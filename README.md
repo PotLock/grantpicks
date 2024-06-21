@@ -1,4 +1,4 @@
-# grantpicks-stellar
+# GrantPicks Monorepo
 Pairwise voting mechanism for Stellar built on Soroban (Stellar & NEAR). Mono repo for front end and smart contracts. 
 
 # Resources

@@ -1386,6 +1386,11 @@ hasown@^2.0.0, hasown@^2.0.1, hasown@^2.0.2:
   dependencies:
     function-bind "^1.1.2"
 
+husky@^9.0.11:
+  version "9.0.11"
+  resolved "https://registry.yarnpkg.com/husky/-/husky-9.0.11.tgz#fc91df4c756050de41b3e478b2158b87c1e79af9"
+  integrity sha512-AB6lFlbwwyIqMdHYhwPe+kjOC3Oc5P3nThEoW/AaO2BX3vJDjWPFxYLxokUZOo6RNX20He3AaT8sESs9NJcmEw==
+
 ignore@^5.2.0:
   version "5.3.1"
   resolved "https://registry.yarnpkg.com/ignore/-/ignore-5.3.1.tgz#5073e554cd42c5b33b394375f538b8593e34d4ef"
@@ -2124,6 +2129,11 @@ prelude-ls@^1.2.1:
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/prelude-ls/-/prelude-ls-1.2.1.tgz#debc6489d7a6e6b0e7611888cec880337d316396"
   integrity sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==
+
+prettier@^3.3.2:
+  version "3.3.2"
+  resolved "https://registry.yarnpkg.com/prettier/-/prettier-3.3.2.tgz#03ff86dc7c835f2d2559ee76876a3914cec4a90a"
+  integrity sha512-rAVeHYMcv8ATV5d508CFdn+8/pHPpXeIid1DdrPwXnaAdH7cqjVbpJaT5eq4yRAFU/lsbwYwSF/n5iNrdJHPQA==
 
 prop-types@^15.8.1:
   version "15.8.1"

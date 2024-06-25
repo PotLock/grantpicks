@@ -25,7 +25,6 @@ import {
 	ISupportedWallet,
 	StellarWalletsKit,
 	WalletNetwork,
-	XBULL_ID,
 } from '@creit.tech/stellar-wallets-kit'
 
 const WalletProvider = ({ children }: { children: React.ReactNode }) => {
@@ -71,7 +70,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 				envVarConfigs.NETWORK_ENV === 'testnet'
 					? WalletNetwork.TESTNET
 					: WalletNetwork.FUTURENET,
-			selectedWalletId: XBULL_ID,
+			selectedWalletId: 'xbull',
 			modules: allowAllModules(),
 		})
 		setStellarKit(kit)

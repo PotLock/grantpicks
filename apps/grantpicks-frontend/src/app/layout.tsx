@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Titillium_Web } from 'next/font/google'
 import './globals.css'
+import '@near-wallet-selector/modal-ui/styles.css'
 
 const titiliumWeb = Titillium_Web({
 	subsets: ['latin'],

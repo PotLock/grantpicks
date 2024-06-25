@@ -14,13 +14,23 @@ const config: Config = {
 			colors: {
 				grantpicks: {
 					black: {
+						200: '#DCDCDC',
+						400: '#989898',
 						600: '#656565',
+						900: '#3D3D3D',
 						950: '#292929',
 					},
 					white: '#FFFFFF',
 					purple: {
 						100: '#ede9fe',
 						950: '#2E1065',
+					},
+					alpha: {
+						50: '#373737',
+					},
+					red: {
+						400: '#FC776D',
+						600: '#E22D20',
 					},
 				},
 			},

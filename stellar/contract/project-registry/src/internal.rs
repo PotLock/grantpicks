@@ -20,11 +20,11 @@ impl ProjectRegistryTrait for ProjectRegistry {
     fn apply(env: &Env, applicant: Address, project_params: ProjectParams) -> Project {
         applicant.require_auth();
 
-        assert!(project_params.name.len() > 0, "name is required");
-        assert!(project_params.overview.len() > 0, "overview is required");
-        assert!(project_params.contacts.len() > 0, "contacts is required");
+        assert!(!project_params.name.is_empty(), "name is required");
+        assert!(!project_params.overview.is_empty(), "overview is required");
+        assert!(!project_params.contacts.is_empty(), "contacts is required");
         assert!(!project_params.admins.is_empty(), "admin is required");
-        assert!(project_params.image_url.len() > 0, "image_url is required");
+        assert!(!project_params.image_url.is_empty(), "image_url is required");
         assert!(
             project_params.admins.len() < 5,
             "too many admin. max. 4 admin allowed"
@@ -91,9 +91,9 @@ impl ProjectRegistryTrait for ProjectRegistry {
     ) {
         admin.require_auth();
 
-        assert!(new_project_params.name.len() > 0, "name is required");
+        assert!(!new_project_params.name.is_empty(), "name is required");
         assert!(
-            new_project_params.overview.len() > 0,
+            !new_project_params.overview.is_empty(),
             "overview is required"
         );
         assert!(
@@ -101,7 +101,7 @@ impl ProjectRegistryTrait for ProjectRegistry {
             "contacts is required"
         );
         assert!(
-            new_project_params.image_url.len() > 0,
+            !new_project_params.image_url.is_empty(),
             "image_url is required"
         );
 

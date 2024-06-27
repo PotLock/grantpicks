@@ -1,0 +1,4 @@
+stellar/contract/target
+stellar/contract/*/target
+stellar/contract/*/test_snapshots
+stellar/node_modules

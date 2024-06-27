@@ -554,7 +554,7 @@ fn test_voting_deposit_and_payout() {
     let cindy = Address::generate(&env);
 
     let voter_pairs = round.get_pair_to_vote();
-    assert!(voter_pairs.len() > 0);
+    assert!(!voter_pairs.is_empty());
 
     let mut picks: Vec<PickedPair> = Vec::new(&env);
     picks.push_back(PickedPair {
@@ -576,7 +576,7 @@ fn test_voting_deposit_and_payout() {
     round.vote(&voter, &picks);
 
     let voter_pairs2 = round.get_pair_to_vote();
-    assert!(voter_pairs2.len() > 0);
+    assert!(!voter_pairs2.is_empty());
 
     let mut picks2: Vec<PickedPair> = Vec::new(&env);
     picks2.push_back(PickedPair {

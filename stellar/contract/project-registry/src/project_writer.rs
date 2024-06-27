@@ -38,14 +38,14 @@ pub fn get_project(env: &Env, project_id: u128) -> Option<Project> {
         .iter()
         .skip(skip)
         .take(1)
-        .find(|project| project.project_id == project_id)
+        .find(|project| project.id == project_id)
         .clone()
 }
 
 pub fn find_projects(env: &Env, skip: Option<u64>, limit: Option<u64>) -> Vec<Project> {
     let projects = read_projects(env);
-    let skip = skip.unwrap_or(0) as usize;
-    let limit = limit.unwrap_or(10) as usize;
+    let skip: usize = skip.unwrap_or(0).try_into().unwrap();
+    let limit: usize = limit.unwrap_or(10).try_into().unwrap();
     assert!(limit <= 20, "limit should be less than or equal to 20");
 
     let mut found_projects: Vec<Project> = Vec::new(env);
@@ -66,10 +66,10 @@ pub fn add_project(env: &Env, project: Project) {
 
 pub fn update_project(env: &Env, project: Project) {
     let mut projects = read_projects(env);
-    let project_id = project.project_id;
+    let project_id = project.id;
     let index: u32 = projects
         .iter()
-        .position(|x| x.project_id == project_id)
+        .position(|x| x.id == project_id)
         .unwrap()
         .try_into()
         .unwrap();

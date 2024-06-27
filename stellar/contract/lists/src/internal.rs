@@ -23,8 +23,8 @@ use crate::{
     registration_writer::{
         add_registration, add_registration_id_to_user, add_registration_to_list,
         get_registration_by_id, get_registrations_of_list, get_user_registration_ids_of,
-        increment_registration_number, read_registration_number,
-        remove_registration, remove_registration_id_to_user, remove_registration_to_list,
+        increment_registration_number, read_registration_number, remove_registration,
+        remove_registration_id_to_user, remove_registration_to_list,
     },
     storage::extend_instance,
     upvotes_writer::{
@@ -39,7 +39,7 @@ pub struct ListsContract;
 #[contractimpl]
 impl ListsTrait for ListsContract {
     fn initialize(env: &Env, owner: Address) {
-        write_contract_owner(&env, owner);
+        write_contract_owner(&env, &owner);
     }
 
     fn create_list(
@@ -173,10 +173,8 @@ impl ListsTrait for ListsContract {
             ulist.cover_image_url = new_cover_image_url;
         }
 
-        if remove_cover_image.is_some() {
-            if remove_cover_image.unwrap() {
-                ulist.cover_image_url = String::from_str(env, "");
-            }
+        if remove_cover_image.is_some() && remove_cover_image.unwrap() {
+            ulist.cover_image_url = String::from_str(env, "");
         }
 
         if default_registration_status.is_some() {
@@ -202,8 +200,8 @@ impl ListsTrait for ListsContract {
             updated_at: ulist.updated_at,
             default_registration_status: ulist.default_registration_status.clone(),
             admin_only_registrations: ulist.admin_only_registration,
-            total_registrations_count: get_registrations_of_list(env, list_id).len() as u64,
-            total_upvotes_count: read_list_upvotes(env, list_id).len() as u64,
+            total_registrations_count: get_registrations_of_list(env, list_id).len().into(),
+            total_upvotes_count: read_list_upvotes(env, list_id).len().into(),
         };
 
         log_update_list_event(env, external_list.clone());
@@ -261,7 +259,7 @@ impl ListsTrait for ListsContract {
         let upvotes = read_list_upvotes(env, list_id);
         assert!(upvotes.contains(&voter), "Not upvoted");
 
-        remove_upvote_from_list(env, list_id, voter.clone());
+        remove_upvote_from_list(env, list_id, &voter);
         remove_upvoted_list_from_user(env, voter, list_id);
         extend_instance(env);
         log_unvote_list_event(env, list_id);
@@ -677,14 +675,14 @@ impl ListsTrait for ListsContract {
             updated_at: ulist.updated_at,
             default_registration_status: ulist.default_registration_status.clone(),
             admin_only_registrations: ulist.admin_only_registration,
-            total_registrations_count: get_registrations_of_list(env, list_id).len() as u64,
-            total_upvotes_count: read_list_upvotes(env, list_id).len() as u64,
+            total_registrations_count: get_registrations_of_list(env, list_id).len().into(),
+            total_upvotes_count: read_list_upvotes(env, list_id).len().into(),
         }
     }
 
     fn get_lists(env: &Env, from_index: Option<u64>, limit: Option<u64>) -> Vec<ListExternal> {
-        let internal_skip = from_index.unwrap_or(0);
-        let internal_limit = limit.unwrap_or(10);
+        let internal_skip: usize = from_index.unwrap_or(0).try_into().unwrap();
+        let internal_limit: usize = limit.unwrap_or(10).try_into().unwrap();
 
         assert!(internal_limit <= 20, "Limit cannot be more than 20");
 
@@ -693,8 +691,8 @@ impl ListsTrait for ListsContract {
         let mut result: Vec<ListExternal> = Vec::new(env);
 
         keys.iter()
-            .take(internal_limit as usize)
-            .skip(internal_skip as usize)
+            .take(internal_limit)
+            .skip(internal_skip)
             .for_each(|id| {
                 let list = lists.get(id.clone());
                 if list.is_some() {
@@ -710,9 +708,10 @@ impl ListsTrait for ListsContract {
                         admins: read_admins_of_list(env, ulist.id),
                         created_at: ulist.created_at,
                         updated_at: ulist.updated_at,
-                        total_registrations_count: get_registrations_of_list(env, ulist.id).len()
-                            as u64,
-                        total_upvotes_count: read_list_upvotes(env, ulist.id).len() as u64,
+                        total_registrations_count: get_registrations_of_list(env, ulist.id)
+                            .len()
+                            .into(),
+                        total_upvotes_count: read_list_upvotes(env, ulist.id).len().into(),
                     });
                 }
             });
@@ -740,8 +739,8 @@ impl ListsTrait for ListsContract {
                     admins: read_admins_of_list(env, ulist.id),
                     created_at: ulist.created_at,
                     updated_at: ulist.updated_at,
-                    total_registrations_count: get_registrations_of_list(env, list_id).len() as u64,
-                    total_upvotes_count: read_list_upvotes(env, list_id).len() as u64,
+                    total_registrations_count: get_registrations_of_list(env, list_id).len().into(),
+                    total_upvotes_count: read_list_upvotes(env, list_id).len().into(),
                 });
             }
         });
@@ -769,8 +768,8 @@ impl ListsTrait for ListsContract {
                     admins: read_admins_of_list(env, ulist.id),
                     created_at: ulist.created_at,
                     updated_at: ulist.updated_at,
-                    total_registrations_count: get_registrations_of_list(env, list_id).len() as u64,
-                    total_upvotes_count: read_list_upvotes(env, list_id).len() as u64,
+                    total_registrations_count: get_registrations_of_list(env, list_id).len().into(),
+                    total_upvotes_count: read_list_upvotes(env, list_id).len().into(),
                 });
             }
         });
@@ -787,14 +786,14 @@ impl ListsTrait for ListsContract {
         let upvotes = read_list_upvotes(env, list_id);
         let mut result: Vec<Address> = Vec::new(env);
 
-        let internal_skip = from_index.unwrap_or(0);
-        let internal_limit = limit.unwrap_or(10);
+        let internal_skip: usize = from_index.unwrap_or(0).try_into().unwrap();
+        let internal_limit: usize = limit.unwrap_or(10).try_into().unwrap();
         assert!(internal_limit <= 20, "Limit cannot be more than 20");
 
         upvotes
             .iter()
-            .skip(internal_skip as usize)
-            .take(internal_limit as usize)
+            .skip(internal_skip)
+            .take(internal_limit)
             .for_each(|upvoter| {
                 result.push_back(upvoter.clone());
             });
@@ -820,15 +819,15 @@ impl ListsTrait for ListsContract {
             }
         });
 
-        let internal_skip = from_index.unwrap_or(0);
-        let internal_limit = limit.unwrap_or(10);
+        let internal_skip: usize = from_index.unwrap_or(0).try_into().unwrap();
+        let internal_limit: usize = limit.unwrap_or(10).try_into().unwrap();
         assert!(internal_limit <= 20, "Limit cannot be more than 20");
 
         lists
             .keys()
             .iter()
-            .skip(internal_skip as usize)
-            .take(internal_limit as usize)
+            .skip(internal_skip)
+            .take(internal_limit)
             .for_each(|list_id| {
                 let ulist = lists.get(list_id.clone()).unwrap();
                 result.push_back(ListExternal {
@@ -842,9 +841,10 @@ impl ListsTrait for ListsContract {
                     admins: read_admins_of_list(env, ulist.id),
                     created_at: ulist.created_at,
                     updated_at: ulist.updated_at,
-                    total_registrations_count: get_registrations_of_list(env, list_id.clone()).len()
-                        as u64,
-                    total_upvotes_count: read_list_upvotes(env, list_id.clone()).len() as u64,
+                    total_registrations_count: get_registrations_of_list(env, list_id.clone())
+                        .len()
+                        .into(),
+                    total_upvotes_count: read_list_upvotes(env, list_id.clone()).len().into(),
                 });
             });
 
@@ -902,15 +902,15 @@ impl ListsTrait for ListsContract {
             });
         }
 
-        let internal_skip = from_index.unwrap_or(0);
-        let internal_limit = limit.unwrap_or(10);
+        let internal_skip: usize = from_index.unwrap_or(0).try_into().unwrap();
+        let internal_limit: usize = limit.unwrap_or(10).try_into().unwrap();
         assert!(internal_limit <= 20, "Limit cannot be more than 20");
 
         registrations
             .keys()
             .iter()
-            .skip(internal_skip as usize)
-            .take(internal_limit as usize)
+            .skip(internal_skip)
+            .take(internal_limit)
             .for_each(|registration_id| {
                 let registration = registrations.get(registration_id.clone()).unwrap();
                 result.push_back(RegistrationExternal {
@@ -963,15 +963,15 @@ impl ListsTrait for ListsContract {
             });
         }
 
-        let internal_skip = from_index.unwrap_or(0);
-        let internal_limit = limit.unwrap_or(10);
+        let internal_skip: usize = from_index.unwrap_or(0).try_into().unwrap();
+        let internal_limit: usize = limit.unwrap_or(10).try_into().unwrap();
         assert!(internal_limit <= 20, "Limit cannot be more than 20");
 
         registrations
             .keys()
             .iter()
-            .skip(internal_skip as usize)
-            .take(internal_limit as usize)
+            .skip(internal_skip)
+            .take(internal_limit)
             .for_each(|registration_id| {
                 let registration = registrations.get(registration_id.clone()).unwrap();
                 result.push_back(RegistrationExternal {
@@ -1002,7 +1002,7 @@ impl ListsTrait for ListsContract {
         let registration_ids = get_user_registration_ids_of(env, registrant_id.clone());
 
         if required_status.is_none() && list_id.is_none() {
-            return registration_ids.len() > 0;
+            return !registration_ids.is_empty();
         }
 
         if list_id.is_some() && required_status.is_none() {
@@ -1023,7 +1023,7 @@ impl ListsTrait for ListsContract {
         result
     }
 
-    fn owner(env: &Env) -> Address{
+    fn owner(env: &Env) -> Address {
         read_contract_owner(env)
     }
 }

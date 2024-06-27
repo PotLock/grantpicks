@@ -10,9 +10,9 @@ pub fn read_upvotes(env: &Env) -> Map<u128, Vec<Address>> {
     }
 }
 
-pub fn write_upvotes(env: &Env, upvotes: Map<u128, Vec<Address>>) {
+pub fn write_upvotes(env: &Env, upvotes: &Map<u128, Vec<Address>>) {
     let key = ContractKey::Upvotes;
-    env.storage().persistent().set(&key, &upvotes);
+    env.storage().persistent().set(&key, upvotes);
 }
 
 pub fn read_list_upvotes(env: &Env, list_id: u128) -> Vec<Address> {
@@ -25,19 +25,19 @@ pub fn read_list_upvotes(env: &Env, list_id: u128) -> Vec<Address> {
 
 pub fn add_upvote_to_list(env: &Env, list_id: u128, voter: Address) {
     let mut upvotes = read_upvotes(env);
-    let mut upvoters = read_list_upvotes(env, list_id);
-    upvoters.push_back(voter);
-    upvotes.set(list_id, upvoters);
-    write_upvotes(env, upvotes);
+    let mut list_upvotes = read_list_upvotes(env, list_id);
+    list_upvotes.push_back(voter);
+    upvotes.set(list_id, list_upvotes);
+    write_upvotes(env, &upvotes);
 }
 
-pub fn remove_upvote_from_list(env: &Env, list_id: u128, upvoter: Address) {
+pub fn remove_upvote_from_list(env: &Env, list_id: u128, voter: &Address) {
     let mut upvotes = read_upvotes(env);
-    let mut upvoters = read_list_upvotes(env, list_id);
-    let index = upvoters.first_index_of(&upvoter).unwrap();
-    upvoters.remove(index as u32);
-    upvotes.set(list_id, upvoters);
-    write_upvotes(env, upvotes);
+    let mut list_upvotes = read_list_upvotes(env, list_id);
+    let index = list_upvotes.first_index_of(voter).unwrap();
+    list_upvotes.remove(index as u32);
+    upvotes.set(list_id, list_upvotes);
+    write_upvotes(env, &upvotes);
 }
 
 pub fn read_user_upvotes(env: &Env) -> Map<Address, Vec<u128>> {
@@ -48,9 +48,9 @@ pub fn read_user_upvotes(env: &Env) -> Map<Address, Vec<u128>> {
     }
 }
 
-pub fn write_user_upvotes(env: &Env, upvoted_list: Map<Address, Vec<u128>>) {
+pub fn write_user_upvotes(env: &Env, upvoted_list: &Map<Address, Vec<u128>>) {
     let key = ContractKey::UserUpvotes;
-    env.storage().persistent().set(&key, &upvoted_list);
+    env.storage().persistent().set(&key, upvoted_list);
 }
 
 pub fn read_user_upvoted_lists(env: &Env, user: Address) -> Vec<u128> {
@@ -66,7 +66,7 @@ pub fn add_upvoted_list_to_user(env: &Env, user: Address, list_id: u128) {
     let mut upvoted_lists = read_user_upvoted_lists(env, user.clone());
     upvoted_lists.push_back(list_id);
     user_upvotes.set(user, upvoted_lists);
-    write_user_upvotes(env, user_upvotes);
+    write_user_upvotes(env, &user_upvotes);
 }
 
 pub fn remove_upvoted_list_from_user(env: &Env, user: Address, list_id: u128) {
@@ -75,11 +75,11 @@ pub fn remove_upvoted_list_from_user(env: &Env, user: Address, list_id: u128) {
     let index = upvoted_lists.first_index_of(&list_id).unwrap();
     upvoted_lists.remove(index as u32);
     user_upvotes.set(user, upvoted_lists);
-    write_user_upvotes(env, user_upvotes);
+    write_user_upvotes(env, &user_upvotes);
 }
 
 pub fn clear_upvotes_for_list(env: &Env, list_id: u128) {
     let mut upvotes = read_upvotes(env);
     upvotes.remove(list_id);
-    write_upvotes(env, upvotes);
+    write_upvotes(env, &upvotes);
 }

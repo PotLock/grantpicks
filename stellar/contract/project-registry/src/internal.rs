@@ -1,4 +1,4 @@
-use crate::admin::{read_registry_admin, write_registry_admin};
+use crate::admin::{read_contract_owner, write_contract_owner};
 use crate::data_type::{Project, ProjectParams, ProjectStatus, UpdateProjectParams};
 use crate::events::{log_create_project_event, log_update_project_event};
 use crate::methods::ProjectRegistryTrait;
@@ -13,8 +13,8 @@ pub struct ProjectRegistry;
 
 #[contractimpl]
 impl ProjectRegistryTrait for ProjectRegistry {
-    fn initialize(env: &Env, registry_admin: Address) {
-        write_registry_admin(env, &registry_admin);
+    fn initialize(env: &Env, contract_owner: Address) {
+        write_contract_owner(env, &contract_owner);
     }
 
     fn apply(env: &Env, applicant: Address, project_params: ProjectParams) -> Project {
@@ -23,7 +23,7 @@ impl ProjectRegistryTrait for ProjectRegistry {
         assert!(project_params.name.len() > 0, "name is required");
         assert!(project_params.overview.len() > 0, "overview is required");
         assert!(project_params.contacts.len() > 0, "contacts is required");
-        assert!(project_params.admins.len() > 0, "admin is required");
+        assert!(!project_params.admins.is_empty(), "admin is required");
         assert!(project_params.image_url.len() > 0, "image_url is required");
         assert!(
             project_params.admins.len() < 5,
@@ -33,7 +33,7 @@ impl ProjectRegistryTrait for ProjectRegistry {
         let project_id = increment_project_num(env);
 
         let project = Project {
-            project_id,
+            id: project_id,
             name: project_params.name,
             overview: project_params.overview,
             contacts: project_params.contacts,
@@ -58,15 +58,15 @@ impl ProjectRegistryTrait for ProjectRegistry {
 
     fn change_project_status(
         env: &Env,
-        registry_admin: Address,
+        contract_owner: Address,
         project_id: u128,
         new_status: ProjectStatus,
     ) {
-        registry_admin.require_auth();
+        contract_owner.require_auth();
 
-        let contract_admin = read_registry_admin(env);
+        let contract_admin = read_contract_owner(env);
         assert!(
-            registry_admin == contract_admin,
+            contract_owner == contract_admin,
             "only contract admin can change status"
         );
 
@@ -97,7 +97,7 @@ impl ProjectRegistryTrait for ProjectRegistry {
             "overview is required"
         );
         assert!(
-            new_project_params.contacts.len() > 0,
+            !new_project_params.contacts.is_empty(),
             "contacts is required"
         );
         assert!(
@@ -138,6 +138,12 @@ impl ProjectRegistryTrait for ProjectRegistry {
         assert!(project.is_some(), "project not found");
 
         let mut uproject = project.unwrap();
+        assert!(uproject.owner == admin, "only owner can add admin");
+        assert!(
+            uproject.admins.len() < 5,
+            "too many admin. max. 4 admin allowed"
+        );
+
         uproject.admins.push_back(new_admin);
 
         log_update_project_event(env, uproject.clone());
@@ -152,6 +158,7 @@ impl ProjectRegistryTrait for ProjectRegistry {
         assert!(project.is_some(), "project not found");
 
         let mut uproject = project.unwrap();
+        assert!(uproject.owner == admin, "only owner can add admin");
         let index = uproject.admins.first_index_of(&admin_to_remove.clone());
         assert!(index.is_some(), "admin not found");
 
@@ -160,7 +167,7 @@ impl ProjectRegistryTrait for ProjectRegistry {
 
         log_update_project_event(env, uproject.clone());
         update_project(env, uproject);
-        extend_instance(env)
+        extend_instance(env);
     }
 
     fn get_project_by_id(env: &Env, project_id: u128) -> Option<Project> {

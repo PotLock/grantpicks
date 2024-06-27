@@ -9,9 +9,9 @@ pub fn read_approved_projects(env: &Env) -> Vec<u128> {
     }
 }
 
-pub fn write_approved_projects(env: &Env, approved_projects: Vec<u128>) {
+pub fn write_approved_projects(env: &Env, approved_projects: &Vec<u128>) {
     let key = ContractKey::ApprovedProjects;
-    env.storage().persistent().set(&key, &approved_projects);
+    env.storage().persistent().set(&key, approved_projects);
 }
 
 pub fn is_project_approved(env: &Env, project_id: u128) -> bool {
@@ -27,7 +27,7 @@ pub fn is_project_approved(env: &Env, project_id: u128) -> bool {
 pub fn add_approved_project(env: &Env, project_id: u128) {
     let mut approved_projects = read_approved_projects(env);
     approved_projects.push_back(project_id);
-    write_approved_projects(env, approved_projects);
+    write_approved_projects(env, &approved_projects);
 }
 
 pub fn remove_approved_project(env: &Env, project_id: u128) {
@@ -36,6 +36,6 @@ pub fn remove_approved_project(env: &Env, project_id: u128) {
 
     if index.is_some() {
         approved_projects.remove(index.unwrap() as u32);
-        write_approved_projects(env, approved_projects);
+        write_approved_projects(env, &approved_projects);
     }
 }

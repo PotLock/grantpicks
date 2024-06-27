@@ -3,11 +3,11 @@ use loam_sdk::soroban_sdk::{Address, Env, Vec};
 use crate::data_type::{Project, ProjectParams, ProjectStatus, UpdateProjectParams};
 
 pub trait ProjectRegistryTrait {
-    fn initialize(env: &Env, registry_admin: Address);
+    fn initialize(env: &Env, contract_owner: Address);
     fn apply(env: &Env, applicant: Address, params: ProjectParams) -> Project;
     fn change_project_status(
         env: &Env,
-        registry_admin: Address,
+        contract_owner: Address,
         project_id: u128,
         new_status: ProjectStatus,
     );

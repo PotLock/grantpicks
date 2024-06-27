@@ -64,8 +64,8 @@ impl RoundTrait for Round {
         );
         assert!(round_detail.amount > 0, "Amount must be greater than 0");
         assert!(
-            round_detail.admins.len() > 0,
-            "Round admins must be greater than 0"
+            !round_detail.admins.is_empty(),
+            "Round admins must not empty"
         );
         assert!(
             round_detail.admins.len() < 5,
@@ -406,9 +406,11 @@ impl RoundTrait for Round {
         let mut picked_pairs: Vec<PickResult> = Vec::new(env);
 
         let projects = read_approved_projects(env);
-        let total_available_pairs = (projects.len() * (projects.len() - 1)) as u64;
+        let total_available_pairs: u64 = (projects.len() * (projects.len() - 1))
+            .try_into()
+            .expect("Conversion failed");
         picks.iter().for_each(|picked_pair| {
-            let picked_index = picked_pair.pair_id as u64;
+            let picked_index: u64 = picked_pair.pair_id.into();
             assert!(
                 picked_index < total_available_pairs,
                 "Picked pair is greater than total available pairs"
@@ -444,7 +446,7 @@ impl RoundTrait for Round {
 
     fn get_pair_to_vote(env: &Env) -> Vec<Pair> {
         let round = read_round_info(env);
-        let pairs = get_random_pairs(env, round.num_picks_per_voter as u64);
+        let pairs = get_random_pairs(env, round.num_picks_per_voter.into());
         extend_instance(env);
         pairs
     }
@@ -666,7 +668,7 @@ impl RoundTrait for Round {
 
         let project_contract = read_project_contract(env);
         let project_client = project_registry::Client::new(env, &project_contract);
-        let total_projects = project_client.get_total_projects() as u128;
+        let total_projects: u128 = project_client.get_total_projects().into();
 
         project_ids.iter().for_each(|project_id| {
             assert!(
@@ -792,7 +794,9 @@ impl RoundTrait for Round {
 
     fn get_pair_by_index(env: &Env, index: u64) -> Pair {
         let approved_project = read_approved_projects(env);
-        let total_available_pairs = (approved_project.len() * (approved_project.len() - 1)) as u64;
+        let total_available_pairs: u64 = (approved_project.len() * (approved_project.len() - 1))
+            .try_into()
+            .expect("Conversion failed");
         let pair = get_pair_by_index(env, total_available_pairs, index);
         extend_instance(env);
 

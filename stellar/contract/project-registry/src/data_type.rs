@@ -12,7 +12,7 @@ pub enum ProjectStatus {
 #[contracttype]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Project {
-    pub project_id: u128,
+    pub id: u128,
     pub image_url: String,
     pub name: String,
     pub overview: String,

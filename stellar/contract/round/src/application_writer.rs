@@ -20,7 +20,7 @@ pub fn increment_application_number(env: &Env) -> u128 {
 pub fn add_application(env: &Env, application: ProjectApplication) {
     let mut applications = read_application(env);
     applications.push_back(application);
-    write_application(env, applications);
+    write_application(env, &applications);
 }
 
 pub fn read_application(env: &Env) -> Vec<ProjectApplication> {
@@ -31,9 +31,9 @@ pub fn read_application(env: &Env) -> Vec<ProjectApplication> {
     }
 }
 
-pub fn write_application(env: &Env, applications: Vec<ProjectApplication>) {
+pub fn write_application(env: &Env, applications: &Vec<ProjectApplication>) {
     let key = ContractKey::ProjectApplicants;
-    env.storage().persistent().set(&key, &applications);
+    env.storage().persistent().set(&key, applications);
 }
 
 pub fn update_application(env: &Env, application: ProjectApplication) {
@@ -44,7 +44,7 @@ pub fn update_application(env: &Env, application: ProjectApplication) {
         .unwrap();
     let index_u32: u32 = index.try_into().unwrap();
     applications.set(index_u32, application);
-    write_application(env, applications);
+    write_application(env, &applications);
 }
 
 pub fn find_applications(
@@ -53,8 +53,8 @@ pub fn find_applications(
     limit: Option<u64>,
 ) -> Vec<ProjectApplication> {
     let applications = read_application(env);
-    let skip = skip.unwrap_or(0) as usize;
-    let limit = limit.unwrap_or(10) as usize;
+    let skip: usize = skip.unwrap_or(0).try_into().unwrap();
+    let limit: usize = limit.unwrap_or(10).try_into().unwrap();
     assert!(limit <= 20, "limit should be less than or equal to 20");
     let mut found_applications: Vec<ProjectApplication> = Vec::new(env);
 
@@ -80,10 +80,10 @@ pub fn get_application(env: &Env, project_id: u128) -> Option<ProjectApplication
 
 pub fn get_application_by_id(env: &Env, application_id: u128) -> Option<ProjectApplication> {
     let applications = read_application(env);
-    let skip = application_id - 1;
+    let skip: usize = (application_id - 1).try_into().unwrap();
     let application = applications
         .iter()
-        .skip(skip as usize)
+        .skip(skip)
         .take(1)
         .find(|application| application.application_id == application_id);
 

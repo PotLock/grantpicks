@@ -27,21 +27,21 @@ pub fn read_registrations(env: &Env) -> Map<u128, RegistrationInternal> {
     }
 }
 
-pub fn write_registrations(env: &Env, value: Map<u128, RegistrationInternal>) {
+pub fn write_registrations(env: &Env, value: &Map<u128, RegistrationInternal>) {
     let key = ContractKey::Registrations;
-    env.storage().persistent().set(&key, &value);
+    env.storage().persistent().set(&key, value);
 }
 
 pub fn add_registration(env: &Env, registration_id: u128, registration: RegistrationInternal) {
     let mut registrations = read_registrations(env);
     registrations.set(registration_id, registration);
-    write_registrations(env, registrations);
+    write_registrations(env, &registrations);
 }
 
 pub fn remove_registration(env: &Env, registration_id: u128) {
     let mut registrations = read_registrations(env);
     registrations.remove(registration_id);
-    write_registrations(env, registrations);
+    write_registrations(env, &registrations);
 }
 
 pub fn get_registration_by_id(env: &Env, registration_id: u128) -> Option<RegistrationInternal> {
@@ -57,9 +57,9 @@ pub fn read_list_registrations(env: &Env) -> Map<u128, Vec<u128>> {
     }
 }
 
-pub fn write_list_registrations(env: &Env, value: Map<u128, Vec<u128>>) {
+pub fn write_list_registrations(env: &Env, value: &Map<u128, Vec<u128>>) {
     let key = ContractKey::ListRegistration;
-    env.storage().persistent().set(&key, &value);
+    env.storage().persistent().set(&key, value);
 }
 
 pub fn get_registrations_of_list(env: &Env, list_id: u128) -> Vec<u128> {
@@ -72,18 +72,15 @@ pub fn get_registrations_of_list(env: &Env, list_id: u128) -> Vec<u128> {
 
 pub fn add_registration_to_list(env: &Env, list_id: u128, registration_id: u128) {
     let mut list_registrations = read_list_registrations(env);
-    match list_registrations.get(list_id) {
-        Some(mut value) => {
-            value.push_back(registration_id);
-            list_registrations.set(list_id, value);
-        }
-        None => {
-            let mut new_list = Vec::new(env);
-            new_list.push_back(registration_id);
-            list_registrations.set(list_id, new_list);
-        }
+    if let Some(mut value) = list_registrations.get(list_id) {
+        value.push_back(registration_id);
+        list_registrations.set(list_id, value);
+    } else {
+        let mut new_list = Vec::new(env);
+        new_list.push_back(registration_id);
+        list_registrations.set(list_id, new_list);
     }
-    write_list_registrations(env, list_registrations);
+    write_list_registrations(env, &list_registrations);
 }
 
 pub fn remove_registration_to_list(env: &Env, list_id: u128, registration_id: u128) {
@@ -102,7 +99,7 @@ pub fn remove_registration_to_list(env: &Env, list_id: u128, registration_id: u1
         }
         None => {}
     }
-    write_list_registrations(env, list_registrations);
+    write_list_registrations(env, &list_registrations);
 }
 
 pub fn read_user_registration_ids(env: &Env) -> Map<Address, Vec<u128>> {
@@ -113,9 +110,9 @@ pub fn read_user_registration_ids(env: &Env) -> Map<Address, Vec<u128>> {
     }
 }
 
-pub fn write_user_registration_ids(env: &Env, value: Map<Address, Vec<u128>>) {
+pub fn write_user_registration_ids(env: &Env, value: &Map<Address, Vec<u128>>) {
     let key = ContractKey::RegistrationsIDs;
-    env.storage().persistent().set(&key, &value);
+    env.storage().persistent().set(&key, value);
 }
 
 pub fn get_user_registration_ids_of(env: &Env, user_id: Address) -> Vec<u128> {
@@ -128,18 +125,15 @@ pub fn get_user_registration_ids_of(env: &Env, user_id: Address) -> Vec<u128> {
 
 pub fn add_registration_id_to_user(env: &Env, user_id: Address, registration_id: u128) {
     let mut user_registration_ids = read_user_registration_ids(env);
-    match user_registration_ids.get(user_id.clone()) {
-        Some(mut value) => {
-            value.push_back(registration_id);
-            user_registration_ids.set(user_id, value);
-        }
-        None => {
-            let mut new_list = Vec::new(env);
-            new_list.push_back(registration_id);
-            user_registration_ids.set(user_id, new_list);
-        }
+    if let Some(mut value) = user_registration_ids.get(user_id.clone()) {
+        value.push_back(registration_id);
+        user_registration_ids.set(user_id, value);
+    } else {
+        let mut new_list = Vec::new(env);
+        new_list.push_back(registration_id);
+        user_registration_ids.set(user_id, new_list);
     }
-    write_user_registration_ids(env, user_registration_ids);
+    write_user_registration_ids(env, &user_registration_ids);
 }
 
 pub fn remove_registration_id_to_user(env: &Env, user_id: Address, registration_id: u128) {
@@ -158,5 +152,5 @@ pub fn remove_registration_id_to_user(env: &Env, user_id: Address, registration_
         }
         None => {}
     }
-    write_user_registration_ids(env, user_registration_ids);
+    write_user_registration_ids(env, &user_registration_ids);
 }

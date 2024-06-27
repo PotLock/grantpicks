@@ -19,10 +19,10 @@ pub struct RoundFactory;
 #[contractimpl]
 impl RoundFactoryTrait for RoundFactory {
     fn init(env: &Env, owner: Address, token_address: Address, registry_address: Address) {
-        write_owner(env, owner);
+        write_owner(env, &owner);
         let wasm_hash = env.deployer().upload_contract_wasm(round::WASM);
-        write_wasm_hash(&env, wasm_hash);
-        write_token_address(&env, &token_address);
+        write_wasm_hash(env, &wasm_hash);
+        write_token_address(env, &token_address);
         write_project_contract(env, &registry_address);
     }
 
@@ -52,10 +52,7 @@ impl RoundFactoryTrait for RoundFactory {
             "Round end time must be greater than round application start time"
         );
         assert!(params.amount > 0, "Amount must be greater than 0");
-        assert!(
-            params.admins.len() > 0,
-            "Round admins must be greater than 0"
-        );
+        assert!(!params.admins.is_empty(), "Round admins must not empty");
         assert!(params.admins.len() < 5, "Round admins must be less than 5");
         assert!(params.contact.len() <= 10, "Contact must be less than 10");
         assert!(
@@ -157,7 +154,7 @@ impl RoundFactoryTrait for RoundFactory {
             "Only the contract owner can transfer ownership"
         );
 
-        write_owner(env, new_owner);
+        write_owner(env, &new_owner);
         extend_instance(env);
     }
 
@@ -177,7 +174,7 @@ impl RoundFactoryTrait for RoundFactory {
 
         assert!(is_exist, "Admin does not exist");
 
-        remove_admin(env, admin);
+        remove_admin(env, &admin);
         extend_instance(env);
     }
 

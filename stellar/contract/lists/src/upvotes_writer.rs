@@ -72,7 +72,7 @@ pub fn add_upvoted_list_to_user(env: &Env, user: Address, list_id: u128) {
 pub fn remove_upvoted_list_from_user(env: &Env, user: Address, list_id: u128) {
     let mut user_upvotes = read_user_upvotes(env);
     let mut upvoted_lists = read_user_upvoted_lists(env, user.clone());
-    let index = upvoted_lists.first_index_of(&list_id).unwrap();
+    let index = upvoted_lists.first_index_of(list_id).unwrap();
     upvoted_lists.remove(index as u32);
     user_upvotes.set(user, upvoted_lists);
     write_user_upvotes(env, &user_upvotes);

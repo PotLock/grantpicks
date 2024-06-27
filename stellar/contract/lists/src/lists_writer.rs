@@ -143,7 +143,7 @@ pub fn remove_admin_from_list(env: &Env, list_id: u128, admin: Address) {
         Some(mut value) => {
             let index = value.first_index_of(admin);
             assert!(index.is_some(), "Admin not found in list admins");
-            value.remove(index.unwrap() as u32);
+            value.remove(index.unwrap());
             list_admins.set(list_id, value);
         }
         None => {}
@@ -197,11 +197,11 @@ pub fn remove_list_to_registrant_lists(env: &Env, registrant: Address, list_id: 
     let lists_registered_by_user = registrant_lists.get(registrant.clone());
     match lists_registered_by_user {
         Some(mut value) => {
-            let index = value.first_index_of(&list_id);
+            let index = value.first_index_of(list_id);
             assert!(index.is_some(), "List not found in registrant lists");
 
             let index_unwrap = index.unwrap();
-            value.remove(index_unwrap as u32);
+            value.remove(index_unwrap);
             registrant_lists.set(registrant, value);
         }
         None => {}

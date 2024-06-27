@@ -87,14 +87,14 @@ pub fn remove_registration_to_list(env: &Env, list_id: u128, registration_id: u1
     let mut list_registrations = read_list_registrations(env);
     match list_registrations.get(list_id) {
         Some(mut value) => {
-            let index = value.first_index_of(&registration_id);
+            let index = value.first_index_of(registration_id);
             assert!(
                 index.is_some(),
                 "Registration ID not found in list's registration list"
             );
 
             let index_unwrap = index.unwrap();
-            value.remove(index_unwrap as u32);
+            value.remove(index_unwrap);
             list_registrations.set(list_id, value);
         }
         None => {}
@@ -140,14 +140,14 @@ pub fn remove_registration_id_to_user(env: &Env, user_id: Address, registration_
     let mut user_registration_ids = read_user_registration_ids(env);
     match user_registration_ids.get(user_id.clone()) {
         Some(mut value) => {
-            let index = value.first_index_of(&registration_id);
+            let index = value.first_index_of(registration_id);
             assert!(
                 index.is_some(),
                 "Registration ID not found in user's registration list"
             );
 
             let index_unwrap = index.unwrap();
-            value.remove(index_unwrap as u32);
+            value.remove(index_unwrap);
             user_registration_ids.set(user_id, value);
         }
         None => {}

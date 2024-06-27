@@ -39,7 +39,7 @@ pub struct ListsContract;
 #[contractimpl]
 impl ListsTrait for ListsContract {
     fn initialize(env: &Env, owner: Address) {
-        write_contract_owner(&env, &owner);
+        write_contract_owner(env, &owner);
     }
 
     fn create_list(
@@ -54,7 +54,7 @@ impl ListsTrait for ListsContract {
     ) -> ListExternal {
         owner.require_auth();
 
-        assert!(name.len() > 0, "Name cannot be empty");
+        assert!(!name.is_empty(), "Name cannot be empty");
 
         if description.is_some() {
             assert!(
@@ -151,7 +151,7 @@ impl ListsTrait for ListsContract {
 
         if name.is_some() {
             let new_name = name.unwrap();
-            assert!(new_name.len() > 0, "Name cannot be empty");
+            assert!(!new_name.is_empty(), "Name cannot be empty");
             ulist.name = new_name;
         }
 
@@ -494,7 +494,7 @@ impl ListsTrait for ListsContract {
 
         if list_id.is_some() {
             let current_list = read_lists_number(env);
-            assert!(list_id.clone().unwrap() <= current_list, "Invalid List ID");
+            assert!(list_id.unwrap() <= current_list, "Invalid List ID");
 
             list = get_list_by_id(env, list_id.unwrap());
             assert!(list.is_some(), "List not found");
@@ -503,7 +503,7 @@ impl ListsTrait for ListsContract {
         if registration_id.is_some() {
             let current_registration_number = read_registration_number(env);
             assert!(
-                registration_id.clone().unwrap() <= current_registration_number,
+                registration_id.unwrap() <= current_registration_number,
                 "Invalid Registration ID"
             );
         }
@@ -579,7 +579,7 @@ impl ListsTrait for ListsContract {
                 let registration = get_registration_by_id(env, registration_id);
                 if registration.is_some() {
                     let uregistration = registration.unwrap();
-                    if list_registered.contains(&uregistration.list_id) {
+                    if list_registered.contains(uregistration.list_id) {
                         remove_registration(env, registration_id);
                         remove_list_to_registrant_lists(
                             env,
@@ -638,7 +638,7 @@ impl ListsTrait for ListsContract {
         extend_instance(env);
 
         let registration_external = RegistrationExternal {
-            id: registration_id.clone(),
+            id: registration_id,
             list_id: uregistration.list_id,
             registrant_id: uregistration.registrant_id,
             status: uregistration.status,
@@ -694,7 +694,7 @@ impl ListsTrait for ListsContract {
             .take(internal_limit)
             .skip(internal_skip)
             .for_each(|id| {
-                let list = lists.get(id.clone());
+                let list = lists.get(id);
                 if list.is_some() {
                     let ulist = list.unwrap();
                     result.push_back(ListExternal {
@@ -812,7 +812,7 @@ impl ListsTrait for ListsContract {
         let mut result: Vec<ListExternal> = Vec::new(env);
 
         upvoted_list.iter().for_each(|list_id| {
-            let list = get_list_by_id(env, list_id.clone());
+            let list = get_list_by_id(env, list_id);
             if list.is_some() {
                 let ulist = list.unwrap();
                 lists.set(ulist.id, ulist);
@@ -829,7 +829,7 @@ impl ListsTrait for ListsContract {
             .skip(internal_skip)
             .take(internal_limit)
             .for_each(|list_id| {
-                let ulist = lists.get(list_id.clone()).unwrap();
+                let ulist = lists.get(list_id).unwrap();
                 result.push_back(ListExternal {
                     id: ulist.id,
                     name: ulist.name.clone(),
@@ -841,10 +841,10 @@ impl ListsTrait for ListsContract {
                     admins: read_admins_of_list(env, ulist.id),
                     created_at: ulist.created_at,
                     updated_at: ulist.updated_at,
-                    total_registrations_count: get_registrations_of_list(env, list_id.clone())
+                    total_registrations_count: get_registrations_of_list(env, list_id)
                         .len()
                         .into(),
-                    total_upvotes_count: read_list_upvotes(env, list_id.clone()).len().into(),
+                    total_upvotes_count: read_list_upvotes(env, list_id).len().into(),
                 });
             });
 
@@ -883,7 +883,7 @@ impl ListsTrait for ListsContract {
 
         if required_status.is_none() {
             registration_ids.iter().for_each(|registration_id| {
-                let registration = get_registration_by_id(env, registration_id.clone());
+                let registration = get_registration_by_id(env, registration_id);
                 if registration.is_some() {
                     let uregistration = registration.unwrap();
                     registrations.set(uregistration.id, uregistration);
@@ -892,7 +892,7 @@ impl ListsTrait for ListsContract {
         } else {
             let ustatus = required_status.unwrap();
             registration_ids.iter().for_each(|registration_id| {
-                let registration = get_registration_by_id(env, registration_id.clone());
+                let registration = get_registration_by_id(env, registration_id);
                 if registration.is_some() {
                     let uregistration = registration.unwrap();
                     if uregistration.status == ustatus {
@@ -912,9 +912,9 @@ impl ListsTrait for ListsContract {
             .skip(internal_skip)
             .take(internal_limit)
             .for_each(|registration_id| {
-                let registration = registrations.get(registration_id.clone()).unwrap();
+                let registration = registrations.get(registration_id).unwrap();
                 result.push_back(RegistrationExternal {
-                    id: registration_id.clone(),
+                    id: registration_id,
                     list_id: registration.list_id,
                     registrant_id: registration.registrant_id.clone(),
                     status: registration.status.clone(),
@@ -944,7 +944,7 @@ impl ListsTrait for ListsContract {
 
         if required_status.is_none() {
             registration_ids.iter().for_each(|registration_id| {
-                let registration = get_registration_by_id(env, registration_id.clone());
+                let registration = get_registration_by_id(env, registration_id);
                 if registration.is_some() {
                     let uregistration = registration.unwrap();
                     registrations.set(uregistration.id, uregistration);
@@ -953,7 +953,7 @@ impl ListsTrait for ListsContract {
         } else {
             let ustatus = required_status.unwrap();
             registration_ids.iter().for_each(|registration_id| {
-                let registration = get_registration_by_id(env, registration_id.clone());
+                let registration = get_registration_by_id(env, registration_id);
                 if registration.is_some() {
                     let uregistration = registration.unwrap();
                     if uregistration.status == ustatus {
@@ -973,9 +973,9 @@ impl ListsTrait for ListsContract {
             .skip(internal_skip)
             .take(internal_limit)
             .for_each(|registration_id| {
-                let registration = registrations.get(registration_id.clone()).unwrap();
+                let registration = registrations.get(registration_id).unwrap();
                 result.push_back(RegistrationExternal {
-                    id: registration_id.clone(),
+                    id: registration_id,
                     list_id: registration.list_id,
                     registrant_id: registration.registrant_id.clone(),
                     status: registration.status.clone(),
@@ -1006,21 +1006,21 @@ impl ListsTrait for ListsContract {
         }
 
         if list_id.is_some() && required_status.is_none() {
-            return get_lists_registered_by(env, registrant_id.clone()).contains(&list_id.unwrap());
+            return get_lists_registered_by(env, registrant_id.clone()).contains(list_id.unwrap());
         }
 
         let status = required_status.unwrap();
         let ulist_id = list_id.unwrap();
-        let result = registration_ids.iter().any(|registration_id| {
-            let registration = get_registration_by_id(env, registration_id.clone());
+        
+
+        registration_ids.iter().any(|registration_id| {
+            let registration = get_registration_by_id(env, registration_id);
             if registration.is_some() {
                 let uregistration = registration.unwrap();
                 return uregistration.list_id == ulist_id && uregistration.status == status;
             }
             false
-        });
-
-        result
+        })
     }
 
     fn owner(env: &Env) -> Address {

@@ -1,0 +1,21 @@
+[workspace]
+members = ["./contract/project-registry","./contract/round","./contract/round-factory","./contract/lists"]
+resolver = "2"
+
+[workspace.dependencies]
+loam-sdk = "0.6.9"
+soroban-token-sdk = "21.0.1-preview.2"
+
+[profile.release]
+opt-level = "z"
+overflow-checks = true
+debug = 0
+strip = "symbols"
+debug-assertions = false
+panic = "abort"
+codegen-units = 1
+lto = true
+
+[profile.release-with-logs]
+inherits = "release"
+debug-assertions = true

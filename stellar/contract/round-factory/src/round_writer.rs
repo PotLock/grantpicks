@@ -3,10 +3,7 @@ use loam_sdk::soroban_sdk::{Env, Vec};
 
 pub fn read_round_number(env: &Env) -> u128 {
     let key = ContractKey::RoundNumber;
-    match env.storage().persistent().get(&key) {
-        Some(value) => value,
-        None => 0,
-    }
+    env.storage().persistent().get(&key).unwrap_or(0)
 }
 
 pub fn increment_round_number(env: &Env) -> u128 {

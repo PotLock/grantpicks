@@ -63,18 +63,18 @@ impl RoundFactoryTrait for RoundFactory {
         let round_id = increment_round_number(env);
         let wasm_hash = read_wasm_hash(env);
         let contract_address = env.current_contract_address();
-        let salt = BytesN::from_array(&env, &[u8::try_from(round_id).expect("Overflow"); 32]);
+        let salt = BytesN::from_array(env, &[u8::try_from(round_id).expect("Overflow"); 32]);
 
         let deployed_address = env
             .deployer()
             .with_address(contract_address, salt)
             .deploy(wasm_hash);
 
-        let round_client = round::Client::new(&env, &deployed_address);
-        let token_address = read_token_address(&env);
-        let registry_address = read_project_contract(&env);
+        let round_client = round::Client::new(env, &deployed_address);
+        let token_address = read_token_address(env);
+        let registry_address = read_project_contract(env);
 
-        let mut contacts: Vec<round::Contact> = Vec::new(&env);
+        let mut contacts: Vec<round::Contact> = Vec::new(env);
         for contact in params.contact {
             contacts.push_back(round::Contact {
                 name: contact.name,
@@ -108,7 +108,7 @@ impl RoundFactoryTrait for RoundFactory {
             round_id,
         };
 
-        add_round(&env, &round_info);
+        add_round(env, &round_info);
         extend_instance(env);
         log_create_round_contract_event(env, round_info.clone());
 
@@ -136,8 +136,7 @@ impl RoundFactoryTrait for RoundFactory {
 
         let is_exist = admins
             .iter()
-            .find(|round_admin| round_admin == &admin)
-            .is_some();
+            .any(|round_admin| &round_admin == &admin);
 
         assert!(!is_exist, "Admin already exists");
 
@@ -169,8 +168,7 @@ impl RoundFactoryTrait for RoundFactory {
 
         let is_exist = read_admins(env)
             .iter()
-            .find(|round_admin| round_admin == &admin)
-            .is_some();
+            .any(|round_admin| &round_admin == &admin);
 
         assert!(is_exist, "Admin does not exist");
 

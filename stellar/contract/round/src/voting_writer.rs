@@ -23,10 +23,7 @@ pub fn set_voting_state(env: &Env, voter: Address, state: bool) {
 
 pub fn get_voting_state(env: &Env, voter: Address) -> bool {
     let voting_state = read_voting_state(env);
-    match voting_state.get(voter) {
-        Some(state) => state,
-        None => false,
-    }
+    voting_state.get(voter).unwrap_or(false)
 }
 
 pub fn read_voting_results(env: &Env) -> Vec<VotingResult> {
@@ -81,18 +78,12 @@ pub fn write_voting_count(env: &Env, voting_count: &Map<u128, u128>) {
 
 pub fn get_voting_count(env: &Env, project_id: u128) -> u128 {
     let voting_count = read_voting_count(env);
-    match voting_count.get(project_id) {
-        Some(count) => count,
-        None => 0,
-    }
+    voting_count.get(project_id).unwrap_or(0)
 }
 
 pub fn increment_voting_count(env: &Env, project_id: u128) {
     let mut voting_count = read_voting_count(env);
-    let count = match voting_count.get(project_id) {
-        Some(count) => count,
-        None => 0,
-    };
+    let count = voting_count.get(project_id).unwrap_or(0);
     voting_count.set(project_id, count + 1);
     write_voting_count(env, &voting_count);
 }

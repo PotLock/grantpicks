@@ -7,16 +7,16 @@ pub fn get_pair_by_index(env: &Env, total_available_pairs: u64, index: u64) -> P
     assert!(index < total_available_pairs, "Index out of range");
 
     let mut pair_projects: Vec<u128> = Vec::new(env);
-    let project_num_min_1: u64 = (projects.len() - 1).try_into().unwrap();
+    let project_num_min_1: u64 = (projects.len() - 1).into();
     let project_1_index: u64 = index / project_num_min_1;
 
     let mut available_projects: Vec<u128> = projects.clone();
     available_projects.remove_unchecked(project_1_index.try_into().unwrap());
 
     let mut project_2_index: u64 = index;
-    if project_2_index >= available_projects.len().try_into().unwrap() {
-        let available_projects_len: u64 = available_projects.len().try_into().unwrap();
-        project_2_index = project_2_index % available_projects_len;
+    if project_2_index >= available_projects.len().into() {
+        let available_projects_len: u64 = available_projects.len().into();
+        project_2_index %= available_projects_len;
     }
 
     let project_1 = projects.get(project_1_index.try_into().unwrap()).unwrap();

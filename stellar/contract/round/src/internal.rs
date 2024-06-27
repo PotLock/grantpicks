@@ -259,7 +259,7 @@ impl RoundTrait for Round {
                 && current_time <= round.application_end_time,
             "Application period is not live"
         );
-        assert!(round.is_completed == false, "Round is completed");
+        assert!(!round.is_completed, "Round is completed");
 
         if round.use_whitelist {
             let is_white_listed = is_white_listed(env, applicant.clone());
@@ -317,7 +317,7 @@ impl RoundTrait for Round {
                 && current_time <= round.application_end_time,
             "Application period is not live"
         );
-        assert!(round.is_completed == false, "Round is completed");
+        assert!(!round.is_completed, "Round is completed");
 
         let application = get_application_by_id(env, application_id);
 
@@ -340,7 +340,7 @@ impl RoundTrait for Round {
         if updated_application.status == ApplicationStatus::Approved {
             let approved_project = read_approved_projects(env);
             assert!(
-                approved_project.len() + 1 <= 10,
+                approved_project.len() < 10,
                 "Maximum approved projects {}",
                 10
             );
@@ -388,7 +388,7 @@ impl RoundTrait for Round {
             round.start_time <= current_time && current_time <= round.end_time,
             "Voting period is not live"
         );
-        assert!(round.is_completed == false, "Round is completed");
+        assert!(!round.is_completed, "Round is completed");
 
         if round.use_whitelist {
             let is_white_listed = is_white_listed(env, voter.clone());
@@ -407,8 +407,7 @@ impl RoundTrait for Round {
 
         let projects = read_approved_projects(env);
         let total_available_pairs: u64 = (projects.len() * (projects.len() - 1))
-            .try_into()
-            .expect("Conversion failed");
+            .into();
         picks.iter().for_each(|picked_pair| {
             let picked_index: u64 = picked_pair.pair_id.into();
             assert!(
@@ -676,12 +675,12 @@ impl RoundTrait for Round {
                 "Project not found in registry"
             );
 
-            let already_approved = is_project_approved(env, project_id.clone());
+            let already_approved = is_project_approved(env, project_id);
             assert!(!already_approved, "Project already approved");
         });
 
         project_ids.iter().for_each(|project_id| {
-            add_approved_project(env, project_id.clone());
+            add_approved_project(env, project_id);
         });
 
         let new_approved_project = read_approved_projects(env);
@@ -709,7 +708,7 @@ impl RoundTrait for Round {
         );
 
         project_ids.iter().for_each(|project_id| {
-            let already_approved = is_project_approved(env, project_id.clone());
+            let already_approved = is_project_approved(env, project_id);
             assert!(already_approved, "Project not approved");
         });
 
@@ -795,8 +794,7 @@ impl RoundTrait for Round {
     fn get_pair_by_index(env: &Env, index: u64) -> Pair {
         let approved_project = read_approved_projects(env);
         let total_available_pairs: u64 = (approved_project.len() * (approved_project.len() - 1))
-            .try_into()
-            .expect("Conversion failed");
+            .into();
         let pair = get_pair_by_index(env, total_available_pairs, index);
         extend_instance(env);
 

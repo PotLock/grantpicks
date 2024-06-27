@@ -9,10 +9,7 @@ pub fn add_total_funding(env: &Env, funding: u128) {
 
 pub fn read_total_funding(env: &Env) -> u128 {
     let key = ContractKey::TotalFunding;
-    match env.storage().persistent().get(&key) {
-        Some(value) => value,
-        None => 0,
-    }
+    env.storage().persistent().get(&key).unwrap_or(0)
 }
 
 pub fn write_total_funding(env: &Env, total_funding: u128) {

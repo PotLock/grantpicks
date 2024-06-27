@@ -4,10 +4,7 @@ use crate::{data_type::ProjectApplication, storage_key::ContractKey};
 
 pub fn read_application_number(env: &Env) -> u128 {
     let key = ContractKey::ApplicationNumber;
-    match env.storage().persistent().get(&key) {
-        Some(value) => value,
-        None => 0,
-    }
+    env.storage().persistent().get(&key).unwrap_or(0)
 }
 
 pub fn increment_application_number(env: &Env) -> u128 {
@@ -71,21 +68,21 @@ pub fn find_applications(
 
 pub fn get_application(env: &Env, project_id: u128) -> Option<ProjectApplication> {
     let applications = read_application(env);
-    let application = applications
-        .iter()
-        .find(|application| application.project_id == project_id);
+    
 
-    application
+    applications
+        .iter()
+        .find(|application| application.project_id == project_id)
 }
 
 pub fn get_application_by_id(env: &Env, application_id: u128) -> Option<ProjectApplication> {
     let applications = read_application(env);
     let skip: usize = (application_id - 1).try_into().unwrap();
-    let application = applications
+    
+
+    applications
         .iter()
         .skip(skip)
         .take(1)
-        .find(|application| application.application_id == application_id);
-
-    application
+        .find(|application| application.application_id == application_id)
 }

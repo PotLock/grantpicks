@@ -19,8 +19,8 @@ pub fn calculate_voting_results(env: &Env) -> Vec<ProjectVotingResult> {
     approved_projects.iter().for_each(|project_id| {
         let voting_count = get_voting_count(env, project_id);
         let voting_result = ProjectVotingResult {
-            project_id: project_id.clone(),
-            voting_count: voting_count.clone(),
+            project_id: project_id,
+            voting_count: voting_count,
             allocation: calculate_allocation(voting_count, total_voting_count),
         };
         final_results.push_back(voting_result);

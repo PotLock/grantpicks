@@ -43,6 +43,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 	const [stellarPubKey, setStellarPubKey] = useState<string>('')
 
 	const onInitNear = async () => {
+		// try {
 		const selector = await setupWalletSelector({
 			network: envVarConfigs.NETWORK_ENV as NetworkId,
 			modules: [
@@ -62,6 +63,9 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 		if (selector && selector.isSignedIn()) {
 			await onCheckConnected(selector)
 		}
+		// } catch (error: any) {
+		// 	console.log(error)
+		// }
 	}
 
 	const onInitStellar = () => {
@@ -86,7 +90,6 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 		const localStellarPubKey = localStorage.getItem(
 			localStorageConfigs.STELLAR_PUBLIC_KEY,
 		)
-		console.log('ss', selector?.isSignedIn())
 		if (selector && selector.isSignedIn()) {
 			setConnectedWallet('near')
 			localStorage.setItem(localStorageConfigs.CONNECTED_WALLET, 'near')

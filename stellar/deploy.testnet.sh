@@ -10,3 +10,7 @@ soroban contract bindings typescript --network testnet --contract-id $lists_cont
 soroban contract bindings typescript --network testnet --contract-id $registry_contract_id --output-dir ./packages/project-registry-client
 soroban contract bindings typescript --network testnet --contract-id $round_contract_id --output-dir ./packages/round-client
 soroban contract bindings typescript --network testnet --contract-id $factory_contract_id --output-dir ./packages/round-factory-client
+
+echo "lists contract id: $lists_contract_id"
+echo "registry contract id: $registry_contract_id"
+echo "factory contract id: $factory_contract_id"

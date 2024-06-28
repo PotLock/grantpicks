@@ -68,7 +68,6 @@ pub fn find_applications(
 
 pub fn get_application(env: &Env, project_id: u128) -> Option<ProjectApplication> {
     let applications = read_application(env);
-    
 
     applications
         .iter()
@@ -78,7 +77,6 @@ pub fn get_application(env: &Env, project_id: u128) -> Option<ProjectApplication
 pub fn get_application_by_id(env: &Env, application_id: u128) -> Option<ProjectApplication> {
     let applications = read_application(env);
     let skip: usize = (application_id - 1).try_into().unwrap();
-    
 
     applications
         .iter()

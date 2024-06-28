@@ -33,7 +33,6 @@ pub fn write_admins(env: &Env, admins: &Vec<Address>) {
 pub fn remove_admin(env: &Env, admin: &Address) {
     let mut admins = read_admins(env);
     let index = admins.first_index_of(admin).unwrap();
-    let index_u32: u32 = index.try_into().unwrap();
-    admins.remove(index_u32);
+    admins.remove(index);
     write_admins(env, &admins);
 }

@@ -841,9 +841,7 @@ impl ListsTrait for ListsContract {
                     admins: read_admins_of_list(env, ulist.id),
                     created_at: ulist.created_at,
                     updated_at: ulist.updated_at,
-                    total_registrations_count: get_registrations_of_list(env, list_id)
-                        .len()
-                        .into(),
+                    total_registrations_count: get_registrations_of_list(env, list_id).len().into(),
                     total_upvotes_count: read_list_upvotes(env, list_id).len().into(),
                 });
             });
@@ -1005,13 +1003,12 @@ impl ListsTrait for ListsContract {
             return !registration_ids.is_empty();
         }
 
-        if list_id.is_some() && required_status.is_none() {
+        if required_status.is_none() {
             return get_lists_registered_by(env, registrant_id.clone()).contains(list_id.unwrap());
         }
 
         let status = required_status.unwrap();
         let ulist_id = list_id.unwrap();
-        
 
         registration_ids.iter().any(|registration_id| {
             let registration = get_registration_by_id(env, registration_id);

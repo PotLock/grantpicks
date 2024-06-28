@@ -134,9 +134,7 @@ impl RoundFactoryTrait for RoundFactory {
         let admins = read_admins(env);
         assert!(admins.len() < 5, "Admins must be less than 5");
 
-        let is_exist = admins
-            .iter()
-            .any(|round_admin| &round_admin == &admin);
+        let is_exist = admins.iter().any(|round_admin| round_admin == admin);
 
         assert!(!is_exist, "Admin already exists");
 
@@ -168,7 +166,7 @@ impl RoundFactoryTrait for RoundFactory {
 
         let is_exist = read_admins(env)
             .iter()
-            .any(|round_admin| &round_admin == &admin);
+            .any(|round_admin| round_admin == admin);
 
         assert!(is_exist, "Admin does not exist");
 

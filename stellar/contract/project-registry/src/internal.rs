@@ -24,7 +24,10 @@ impl ProjectRegistryTrait for ProjectRegistry {
         assert!(!project_params.overview.is_empty(), "overview is required");
         assert!(!project_params.contacts.is_empty(), "contacts is required");
         assert!(!project_params.admins.is_empty(), "admin is required");
-        assert!(!project_params.image_url.is_empty(), "image_url is required");
+        assert!(
+            !project_params.image_url.is_empty(),
+            "image_url is required"
+        );
         assert!(
             project_params.admins.len() < 5,
             "too many admin. max. 4 admin allowed"
@@ -162,7 +165,7 @@ impl ProjectRegistryTrait for ProjectRegistry {
         let index = uproject.admins.first_index_of(&admin_to_remove.clone());
         assert!(index.is_some(), "admin not found");
 
-        let index_u32: u32 = index.unwrap().try_into().unwrap();
+        let index_u32: u32 = index.unwrap();
         uproject.admins.remove(index_u32);
 
         log_update_project_event(env, uproject.clone());

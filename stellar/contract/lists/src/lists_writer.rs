@@ -86,17 +86,14 @@ pub fn add_list_to_owned_list(env: &Env, owner: Address, list_id: u128) {
 pub fn remove_list_from_owned_list(env: &Env, owner: Address, list_id: u128) {
     let mut owned_list = read_owned_list(env);
     let list_owned_by_user = owned_list.get(owner.clone());
-    match list_owned_by_user {
-        Some(value) => {
-            let mut new_list = Vec::new(env);
-            for id in value.iter() {
-                if id != list_id {
-                    new_list.push_back(id);
-                }
+    if let Some(value) = list_owned_by_user {
+        let mut new_list = Vec::new(env);
+        for id in value.iter() {
+            if id != list_id {
+                new_list.push_back(id);
             }
-            owned_list.set(owner, new_list);
         }
-        None => {}
+        owned_list.set(owner, new_list);
     }
     write_owned_list(env, &owned_list);
 }
@@ -139,14 +136,11 @@ pub fn add_admin_to_list(env: &Env, list_id: u128, admin: Address) {
 pub fn remove_admin_from_list(env: &Env, list_id: u128, admin: Address) {
     let mut list_admins = read_list_admins(env);
     let admins_of_list = list_admins.get(list_id);
-    match admins_of_list {
-        Some(mut value) => {
-            let index = value.first_index_of(admin);
-            assert!(index.is_some(), "Admin not found in list admins");
-            value.remove(index.unwrap());
-            list_admins.set(list_id, value);
-        }
-        None => {}
+    if let Some(mut value) = admins_of_list {
+        let index = value.first_index_of(admin);
+        assert!(index.is_some(), "Admin not found in list admins");
+        value.remove(index.unwrap());
+        list_admins.set(list_id, value);
     }
     write_list_admins(env, &list_admins);
 }
@@ -195,16 +189,13 @@ pub fn add_list_to_registrant_lists(env: &Env, registrant: Address, list_id: u12
 pub fn remove_list_to_registrant_lists(env: &Env, registrant: Address, list_id: u128) {
     let mut registrant_lists = read_registrant_lists(env);
     let lists_registered_by_user = registrant_lists.get(registrant.clone());
-    match lists_registered_by_user {
-        Some(mut value) => {
-            let index = value.first_index_of(list_id);
-            assert!(index.is_some(), "List not found in registrant lists");
+    if let Some(mut value) = lists_registered_by_user {
+        let index = value.first_index_of(list_id);
+        assert!(index.is_some(), "List not found in registrant lists");
 
-            let index_unwrap = index.unwrap();
-            value.remove(index_unwrap);
-            registrant_lists.set(registrant, value);
-        }
-        None => {}
+        let index_unwrap = index.unwrap();
+        value.remove(index_unwrap);
+        registrant_lists.set(registrant, value);
     }
     write_registrant_lists(env, &registrant_lists);
 }

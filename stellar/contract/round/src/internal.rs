@@ -406,8 +406,7 @@ impl RoundTrait for Round {
         let mut picked_pairs: Vec<PickResult> = Vec::new(env);
 
         let projects = read_approved_projects(env);
-        let total_available_pairs: u64 = (projects.len() * (projects.len() - 1))
-            .into();
+        let total_available_pairs: u64 = (projects.len() * (projects.len() - 1)).into();
         picks.iter().for_each(|picked_pair| {
             let picked_index: u64 = picked_pair.pair_id.into();
             assert!(
@@ -793,8 +792,8 @@ impl RoundTrait for Round {
 
     fn get_pair_by_index(env: &Env, index: u64) -> Pair {
         let approved_project = read_approved_projects(env);
-        let total_available_pairs: u64 = (approved_project.len() * (approved_project.len() - 1))
-            .into();
+        let total_available_pairs: u64 =
+            (approved_project.len() * (approved_project.len() - 1)).into();
         let pair = get_pair_by_index(env, total_available_pairs, index);
         extend_instance(env);
 

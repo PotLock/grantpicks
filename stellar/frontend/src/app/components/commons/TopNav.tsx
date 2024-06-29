@@ -39,13 +39,13 @@ const TopNav = () => {
 									<div>
 										<p className="text-sm font-semibold text-grantpicks-black-950">
 											{connectedWallet === 'near'
-												? nearAccounts[0].accountId
+												? nearAccounts[0]?.accountId
 												: prettyTruncate(stellarPubKey, 10, 'address')}
 										</p>
 										<p className="text-sm font-normal text-grantpicks-black-600">
 											@
 											{connectedWallet === 'near'
-												? nearAccounts[0].accountId
+												? nearAccounts[0]?.accountId
 												: prettyTruncate(stellarPubKey, 10, 'address')}
 										</p>
 									</div>
@@ -66,7 +66,7 @@ const TopNav = () => {
 					) : (
 						<Button
 							onClick={() =>
-								setShowMenu(connectedWallet ? 'user' : 'choose-wallet')
+								setShowMenu(!!connectedWallet ? 'user' : 'choose-wallet')
 							}
 							className="!text-sm !font-semibold"
 							color="black-950"
@@ -78,6 +78,8 @@ const TopNav = () => {
 						showMenu === 'user' && !!connectedWallet ? (
 							<UserMenu
 								onShowChooseWallet={() => setShowMenu('choose-wallet')}
+								onCloseChooseWalletMenu={() => setShowMenu(null)}
+								onClose={() => setShowMenu(null)}
 							/>
 						) : (
 							<ChooseWalletMenu

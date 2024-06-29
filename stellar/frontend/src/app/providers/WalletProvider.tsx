@@ -26,6 +26,7 @@ import {
 	StellarWalletsKit,
 	WalletNetwork,
 } from '@creit.tech/stellar-wallets-kit'
+import { distinctUntilChanged, map } from 'rxjs'
 
 const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 	const [connectedWallet, setConnectedWallet] = useState<
@@ -43,43 +44,47 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 	const [stellarPubKey, setStellarPubKey] = useState<string>('')
 
 	const onInitNear = async () => {
-		// try {
-		const selector = await setupWalletSelector({
-			network: envVarConfigs.NETWORK_ENV as NetworkId,
-			modules: [
-				setupNearWallet(),
-				setupMyNearWallet(),
-				setupMeteorWallet(),
-				setupSender(),
-				setupHereWallet(),
-			],
-		})
+		try {
+			const selector = await setupWalletSelector({
+				network: envVarConfigs.NETWORK_ENV as NetworkId,
+				modules: [
+					setupNearWallet(),
+					setupMyNearWallet(),
+					setupMeteorWallet(),
+					setupSender(),
+					setupHereWallet(),
+				],
+			})
 
-		const modal = setupModal(selector, {
-			contractId: 'test.testnet',
-		})
-		setNearSelector(selector)
-		setNearModal(modal)
-		if (selector && selector.isSignedIn()) {
-			await onCheckConnected(selector)
+			const modal = setupModal(selector, {
+				contractId: 'test.testnet',
+			})
+			setNearSelector(selector)
+			setNearModal(modal)
+			if (selector && selector.isSignedIn()) {
+				await onCheckConnected(selector)
+			}
+		} catch (error: any) {
+			console.log('error', error)
 		}
-		// } catch (error: any) {
-		// 	console.log(error)
-		// }
 	}
 
-	const onInitStellar = () => {
-		const kit: StellarWalletsKit = new StellarWalletsKit({
-			network:
-				envVarConfigs.NETWORK_ENV === 'testnet'
-					? WalletNetwork.TESTNET
-					: WalletNetwork.FUTURENET,
-			selectedWalletId: 'xbull',
-			modules: allowAllModules(),
-		})
-		setStellarKit(kit)
-		if (kit) {
-			onCheckConnected(undefined, kit)
+	const onInitStellar = async () => {
+		try {
+			const kit: StellarWalletsKit = new StellarWalletsKit({
+				network:
+					envVarConfigs.NETWORK_ENV === 'testnet'
+						? WalletNetwork.TESTNET
+						: WalletNetwork.FUTURENET,
+				selectedWalletId: 'xbull',
+				modules: allowAllModules(),
+			})
+			setStellarKit(kit)
+			if (kit) {
+				onCheckConnected(undefined, kit)
+			}
+		} catch (error: any) {
+			console.log('error', error)
 		}
 	}
 
@@ -92,6 +97,9 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 		)
 		if (selector && selector.isSignedIn()) {
 			setConnectedWallet('near')
+			//sign out stellar
+			localStorage.removeItem(localStorageConfigs.STELLAR_PUBLIC_KEY)
+
 			localStorage.setItem(localStorageConfigs.CONNECTED_WALLET, 'near')
 			const wallet = await selector.wallet()
 			const accounts = await wallet.getAccounts()
@@ -99,9 +107,14 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 			setNearAccounts(accounts)
 			return
 		} else if (kit && localStellarPubKey) {
+			const pubKey = await kit?.getPublicKey()
 			setConnectedWallet('stellar')
 			localStorage.setItem(localStorageConfigs.CONNECTED_WALLET, 'stellar')
-			setStellarPubKey(localStellarPubKey)
+			setStellarPubKey(localStellarPubKey || pubKey)
+			localStorage.setItem(
+				localStorageConfigs.STELLAR_PUBLIC_KEY,
+				localStellarPubKey || pubKey,
+			)
 			return
 		} else {
 			setConnectedWallet(null)
@@ -109,7 +122,11 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 	}
 
 	const onOpenNearWallet = () => {
-		nearModal?.show()
+		try {
+			nearModal?.show()
+		} catch (error: any) {
+			console.log('error', error)
+		}
 	}
 
 	const onOpenStellarWallet = (
@@ -119,14 +136,16 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 			onWalletSelected: async (option: ISupportedWallet) => {
 				try {
 					stellarKit.setWallet(option.id)
-					const publicKey = await stellarKit.getPublicKey()
+					const pubKey = await stellarKit?.getPublicKey()
 					setConnectedWallet('stellar')
-					setStellarPubKey(publicKey)
 					localStorage.setItem(localStorageConfigs.CONNECTED_WALLET, 'stellar')
-					localStorage.setItem(
-						localStorageConfigs.STELLAR_PUBLIC_KEY,
-						publicKey,
-					)
+					setStellarPubKey(pubKey)
+					localStorage.setItem(localStorageConfigs.STELLAR_PUBLIC_KEY, pubKey)
+					//sign out near
+					const wallet = await nearSelector?.wallet()
+					await wallet?.signOut()
+					setNearWallet(null)
+					setNearAccounts([])
 					onSelected?.(option)
 				} catch (error: any) {
 					console.log('error connect stellar', error)
@@ -155,6 +174,35 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 		onInitNear()
 		onInitStellar()
 	}, [])
+
+	useEffect(() => {
+		if (!nearSelector) {
+			return
+		}
+		const subscription = nearSelector.store.observable
+			.pipe(
+				map((state) => state.accounts),
+				distinctUntilChanged(),
+			)
+			.subscribe(async (nextAccounts) => {
+				try {
+					setNearAccounts(nextAccounts)
+					if (nearSelector && nearSelector?.isSignedIn()) {
+						await onCheckConnected(nearSelector)
+					}
+				} catch (error: any) {
+					console.log('error', error)
+				}
+			})
+		const onHideSubscription = nearModal?.on('onHide', ({ hideReason }) => {
+			console.log(`Reason ${hideReason}`)
+		})
+		return () => {
+			subscription.unsubscribe()
+			onHideSubscription?.remove()
+		}
+	}, [nearSelector])
+
 	return (
 		<WalletContext.Provider
 			value={{

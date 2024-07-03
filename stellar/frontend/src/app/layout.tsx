@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
 import { Titillium_Web } from 'next/font/google'
 import './globals.css'
+import 'react-datepicker/dist/react-datepicker.css'
 import '@near-wallet-selector/modal-ui/styles.css'
+import WalletProvider from './providers/WalletProvider'
 
 const titiliumWeb = Titillium_Web({
 	subsets: ['latin'],
@@ -21,7 +23,9 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="en">
-			<body className={titiliumWeb.className}>{children}</body>
+			<body className={titiliumWeb.className}>
+				<WalletProvider>{children}</WalletProvider>
+			</body>
 		</html>
 	)
 }

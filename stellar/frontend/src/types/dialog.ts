@@ -10,3 +10,11 @@ export interface IMenuProps extends DialogProps {
 	className?: string
 	position?: string
 }
+
+export interface BaseModalProps {
+	isOpen: boolean
+	onClose: () => void
+	children?: React.ReactNode
+	closeOnEscape?: boolean
+	closeOnBgClick?: boolean
+}

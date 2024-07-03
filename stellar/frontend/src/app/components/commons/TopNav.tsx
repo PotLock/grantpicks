@@ -13,7 +13,7 @@ const TopNav = () => {
 		null,
 	)
 	return (
-		<div className="flex items-center justify-between px-[5vw] md:px-[10vw] xl:px-[15vw] py-4">
+		<div className="flex fixed z-20 inset-x-0 items-center justify-between px-[5vw] md:px-[10vw] xl:px-[15vw] py-4 bg-white">
 			<div>
 				<p className="text-xl md:text-3xl xl:text-5xl font-black text-grantpicks-black-950">
 					GRANTPICKS

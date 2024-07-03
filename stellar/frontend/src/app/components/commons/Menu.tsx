@@ -1,4 +1,4 @@
-import { IMenuProps } from '@/types/menu'
+import { IMenuProps } from '@/types/dialog'
 import clsx from 'clsx'
 import React, { useEffect, useRef } from 'react'
 

@@ -8,6 +8,7 @@ import IconProject from '../../svgs/IconProject'
 import IconCheckCircle from '../../svgs/IconCheckCircle'
 import { prettyTruncate } from '@/utils/helper'
 import Menu from '../../commons/Menu'
+import { useRouter } from 'next/navigation'
 
 const UserMenu = ({
 	onShowChooseWallet,
@@ -18,6 +19,7 @@ const UserMenu = ({
 	onCloseChooseWalletMenu: () => void
 	onClose: () => void
 }) => {
+	const router = useRouter()
 	const { connectedWallet, nearAccounts, onSignOut, stellarPubKey } =
 		useWallet()
 	return (
@@ -63,7 +65,10 @@ const UserMenu = ({
 					</Button>
 				</div>
 				<div className="flex flex-col space-y-3">
-					<div className="flex items-center space-x-3 cursor-pointer hover:opacity-70 transition">
+					<div
+						onClick={() => router.push(`/application/create-round`)}
+						className="flex items-center space-x-3 cursor-pointer hover:opacity-70 transition"
+					>
 						<IconCube size={24} className="fill-grantpicks-black-400" />
 						<p className="text-sm font-normal text-grantpicks-black-950">
 							Create Round

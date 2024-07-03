@@ -27,25 +27,12 @@ const Button = ({
 			return 'bg-grantpicks-alpha-50/5 text-grantpicks-black-950'
 	}
 
-	// const getSize = () => {
-	// 	if (size === 'sm') return 'px-3 py-2 text-sm'
-	// 	else if (size === 'md') return 'px-4 py-3 text-base'
-	// 	if (size === 'xl') return 'px-6 py-3 text-lg'
-	// }
-
-	// const getRounded = () => {
-	// 	if (rounded === 'md') return 'rounded-md'
-	// 	else if (rounded === 'xl') return 'rounded-xl'
-	// 	if (rounded === 'full') return 'rounded-full'
-	// }
-
 	return (
 		<button
 			style={style}
 			className={clsx(
 				'transition duration-300 ease-in-out hover:opacity-70 font-semibold relative rounded-full px-4 py-2',
 				getColor(),
-				// getRounded(),
 				isFullWidth && `w-full`,
 				isDisabled && `cursor-not-allowed opacity-60 hover:bg-opacity-50`,
 				isLoading && 'cursor-wait',

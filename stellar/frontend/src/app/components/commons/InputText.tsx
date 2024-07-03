@@ -19,6 +19,7 @@ const InputText = forwardRef<HTMLInputElement, InputProps>(
 			preffixIcon,
 			suffixIcon,
 			errorMessage,
+			textAlign = 'left',
 		},
 		ref,
 	) => {
@@ -29,12 +30,12 @@ const InputText = forwardRef<HTMLInputElement, InputProps>(
 					(label && (
 						<p className="font-semibold text-grantpicks-black-950 mb-2 cursor-default">
 							{label}
-							{required && <span className="text-red-500">*</span>}
+							{required && <span className="text-red-500 ml-1">*</span>}
 						</p>
 					))}
 				<div className="relative mb-1">
 					{preffixIcon && (
-						<div className="absolute left-3 inset-y-0 flex items-center justify-center">
+						<div className="absolute left-0 pl-3 inset-y-0 flex items-center justify-center">
 							{preffixIcon}
 						</div>
 					)}
@@ -47,12 +48,19 @@ const InputText = forwardRef<HTMLInputElement, InputProps>(
 						required={required}
 						className={clsx(
 							`py-3 px-3 outline-none flex-1 bg-white rounded-xl w-full text-grantpicks-black-950 placeholder-grantpicks-black-400 focus:shadow-xl ${className}`,
-							preffixIcon && `pl-6 pr-3`,
-							suffixIcon && `pr-6 pl-3`,
-							focus ? 'shadow-xl' : 'shadow-none',
+							preffixIcon && `pl-12 pr-3`,
+							suffixIcon && `pr-12 pl-3`,
+							focus
+								? 'shadow-md border border-grantpicks-black-400'
+								: 'shadow-none',
 							errorMessage
 								? `border border-red-500`
-								: `border border-grantpicks-black-600`,
+								: `border border-grantpicks-black-200`,
+							textAlign === 'left'
+								? `text-left`
+								: textAlign === 'center'
+									? `text-center`
+									: `text-right`,
 						)}
 						onFocus={() => setFocus(true)}
 						onBlur={() => setFocus(false)}
@@ -60,7 +68,7 @@ const InputText = forwardRef<HTMLInputElement, InputProps>(
 						onChange={onChange}
 					/>
 					{suffixIcon && (
-						<div className="absolute right-3 inset-y-0 flex items-center justify-center">
+						<div className="absolute right-0 pr-3 inset-y-0 flex items-center justify-center">
 							{suffixIcon}
 						</div>
 					)}

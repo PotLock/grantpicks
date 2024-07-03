@@ -14,8 +14,10 @@ const config: Config = {
 			colors: {
 				grantpicks: {
 					black: {
+						50: '#F7F7F7',
 						200: '#DCDCDC',
 						400: '#989898',
+						500: '#7C7C7C',
 						600: '#656565',
 						900: '#3D3D3D',
 						950: '#292929',

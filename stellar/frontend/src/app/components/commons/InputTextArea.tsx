@@ -1,8 +1,8 @@
-import { InputProps } from '@/types/form'
+import { InputProps, InputTextAreaProps } from '@/types/form'
 import clsx from 'clsx'
 import { forwardRef, useState } from 'react'
 
-const InputTextArea = forwardRef<HTMLTextAreaElement, InputProps>(
+const InputTextArea = forwardRef<HTMLTextAreaElement, InputTextAreaProps>(
 	(
 		{
 			value,
@@ -15,6 +15,7 @@ const InputTextArea = forwardRef<HTMLTextAreaElement, InputProps>(
 			label,
 			hintLabel,
 			errorMessage,
+			textAlign = 'left',
 		},
 		ref,
 	) => {
@@ -36,7 +37,17 @@ const InputTextArea = forwardRef<HTMLTextAreaElement, InputProps>(
 						rows={4}
 						className={clsx(
 							`py-3 px-3 outline-none flex-1 bg-white rounded-xl w-full text-grantpicks-black-950 placeholder-grantpicks-black-400 focus:shadow-xl ${className}`,
-							focus ? 'shadow-xl' : 'shadow-none',
+							focus
+								? 'shadow-xl border border-grantpicks-black-400'
+								: 'shadow-none',
+							errorMessage
+								? `border border-red-500`
+								: `border border-grantpicks-black-200`,
+							textAlign === 'left'
+								? `text-left`
+								: textAlign === 'center'
+									? 'text-center'
+									: 'text-right',
 						)}
 						onFocus={() => setFocus(true)}
 						onBlur={() => setFocus(false)}

@@ -7,11 +7,9 @@ import WalletProvider from '../providers/WalletProvider'
 
 const AppPage = () => {
 	return (
-		<WalletProvider>
-			<ApplicationLayout>
-				<TopNav />
-			</ApplicationLayout>
-		</WalletProvider>
+		<ApplicationLayout>
+			<TopNav />
+		</ApplicationLayout>
 	)
 }
 

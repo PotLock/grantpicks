@@ -28,13 +28,17 @@
 		"@near-wallet-selector/nightly-connect": "^8.7.0",
 		"@near-wallet-selector/sender": "^8.9.10",
 		"@near-wallet-selector/wallet-connect": "^8.9.10",
+		"axios": "^1.7.2",
 		"clsx": "^2.1.1",
 		"install": "^0.13.0",
 		"near-api-js": "^0.44.2",
 		"next": "14.2.4",
 		"npm": "^10.8.1",
 		"react": "^18",
+		"react-datepicker": "^7.2.0",
 		"react-dom": "^18",
+		"react-hook-form": "^7.52.0",
+		"react-switch": "^7.0.0",
 		"rxjs": "^7.8.1"
 	},
 	"devDependencies": {

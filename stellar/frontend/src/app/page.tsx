@@ -6,10 +6,8 @@ import WalletProvider from './providers/WalletProvider'
 
 export default function Home() {
 	return (
-		<WalletProvider>
-			<LandingLayout>
-				<LandingHeader />
-			</LandingLayout>
-		</WalletProvider>
+		<LandingLayout>
+			<LandingHeader />
+		</LandingLayout>
 	)
 }

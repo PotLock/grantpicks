@@ -1,7 +1,7 @@
 import { IconProps } from '@/types/icon'
 import React from 'react'
 
-const IconClose = ({ size, className }: IconProps) => {
+const IconClose = ({ size, className, onClick }: IconProps) => {
 	return (
 		<svg
 			width={size}
@@ -10,6 +10,7 @@ const IconClose = ({ size, className }: IconProps) => {
 			fill="none"
 			xmlns="http://www.w3.org/2000/svg"
 			className={className}
+			onClick={onClick}
 		>
 			<path
 				fillRule="evenodd"

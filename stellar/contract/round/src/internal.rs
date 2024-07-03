@@ -216,7 +216,7 @@ impl RoundTrait for Round {
             );
         }
 
-        round.end_time = env.ledger().timestamp();
+        round.end_time = env.ledger().timestamp() * 1000;
 
         write_round_info(env, &round);
         extend_instance(env);
@@ -261,10 +261,9 @@ impl RoundTrait for Round {
             .admins
             .first_index_of(&round_admin)
             .expect("Round admin not found");
-        let index_u32: u32 = index.try_into().expect("Conversion failed");
 
         let mut updated_round = round.clone();
-        updated_round.admins.remove(index_u32);
+        updated_round.admins.remove(index);
 
         write_round_info(env, &updated_round);
         extend_instance(env);
@@ -275,7 +274,7 @@ impl RoundTrait for Round {
         applicant.require_auth();
 
         let round = read_round_info(env);
-        let current_time = env.ledger().timestamp();
+        let current_time = env.ledger().timestamp() * 1000;
 
         assert!(
             round.application_start_time <= current_time
@@ -311,9 +310,9 @@ impl RoundTrait for Round {
             project_id,
             applicant,
             status: ApplicationStatus::Pending,
-            submited_at: current_time,
+            submited_ms: current_time,
             review_note,
-            updated_at: None,
+            updated_ms: None,
         };
 
         add_application(env, application.clone());
@@ -333,7 +332,7 @@ impl RoundTrait for Round {
         admin.require_auth();
 
         let round = read_round_info(env);
-        let current_time = env.ledger().timestamp();
+        let current_time = env.ledger().timestamp() * 1000;
 
         assert!(
             round.application_start_time <= current_time
@@ -358,7 +357,7 @@ impl RoundTrait for Round {
             updated_application.review_note = review_note;
         }
 
-        updated_application.updated_at = Some(current_time);
+        updated_application.updated_ms = Some(current_time);
 
         if updated_application.status == ApplicationStatus::Approved {
             let approved_project = read_approved_projects(env);
@@ -405,7 +404,7 @@ impl RoundTrait for Round {
         voter.require_auth();
 
         let round = read_round_info(env);
-        let current_time = env.ledger().timestamp();
+        let current_time = env.ledger().timestamp() * 1000;
 
         assert!(
             round.start_time <= current_time && current_time <= round.end_time,
@@ -534,7 +533,7 @@ impl RoundTrait for Round {
         admin.require_auth();
 
         let round = read_round_info(env);
-        let current_time = env.ledger().timestamp();
+        let current_time = env.ledger().timestamp() * 1000;
 
         assert!(
             round.start_time <= current_time,
@@ -595,7 +594,7 @@ impl RoundTrait for Round {
 
     fn can_vote(env: &Env, voter: Address) -> bool {
         let round = read_round_info(env);
-        let current_time = env.ledger().timestamp();
+        let current_time = env.ledger().timestamp() * 1000;
         extend_instance(env);
 
         if round.start_time <= current_time && current_time <= round.end_time {
@@ -628,7 +627,7 @@ impl RoundTrait for Round {
 
     fn is_voting_live(env: &Env) -> bool {
         let round = read_round_info(env);
-        let current_time = env.ledger().timestamp();
+        let current_time = env.ledger().timestamp() * 1000;
         extend_instance(env);
 
         round.start_time <= current_time && current_time <= round.end_time
@@ -636,7 +635,7 @@ impl RoundTrait for Round {
 
     fn is_application_live(env: &Env) -> bool {
         let round = read_round_info(env);
-        let current_time = env.ledger().timestamp();
+        let current_time = env.ledger().timestamp() * 1000;
         extend_instance(env);
 
         round.application_start_time <= current_time && current_time <= round.application_end_time

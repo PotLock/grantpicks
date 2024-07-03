@@ -90,8 +90,8 @@ impl ProjectRegistryTrait for ProjectRegistry {
             payout_address: project_params.payout_address,
             image_url: project_params.image_url,
             status: ProjectStatus::New,
-            submited_at: env.ledger().timestamp(),
-            updated_at: None,
+            submited_ms: env.ledger().timestamp() * 1000,
+            updated_ms: None,
             admins: project_params.admins,
             owner: applicant.clone(),
         };
@@ -123,7 +123,7 @@ impl ProjectRegistryTrait for ProjectRegistry {
         let mut uproject = project.unwrap();
 
         uproject.status = new_status;
-        uproject.updated_at = Some(env.ledger().timestamp());
+        uproject.updated_ms = Some(env.ledger().timestamp() * 1000);
 
         log_update_project_event(env, uproject.clone());
         update_project(env, uproject);

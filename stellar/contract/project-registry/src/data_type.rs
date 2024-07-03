@@ -23,8 +23,8 @@ pub struct Project {
     pub team_members: Vec<ProjectTeamMember>,
     pub repositories: Vec<ProjectRepository>,
     pub status: ProjectStatus,
-    pub submited_at: u64,
-    pub updated_at: Option<u64>,
+    pub submited_ms: u64,
+    pub updated_ms: Option<u64>,
     pub admins: Vec<Address>,
 }
 

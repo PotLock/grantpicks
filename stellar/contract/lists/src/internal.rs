@@ -79,7 +79,7 @@ impl ListsTrait for ListsContract {
         }
 
         let list_id = increment_lists_number(env);
-        let current_time = env.ledger().timestamp();
+        let current_time = env.ledger().timestamp() * 1000;
         let list = ListInternal {
             id: list_id,
             name: name.clone(),
@@ -91,8 +91,8 @@ impl ListsTrait for ListsContract {
                 .unwrap_or_else(|| String::from_str(env, "")),
             admin_only_registration: admin_only_registrations.unwrap_or(false),
             default_registration_status: default_registration_status.clone(),
-            created_at: current_time,
-            updated_at: current_time,
+            created_ms: current_time,
+            updated_ms: current_time,
             owner: owner.clone(),
         };
 
@@ -114,8 +114,8 @@ impl ListsTrait for ListsContract {
                 .unwrap_or_else(|| String::from_str(env, "")),
             owner,
             admins: internal_admins,
-            created_at: current_time,
-            updated_at: current_time,
+            created_ms: current_time,
+            updated_ms: current_time,
             default_registration_status,
             admin_only_registrations: admin_only_registrations.unwrap_or(false),
             total_registrations_count: 0,
@@ -196,8 +196,8 @@ impl ListsTrait for ListsContract {
             cover_img_url: ulist.cover_image_url.clone(),
             owner: ulist.owner.clone(),
             admins,
-            created_at: ulist.created_at,
-            updated_at: ulist.updated_at,
+            created_ms: ulist.created_ms,
+            updated_ms: ulist.updated_ms,
             default_registration_status: ulist.default_registration_status.clone(),
             admin_only_registrations: ulist.admin_only_registration,
             total_registrations_count: get_registrations_of_list(env, list_id).len().into(),
@@ -394,7 +394,7 @@ impl ListsTrait for ListsContract {
             assert!(notes.is_some(), "Notes Reqired for non-admin");
         }
 
-        let current_time = env.ledger().timestamp();
+        let current_time = env.ledger().timestamp() * 1000;
         let mut registered: Vec<RegistrationExternal> = Vec::new(env);
 
         if is_admin_or_owner {
@@ -414,8 +414,8 @@ impl ListsTrait for ListsContract {
                     list_id,
                     registrant_id: registration.registrant.clone(),
                     status: registration.status.clone(),
-                    submited_at: registration.submitted_ms.unwrap_or(current_time),
-                    updated_at: registration.updated_ms.unwrap_or(current_time),
+                    submited_ms: registration.submitted_ms.unwrap_or(current_time),
+                    updated_ms: registration.updated_ms.unwrap_or(current_time),
                     admin_notes: registration.notes.clone(),
                     registrant_notes: notes.clone(),
                     registered_by: submitter.clone(),
@@ -449,8 +449,8 @@ impl ListsTrait for ListsContract {
                 list_id,
                 registrant_id: submitter.clone(),
                 status: ulist.default_registration_status.clone(),
-                submited_at: current_time,
-                updated_at: current_time,
+                submited_ms: current_time,
+                updated_ms: current_time,
                 admin_notes: String::from_str(env, ""),
                 registrant_notes: notes.clone(),
                 registered_by: submitter.clone(),
@@ -643,8 +643,8 @@ impl ListsTrait for ListsContract {
             registrant_id: uregistration.registrant_id,
             status: uregistration.status,
             admin_notes: uregistration.admin_notes,
-            submitted_ms: uregistration.submited_at,
-            updated_ms: uregistration.updated_at,
+            submitted_ms: uregistration.submited_ms,
+            updated_ms: uregistration.updated_ms,
             registrant_notes: uregistration.registrant_notes,
             registered_by: uregistration.registered_by,
         };
@@ -671,8 +671,8 @@ impl ListsTrait for ListsContract {
             cover_img_url: ulist.description.clone(),
             owner: ulist.owner.clone(),
             admins,
-            created_at: ulist.created_at,
-            updated_at: ulist.updated_at,
+            created_ms: ulist.created_ms,
+            updated_ms: ulist.updated_ms,
             default_registration_status: ulist.default_registration_status.clone(),
             admin_only_registrations: ulist.admin_only_registration,
             total_registrations_count: get_registrations_of_list(env, list_id).len().into(),
@@ -706,8 +706,8 @@ impl ListsTrait for ListsContract {
                         admin_only_registrations: ulist.admin_only_registration,
                         default_registration_status: ulist.default_registration_status.clone(),
                         admins: read_admins_of_list(env, ulist.id),
-                        created_at: ulist.created_at,
-                        updated_at: ulist.updated_at,
+                        created_ms: ulist.created_ms,
+                        updated_ms: ulist.updated_ms,
                         total_registrations_count: get_registrations_of_list(env, ulist.id)
                             .len()
                             .into(),
@@ -737,8 +737,8 @@ impl ListsTrait for ListsContract {
                     admin_only_registrations: ulist.admin_only_registration,
                     default_registration_status: ulist.default_registration_status.clone(),
                     admins: read_admins_of_list(env, ulist.id),
-                    created_at: ulist.created_at,
-                    updated_at: ulist.updated_at,
+                    created_ms: ulist.created_ms,
+                    updated_ms: ulist.updated_ms,
                     total_registrations_count: get_registrations_of_list(env, list_id).len().into(),
                     total_upvotes_count: read_list_upvotes(env, list_id).len().into(),
                 });
@@ -766,8 +766,8 @@ impl ListsTrait for ListsContract {
                     admin_only_registrations: ulist.admin_only_registration,
                     default_registration_status: ulist.default_registration_status.clone(),
                     admins: read_admins_of_list(env, ulist.id),
-                    created_at: ulist.created_at,
-                    updated_at: ulist.updated_at,
+                    created_ms: ulist.created_ms,
+                    updated_ms: ulist.updated_ms,
                     total_registrations_count: get_registrations_of_list(env, list_id).len().into(),
                     total_upvotes_count: read_list_upvotes(env, list_id).len().into(),
                 });
@@ -839,8 +839,8 @@ impl ListsTrait for ListsContract {
                     admin_only_registrations: ulist.admin_only_registration,
                     default_registration_status: ulist.default_registration_status.clone(),
                     admins: read_admins_of_list(env, ulist.id),
-                    created_at: ulist.created_at,
-                    updated_at: ulist.updated_at,
+                    created_ms: ulist.created_ms,
+                    updated_ms: ulist.updated_ms,
                     total_registrations_count: get_registrations_of_list(env, list_id).len().into(),
                     total_upvotes_count: read_list_upvotes(env, list_id).len().into(),
                 });
@@ -861,8 +861,8 @@ impl ListsTrait for ListsContract {
             registrant_id: uregistration.registrant_id,
             status: uregistration.status,
             admin_notes: uregistration.admin_notes,
-            submitted_ms: uregistration.submited_at,
-            updated_ms: uregistration.updated_at,
+            submitted_ms: uregistration.submited_ms,
+            updated_ms: uregistration.updated_ms,
             registrant_notes: uregistration.registrant_notes,
             registered_by: uregistration.registered_by,
         }
@@ -917,8 +917,8 @@ impl ListsTrait for ListsContract {
                     registrant_id: registration.registrant_id.clone(),
                     status: registration.status.clone(),
                     admin_notes: registration.admin_notes.clone(),
-                    submitted_ms: registration.submited_at,
-                    updated_ms: registration.updated_at,
+                    submitted_ms: registration.submited_ms,
+                    updated_ms: registration.updated_ms,
                     registrant_notes: registration.registrant_notes.clone(),
                     registered_by: registration.registered_by.clone(),
                 });
@@ -978,8 +978,8 @@ impl ListsTrait for ListsContract {
                     registrant_id: registration.registrant_id.clone(),
                     status: registration.status.clone(),
                     admin_notes: registration.admin_notes.clone(),
-                    submitted_ms: registration.submited_at,
-                    updated_ms: registration.updated_at,
+                    submitted_ms: registration.submited_ms,
+                    updated_ms: registration.updated_ms,
                     registrant_notes: registration.registrant_notes.clone(),
                     registered_by: registration.registered_by.clone(),
                 });

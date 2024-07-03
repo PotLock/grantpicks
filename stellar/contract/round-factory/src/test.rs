@@ -35,6 +35,10 @@ fn create_token<'a>(env: &Env, admin: &Address) -> (TokenClient<'a>, StellarAsse
     )
 }
 
+fn get_ledger_second_as_millis(env: &Env) -> u64 {
+  env.ledger().timestamp() * 1000
+}
+
 #[test]
 fn test_create_round() {
     let env = Env::default();
@@ -57,10 +61,10 @@ fn test_create_round() {
         name: String::from_str(&env, "name"),
         image_url: String::from_str(&env, "image_url"),
         contact: Vec::new(&env),
-        start_time: env.ledger().timestamp() + 20000,
-        end_time: env.ledger().timestamp() + 30000,
-        application_start_time: env.ledger().timestamp(),
-        application_end_time: env.ledger().timestamp() + 10000,
+        start_time: get_ledger_second_as_millis(&env) + 20000,
+        end_time: get_ledger_second_as_millis(&env) + 30000,
+        application_start_time: get_ledger_second_as_millis(&env),
+        application_end_time: get_ledger_second_as_millis(&env) + 10000,
         amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),

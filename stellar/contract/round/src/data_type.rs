@@ -56,8 +56,8 @@ pub struct ProjectApplication {
     pub applicant: Address,
     pub status: ApplicationStatus,
     pub review_note: String,
-    pub submited_at: u64,
-    pub updated_at: Option<u64>,
+    pub submited_ms: u64,
+    pub updated_ms: Option<u64>,
 }
 
 #[contracttype]

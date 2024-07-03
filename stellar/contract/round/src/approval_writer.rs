@@ -31,8 +31,8 @@ pub fn remove_approved_project(env: &Env, project_id: u128) {
     let mut approved_projects = read_approved_projects(env);
     let index = approved_projects.first_index_of(project_id);
 
-    if index.is_some() {
-        approved_projects.remove(index.unwrap() as u32);
+    if let Some(index) = index{
+        approved_projects.remove(index);
         write_approved_projects(env, &approved_projects);
     }
 }

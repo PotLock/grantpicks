@@ -75,8 +75,7 @@ pub struct ProjectContract {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProjectTeamMember {
     pub name: String,
-    pub role: String,
-    pub image_url: String,
+    pub value: String,
 }
 
 #[contracttype]

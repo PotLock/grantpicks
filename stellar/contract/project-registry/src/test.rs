@@ -42,8 +42,7 @@ fn test_apply() {
 
     project_team_members.push_back(ProjectTeamMember {
         name: String::from_str(&env, "team member name"),
-        role: String::from_str(&env, "team member role"),
-        image_url: String::from_str(&env, "team member image url"),
+        value: String::from_str(&env, "root.near"),
     });
 
     project_repositories.push_back(ProjectRepository {
@@ -109,8 +108,7 @@ fn test_change_project_status() {
 
     project_team_members.push_back(ProjectTeamMember {
         name: String::from_str(&env, "team member name"),
-        role: String::from_str(&env, "team member role"),
-        image_url: String::from_str(&env, "team member image url"),
+        value: String::from_str(&env, "root.near"),
     });
 
     project_repositories.push_back(ProjectRepository {
@@ -181,8 +179,7 @@ fn test_add_admin() {
 
     project_team_members.push_back(ProjectTeamMember {
         name: String::from_str(&env, "team member name"),
-        role: String::from_str(&env, "team member role"),
-        image_url: String::from_str(&env, "team member image url"),
+        value: String::from_str(&env, "root.near"),
     });
 
     project_repositories.push_back(ProjectRepository {
@@ -254,8 +251,7 @@ fn test_remove_admin() {
 
     project_team_members.push_back(ProjectTeamMember {
         name: String::from_str(&env, "team member name"),
-        role: String::from_str(&env, "team member role"),
-        image_url: String::from_str(&env, "team member image url"),
+        value: String::from_str(&env, "root.near"),
     });
 
     project_repositories.push_back(ProjectRepository {
@@ -331,8 +327,7 @@ fn test_get_projects() {
 
     project_team_members.push_back(ProjectTeamMember {
         name: String::from_str(&env, "team member name"),
-        role: String::from_str(&env, "team member role"),
-        image_url: String::from_str(&env, "team member image url"),
+        value: String::from_str(&env, "root.near"),
     });
 
     project_repositories.push_back(ProjectRepository {
@@ -402,8 +397,7 @@ fn test_get_project_admins() {
 
     project_team_members.push_back(ProjectTeamMember {
         name: String::from_str(&env, "team member name"),
-        role: String::from_str(&env, "team member role"),
-        image_url: String::from_str(&env, "team member image url"),
+        value: String::from_str(&env, "root.near"),
     });
 
     project_repositories.push_back(ProjectRepository {
@@ -474,8 +468,7 @@ fn test_get_project_by_id() {
 
     project_team_members.push_back(ProjectTeamMember {
         name: String::from_str(&env, "team member name"),
-        role: String::from_str(&env, "team member role"),
-        image_url: String::from_str(&env, "team member image url"),
+        value: String::from_str(&env, "root.near"),
     });
 
     project_repositories.push_back(ProjectRepository {
@@ -544,8 +537,7 @@ fn test_update_project() {
 
     project_team_members.push_back(ProjectTeamMember {
         name: String::from_str(&env, "team member name"),
-        role: String::from_str(&env, "team member role"),
-        image_url: String::from_str(&env, "team member image url"),
+        value: String::from_str(&env, "root.near"),
     });
 
     project_repositories.push_back(ProjectRepository {
@@ -598,8 +590,7 @@ fn test_update_project() {
 
     project_team_members2.push_back(ProjectTeamMember {
         name: String::from_str(&env, "team member name 2"),
-        role: String::from_str(&env, "team member role"),
-        image_url: String::from_str(&env, "team member image url"),
+        value: String::from_str(&env, "root.near"),
     });
 
     project_repositories2.push_back(ProjectRepository {
@@ -661,12 +652,8 @@ fn test_update_project() {
         String::from_str(&env, "team member name 2")
     );
     assert_eq!(
-        project.team_members.get(0).unwrap().role,
-        String::from_str(&env, "team member role")
-    );
-    assert_eq!(
-        project.team_members.get(0).unwrap().image_url,
-        String::from_str(&env, "team member image url")
+        project.team_members.get(0).unwrap().value,
+        String::from_str(&env, "root.near")
     );
     assert_eq!(project.repositories.len(), 1);
     assert_eq!(

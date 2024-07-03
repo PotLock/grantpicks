@@ -47,8 +47,7 @@ fn generate_fake_project(env: &Env, owner: &Address, project_contract: &project_
 
     project_team_members.push_back(project_registry::ProjectTeamMember {
         name: String::from_str(&env, "team member name"),
-        role: String::from_str(&env, "team member role"),
-        image_url: String::from_str(&env, "team member image url"),
+        value: String::from_str(&env, "root.near"),
     });
 
     project_repositories.push_back(project_registry::ProjectRepository {

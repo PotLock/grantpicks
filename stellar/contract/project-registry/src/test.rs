@@ -2,7 +2,8 @@
 use loam_sdk::soroban_sdk::Vec;
 
 use crate::data_type::{
-    ProjectContact, ProjectContract, ProjectFundingHistory, ProjectRepository, ProjectStatus, ProjectTeamMember
+    ProjectContact, ProjectContract, ProjectFundingHistory, ProjectRepository, ProjectStatus,
+    ProjectTeamMember,
 };
 use crate::soroban_sdk::{testutils::Address as _, Address, Env, String};
 use crate::{internal::ProjectRegistry, internal::ProjectRegistryClient};
@@ -32,7 +33,7 @@ fn test_apply() {
 
     project_contracts.push_back(ProjectContract {
         name: String::from_str(&env, "contract name"),
-        contract_address: Address::generate(&env),
+        contract_address: String::from_str(&env, "contract address"),
     });
 
     project_contacts.push_back(ProjectContact {
@@ -98,7 +99,7 @@ fn test_change_project_status() {
 
     project_contracts.push_back(ProjectContract {
         name: String::from_str(&env, "contract name"),
-        contract_address: Address::generate(&env),
+        contract_address: String::from_str(&env, "contract address"),
     });
 
     project_contacts.push_back(ProjectContact {
@@ -117,13 +118,12 @@ fn test_change_project_status() {
     });
 
     funding_histories.push_back(ProjectFundingHistory {
-      amount: 100,
-      source: String::from_str(&env, "source"),
-      funding_time: 100,
-      description: String::from_str(&env, "description"),
-      denomiation: String::from_str(&env, "USD"),
-  });
-
+        amount: 100,
+        source: String::from_str(&env, "source"),
+        funding_time: 100,
+        description: String::from_str(&env, "description"),
+        denomiation: String::from_str(&env, "USD"),
+    });
 
     project_admins.push_back(alice.clone());
 
@@ -169,7 +169,7 @@ fn test_add_admin() {
 
     project_contracts.push_back(ProjectContract {
         name: String::from_str(&env, "contract name"),
-        contract_address: Address::generate(&env),
+        contract_address: String::from_str(&env, "contract address"),
     });
 
     project_contacts.push_back(ProjectContact {
@@ -188,13 +188,12 @@ fn test_add_admin() {
     });
 
     funding_histories.push_back(ProjectFundingHistory {
-      amount: 100,
-      source: String::from_str(&env, "source"),
-      funding_time: 100,
-      description: String::from_str(&env, "description"),
-      denomiation: String::from_str(&env, "USD"),
+        amount: 100,
+        source: String::from_str(&env, "source"),
+        funding_time: 100,
+        description: String::from_str(&env, "description"),
+        denomiation: String::from_str(&env, "USD"),
     });
-
 
     project_admins.push_back(alice.clone());
 
@@ -241,7 +240,7 @@ fn test_remove_admin() {
 
     project_contracts.push_back(ProjectContract {
         name: String::from_str(&env, "contract name"),
-        contract_address: Address::generate(&env),
+        contract_address: String::from_str(&env, "contract address"),
     });
 
     project_contacts.push_back(ProjectContact {
@@ -260,11 +259,11 @@ fn test_remove_admin() {
     });
 
     funding_histories.push_back(ProjectFundingHistory {
-      amount: 100,
-      source: String::from_str(&env, "source"),
-      funding_time: 100,
-      description: String::from_str(&env, "description"),
-      denomiation: String::from_str(&env, "USD"),
+        amount: 100,
+        source: String::from_str(&env, "source"),
+        funding_time: 100,
+        description: String::from_str(&env, "description"),
+        denomiation: String::from_str(&env, "USD"),
     });
 
     project_admins.push_back(alice.clone());
@@ -317,7 +316,7 @@ fn test_get_projects() {
 
     project_contracts.push_back(ProjectContract {
         name: String::from_str(&env, "contract name"),
-        contract_address: Address::generate(&env),
+        contract_address: String::from_str(&env, "contract address"),
     });
 
     project_contacts.push_back(ProjectContact {
@@ -336,13 +335,12 @@ fn test_get_projects() {
     });
 
     funding_histories.push_back(ProjectFundingHistory {
-      amount: 100,
-      source: String::from_str(&env, "source"),
-      funding_time: 100,
-      description: String::from_str(&env, "description"),
-      denomiation: String::from_str(&env, "USD"),
+        amount: 100,
+        source: String::from_str(&env, "source"),
+        funding_time: 100,
+        description: String::from_str(&env, "description"),
+        denomiation: String::from_str(&env, "USD"),
     });
-
 
     project_admins.push_back(alice.clone());
 
@@ -387,7 +385,7 @@ fn test_get_project_admins() {
 
     project_contracts.push_back(ProjectContract {
         name: String::from_str(&env, "contract name"),
-        contract_address: Address::generate(&env),
+        contract_address: String::from_str(&env, "contract address"),
     });
 
     project_contacts.push_back(ProjectContact {
@@ -406,13 +404,12 @@ fn test_get_project_admins() {
     });
 
     funding_histories.push_back(ProjectFundingHistory {
-      amount: 100,
-      source: String::from_str(&env, "source"),
-      funding_time: 100,
-      description: String::from_str(&env, "description"),
-      denomiation: String::from_str(&env, "USD"),
+        amount: 100,
+        source: String::from_str(&env, "source"),
+        funding_time: 100,
+        description: String::from_str(&env, "description"),
+        denomiation: String::from_str(&env, "USD"),
     });
-
 
     project_admins.push_back(alice.clone());
 
@@ -458,7 +455,7 @@ fn test_get_project_by_id() {
 
     project_contracts.push_back(ProjectContract {
         name: String::from_str(&env, "contract name"),
-        contract_address: Address::generate(&env),
+        contract_address: String::from_str(&env, "contract address"),
     });
 
     project_contacts.push_back(ProjectContact {
@@ -477,13 +474,12 @@ fn test_get_project_by_id() {
     });
 
     funding_histories.push_back(ProjectFundingHistory {
-      amount: 100,
-      source: String::from_str(&env, "source"),
-      funding_time: 100,
-      description: String::from_str(&env, "description"),
-      denomiation: String::from_str(&env, "USD"),
+        amount: 100,
+        source: String::from_str(&env, "source"),
+        funding_time: 100,
+        description: String::from_str(&env, "description"),
+        denomiation: String::from_str(&env, "USD"),
     });
-
 
     project_admins.push_back(alice.clone());
 
@@ -527,7 +523,7 @@ fn test_update_project() {
 
     project_contracts.push_back(ProjectContract {
         name: String::from_str(&env, "contract name"),
-        contract_address: Address::generate(&env),
+        contract_address: String::from_str(&env, "contract address"),
     });
 
     project_contacts.push_back(ProjectContact {
@@ -546,13 +542,12 @@ fn test_update_project() {
     });
 
     funding_histories.push_back(ProjectFundingHistory {
-      amount: 100,
-      source: String::from_str(&env, "source"),
-      funding_time: 100,
-      description: String::from_str(&env, "description"),
-      denomiation: String::from_str(&env, "USD"),
+        amount: 100,
+        source: String::from_str(&env, "source"),
+        funding_time: 100,
+        description: String::from_str(&env, "description"),
+        denomiation: String::from_str(&env, "USD"),
     });
-
 
     project_admins.push_back(alice.clone());
 
@@ -580,7 +575,7 @@ fn test_update_project() {
 
     project_contracts2.push_back(ProjectContract {
         name: String::from_str(&env, "contract name 2"),
-        contract_address: Address::generate(&env),
+        contract_address: String::from_str(&env, "contract address"),
     });
 
     project_contacts2.push_back(ProjectContact {
@@ -599,13 +594,12 @@ fn test_update_project() {
     });
 
     funding_histories2.push_back(ProjectFundingHistory {
-      amount: 100,
-      source: String::from_str(&env, "source"),
-      funding_time: 100,
-      description: String::from_str(&env, "description"),
-      denomiation: String::from_str(&env, "USD"),
+        amount: 100,
+        source: String::from_str(&env, "source"),
+        funding_time: 100,
+        description: String::from_str(&env, "description"),
+        denomiation: String::from_str(&env, "USD"),
     });
-
 
     contract.update_project(
         &alice,

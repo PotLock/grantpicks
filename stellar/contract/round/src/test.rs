@@ -37,7 +37,7 @@ fn generate_fake_project(env: &Env, owner: &Address, project_contract: &project_
 
     project_contracts.push_back(project_registry::ProjectContract {
         name: String::from_str(&env, "contract name"),
-        contract_address: Address::generate(&env),
+        contract_address: String::from_str(&env, "contract address"),
     });
 
     project_contacts.push_back(project_registry::ProjectContact {
@@ -56,11 +56,11 @@ fn generate_fake_project(env: &Env, owner: &Address, project_contract: &project_
     });
 
     funding_histories.push_back(project_registry::ProjectFundingHistory {
-      amount: 100,
-      source: String::from_str(&env, "source"),
-      funding_time: 100,
-      description: String::from_str(&env, "description"),
-      denomiation: String::from_str(&env, "USD"),
+        amount: 100,
+        source: String::from_str(&env, "source"),
+        funding_time: 100,
+        description: String::from_str(&env, "description"),
+        denomiation: String::from_str(&env, "USD"),
     });
 
     project_admins.push_back(admin.clone());
@@ -703,7 +703,7 @@ fn test_get_all_pairs() {
 }
 
 #[test]
-fn test_change_number_of_votes(){
+fn test_change_number_of_votes() {
     let env = Env::default();
     env.mock_all_auths();
     let admin = Address::generate(&env);
@@ -746,7 +746,7 @@ fn test_change_number_of_votes(){
 }
 
 #[test]
-fn test_change_amount(){
+fn test_change_amount() {
     let env = Env::default();
     env.mock_all_auths();
     let admin = Address::generate(&env);
@@ -789,7 +789,7 @@ fn test_change_amount(){
 }
 
 #[test]
-fn test_change_voting_period(){
+fn test_change_voting_period() {
     let env = Env::default();
     env.mock_all_auths();
     let admin = Address::generate(&env);
@@ -834,7 +834,7 @@ fn test_change_voting_period(){
 }
 
 #[test]
-fn test_application_period(){
+fn test_application_period() {
     let env = Env::default();
     env.mock_all_auths();
     let admin = Address::generate(&env);
@@ -871,9 +871,16 @@ fn test_application_period(){
 
     let new_application_start_time = env.ledger().timestamp() + 1000;
     let new_application_end_time = env.ledger().timestamp() + 2000;
-    round.change_application_period(&admin, &new_application_start_time, &new_application_end_time);
+    round.change_application_period(
+        &admin,
+        &new_application_start_time,
+        &new_application_end_time,
+    );
 
     let round_info = round.round_info();
-    assert_eq!(round_info.application_start_time, new_application_start_time);
+    assert_eq!(
+        round_info.application_start_time,
+        new_application_start_time
+    );
     assert_eq!(round_info.application_end_time, new_application_end_time);
 }

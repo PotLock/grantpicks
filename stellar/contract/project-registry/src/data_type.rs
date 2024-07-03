@@ -68,7 +68,7 @@ pub struct ProjectContact {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProjectContract {
     pub name: String,
-    pub contract_address: Address,
+    pub contract_address: String,
 }
 
 #[contracttype]
@@ -87,7 +87,7 @@ pub struct ProjectRepository {
 
 #[contracttype]
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ProjectFundingHistory{
+pub struct ProjectFundingHistory {
     pub source: String,
     pub amount: u128,
     pub denomiation: String,

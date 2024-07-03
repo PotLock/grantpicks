@@ -33,7 +33,10 @@ impl RoundFactoryTrait for RoundFactory {
         if contract_owner != admin {
             let admins = read_admins(env);
             let is_admin = admins.first_index_of(admin.clone());
-            assert!(is_admin.is_some(), "Only the contract owner or admin can create a round");
+            assert!(
+                is_admin.is_some(),
+                "Only the contract owner or admin can create a round"
+            );
         }
 
         assert!(
@@ -42,15 +45,15 @@ impl RoundFactoryTrait for RoundFactory {
         );
 
         assert!(
-          params.application_start_time <= params.application_end_time,
-          "Round application start time must be less than round application end time"
+            params.application_start_time <= params.application_end_time,
+            "Round application start time must be less than round application end time"
         );
 
         assert!(
-          params.start_time >= params.application_end_time,
-          "Round start time must be greater than or equal round application end time"
+            params.start_time >= params.application_end_time,
+            "Round start time must be greater than or equal round application end time"
         );
-          assert!(params.amount > 0, "Amount must be greater than 0");
+        assert!(params.amount > 0, "Amount must be greater than 0");
         assert!(!params.admins.is_empty(), "Round admins must not empty");
         assert!(params.admins.len() < 5, "Round admins must be less than 5");
         assert!(params.contact.len() <= 10, "Contact must be less than 10");

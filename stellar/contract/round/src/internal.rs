@@ -28,7 +28,8 @@ use crate::{
         remove_from_black_list, remove_from_white_list,
     },
     voting_writer::{
-        add_voting_result, find_voting_result, get_voting_state, increment_voting_count, read_voting_state, set_voting_state
+        add_voting_result, find_voting_result, get_voting_state, increment_voting_count,
+        read_voting_state, set_voting_state,
     },
 };
 use loam_sdk::soroban_sdk::{self, contract, contractimpl, token::TokenClient, String, Vec};
@@ -138,7 +139,10 @@ impl RoundTrait for Round {
 
         if round.owner != admin {
             let admin_index = round.admins.first_index_of(admin.clone());
-            assert!(admin_index.is_some(), "Only round owner or round admin can change voting period");
+            assert!(
+                admin_index.is_some(),
+                "Only round owner or round admin can change voting period"
+            );
         }
 
         round.start_time = round_start_time;
@@ -165,8 +169,11 @@ impl RoundTrait for Round {
         let mut round = read_round_info(env);
 
         if round.owner != admin {
-          let admin_index = round.admins.first_index_of(admin.clone());
-          assert!(admin_index.is_some(), "Only round owner or round admin can change application period");
+            let admin_index = round.admins.first_index_of(admin.clone());
+            assert!(
+                admin_index.is_some(),
+                "Only round owner or round admin can change application period"
+            );
         }
 
         round.application_start_time = round_application_start_time;
@@ -183,8 +190,11 @@ impl RoundTrait for Round {
         let mut round = read_round_info(env);
 
         if round.owner != admin {
-           let admin_index = round.admins.first_index_of(admin.clone());
-            assert!(admin_index.is_some(), "Only round owner or round admin can change amount");
+            let admin_index = round.admins.first_index_of(admin.clone());
+            assert!(
+                admin_index.is_some(),
+                "Only round owner or round admin can change amount"
+            );
         }
 
         round.expected_amount = amount;
@@ -193,20 +203,23 @@ impl RoundTrait for Round {
         extend_instance(env);
     }
 
-    fn complete_vote(env: &Env, admin: Address){
-      admin.require_auth();
+    fn complete_vote(env: &Env, admin: Address) {
+        admin.require_auth();
 
-      let mut round = read_round_info(env);
+        let mut round = read_round_info(env);
 
-      if round.owner != admin {
-         let admin_index = round.admins.first_index_of(admin.clone());
-          assert!(admin_index.is_some(), "Only round owner or round admin can change amount");
-      }
+        if round.owner != admin {
+            let admin_index = round.admins.first_index_of(admin.clone());
+            assert!(
+                admin_index.is_some(),
+                "Only round owner or round admin can change amount"
+            );
+        }
 
-      round.end_time = env.ledger().timestamp();
+        round.end_time = env.ledger().timestamp();
 
-      write_round_info(env, &round);
-      extend_instance(env);
+        write_round_info(env, &round);
+        extend_instance(env);
     }
 
     fn add_admin(env: &Env, admin: Address, round_admin: Address) {
@@ -416,7 +429,8 @@ impl RoundTrait for Round {
         let state = get_voting_state(env, voter.clone());
         assert!(
             !state,
-            "Voter already voted. Can not vote again in same round");
+            "Voter already voted. Can not vote again in same round"
+        );
 
         let mut picked_pairs: Vec<PickResult> = Vec::new(env);
 
@@ -527,10 +541,7 @@ impl RoundTrait for Round {
             "Voting period is not started"
         );
 
-        assert!(
-            current_time >= round.end_time,
-            "Voting period is not ended"
-        );
+        assert!(current_time >= round.end_time, "Voting period is not ended");
 
         if round.owner != admin {
             round
@@ -820,29 +831,35 @@ impl RoundTrait for Round {
         pair
     }
 
-    fn  change_number_of_votes(env: &Env, admin: Address, num_picks_per_voter: u32){
-      admin.require_auth();
+    fn change_number_of_votes(env: &Env, admin: Address, num_picks_per_voter: u32) {
+        admin.require_auth();
 
-      let mut round = read_round_info(env);
+        let mut round = read_round_info(env);
 
-      if round.owner != admin {
-         let admin_index = round.admins.first_index_of(admin.clone());
-          assert!(admin_index.is_some(), "Only round owner or round admin can change number of votes");
-      }
+        if round.owner != admin {
+            let admin_index = round.admins.first_index_of(admin.clone());
+            assert!(
+                admin_index.is_some(),
+                "Only round owner or round admin can change number of votes"
+            );
+        }
 
-      assert!(
-          num_picks_per_voter > 0,
-          "Number of picks per voter must be greater than 0"
-      );
+        assert!(
+            num_picks_per_voter > 0,
+            "Number of picks per voter must be greater than 0"
+        );
 
-      let states = read_voting_state(env);
-      let votes = states.len();
+        let states = read_voting_state(env);
+        let votes = states.len();
 
-      assert!(votes == 0, "Votes already casted. Can not change number of votes");
+        assert!(
+            votes == 0,
+            "Votes already casted. Can not change number of votes"
+        );
 
-      round.num_picks_per_voter = num_picks_per_voter;
+        round.num_picks_per_voter = num_picks_per_voter;
 
-      write_round_info(env, &round);
-      extend_instance(env);
+        write_round_info(env, &round);
+        extend_instance(env);
     }
 }

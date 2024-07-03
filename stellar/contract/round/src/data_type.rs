@@ -26,6 +26,7 @@ pub struct RoundDetail {
     pub is_completed: bool,
     pub use_whitelist: bool,
     pub num_picks_per_voter: u32,
+    pub max_participants: u32,
 }
 
 #[contracttype]
@@ -44,6 +45,7 @@ pub struct CreateRoundParams {
     pub admins: Vec<Address>,
     pub use_whitelist: Option<bool>,
     pub num_picks_per_voter: Option<u32>,
+    pub max_participants: Option<u32>
 }
 
 #[contracttype]

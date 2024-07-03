@@ -57,14 +57,15 @@ fn test_create_round() {
         name: String::from_str(&env, "name"),
         image_url: String::from_str(&env, "image_url"),
         contact: Vec::new(&env),
-        start_time: 0,
+        start_time: env.ledger().timestamp() + 20000,
         end_time: env.ledger().timestamp() + 30000,
-        application_start_time: 0,
+        application_start_time: env.ledger().timestamp(),
         application_end_time: env.ledger().timestamp() + 10000,
         amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
         num_picks_per_voter: Some(2),
+        max_participants: Some(10),
     };
 
     let round_info = round_factory.create_round(&admin, &params);

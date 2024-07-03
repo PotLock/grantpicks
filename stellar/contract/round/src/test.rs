@@ -33,6 +33,7 @@ fn generate_fake_project(env: &Env, owner: &Address, project_contract: &project_
     let mut project_team_members: Vec<project_registry::ProjectTeamMember> = Vec::new(&env);
     let mut project_repositories: Vec<project_registry::ProjectRepository> = Vec::new(&env);
     let mut project_admins: Vec<Address> = Vec::new(&env);
+    let mut funding_histories: Vec<project_registry::ProjectFundingHistory> = Vec::new(&env);
 
     project_contracts.push_back(project_registry::ProjectContract {
         name: String::from_str(&env, "contract name"),
@@ -55,6 +56,14 @@ fn generate_fake_project(env: &Env, owner: &Address, project_contract: &project_
         url: String::from_str(&env, "repository url"),
     });
 
+    funding_histories.push_back(project_registry::ProjectFundingHistory {
+      amount: 100,
+      source: String::from_str(&env, "source"),
+      funding_time: 100,
+      description: String::from_str(&env, "description"),
+      denomiation: String::from_str(&env, "USD"),
+    });
+
     project_admins.push_back(admin.clone());
 
     for _i in 0..15 {
@@ -68,6 +77,7 @@ fn generate_fake_project(env: &Env, owner: &Address, project_contract: &project_
             team_members: project_team_members.clone(),
             repositories: project_repositories.clone(),
             admins: project_admins.clone(),
+            fundings: funding_histories.clone(),
         };
 
         project_contract.apply(&owner, project_params);
@@ -104,11 +114,12 @@ fn test_round_init() {
         start_time: env.ledger().timestamp() + 10000,
         end_time: env.ledger().timestamp() + 30000,
         application_start_time: env.ledger().timestamp(),
-        application_end_time: env.ledger().timestamp() + 10000,
+        application_end_time: env.ledger().timestamp() + 9000,
         amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
         num_picks_per_voter: Some(2),
+        max_participants: Some(10),
     };
 
     round.init(
@@ -148,11 +159,12 @@ fn test_apply_applications() {
         start_time: env.ledger().timestamp() + 10000,
         end_time: env.ledger().timestamp() + 30000,
         application_start_time: env.ledger().timestamp(),
-        application_end_time: env.ledger().timestamp() + 10000,
+        application_end_time: env.ledger().timestamp() + 9000,
         amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
         num_picks_per_voter: Some(2),
+        max_participants: Some(10),
     };
 
     round.init(
@@ -194,11 +206,12 @@ fn test_review_application() {
         start_time: env.ledger().timestamp() + 10000,
         end_time: env.ledger().timestamp() + 30000,
         application_start_time: env.ledger().timestamp(),
-        application_end_time: env.ledger().timestamp() + 10000,
+        application_end_time: env.ledger().timestamp() + 9000,
         amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
         num_picks_per_voter: Some(2),
+        max_participants: Some(10),
     };
 
     round.init(
@@ -247,11 +260,12 @@ fn test_whitelist_applicant() {
         start_time: env.ledger().timestamp() + 10000,
         end_time: env.ledger().timestamp() + 30000,
         application_start_time: env.ledger().timestamp(),
-        application_end_time: env.ledger().timestamp() + 10000,
+        application_end_time: env.ledger().timestamp() + 9000,
         amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(true),
         num_picks_per_voter: Some(2),
+        max_participants: Some(10),
     };
 
     round.init(
@@ -288,11 +302,12 @@ fn test_whitelist_voters() {
         start_time: env.ledger().timestamp(),
         end_time: env.ledger().timestamp() + 30000,
         application_start_time: env.ledger().timestamp(),
-        application_end_time: env.ledger().timestamp() + 10000,
+        application_end_time: env.ledger().timestamp() + 9000,
         amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(true),
         num_picks_per_voter: Some(2),
+        max_participants: Some(10),
     };
 
     round.init(
@@ -342,11 +357,12 @@ fn test_blacklist() {
         start_time: env.ledger().timestamp() + 10000,
         end_time: env.ledger().timestamp() + 30000,
         application_start_time: env.ledger().timestamp(),
-        application_end_time: env.ledger().timestamp() + 10000,
+        application_end_time: env.ledger().timestamp() + 9000,
         amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
         num_picks_per_voter: Some(2),
+        max_participants: Some(10),
     };
 
     round.init(
@@ -382,13 +398,14 @@ fn test_voting() {
         image_url: String::from_str(&env, "image_url"),
         contact: Vec::new(&env),
         start_time: env.ledger().timestamp(),
-        end_time: env.ledger().timestamp() + 30000,
+        end_time: env.ledger().timestamp() + 30,
         application_start_time: env.ledger().timestamp(),
-        application_end_time: env.ledger().timestamp() + 10000,
+        application_end_time: env.ledger().timestamp(),
         amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
         num_picks_per_voter: Some(2),
+        max_participants: Some(10),
     };
 
     round.init(
@@ -480,11 +497,12 @@ fn test_add_remove_admin() {
         start_time: env.ledger().timestamp() + 10000,
         end_time: env.ledger().timestamp() + 30000,
         application_start_time: env.ledger().timestamp(),
-        application_end_time: env.ledger().timestamp() + 10000,
+        application_end_time: env.ledger().timestamp() + 9000,
         amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
         num_picks_per_voter: Some(2),
+        max_participants: Some(10),
     };
 
     round.init(
@@ -526,14 +544,15 @@ fn test_voting_deposit_and_payout() {
         name: String::from_str(&env, "name"),
         image_url: String::from_str(&env, "image_url"),
         contact: Vec::new(&env),
-        start_time: 0,
-        end_time: env.ledger().timestamp() + 30000,
-        application_start_time: 0,
-        application_end_time: env.ledger().timestamp() + 10000,
+        start_time: env.ledger().timestamp(),
+        end_time: env.ledger().timestamp() + 30,
+        application_start_time: env.ledger().timestamp(),
+        application_end_time: env.ledger().timestamp(),
         amount: 10 * deposit,
         admins: admins.clone(),
         use_whitelist: Some(false),
         num_picks_per_voter: Some(2),
+        max_participants: Some(10),
     };
 
     round.init(
@@ -594,6 +613,8 @@ fn test_voting_deposit_and_payout() {
     let results = round.calculate_results();
     assert_eq!(results.len(), 10);
 
+    round.complete_vote(&admin);
+
     let admin_balance = token_contract.balance(&admin);
     round.trigger_payouts(&admin);
     let new_admin_balance = token_contract.balance(&admin);
@@ -619,14 +640,15 @@ fn test_get_all_pairs() {
         name: String::from_str(&env, "name"),
         image_url: String::from_str(&env, "image_url"),
         contact: Vec::new(&env),
-        start_time: 0,
+        start_time: env.ledger().timestamp() + 10000,
         end_time: env.ledger().timestamp() + 30000,
-        application_start_time: 0,
-        application_end_time: env.ledger().timestamp() + 10000,
+        application_start_time: env.ledger().timestamp(),
+        application_end_time: env.ledger().timestamp() + 9000,
         amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
         num_picks_per_voter: Some(2),
+        max_participants: Some(10),
     };
 
     round.init(
@@ -679,4 +701,180 @@ fn test_get_all_pairs() {
         let pairs = generated_pairs.get(project_id).unwrap();
         assert_eq!(pairs.len(), expected_generated_pairs as u32);
     });
+}
+
+#[test]
+fn test_change_number_of_votes(){
+    let env = Env::default();
+    env.mock_all_auths();
+    let admin = Address::generate(&env);
+    let round = deploy_contract(&env, &admin);
+    let token_contract = create_token(&env, &admin).0;
+    let project_contract = deploy_registry_contract(&env, &admin);
+    generate_fake_project(&env, &admin, &project_contract);
+    let mut admins: Vec<Address> = Vec::new(&env);
+    admins.push_back(admin.clone());
+
+    let round_detail = &CreateRoundParams {
+        id: 1,
+        description: String::from_str(&env, "description"),
+        name: String::from_str(&env, "name"),
+        image_url: String::from_str(&env, "image_url"),
+        contact: Vec::new(&env),
+        start_time: env.ledger().timestamp() + 10000,
+        end_time: env.ledger().timestamp() + 30000,
+        application_start_time: env.ledger().timestamp(),
+        application_end_time: env.ledger().timestamp() + 9000,
+        amount: 5,
+        admins: admins.clone(),
+        use_whitelist: Some(false),
+        num_picks_per_voter: Some(2),
+        max_participants: Some(10),
+    };
+
+    round.init(
+        &admin,
+        &token_contract.address,
+        &project_contract.address,
+        round_detail,
+    );
+
+    let new_num_picks_per_voter = 3;
+    round.change_number_of_votes(&admin, &new_num_picks_per_voter);
+
+    let round_info = round.round_info();
+    assert_eq!(round_info.num_picks_per_voter, new_num_picks_per_voter);
+}
+
+#[test]
+fn test_change_amount(){
+    let env = Env::default();
+    env.mock_all_auths();
+    let admin = Address::generate(&env);
+    let round = deploy_contract(&env, &admin);
+    let token_contract = create_token(&env, &admin).0;
+    let project_contract = deploy_registry_contract(&env, &admin);
+    generate_fake_project(&env, &admin, &project_contract);
+    let mut admins: Vec<Address> = Vec::new(&env);
+    admins.push_back(admin.clone());
+
+    let round_detail = &CreateRoundParams {
+        id: 1,
+        description: String::from_str(&env, "description"),
+        name: String::from_str(&env, "name"),
+        image_url: String::from_str(&env, "image_url"),
+        contact: Vec::new(&env),
+        start_time: env.ledger().timestamp() + 10000,
+        end_time: env.ledger().timestamp() + 30000,
+        application_start_time: env.ledger().timestamp(),
+        application_end_time: env.ledger().timestamp() + 9000,
+        amount: 5,
+        admins: admins.clone(),
+        use_whitelist: Some(false),
+        num_picks_per_voter: Some(2),
+        max_participants: Some(10),
+    };
+
+    round.init(
+        &admin,
+        &token_contract.address,
+        &project_contract.address,
+        round_detail,
+    );
+
+    let new_amount = 10;
+    round.change_amount(&admin, &new_amount);
+
+    let round_info = round.round_info();
+    assert_eq!(round_info.expected_amount, new_amount);
+}
+
+#[test]
+fn test_change_voting_period(){
+    let env = Env::default();
+    env.mock_all_auths();
+    let admin = Address::generate(&env);
+    let round = deploy_contract(&env, &admin);
+    let token_contract = create_token(&env, &admin).0;
+    let project_contract = deploy_registry_contract(&env, &admin);
+    generate_fake_project(&env, &admin, &project_contract);
+    let mut admins: Vec<Address> = Vec::new(&env);
+    admins.push_back(admin.clone());
+
+    let round_detail = &CreateRoundParams {
+        id: 1,
+        description: String::from_str(&env, "description"),
+        name: String::from_str(&env, "name"),
+        image_url: String::from_str(&env, "image_url"),
+        contact: Vec::new(&env),
+        start_time: env.ledger().timestamp() + 10000,
+        end_time: env.ledger().timestamp() + 30000,
+        application_start_time: env.ledger().timestamp(),
+        application_end_time: env.ledger().timestamp() + 9000,
+        amount: 5,
+        admins: admins.clone(),
+        use_whitelist: Some(false),
+        num_picks_per_voter: Some(2),
+        max_participants: Some(10),
+    };
+
+    round.init(
+        &admin,
+        &token_contract.address,
+        &project_contract.address,
+        round_detail,
+    );
+
+    let new_start_time = env.ledger().timestamp() + 1000;
+    let new_end_time = env.ledger().timestamp() + 2000;
+    round.change_voting_period(&admin, &new_start_time, &new_end_time);
+
+    let round_info = round.round_info();
+    assert_eq!(round_info.start_time, new_start_time);
+    assert_eq!(round_info.end_time, new_end_time);
+}
+
+#[test]
+fn test_application_period(){
+    let env = Env::default();
+    env.mock_all_auths();
+    let admin = Address::generate(&env);
+    let round = deploy_contract(&env, &admin);
+    let token_contract = create_token(&env, &admin).0;
+    let project_contract = deploy_registry_contract(&env, &admin);
+    generate_fake_project(&env, &admin, &project_contract);
+    let mut admins: Vec<Address> = Vec::new(&env);
+    admins.push_back(admin.clone());
+
+    let round_detail = &CreateRoundParams {
+        id: 1,
+        description: String::from_str(&env, "description"),
+        name: String::from_str(&env, "name"),
+        image_url: String::from_str(&env, "image_url"),
+        contact: Vec::new(&env),
+        start_time: env.ledger().timestamp() + 10000,
+        end_time: env.ledger().timestamp() + 30000,
+        application_start_time: env.ledger().timestamp(),
+        application_end_time: env.ledger().timestamp() + 9000,
+        amount: 5,
+        admins: admins.clone(),
+        use_whitelist: Some(false),
+        num_picks_per_voter: Some(2),
+        max_participants: Some(10),
+    };
+
+    round.init(
+        &admin,
+        &token_contract.address,
+        &project_contract.address,
+        round_detail,
+    );
+
+    let new_application_start_time = env.ledger().timestamp() + 1000;
+    let new_application_end_time = env.ledger().timestamp() + 2000;
+    round.change_application_period(&admin, &new_application_start_time, &new_application_end_time);
+
+    let round_info = round.round_info();
+    assert_eq!(round_info.application_start_time, new_application_start_time);
+    assert_eq!(round_info.application_end_time, new_application_end_time);
 }

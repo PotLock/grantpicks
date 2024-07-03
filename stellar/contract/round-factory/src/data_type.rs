@@ -22,6 +22,7 @@ pub struct CreateRoundParams {
     pub admins: Vec<Address>,
     pub use_whitelist: Option<bool>,
     pub num_picks_per_voter: Option<u32>,
+    pub max_participants: Option<u32>
 }
 
 #[contracttype]

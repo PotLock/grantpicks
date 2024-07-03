@@ -114,8 +114,9 @@ impl ProjectRegistryTrait for ProjectRegistry {
         let mut uproject = project.unwrap();
 
         if uproject.owner != admin {
+            let is_admin = uproject.admins.first_index_of(&admin.clone());
             assert!(
-                uproject.admins.iter().any(|x| x == admin),
+                is_admin.is_some(),
                 "only owner or admin can update"
             );
         }
@@ -181,20 +182,7 @@ impl ProjectRegistryTrait for ProjectRegistry {
     }
 
     fn get_projects(env: &Env, skip: Option<u64>, limit: Option<u64>) -> Vec<Project> {
-        let mut gskip: u64 = 0;
-        let mut glimit: u64 = 10;
-
-        if skip.is_some() {
-            gskip = skip.unwrap();
-        }
-
-        if limit.is_some() {
-            glimit = limit.unwrap();
-        }
-
-        assert!(glimit <= 50, "limit should be less than 100");
-
-        find_projects(env, Some(gskip), Some(glimit))
+        find_projects(env, skip, limit)
     }
 
     fn get_project_admins(env: &Env, project_id: u128) -> Vec<Address> {

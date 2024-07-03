@@ -32,26 +32,25 @@ impl RoundFactoryTrait for RoundFactory {
         let contract_owner = read_owner(env);
         if contract_owner != admin {
             let admins = read_admins(env);
-
-            admins
-                .iter()
-                .find(|round_admin| round_admin == &admin)
-                .expect("Only round owner or round admin can add approved project");
+            let is_admin = admins.first_index_of(admin.clone());
+            assert!(is_admin.is_some(), "Only the contract owner or admin can create a round");
         }
 
         assert!(
             params.start_time < params.end_time,
             "Round start time must be less than round end time"
         );
+
         assert!(
-            params.application_start_time < params.application_end_time,
-            "Round application start time must be less than round application end time"
+          params.application_start_time <= params.application_end_time,
+          "Round application start time must be less than round application end time"
         );
+
         assert!(
-            params.end_time > params.application_start_time,
-            "Round end time must be greater than round application start time"
+          params.start_time >= params.application_end_time,
+          "Round start time must be greater than or equal round application end time"
         );
-        assert!(params.amount > 0, "Amount must be greater than 0");
+          assert!(params.amount > 0, "Amount must be greater than 0");
         assert!(!params.admins.is_empty(), "Round admins must not empty");
         assert!(params.admins.len() < 5, "Round admins must be less than 5");
         assert!(params.contact.len() <= 10, "Contact must be less than 10");
@@ -100,6 +99,7 @@ impl RoundFactoryTrait for RoundFactory {
                 admins: params.admins,
                 use_whitelist: params.use_whitelist,
                 num_picks_per_voter: params.num_picks_per_voter,
+                max_participants: params.max_participants,
             },
         );
 

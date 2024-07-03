@@ -39,6 +39,7 @@ pub struct ProjectParams {
     pub contracts: Vec<ProjectContract>,
     pub team_members: Vec<ProjectTeamMember>,
     pub repositories: Vec<ProjectRepository>,
+    pub fundings: Vec<ProjectFundingHistory>,
     pub admins: Vec<Address>,
 }
 
@@ -53,6 +54,7 @@ pub struct UpdateProjectParams {
     pub contracts: Vec<ProjectContract>,
     pub team_members: Vec<ProjectTeamMember>,
     pub repositories: Vec<ProjectRepository>,
+    pub fundings: Vec<ProjectFundingHistory>,
 }
 
 #[contracttype]
@@ -82,4 +84,14 @@ pub struct ProjectTeamMember {
 pub struct ProjectRepository {
     pub label: String,
     pub url: String,
+}
+
+#[contracttype]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProjectFundingHistory{
+    pub source: String,
+    pub amount: u128,
+    pub denomiation: String,
+    pub description: String,
+    pub funding_time: u64,
 }

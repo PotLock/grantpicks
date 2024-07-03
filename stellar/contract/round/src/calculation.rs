@@ -29,6 +29,7 @@ pub fn calculate_voting_results(env: &Env) -> Vec<ProjectVotingResult> {
     final_results
 }
 
+// NOTE: calculate voting result is still subject to change
 pub fn calculate_allocation(voting_count: u128, total_voting_count: u128) -> u128 {
     voting_count * 10000 / total_voting_count
 }

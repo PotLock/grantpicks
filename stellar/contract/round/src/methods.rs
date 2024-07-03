@@ -19,7 +19,9 @@ pub trait RoundTrait {
         round_application_start_time: u64,
         round_application_end_time: u64,
     );
+    fn  change_number_of_votes(env: &Env, admin: Address, num_picks_per_voter: u32);
     fn change_amount(env: &Env, admin: Address, amount: u128);
+    fn complete_vote(env: &Env, admin: Address);
     fn add_admin(env: &Env, admin: Address, round_admin: Address);
     fn remove_admin(env: &Env, admin: Address, round_admin: Address);
     fn apply_project(env: &Env, project_id: u128, applicant: Address) -> u128;

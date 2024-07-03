@@ -2,7 +2,7 @@
 use loam_sdk::soroban_sdk::Vec;
 
 use crate::data_type::{
-    ProjectContact, ProjectContract, ProjectRepository, ProjectStatus, ProjectTeamMember,
+    ProjectContact, ProjectContract, ProjectFundingHistory, ProjectRepository, ProjectStatus, ProjectTeamMember
 };
 use crate::soroban_sdk::{testutils::Address as _, Address, Env, String};
 use crate::{internal::ProjectRegistry, internal::ProjectRegistryClient};
@@ -28,6 +28,7 @@ fn test_apply() {
     let mut project_team_members: Vec<ProjectTeamMember> = Vec::new(&env);
     let mut project_repositories: Vec<ProjectRepository> = Vec::new(&env);
     let mut project_admins: Vec<Address> = Vec::new(&env);
+    let mut funding_histories: Vec<ProjectFundingHistory> = Vec::new(&env);
 
     project_contracts.push_back(ProjectContract {
         name: String::from_str(&env, "contract name"),
@@ -50,6 +51,14 @@ fn test_apply() {
         url: String::from_str(&env, "repository url"),
     });
 
+    funding_histories.push_back(ProjectFundingHistory {
+        amount: 100,
+        source: String::from_str(&env, "source"),
+        funding_time: 100,
+        description: String::from_str(&env, "description"),
+        denomiation: String::from_str(&env, "USD"),
+    });
+
     project_admins.push_back(alice.clone());
 
     let project = contract.apply(
@@ -64,6 +73,7 @@ fn test_apply() {
             team_members: project_team_members,
             repositories: project_repositories,
             admins: project_admins,
+            fundings: funding_histories,
         },
     );
 
@@ -85,6 +95,7 @@ fn test_change_project_status() {
     let mut project_team_members: Vec<ProjectTeamMember> = Vec::new(&env);
     let mut project_repositories: Vec<ProjectRepository> = Vec::new(&env);
     let mut project_admins: Vec<Address> = Vec::new(&env);
+    let mut funding_histories: Vec<ProjectFundingHistory> = Vec::new(&env);
 
     project_contracts.push_back(ProjectContract {
         name: String::from_str(&env, "contract name"),
@@ -107,6 +118,15 @@ fn test_change_project_status() {
         url: String::from_str(&env, "repository url"),
     });
 
+    funding_histories.push_back(ProjectFundingHistory {
+      amount: 100,
+      source: String::from_str(&env, "source"),
+      funding_time: 100,
+      description: String::from_str(&env, "description"),
+      denomiation: String::from_str(&env, "USD"),
+  });
+
+
     project_admins.push_back(alice.clone());
 
     let project = contract.apply(
@@ -121,6 +141,7 @@ fn test_change_project_status() {
             team_members: project_team_members,
             repositories: project_repositories,
             admins: project_admins,
+            fundings: funding_histories,
         },
     );
 
@@ -146,6 +167,7 @@ fn test_add_admin() {
     let mut project_team_members: Vec<ProjectTeamMember> = Vec::new(&env);
     let mut project_repositories: Vec<ProjectRepository> = Vec::new(&env);
     let mut project_admins: Vec<Address> = Vec::new(&env);
+    let mut funding_histories: Vec<ProjectFundingHistory> = Vec::new(&env);
 
     project_contracts.push_back(ProjectContract {
         name: String::from_str(&env, "contract name"),
@@ -168,6 +190,15 @@ fn test_add_admin() {
         url: String::from_str(&env, "repository url"),
     });
 
+    funding_histories.push_back(ProjectFundingHistory {
+      amount: 100,
+      source: String::from_str(&env, "source"),
+      funding_time: 100,
+      description: String::from_str(&env, "description"),
+      denomiation: String::from_str(&env, "USD"),
+    });
+
+
     project_admins.push_back(alice.clone());
 
     let project = contract.apply(
@@ -182,6 +213,7 @@ fn test_add_admin() {
             team_members: project_team_members,
             repositories: project_repositories,
             admins: project_admins,
+            fundings: funding_histories,
         },
     );
 
@@ -208,6 +240,7 @@ fn test_remove_admin() {
     let mut project_team_members: Vec<ProjectTeamMember> = Vec::new(&env);
     let mut project_repositories: Vec<ProjectRepository> = Vec::new(&env);
     let mut project_admins: Vec<Address> = Vec::new(&env);
+    let mut funding_histories: Vec<ProjectFundingHistory> = Vec::new(&env);
 
     project_contracts.push_back(ProjectContract {
         name: String::from_str(&env, "contract name"),
@@ -230,6 +263,14 @@ fn test_remove_admin() {
         url: String::from_str(&env, "repository url"),
     });
 
+    funding_histories.push_back(ProjectFundingHistory {
+      amount: 100,
+      source: String::from_str(&env, "source"),
+      funding_time: 100,
+      description: String::from_str(&env, "description"),
+      denomiation: String::from_str(&env, "USD"),
+    });
+
     project_admins.push_back(alice.clone());
 
     let project = contract.apply(
@@ -244,6 +285,7 @@ fn test_remove_admin() {
             team_members: project_team_members,
             repositories: project_repositories,
             admins: project_admins,
+            fundings: funding_histories,
         },
     );
 
@@ -275,6 +317,7 @@ fn test_get_projects() {
     let mut project_team_members: Vec<ProjectTeamMember> = Vec::new(&env);
     let mut project_repositories: Vec<ProjectRepository> = Vec::new(&env);
     let mut project_admins: Vec<Address> = Vec::new(&env);
+    let mut funding_histories: Vec<ProjectFundingHistory> = Vec::new(&env);
 
     project_contracts.push_back(ProjectContract {
         name: String::from_str(&env, "contract name"),
@@ -297,6 +340,15 @@ fn test_get_projects() {
         url: String::from_str(&env, "repository url"),
     });
 
+    funding_histories.push_back(ProjectFundingHistory {
+      amount: 100,
+      source: String::from_str(&env, "source"),
+      funding_time: 100,
+      description: String::from_str(&env, "description"),
+      denomiation: String::from_str(&env, "USD"),
+    });
+
+
     project_admins.push_back(alice.clone());
 
     let project = contract.apply(
@@ -311,6 +363,7 @@ fn test_get_projects() {
             team_members: project_team_members,
             repositories: project_repositories,
             admins: project_admins,
+            fundings: funding_histories,
         },
     );
 
@@ -335,6 +388,7 @@ fn test_get_project_admins() {
     let mut project_team_members: Vec<ProjectTeamMember> = Vec::new(&env);
     let mut project_repositories: Vec<ProjectRepository> = Vec::new(&env);
     let mut project_admins: Vec<Address> = Vec::new(&env);
+    let mut funding_histories: Vec<ProjectFundingHistory> = Vec::new(&env);
 
     project_contracts.push_back(ProjectContract {
         name: String::from_str(&env, "contract name"),
@@ -357,6 +411,15 @@ fn test_get_project_admins() {
         url: String::from_str(&env, "repository url"),
     });
 
+    funding_histories.push_back(ProjectFundingHistory {
+      amount: 100,
+      source: String::from_str(&env, "source"),
+      funding_time: 100,
+      description: String::from_str(&env, "description"),
+      denomiation: String::from_str(&env, "USD"),
+    });
+
+
     project_admins.push_back(alice.clone());
 
     let project = contract.apply(
@@ -371,6 +434,7 @@ fn test_get_project_admins() {
             team_members: project_team_members,
             repositories: project_repositories,
             admins: project_admins,
+            fundings: funding_histories,
         },
     );
 
@@ -396,6 +460,7 @@ fn test_get_project_by_id() {
     let mut project_team_members: Vec<ProjectTeamMember> = Vec::new(&env);
     let mut project_repositories: Vec<ProjectRepository> = Vec::new(&env);
     let mut project_admins: Vec<Address> = Vec::new(&env);
+    let mut funding_histories: Vec<ProjectFundingHistory> = Vec::new(&env);
 
     project_contracts.push_back(ProjectContract {
         name: String::from_str(&env, "contract name"),
@@ -418,6 +483,15 @@ fn test_get_project_by_id() {
         url: String::from_str(&env, "repository url"),
     });
 
+    funding_histories.push_back(ProjectFundingHistory {
+      amount: 100,
+      source: String::from_str(&env, "source"),
+      funding_time: 100,
+      description: String::from_str(&env, "description"),
+      denomiation: String::from_str(&env, "USD"),
+    });
+
+
     project_admins.push_back(alice.clone());
 
     let project = contract.apply(
@@ -432,6 +506,7 @@ fn test_get_project_by_id() {
             team_members: project_team_members,
             repositories: project_repositories,
             admins: project_admins,
+            fundings: funding_histories,
         },
     );
 
@@ -455,6 +530,7 @@ fn test_update_project() {
     let mut project_team_members: Vec<ProjectTeamMember> = Vec::new(&env);
     let mut project_repositories: Vec<ProjectRepository> = Vec::new(&env);
     let mut project_admins: Vec<Address> = Vec::new(&env);
+    let mut funding_histories: Vec<ProjectFundingHistory> = Vec::new(&env);
 
     project_contracts.push_back(ProjectContract {
         name: String::from_str(&env, "contract name"),
@@ -477,6 +553,15 @@ fn test_update_project() {
         url: String::from_str(&env, "repository url"),
     });
 
+    funding_histories.push_back(ProjectFundingHistory {
+      amount: 100,
+      source: String::from_str(&env, "source"),
+      funding_time: 100,
+      description: String::from_str(&env, "description"),
+      denomiation: String::from_str(&env, "USD"),
+    });
+
+
     project_admins.push_back(alice.clone());
 
     let project = contract.apply(
@@ -491,6 +576,7 @@ fn test_update_project() {
             team_members: project_team_members,
             repositories: project_repositories,
             admins: project_admins,
+            fundings: funding_histories,
         },
     );
 
@@ -498,6 +584,7 @@ fn test_update_project() {
     let mut project_contacts2: Vec<ProjectContact> = Vec::new(&env);
     let mut project_team_members2: Vec<ProjectTeamMember> = Vec::new(&env);
     let mut project_repositories2: Vec<ProjectRepository> = Vec::new(&env);
+    let mut funding_histories2: Vec<ProjectFundingHistory> = Vec::new(&env);
 
     project_contracts2.push_back(ProjectContract {
         name: String::from_str(&env, "contract name 2"),
@@ -520,6 +607,15 @@ fn test_update_project() {
         url: String::from_str(&env, "repository url"),
     });
 
+    funding_histories2.push_back(ProjectFundingHistory {
+      amount: 100,
+      source: String::from_str(&env, "source"),
+      funding_time: 100,
+      description: String::from_str(&env, "description"),
+      denomiation: String::from_str(&env, "USD"),
+    });
+
+
     contract.update_project(
         &alice,
         &project.id,
@@ -532,6 +628,7 @@ fn test_update_project() {
             contracts: project_contracts2.clone(),
             team_members: project_team_members2.clone(),
             repositories: project_repositories2.clone(),
+            fundings: funding_histories2.clone(),
         },
     );
 

@@ -25,6 +25,7 @@ const config: Config = {
 					white: '#FFFFFF',
 					purple: {
 						100: '#ede9fe',
+						400: '#A78BFA',
 						950: '#2E1065',
 					},
 					alpha: {

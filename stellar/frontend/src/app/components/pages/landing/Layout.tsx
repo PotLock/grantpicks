@@ -12,9 +12,8 @@ const LandingLayout = ({ children }: { children: React.ReactNode }) => {
 							'linear-gradient(45deg, rgba(256,256,256) 0%,  rgba(237, 233, 254) 40%, rgba(256,256,256) 80%, rgba(237, 233, 254) 100%)',
 					}}
 				/>
-				<div className="bg-[url('/assets/images/container.png')] z-10 absolute inset-0">
-					{children}
-				</div>
+				<div className="bg-[url('/assets/images/container.png')] z-10 absolute inset-0 h-full"></div>
+				<div className="z-20">{children}</div>
 			</>
 		</BaseLayout>
 	)

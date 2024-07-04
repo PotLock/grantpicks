@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+	--foreground-rgb: 0, 0, 0;
+	--background-start-rgb: 214, 219, 220;
+	--background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--foreground-rgb: 255, 255, 255;
+		--background-start-rgb: 0, 0, 0;
+		--background-end-rgb: 0, 0, 0;
+	}
+}
+
+body {
+	color: rgb(var(--foreground-rgb));
+	background: linear-gradient(
+			to bottom,
+			transparent,
+			rgb(var(--background-end-rgb))
+		)
+		rgb(var(--background-start-rgb));
+}
+
+@layer utilities {
+	.text-balance {
+		text-wrap: balance;
+	}
+
+	.launch-app-button {
+		border-radius: 24px;
+		border: 1px solid rgba(237, 233, 254, 0.00);
+		background: radial-gradient(83.78% 135.19% at 52.55% 0%, #7B3AED 0%, #5A21B6 99.6%);
+		box-shadow: 0px 16px 16px -8px rgba(137, 90, 246, 0.20), 0px 8px 8px -4px rgba(137, 90, 246, 0.30), 0px 0px 0px 0.5px #895AF6, 0px -2px 2px 0px rgba(117, 177, 252, 0.70) inset, 2px 0px 2px 0px rgba(221, 214, 254, 0.50) inset, -2px 0px 2px 0px rgba(221, 214, 254, 0.50) inset, 0px -2px 4px 0px rgba(117, 177, 252, 0.70) inset;	
+	}
+
+	.how-it-works-div {
+		border-radius: 20px;
+		border: 1px solid #B0E7F8;
+		background: var(--White, #FFF);
+		box-shadow: 0px -4px 4px 0px rgba(117, 177, 252, 0.40) inset, 0px 0px 0px 8px rgba(137, 90, 246, 0.08), 0px 4px 4px -2px rgba(137, 90, 246, 0.16), 0px 8px 8px -4px rgba(137, 90, 246, 0.16), 0px 16px 16px -8px rgba(137, 90, 246, 0.16);
+	}
+
+	.how-it-works-counter {
+		border-radius: 100px;
+		background: var(--Black-Haze-50, #F7F7F7);
+		/* Elevation/Xlow */
+		box-shadow: 0px 0px 0px 1px rgba(26, 26, 26, 0.07), 0px 1px 1px 0px rgba(5, 5, 5, 0.14);
+	}
+
+	.easily-decide-div {
+		border-radius: 20px;
+		background: linear-gradient(269deg, #9E77F8 -4.71%, #8D5EF7 48.83%, #743CF6 101.94%);
+	}
+
+	.launch-app-button-easily-decide {
+		border-radius: 24px;
+		border: 1px solid rgba(237, 233, 254, 0.00);
+		background: radial-gradient(83.78% 135.19% at 52.55% 0%, #7B3AED 0%, #5A21B6 99.6%);
+		box-shadow: 0px 16px 16px -8px rgba(137, 90, 246, 0.20), 0px 8px 8px -4px rgba(137, 90, 246, 0.30), 0px 0px 0px 0.5px #895AF6, 0px -2px 2px 0px rgba(117, 177, 252, 0.70) inset, 2px 0px 2px 0px rgba(221, 214, 254, 0.50) inset, -2px 0px 2px 0px rgba(221, 214, 254, 0.50) inset, 0px -2px 4px 0px rgba(117, 177, 252, 0.70) inset;
+	}
+}
+
+

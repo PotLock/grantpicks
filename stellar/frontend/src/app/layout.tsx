@@ -28,10 +28,10 @@ export default function RootLayout({
 	return (
 		<html lang="en">
 			<Head>
-				<title>{metadata.title}</title>
-				<meta name="description" content={metadata.description} />
-				<meta property="og:title" content={metadata.title} />
-				<meta property="og:description" content={metadata.description} />
+				<title>{String(metadata.title)}</title>
+				<meta name="description" content={String(metadata.description)} />
+				<meta property="og:title" content={String(metadata.title)} />
+				<meta property="og:description" content={String(metadata.description)} />
 				<meta property="og:image" content="https://grantpicks.com/assets/images/GrantPicksMeta.png" />
 				<meta property="og:url" content="https://grantpicks.com" />
 				<meta property="og:type" content="website" />

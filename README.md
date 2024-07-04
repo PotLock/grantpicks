@@ -18,4 +18,7 @@ Once the pairwise preferences are collected, they are used to construct a prefer
 - Original Idea https://news.colony.io/ideas/en/budget-box
 - https://github.com/JoinColony/budgetBox 
 - https://uploads-ssl.webflow.com/61840fafb9a4c433c1470856/639b50ee30b729cb016806c1_BudgetingBoxes.pdf
-- Mechanism Institute: https://www.mechanism.institute/library/pairwise 
+- Mechanism Institute: https://www.mechanism.institute/library/pairwise
+
+![GrantPicks Choose Page](https://github.com/PotLock/grantpicks/assets/45281667/50c21f90-8d91-436c-b96f-cff0b5950f67)
+

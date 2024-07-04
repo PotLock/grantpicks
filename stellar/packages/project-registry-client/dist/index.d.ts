@@ -1,4 +1,3 @@
-import { Buffer } from "buffer";
 import { AssembledTransaction, Client as ContractClient, ClientOptions as ContractClientOptions } from '@stellar/stellar-sdk/contract';
 import type { u32, u64, u128, Option } from '@stellar/stellar-sdk/contract';
 export * from '@stellar/stellar-sdk';
@@ -7,7 +6,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CDKXOMWVLNW6HK743YGHGKOLV3FMFIMFRRO73IDIBZW4UUEQSGPNOR2M";
+        readonly contractId: "CBVVJBKSB3SXOQOSTJGODXB7F3GN7RIHUS55YOO4CW6EGHXXU3IZHEBN";
     };
 };
 export type ProjectStatus = {
@@ -82,7 +81,7 @@ export interface ProjectFundingHistory {
     amount: u128;
     denomiation: string;
     description: string;
-    funding_time: u64;
+    funded_ms: u64;
     source: string;
 }
 export type ContractKey = {
@@ -295,64 +294,6 @@ export interface Client {
          */
         simulate?: boolean;
     }) => Promise<AssembledTransaction<u32>>;
-    /**
-     * Construct and simulate a owner_get transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.   *
-     * Returns the owner of the contract
-     */
-    owner_get: (options?: {
-        /**
-         * The fee to pay for the transaction. Default: BASE_FEE
-         */
-        fee?: number;
-        /**
-         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
-         */
-        timeoutInSeconds?: number;
-        /**
-         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
-         */
-        simulate?: boolean;
-    }) => Promise<AssembledTransaction<Option<string>>>;
-    /**
-     * Construct and simulate a owner_set transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.   *
-     * Sets the owner of the contract. If one already set it transfers it to the new owner, if signed by owner.
-     */
-    owner_set: ({ new_owner }: {
-        new_owner: string;
-    }, options?: {
-        /**
-         * The fee to pay for the transaction. Default: BASE_FEE
-         */
-        fee?: number;
-        /**
-         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
-         */
-        timeoutInSeconds?: number;
-        /**
-         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
-         */
-        simulate?: boolean;
-    }) => Promise<AssembledTransaction<null>>;
-    /**
-     * Construct and simulate a redeploy transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.   *
-     * Redeploy the contract to a Wasm hash
-     */
-    redeploy: ({ wasm_hash }: {
-        wasm_hash: Buffer;
-    }, options?: {
-        /**
-         * The fee to pay for the transaction. Default: BASE_FEE
-         */
-        fee?: number;
-        /**
-         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
-         */
-        timeoutInSeconds?: number;
-        /**
-         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
-         */
-        simulate?: boolean;
-    }) => Promise<AssembledTransaction<null>>;
 }
 export declare class Client extends ContractClient {
     readonly options: ContractClientOptions;
@@ -368,8 +309,5 @@ export declare class Client extends ContractClient {
         get_projects: (json: string) => AssembledTransaction<Project[]>;
         get_project_admins: (json: string) => AssembledTransaction<string[]>;
         get_total_projects: (json: string) => AssembledTransaction<number>;
-        owner_get: (json: string) => AssembledTransaction<Option<string>>;
-        owner_set: (json: string) => AssembledTransaction<null>;
-        redeploy: (json: string) => AssembledTransaction<null>;
     };
 }

@@ -66,7 +66,7 @@ fn test_create_round() {
         voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
         application_start_ms: get_ledger_second_as_millis(&env),
         application_end_ms: get_ledger_second_as_millis(&env) + 10000,
-        amount: 5,
+        expected_amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
         num_picks_per_voter: Some(2),

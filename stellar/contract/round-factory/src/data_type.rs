@@ -18,7 +18,7 @@ pub struct CreateRoundParams {
   pub voting_end_ms: u64,
   pub application_start_ms: u64,
   pub application_end_ms: u64,
-  pub amount: u128,
+  pub expected_amount: u128,
   pub admins: Vec<Address>,
   pub use_whitelist: Option<bool>,
   pub num_picks_per_voter: Option<u32>,

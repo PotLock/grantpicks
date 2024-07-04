@@ -5,6 +5,7 @@ use loam_sdk::soroban_sdk::{Map, Vec};
 
 use crate::data_type::{ApplicationStatus, CreateRoundParams, Pair, PickedPair};
 use crate::soroban_sdk::{testutils::Address as _, Address, Env, String};
+use crate::utils::get_ledger_second_as_millis;
 use crate::{internal::Round, internal::RoundClient};
 
 loam_sdk::import_contract!(project_registry);
@@ -90,10 +91,6 @@ fn create_token<'a>(env: &Env, admin: &Address) -> (TokenClient<'a>, StellarAsse
         TokenClient::new(env, &contract_address),
         StellarAssetClient::new(env, &contract_address),
     )
-}
-
-fn get_ledger_second_as_millis(env: &Env) -> u64 {
-    env.ledger().timestamp() * 1000
 }
 
 #[test]
@@ -668,23 +665,24 @@ fn test_get_all_pairs() {
         round_detail,
     );
 
-    let num_of_projects: u128 = 15;
-    let num_of_project_per_pair: u128 = 2;
-    let posibilities = (num_of_projects * (num_of_projects - 1))/num_of_project_per_pair;
+    let num_of_projects: u32 = 15;
+    let num_of_project_per_pair: u32 = 2;
+    let posibilities:u32 = (num_of_projects * (num_of_projects - 1))/num_of_project_per_pair;
     let expected_generated_pairs_per_project = num_of_projects - 1;
     let mut project_ids: Vec<u128> = Vec::new(&env);
     for i in 0..num_of_projects {
-        project_ids.push_back(i + 1);
+        let project_id: u128 = (i + 1).try_into().unwrap();
+        project_ids.push_back(project_id);
     }
     round.add_approved_project(&admin, &project_ids);
 
     let pairs = round.get_pairs(&admin);
     assert_eq!(pairs.len(), posibilities as u32);
 
-    let mut correctness_test: Map<u128, u128> = Map::new(&env);
+    let mut correctness_test: Map<u128, u32> = Map::new(&env);
     let mut generated_pairs: Map<u128, Vec<Pair>> = Map::new(&env);
     for i in 0..posibilities {
-        let pair = round.get_pair_by_index(&(i as u64));
+        let pair = round.get_pair_by_index(&i);
         pair.projects.iter().for_each(|project_id| {
             if correctness_test.contains_key(project_id) {
                 correctness_test.set(project_id, correctness_test.get(project_id).unwrap() + 1);
@@ -700,7 +698,7 @@ fn test_get_all_pairs() {
         });
     }
 
-    let mut unique_count: u128 = 0;
+    let mut unique_count: u32 = 0;
     correctness_test.iter().for_each(|(_project_id, count)| {
         unique_count += count;
     });

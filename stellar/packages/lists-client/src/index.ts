@@ -33,7 +33,7 @@ if (typeof window !== 'undefined') {
 export const networks = {
   testnet: {
     networkPassphrase: "Test SDF Network ; September 2015",
-    contractId: "CBAJLZZ2UREOH4EEVIMRRUL5BT7X57773Z4JJEUYM3JIJLM2RIB7W7ZQ",
+    contractId: "CALE2MX2HSPBBQRUNPGOIDFPOYH45FSYZIY5RLRXBGJCXVT2WHWFPFFG",
   }
 } as const
 
@@ -590,69 +590,6 @@ export interface Client {
     simulate?: boolean;
   }) => Promise<AssembledTransaction<string>>
 
-  /**
-   * Construct and simulate a owner_get transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.   *
-   * Returns the owner of the contract
-   */
-  owner_get: (options?: {
-    /**
-     * The fee to pay for the transaction. Default: BASE_FEE
-     */
-    fee?: number;
-
-    /**
-     * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
-     */
-    timeoutInSeconds?: number;
-
-    /**
-     * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
-     */
-    simulate?: boolean;
-  }) => Promise<AssembledTransaction<Option<string>>>
-
-  /**
-   * Construct and simulate a owner_set transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.   *
-   * Sets the owner of the contract. If one already set it transfers it to the new owner, if signed by owner.
-   */
-  owner_set: ({new_owner}: {new_owner: string}, options?: {
-    /**
-     * The fee to pay for the transaction. Default: BASE_FEE
-     */
-    fee?: number;
-
-    /**
-     * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
-     */
-    timeoutInSeconds?: number;
-
-    /**
-     * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
-     */
-    simulate?: boolean;
-  }) => Promise<AssembledTransaction<null>>
-
-  /**
-   * Construct and simulate a redeploy transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.   *
-   * Redeploy the contract to a Wasm hash
-   */
-  redeploy: ({wasm_hash}: {wasm_hash: Buffer}, options?: {
-    /**
-     * The fee to pay for the transaction. Default: BASE_FEE
-     */
-    fee?: number;
-
-    /**
-     * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
-     */
-    timeoutInSeconds?: number;
-
-    /**
-     * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
-     */
-    simulate?: boolean;
-  }) => Promise<AssembledTransaction<null>>
-
 }
 export class Client extends ContractClient {
   constructor(public readonly options: ContractClientOptions) {
@@ -687,10 +624,7 @@ export class Client extends ContractClient {
         "AAAAAAAAAAAAAAAgZ2V0X3JlZ2lzdHJhdGlvbnNfZm9yX3JlZ2lzdHJhbnQAAAAEAAAAAAAAAA1yZWdpc3RyYW50X2lkAAAAAAAAEwAAAAAAAAAPcmVxdWlyZWRfc3RhdHVzAAAAA+gAAAfQAAAAElJlZ2lzdHJhdGlvblN0YXR1cwAAAAAAAAAAAApmcm9tX2luZGV4AAAAAAPoAAAABgAAAAAAAAAFbGltaXQAAAAAAAPoAAAABgAAAAEAAAPqAAAH0AAAABRSZWdpc3RyYXRpb25FeHRlcm5hbA==",
         "AAAAAAAAAAAAAAANaXNfcmVnaXN0ZXJlZAAAAAAAAAMAAAAAAAAAB2xpc3RfaWQAAAAD6AAAAAoAAAAAAAAADXJlZ2lzdHJhbnRfaWQAAAAAAAATAAAAAAAAAA9yZXF1aXJlZF9zdGF0dXMAAAAD6AAAB9AAAAASUmVnaXN0cmF0aW9uU3RhdHVzAAAAAAABAAAAAQ==",
         "AAAAAAAAAAAAAAAFb3duZXIAAAAAAAAAAAAAAQAAABM=",
-        "AAAAAgAAAAAAAAAAAAAAC0NvbnRyYWN0S2V5AAAAAAwAAAAAAAAAAAAAAA1Db250cmFjdE93bmVyAAAAAAAAAAAAAAAAAAALTGlzdHNOdW1iZXIAAAAAAAAAAAAAAAAFTGlzdHMAAAAAAAAAAAAAAAAAAApMaXN0QWRtaW5zAAAAAAAAAAAAAAAAAAlPd25lZExpc3QAAAAAAAAAAAAAAAAAAA5SZWdpc3RyYW50TGlzdAAAAAAAAAAAAAAAAAATUmVnaXN0cmF0aW9uc051bWJlcgAAAAAAAAAAAAAAAA1SZWdpc3RyYXRpb25zAAAAAAAAAAAAAAAAAAAQTGlzdFJlZ2lzdHJhdGlvbgAAAAAAAAAAAAAAEFJlZ2lzdHJhdGlvbnNJRHMAAAAAAAAAAAAAAAdVcHZvdGVzAAAAAAAAAAAAAAAAC1VzZXJVcHZvdGVzAA==",
-        "AAAAAAAAACFSZXR1cm5zIHRoZSBvd25lciBvZiB0aGUgY29udHJhY3QAAAAAAAAJb3duZXJfZ2V0AAAAAAAAAAAAAAEAAAPoAAAAEw==",
-        "AAAAAAAAAGhTZXRzIHRoZSBvd25lciBvZiB0aGUgY29udHJhY3QuIElmIG9uZSBhbHJlYWR5IHNldCBpdCB0cmFuc2ZlcnMgaXQgdG8gdGhlIG5ldyBvd25lciwgaWYgc2lnbmVkIGJ5IG93bmVyLgAAAAlvd25lcl9zZXQAAAAAAAABAAAAAAAAAAluZXdfb3duZXIAAAAAAAATAAAAAA==",
-        "AAAAAAAAACRSZWRlcGxveSB0aGUgY29udHJhY3QgdG8gYSBXYXNtIGhhc2gAAAAIcmVkZXBsb3kAAAABAAAAAAAAAAl3YXNtX2hhc2gAAAAAAAPuAAAAIAAAAAA=" ]),
+        "AAAAAgAAAAAAAAAAAAAAC0NvbnRyYWN0S2V5AAAAAAwAAAAAAAAAAAAAAA1Db250cmFjdE93bmVyAAAAAAAAAAAAAAAAAAALTGlzdHNOdW1iZXIAAAAAAAAAAAAAAAAFTGlzdHMAAAAAAAAAAAAAAAAAAApMaXN0QWRtaW5zAAAAAAAAAAAAAAAAAAlPd25lZExpc3QAAAAAAAAAAAAAAAAAAA5SZWdpc3RyYW50TGlzdAAAAAAAAAAAAAAAAAATUmVnaXN0cmF0aW9uc051bWJlcgAAAAAAAAAAAAAAAA1SZWdpc3RyYXRpb25zAAAAAAAAAAAAAAAAAAAQTGlzdFJlZ2lzdHJhdGlvbgAAAAAAAAAAAAAAEFJlZ2lzdHJhdGlvbnNJRHMAAAAAAAAAAAAAAAdVcHZvdGVzAAAAAAAAAAAAAAAAC1VzZXJVcHZvdGVzAA==" ]),
       options
     )
   }
@@ -718,9 +652,6 @@ export class Client extends ContractClient {
         get_registrations_for_list: this.txFromJSON<Array<RegistrationExternal>>,
         get_registrations_for_registrant: this.txFromJSON<Array<RegistrationExternal>>,
         is_registered: this.txFromJSON<boolean>,
-        owner: this.txFromJSON<string>,
-        owner_get: this.txFromJSON<Option<string>>,
-        owner_set: this.txFromJSON<null>,
-        redeploy: this.txFromJSON<null>
+        owner: this.txFromJSON<string>
   }
 }

@@ -1,15 +1,7 @@
 use loam_sdk::soroban_sdk::{self, contract, contractimpl, Address, BytesN, Env, Vec};
 
 use crate::{
-    admin_writer::{add_admin, read_admins, read_owner, remove_admin, write_owner},
-    data_type::{CreateRoundParams, RoundInfo},
-    events::log_create_round_contract_event,
-    methods::RoundFactoryTrait,
-    project_registry_writer::{read_project_contract, write_project_contract},
-    round_writer::{add_round, find_round, increment_round_number},
-    storage::extend_instance,
-    token_writer::{read_token_address, write_token_address},
-    wasm_writer::{read_wasm_hash, write_wasm_hash},
+    admin_writer::{add_admin, read_admins, read_owner, remove_admin, write_owner}, data_type::{CreateRoundParams, RoundInfo}, events::log_create_round_contract_event, methods::RoundFactoryTrait, project_registry_writer::{read_project_contract, write_project_contract}, round_writer::{add_round, find_round, increment_round_number}, storage::extend_instance, token_writer::{read_token_address, write_token_address}, validation::{validate_owner, validate_owner_or_admin, validate_round}, wasm_writer::{read_wasm_hash, write_wasm_hash}
 };
 loam_sdk::import_contract!(round);
 
@@ -28,38 +20,8 @@ impl RoundFactoryTrait for RoundFactory {
     fn create_round(env: &Env, admin: Address, params: CreateRoundParams) -> RoundInfo {
         admin.require_auth();
 
-        let contract_owner = read_owner(env);
-        if contract_owner != admin {
-            let admins = read_admins(env);
-            let is_admin = admins.first_index_of(admin.clone());
-            assert!(
-                is_admin.is_some(),
-                "Only the contract owner or admin can create a round"
-            );
-        }
-
-        assert!(
-            params.voting_start_ms < params.voting_end_ms,
-            "Round start time must be less than round end time"
-        );
-
-        assert!(
-            params.application_start_ms <= params.application_end_ms,
-            "Round application start time must be less than round application end time"
-        );
-
-        assert!(
-            params.voting_start_ms >= params.application_end_ms,
-            "Round start time must be greater than or equal round application end time"
-        );
-        assert!(params.amount > 0, "Amount must be greater than 0");
-        assert!(!params.admins.is_empty(), "Round admins must not empty");
-        assert!(params.admins.len() < 5, "Round admins must be less than 5");
-        assert!(params.contacts.len() <= 10, "Contact must be less than 10");
-        assert!(
-            params.video_url.len() <= 200,
-            "Video URL must be less than 200 characters. Use IPFS Hash Only"
-        );
+        validate_owner_or_admin(env, &admin);
+        validate_round(&params);
 
         let round_id = increment_round_number(env);
         let wasm_hash = read_wasm_hash(env);
@@ -92,12 +54,12 @@ impl RoundFactoryTrait for RoundFactory {
                 name: params.name,
                 description: params.description,
                 video_url: params.video_url,
-                contacts: contacts,
+                contacts,
                 voting_start_ms: params.voting_start_ms,
                 voting_end_ms: params.voting_end_ms,
                 application_start_ms: params.application_start_ms,
                 application_end_ms: params.application_end_ms,
-                amount: params.amount,
+                expected_amount: params.expected_amount,
                 admins: params.admins,
                 use_whitelist: params.use_whitelist,
                 num_picks_per_voter: params.num_picks_per_voter,
@@ -127,16 +89,10 @@ impl RoundFactoryTrait for RoundFactory {
     fn add_admin(env: &Env, owner: Address, admin: Address) {
         owner.require_auth();
 
-        let contract_owner = read_owner(env);
-        assert!(
-            contract_owner == owner,
-            "Only the contract owner can add an admin"
-        );
+        validate_owner(env, &owner);
 
         let admins = read_admins(env);
-        assert!(admins.len() < 5, "Admins must be less than 5");
-
-        let is_exist = admins.iter().any(|round_admin| round_admin == admin);
+        let is_exist = admins.first_index_of(admin.clone()).is_some();
 
         assert!(!is_exist, "Admin already exists");
 
@@ -147,11 +103,7 @@ impl RoundFactoryTrait for RoundFactory {
     fn transfer_ownership(env: &Env, owner: Address, new_owner: Address) {
         owner.require_auth();
 
-        let contract_owner = read_owner(env);
-        assert!(
-            contract_owner == owner,
-            "Only the contract owner can transfer ownership"
-        );
+        validate_owner(env, &owner);
 
         write_owner(env, &new_owner);
         extend_instance(env);
@@ -160,16 +112,9 @@ impl RoundFactoryTrait for RoundFactory {
     fn remove_admin(env: &Env, owner: Address, admin: Address) {
         owner.require_auth();
 
-        let contract_owner = read_owner(env);
-        assert!(
-            contract_owner == owner,
-            "Only the contract owner can remove an admin"
-        );
+        validate_owner(env, &owner);
 
-        let is_exist = read_admins(env)
-            .iter()
-            .any(|round_admin| round_admin == admin);
-
+        let is_exist = read_admins(env).first_index_of(admin.clone()).is_some();
         assert!(is_exist, "Admin does not exist");
 
         remove_admin(env, &admin);

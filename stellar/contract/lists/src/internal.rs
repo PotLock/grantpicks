@@ -4,33 +4,26 @@ use crate::{
     data_type::{
         ListExternal, ListInternal, RegistrationExternal, RegistrationInput, RegistrationInternal,
         RegistrationStatus,
-    },
-    events::{
+    }, events::{
         log_create_list_event, log_create_registration_event, log_delete_list_event,
         log_delete_registration_event, log_transfer_ownership_event, log_unvote_list_event,
         log_update_admins_event, log_update_list_event, log_update_registration_event,
         log_upvote_list_event,
-    },
-    lists_writer::{
+    }, lists_writer::{
         add_admin_to_list, add_list, add_list_to_owned_list, add_list_to_registrant_lists,
         clear_admins, get_list_by_id, get_lists_registered_by, increment_lists_number,
         read_admins_of_list, read_lists, read_lists_number, read_lists_owned_by,
         remove_admin_from_list, remove_list, remove_list_from_owned_list,
         remove_list_to_registrant_lists,
-    },
-    methods::ListsTrait,
-    owner_writer::{read_contract_owner, write_contract_owner},
-    registration_writer::{
+    }, methods::ListsTrait, owner_writer::{read_contract_owner, write_contract_owner}, registration_writer::{
         add_registration, add_registration_id_to_user, add_registration_to_list,
         get_registration_by_id, get_registrations_of_list, get_user_registration_ids_of,
         increment_registration_number, read_registration_number, remove_registration,
         remove_registration_id_to_user, remove_registration_to_list,
-    },
-    storage::extend_instance,
-    upvotes_writer::{
+    }, storage::extend_instance, upvotes_writer::{
         add_upvote_to_list, add_upvoted_list_to_user, clear_upvotes_for_list, read_list_upvotes,
         read_user_upvoted_lists, remove_upvote_from_list, remove_upvoted_list_from_user,
-    },
+    }, utils::unwrap_or_blank, validation::{validate_cover_image_url, validate_description, validate_has_upvoted_list, validate_name, validate_upvotes_status, validate_valid_list_id}
 };
 
 #[contract]
@@ -54,20 +47,14 @@ impl ListsTrait for ListsContract {
     ) -> ListExternal {
         owner.require_auth();
 
-        assert!(!name.is_empty(), "Name cannot be empty");
+        validate_name(&name);
 
         if description.is_some() {
-            assert!(
-                description.clone().unwrap().len() < 500,
-                "Description too long. max 500 characters"
-            );
+           validate_description(&description)
         }
 
         if cover_image_url.is_some() {
-            assert!(
-                cover_image_url.clone().unwrap().len() < 200,
-                "Cover image url too long. max 200 characters"
-            );
+            validate_cover_image_url(&cover_image_url);
         }
 
         let mut internal_admins: Vec<Address> = Vec::new(env);
@@ -83,12 +70,8 @@ impl ListsTrait for ListsContract {
         let list = ListInternal {
             id: list_id,
             name: name.clone(),
-            description: description
-                .clone()
-                .unwrap_or_else(|| String::from_str(env, "")),
-            cover_image_url: cover_image_url
-                .clone()
-                .unwrap_or_else(|| String::from_str(env, "")),
+            description: unwrap_or_blank(env, &description),
+            cover_image_url: unwrap_or_blank(env, &cover_image_url),
             admin_only_registration: admin_only_registrations.unwrap_or(false),
             default_registration_status: default_registration_status.clone(),
             created_ms: current_time,
@@ -106,12 +89,8 @@ impl ListsTrait for ListsContract {
         let external_list = ListExternal {
             id: list_id,
             name,
-            description: description
-                .clone()
-                .unwrap_or_else(|| String::from_str(env, "")),
-            cover_img_url: cover_image_url
-                .clone()
-                .unwrap_or_else(|| String::from_str(env, "")),
+            description: unwrap_or_blank(env, &description),
+            cover_img_url: unwrap_or_blank(env, &cover_image_url),
             owner,
             admins: internal_admins,
             created_ms: current_time,
@@ -140,8 +119,7 @@ impl ListsTrait for ListsContract {
     ) -> ListExternal {
         owner.require_auth();
 
-        let current_list = read_lists_number(env);
-        assert!(list_id <= current_list, "Invalid List ID");
+        validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
         assert!(list.is_some(), "List not found");
@@ -151,25 +129,19 @@ impl ListsTrait for ListsContract {
 
         if name.is_some() {
             let new_name = name.unwrap();
-            assert!(!new_name.is_empty(), "Name cannot be empty");
+            validate_name(&new_name);
             ulist.name = new_name;
         }
 
         if description.is_some() {
+            validate_description(&description);
             let new_description = description.unwrap();
-            assert!(
-                new_description.len() < 500,
-                "Description too long. max 500 characters"
-            );
             ulist.description = new_description;
         }
 
         if cover_image_url.is_some() {
+            validate_cover_image_url(&cover_image_url);
             let new_cover_image_url = cover_image_url.unwrap();
-            assert!(
-                new_cover_image_url.len() < 200,
-                "Cover image url too long. max 200 characters"
-            );
             ulist.cover_image_url = new_cover_image_url;
         }
 
@@ -212,8 +184,7 @@ impl ListsTrait for ListsContract {
     fn delete_list(env: &Env, owner: Address, list_id: u128) {
         owner.require_auth();
 
-        let current_list = read_lists_number(env);
-        assert!(list_id <= current_list, "Invalid List ID");
+        validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
         assert!(list.is_some(), "List not found");
@@ -232,14 +203,12 @@ impl ListsTrait for ListsContract {
     fn upvote(env: &Env, voter: Address, list_id: u128) {
         voter.require_auth();
 
-        let current_list = read_lists_number(env);
-        assert!(list_id <= current_list, "Invalid List ID");
+        validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
         assert!(list.is_some(), "List not found");
 
-        let upvotes = read_list_upvotes(env, list_id);
-        assert!(!upvotes.contains(&voter), "Already upvoted");
+        validate_upvotes_status(env, &voter, list_id);
 
         add_upvote_to_list(env, list_id, voter.clone());
         add_upvoted_list_to_user(env, voter, list_id);
@@ -250,14 +219,12 @@ impl ListsTrait for ListsContract {
     fn remove_upvote(env: &Env, voter: Address, list_id: u128) {
         voter.require_auth();
 
-        let current_list = read_lists_number(env);
-        assert!(list_id <= current_list, "Invalid List ID");
+        validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
         assert!(list.is_some(), "List not found");
 
-        let upvotes = read_list_upvotes(env, list_id);
-        assert!(upvotes.contains(&voter), "Not upvoted");
+        validate_has_upvoted_list(env, &voter, list_id);
 
         remove_upvote_from_list(env, list_id, &voter);
         remove_upvoted_list_from_user(env, voter, list_id);
@@ -273,8 +240,7 @@ impl ListsTrait for ListsContract {
     ) -> Address {
         owner.require_auth();
 
-        let current_list = read_lists_number(env);
-        assert!(list_id <= current_list, "Invalid List ID");
+        validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
         assert!(list.is_some(), "List not found");
@@ -295,8 +261,7 @@ impl ListsTrait for ListsContract {
     fn add_admins(env: &Env, owner: Address, list_id: u128, admins: Vec<Address>) -> Vec<Address> {
         owner.require_auth();
 
-        let current_list = read_lists_number(env);
-        assert!(list_id <= current_list, "Invalid List ID");
+        validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
         assert!(list.is_some(), "List not found");
@@ -329,8 +294,7 @@ impl ListsTrait for ListsContract {
     ) -> Vec<Address> {
         owner.require_auth();
 
-        let current_list = read_lists_number(env);
-        assert!(list_id <= current_list, "Invalid List ID");
+        validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
         assert!(list.is_some(), "List not found");
@@ -358,8 +322,7 @@ impl ListsTrait for ListsContract {
     fn clear_admins(env: &Env, owner: Address, list_id: u128) {
         owner.require_auth();
 
-        let current_list = read_lists_number(env);
-        assert!(list_id <= current_list, "Invalid List ID");
+        validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
         assert!(list.is_some(), "List not found");
@@ -381,8 +344,7 @@ impl ListsTrait for ListsContract {
     ) -> Vec<RegistrationExternal> {
         submitter.require_auth();
 
-        let current_list = read_lists_number(env);
-        assert!(list_id <= current_list, "Invalid List ID");
+        validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
         assert!(list.is_some(), "List not found");
@@ -493,8 +455,7 @@ impl ListsTrait for ListsContract {
         let mut list: Option<ListInternal> = None;
 
         if list_id.is_some() {
-            let current_list = read_lists_number(env);
-            assert!(list_id.unwrap() <= current_list, "Invalid List ID");
+            validate_valid_list_id(env, list_id.unwrap());
 
             list = get_list_by_id(env, list_id.unwrap());
             assert!(list.is_some(), "List not found");
@@ -516,6 +477,7 @@ impl ListsTrait for ListsContract {
                 let uregistration_id = registration_id.unwrap();
                 let registration = get_registration_by_id(env, uregistration_id);
                 assert!(registration.is_some(), "Registration not found");
+
                 let uregistration = registration.unwrap();
 
                 let is_admin_or_owner = ulist.owner == submitter || admins.contains(&submitter);
@@ -610,8 +572,7 @@ impl ListsTrait for ListsContract {
     ) -> RegistrationExternal {
         submitter.require_auth();
 
-        let current_list = read_lists_number(env);
-        assert!(list_id <= current_list, "Invalid List ID");
+        validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
         assert!(list.is_some(), "List not found");
@@ -655,8 +616,7 @@ impl ListsTrait for ListsContract {
     }
 
     fn get_list(env: &Env, list_id: u128) -> ListExternal {
-        let current_list = read_lists_number(env);
-        assert!(list_id <= current_list, "Invalid List ID");
+        validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
         assert!(list.is_some(), "List not found");

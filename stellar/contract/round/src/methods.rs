@@ -24,6 +24,7 @@ pub trait RoundTrait {
     fn complete_vote(env: &Env, admin: Address);
     fn add_admin(env: &Env, admin: Address, round_admin: Address);
     fn remove_admin(env: &Env, admin: Address, round_admin: Address);
+    fn transfer_ownership(env: &Env, owner: Address, new_owner: Address);
     fn apply_project(env: &Env, project_id: u128, applicant: Address) -> u128;
     fn review_application(
         env: &Env,
@@ -60,5 +61,5 @@ pub trait RoundTrait {
     fn blacklist_status(env: &Env, address: Address) -> bool;
     fn get_round_info(env: &Env) -> RoundDetail;
     fn get_pairs(env: &Env, admin: Address) -> Vec<Pair>;
-    fn get_pair_by_index(env: &Env, index: u64) -> Pair;
+    fn get_pair_by_index(env: &Env, index: u32) -> Pair;
 }

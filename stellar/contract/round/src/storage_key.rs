@@ -10,7 +10,6 @@ pub enum ContractKey {
     ApplicationNumber,
     TokenContract,
     ProjectContract,
-    TotalFunding,
     VotingState,
     Votes,
     ProjectVotingCount,

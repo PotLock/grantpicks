@@ -18,9 +18,8 @@ pub struct RoundFactory;
 
 #[contractimpl]
 impl RoundFactoryTrait for RoundFactory {
-    fn init(env: &Env, owner: Address, token_address: Address, registry_address: Address) {
+    fn initialize(env: &Env, owner: Address, token_address: Address, registry_address: Address, wasm_hash: BytesN<32>) {
         write_owner(env, &owner);
-        let wasm_hash = env.deployer().upload_contract_wasm(round::WASM);
         write_wasm_hash(env, &wasm_hash);
         write_token_address(env, &token_address);
         write_project_contract(env, &registry_address);
@@ -40,26 +39,26 @@ impl RoundFactoryTrait for RoundFactory {
         }
 
         assert!(
-            params.start_time < params.end_time,
+            params.voting_start_ms < params.voting_end_ms,
             "Round start time must be less than round end time"
         );
 
         assert!(
-            params.application_start_time <= params.application_end_time,
+            params.application_start_ms <= params.application_end_ms,
             "Round application start time must be less than round application end time"
         );
 
         assert!(
-            params.start_time >= params.application_end_time,
+            params.voting_start_ms >= params.application_end_ms,
             "Round start time must be greater than or equal round application end time"
         );
         assert!(params.amount > 0, "Amount must be greater than 0");
         assert!(!params.admins.is_empty(), "Round admins must not empty");
         assert!(params.admins.len() < 5, "Round admins must be less than 5");
-        assert!(params.contact.len() <= 10, "Contact must be less than 10");
+        assert!(params.contacts.len() <= 10, "Contact must be less than 10");
         assert!(
-            params.image_url.len() <= 200,
-            "Image URL must be less than 200 characters. Use IPFS Hash Only"
+            params.video_url.len() <= 200,
+            "Video URL must be less than 200 characters. Use IPFS Hash Only"
         );
 
         let round_id = increment_round_number(env);
@@ -77,14 +76,14 @@ impl RoundFactoryTrait for RoundFactory {
         let registry_address = read_project_contract(env);
 
         let mut contacts: Vec<round::Contact> = Vec::new(env);
-        for contact in params.contact {
+        for contact in params.contacts {
             contacts.push_back(round::Contact {
                 name: contact.name,
                 value: contact.value,
             });
         }
 
-        round_client.init(
+        round_client.initialize(
             &admin,
             &token_address,
             &registry_address,
@@ -92,12 +91,12 @@ impl RoundFactoryTrait for RoundFactory {
                 id: round_id,
                 name: params.name,
                 description: params.description,
-                image_url: params.image_url,
-                contact: contacts,
-                start_time: params.start_time,
-                end_time: params.end_time,
-                application_start_time: params.application_start_time,
-                application_end_time: params.application_end_time,
+                video_url: params.video_url,
+                contacts: contacts,
+                voting_start_ms: params.voting_start_ms,
+                voting_end_ms: params.voting_end_ms,
+                application_start_ms: params.application_start_ms,
+                application_end_ms: params.application_end_ms,
                 amount: params.amount,
                 admins: params.admins,
                 use_whitelist: params.use_whitelist,

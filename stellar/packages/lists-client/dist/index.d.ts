@@ -7,7 +7,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CC66ZRXPZGQ5BBEBQWOWBI3MQVOADQVGY45XB45WAJ5QEBVDNNBH7PCY";
+        readonly contractId: "CBAJLZZ2UREOH4EEVIMRRUL5BT7X57773Z4JJEUYM3JIJLM2RIB7W7ZQ";
     };
 };
 export type RegistrationStatus = {
@@ -29,13 +29,13 @@ export type RegistrationStatus = {
 export interface ListInternal {
     admin_only_registration: boolean;
     cover_image_url: string;
-    created_at: u64;
+    created_ms: u64;
     default_registration_status: RegistrationStatus;
     description: string;
     id: u128;
     name: string;
     owner: string;
-    updated_at: u64;
+    updated_ms: u64;
 }
 export interface RegistrationInternal {
     admin_notes: string;
@@ -45,14 +45,14 @@ export interface RegistrationInternal {
     registrant_id: string;
     registrant_notes: string;
     status: RegistrationStatus;
-    submited_at: u64;
-    updated_at: u64;
+    submited_ms: u64;
+    updated_ms: u64;
 }
 export interface ListExternal {
     admin_only_registrations: boolean;
     admins: Array<string>;
     cover_img_url: string;
-    created_at: u64;
+    created_ms: u64;
     default_registration_status: RegistrationStatus;
     description: string;
     id: u128;
@@ -60,7 +60,7 @@ export interface ListExternal {
     owner: string;
     total_registrations_count: u64;
     total_upvotes_count: u64;
-    updated_at: u64;
+    updated_ms: u64;
 }
 export interface RegistrationExternal {
     admin_notes: string;

@@ -5,7 +5,7 @@ use crate::data_type::{
 use loam_sdk::soroban_sdk::{Address, Env, String, Vec};
 
 pub trait RoundTrait {
-    fn init(
+    fn initialize(
         env: &Env,
         owner: Address,
         token_address: Address,
@@ -59,6 +59,6 @@ pub trait RoundTrait {
     fn whitelist_status(env: &Env, address: Address) -> bool;
     fn blacklist_status(env: &Env, address: Address) -> bool;
     fn get_round_info(env: &Env) -> RoundDetail;
-    fn get_pairs(env: &Env) -> Vec<Pair>;
+    fn get_pairs(env: &Env, admin: Address) -> Vec<Pair>;
     fn get_pair_by_index(env: &Env, index: u64) -> Pair;
 }

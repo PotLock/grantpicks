@@ -92,5 +92,5 @@ pub struct ProjectFundingHistory {
     pub amount: u128,
     pub denomiation: String,
     pub description: String,
-    pub funding_time: u64,
+    pub funded_ms: u64,
 }

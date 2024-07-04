@@ -54,7 +54,7 @@ fn test_apply() {
     funding_histories.push_back(ProjectFundingHistory {
         amount: 100,
         source: String::from_str(&env, "source"),
-        funding_time: 100,
+        funded_ms: 100,
         description: String::from_str(&env, "description"),
         denomiation: String::from_str(&env, "USD"),
     });
@@ -120,7 +120,7 @@ fn test_change_project_status() {
     funding_histories.push_back(ProjectFundingHistory {
         amount: 100,
         source: String::from_str(&env, "source"),
-        funding_time: 100,
+        funded_ms: 100,
         description: String::from_str(&env, "description"),
         denomiation: String::from_str(&env, "USD"),
     });
@@ -190,7 +190,7 @@ fn test_add_admin() {
     funding_histories.push_back(ProjectFundingHistory {
         amount: 100,
         source: String::from_str(&env, "source"),
-        funding_time: 100,
+        funded_ms: 100,
         description: String::from_str(&env, "description"),
         denomiation: String::from_str(&env, "USD"),
     });
@@ -261,7 +261,7 @@ fn test_remove_admin() {
     funding_histories.push_back(ProjectFundingHistory {
         amount: 100,
         source: String::from_str(&env, "source"),
-        funding_time: 100,
+        funded_ms: 100,
         description: String::from_str(&env, "description"),
         denomiation: String::from_str(&env, "USD"),
     });
@@ -337,7 +337,7 @@ fn test_get_projects() {
     funding_histories.push_back(ProjectFundingHistory {
         amount: 100,
         source: String::from_str(&env, "source"),
-        funding_time: 100,
+        funded_ms: 100,
         description: String::from_str(&env, "description"),
         denomiation: String::from_str(&env, "USD"),
     });
@@ -406,7 +406,7 @@ fn test_get_project_admins() {
     funding_histories.push_back(ProjectFundingHistory {
         amount: 100,
         source: String::from_str(&env, "source"),
-        funding_time: 100,
+        funded_ms: 100,
         description: String::from_str(&env, "description"),
         denomiation: String::from_str(&env, "USD"),
     });
@@ -476,7 +476,7 @@ fn test_get_project_by_id() {
     funding_histories.push_back(ProjectFundingHistory {
         amount: 100,
         source: String::from_str(&env, "source"),
-        funding_time: 100,
+        funded_ms: 100,
         description: String::from_str(&env, "description"),
         denomiation: String::from_str(&env, "USD"),
     });
@@ -544,7 +544,7 @@ fn test_update_project() {
     funding_histories.push_back(ProjectFundingHistory {
         amount: 100,
         source: String::from_str(&env, "source"),
-        funding_time: 100,
+        funded_ms: 100,
         description: String::from_str(&env, "description"),
         denomiation: String::from_str(&env, "USD"),
     });
@@ -596,7 +596,7 @@ fn test_update_project() {
     funding_histories2.push_back(ProjectFundingHistory {
         amount: 100,
         source: String::from_str(&env, "source"),
-        funding_time: 100,
+        funded_ms: 100,
         description: String::from_str(&env, "description"),
         denomiation: String::from_str(&env, "USD"),
     });

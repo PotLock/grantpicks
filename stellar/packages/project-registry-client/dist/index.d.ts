@@ -7,7 +7,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CBIUXTSMVYCWXOUOYHTCMG4JENHVSA4YJ64PZNFWRE4JVWLO6E4DKCIJ";
+        readonly contractId: "CDKXOMWVLNW6HK743YGHGKOLV3FMFIMFRRO73IDIBZW4UUEQSGPNOR2M";
     };
 };
 export type ProjectStatus = {
@@ -35,14 +35,15 @@ export interface Project {
     payout_address: string;
     repositories: Array<ProjectRepository>;
     status: ProjectStatus;
-    submited_at: u64;
+    submited_ms: u64;
     team_members: Array<ProjectTeamMember>;
-    updated_at: Option<u64>;
+    updated_ms: Option<u64>;
 }
 export interface ProjectParams {
     admins: Array<string>;
     contacts: Array<ProjectContact>;
     contracts: Array<ProjectContract>;
+    fundings: Array<ProjectFundingHistory>;
     image_url: string;
     name: string;
     overview: string;
@@ -53,6 +54,7 @@ export interface ProjectParams {
 export interface UpdateProjectParams {
     contacts: Array<ProjectContact>;
     contracts: Array<ProjectContract>;
+    fundings: Array<ProjectFundingHistory>;
     image_url: string;
     name: string;
     overview: string;
@@ -69,13 +71,19 @@ export interface ProjectContract {
     name: string;
 }
 export interface ProjectTeamMember {
-    image_url: string;
     name: string;
-    role: string;
+    value: string;
 }
 export interface ProjectRepository {
     label: string;
     url: string;
+}
+export interface ProjectFundingHistory {
+    amount: u128;
+    denomiation: string;
+    description: string;
+    funding_time: u64;
+    source: string;
 }
 export type ContractKey = {
     tag: "NumOfProjects";

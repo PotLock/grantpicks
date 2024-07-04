@@ -3,8 +3,8 @@ members = ["./contract/project-registry","./contract/round","./contract/round-fa
 resolver = "2"
 
 [workspace.dependencies]
-loam-sdk = "0.6.9"
-soroban-token-sdk = "21.0.1-preview.2"
+loam-sdk = "0.6.10"
+soroban-token-sdk = "21.1.1"
 
 [profile.release]
 opt-level = "z"

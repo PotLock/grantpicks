@@ -154,20 +154,6 @@ dependencies = [
 
 [[package]]
 name = "cargo_metadata"
-version = "0.15.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eee4243f1f26fc7a42710e7439c149e2b10b05472f88090acce52632f231a73a"
-dependencies = [
- "camino",
- "cargo-platform",
- "semver",
- "serde",
- "serde_json",
- "thiserror",
-]
-
-[[package]]
-name = "cargo_metadata"
 version = "0.18.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2d886547e41f740c616ae73108f6eb70afe6d940c7bc697cb30f13daec073037"
@@ -701,19 +687,7 @@ name = "lists"
 version = "1.0.0"
 dependencies = [
  "loam-sdk",
- "smartdeploy-sdk",
  "soroban-token-sdk",
-]
-
-[[package]]
-name = "loam-build"
-version = "0.6.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b0a819eeb0fbca07a21806b304de67d6ac68286719d345b28b1babf69e397a56"
-dependencies = [
- "cargo_metadata 0.15.4",
- "thiserror",
- "topological-sort",
 ]
 
 [[package]]
@@ -722,7 +696,7 @@ version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2fe069a494874d8eaf4bfc34c7f80db5bbb1cd2c764250d37246680c81653d3c"
 dependencies = [
- "cargo_metadata 0.18.1",
+ "cargo_metadata",
  "thiserror",
  "topological-sort",
 ]
@@ -744,8 +718,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "47241a07b01b4777b971da0cdbb0c33efecbdc13f73893c1a49e2f7a00fd052d"
 dependencies = [
  "Inflector",
- "cargo_metadata 0.18.1",
- "loam-build 0.7.0",
+ "cargo_metadata",
+ "loam-build",
  "proc-macro2",
  "quote",
  "syn 2.0.39",
@@ -919,7 +893,6 @@ name = "project-registry"
 version = "1.0.0"
 dependencies = [
  "loam-sdk",
- "smartdeploy-sdk",
 ]
 
 [[package]]
@@ -985,7 +958,6 @@ name = "round"
 version = "1.0.0"
 dependencies = [
  "loam-sdk",
- "smartdeploy-sdk",
  "soroban-token-sdk",
 ]
 
@@ -994,7 +966,6 @@ name = "round-factory"
 version = "1.0.0"
 dependencies = [
  "loam-sdk",
- "smartdeploy-sdk",
 ]
 
 [[package]]
@@ -1149,37 +1120,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3c5e1a9a646d36c3599cd173a41282daf47c44583ad367b8e6837255952e5c67"
 
 [[package]]
-name = "smartdeploy-build"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94206f02ab14157569ff4e1160126a07272ee2a8d56f39bf3c19b5205325df6d"
-dependencies = [
- "loam-build 0.6.5",
- "thiserror",
-]
-
-[[package]]
-name = "smartdeploy-macros"
-version = "0.1.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd8009c2833bd65fbb9d4e944f07d8c346c2894aa32edae99115715f549533aa"
-dependencies = [
- "quote",
- "smartdeploy-build",
- "stellar-strkey 0.0.7",
- "syn 2.0.39",
-]
-
-[[package]]
-name = "smartdeploy-sdk"
-version = "0.1.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "98c90fd3d7cddd113d574183147d6cf90e78464f7f63fe12cc242bc32a4e64a9"
-dependencies = [
- "smartdeploy-macros",
-]
-
-[[package]]
 name = "soroban-builtin-sdk-macros"
 version = "21.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1249,7 +1189,7 @@ dependencies = [
  "soroban-env-common",
  "soroban-wasmi",
  "static_assertions",
- "stellar-strkey 0.0.8",
+ "stellar-strkey",
  "wasmparser",
 ]
 
@@ -1299,7 +1239,7 @@ dependencies = [
  "soroban-env-host",
  "soroban-ledger-snapshot",
  "soroban-sdk-macros",
- "stellar-strkey 0.0.8",
+ "stellar-strkey",
 ]
 
 [[package]]
@@ -1396,16 +1336,6 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "stellar-strkey"
-version = "0.0.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c0689070126ca7f2effc2c5726584446db52190f0cef043c02eb4040a711c11"
-dependencies = [
- "base32",
- "thiserror",
-]
-
-[[package]]
-name = "stellar-strkey"
 version = "0.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "12d2bf45e114117ea91d820a846fd1afbe3ba7d717988fee094ce8227a3bf8bd"
@@ -1428,7 +1358,7 @@ dependencies = [
  "hex",
  "serde",
  "serde_with",
- "stellar-strkey 0.0.8",
+ "stellar-strkey",
 ]
 
 [[package]]

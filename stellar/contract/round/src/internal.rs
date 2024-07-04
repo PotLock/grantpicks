@@ -16,7 +16,6 @@ use crate::{
         log_project_application_update, log_update_approved_projects, log_update_round,
         log_update_user_flag, log_update_white_list, log_vote,
     },
-    funding_writer::{add_total_funding, read_total_funding},
     methods::RoundTrait,
     pair::{get_all_pairs, get_pair_by_index, get_random_pairs},
     project_registry_writer::{read_project_contract, write_project_contract},
@@ -41,7 +40,7 @@ pub struct Round;
 
 #[contractimpl]
 impl RoundTrait for Round {
-    fn init(
+    fn initialize(
         env: &Env,
         owner: Address,
         token_address: Address,
@@ -51,21 +50,21 @@ impl RoundTrait for Round {
         owner.require_auth();
 
         assert!(
-            round_detail.start_time < round_detail.end_time,
+            round_detail.voting_start_ms < round_detail.voting_end_ms,
             "Round start time must be less than round end time"
         );
 
         assert!(
-            round_detail.application_start_time <= round_detail.application_end_time,
+            round_detail.application_start_ms <= round_detail.application_end_ms,
             "Round application start time must be less than equal round application end time"
         );
 
         assert!(
-            round_detail.start_time >= round_detail.application_end_time,
+            round_detail.voting_start_ms >= round_detail.application_end_ms,
             "Round start time must be greater than or equal round application end time"
         );
 
-        assert!(round_detail.amount > 0, "Amount must be greater than 0");
+        assert!(round_detail.expected_amount > 0, "Expected Amount must be greater than 0");
         assert!(
             !round_detail.admins.is_empty(),
             "Round admins must not empty"
@@ -94,31 +93,32 @@ impl RoundTrait for Round {
         }
 
         assert!(
-            round_detail.contact.len() <= 10,
+            round_detail.contacts.len() <= 10,
             "Contact must be less than 10"
         );
         assert!(
-            round_detail.image_url.len() <= 200,
-            "Image URL must be less than 200 characters. Use IPFS Hash Only"
+            round_detail.video_url.len() <= 200,
+            "Video URL must be less than 200 characters. Use IPFS Hash Only"
         );
 
         let round_info = RoundDetail {
             id: round_detail.id,
             name: round_detail.name,
             description: round_detail.description,
-            start_time: round_detail.start_time,
-            end_time: round_detail.end_time,
-            image_url: round_detail.image_url,
-            contact: round_detail.contact,
+            voting_start_ms: round_detail.voting_start_ms,
+            voting_end_ms: round_detail.voting_end_ms,
+            video_url: round_detail.video_url,
+            contacts: round_detail.contacts,
             owner,
             admins: round_detail.admins,
-            application_start_time: round_detail.application_start_time,
-            application_end_time: round_detail.application_end_time,
-            expected_amount: round_detail.amount,
+            application_start_ms: round_detail.application_start_ms,
+            application_end_ms: round_detail.application_end_ms,
+            expected_amount: round_detail.expected_amount,
             is_completed: false,
             use_whitelist: round_detail.use_whitelist.unwrap_or(false),
             num_picks_per_voter,
             max_participants: round_detail.max_participants.unwrap_or(10),
+            vault_balance: 0,
         };
 
         write_round_info(env, &round_info);
@@ -127,11 +127,11 @@ impl RoundTrait for Round {
         log_create_round(env, round_info);
     }
 
-    fn change_voting_period(env: &Env, admin: Address, round_start_time: u64, round_end_time: u64) {
+    fn change_voting_period(env: &Env, admin: Address, round_start_ms: u64, round_end_ms: u64) {
         admin.require_auth();
 
         assert!(
-            round_start_time < round_end_time,
+            round_start_ms < round_end_ms,
             "Round start time must be less than round end time"
         );
 
@@ -145,8 +145,8 @@ impl RoundTrait for Round {
             );
         }
 
-        round.start_time = round_start_time;
-        round.end_time = round_end_time;
+        round.voting_start_ms = round_start_ms;
+        round.voting_end_ms = round_end_ms;
 
         write_round_info(env, &round);
         extend_instance(env);
@@ -156,13 +156,13 @@ impl RoundTrait for Round {
     fn change_application_period(
         env: &Env,
         admin: Address,
-        round_application_start_time: u64,
-        round_application_end_time: u64,
+        round_application_start_ms: u64,
+        round_application_end_ms: u64,
     ) {
         admin.require_auth();
 
         assert!(
-            round_application_start_time < round_application_end_time,
+            round_application_start_ms < round_application_end_ms,
             "Round application start time must be less than round application end time"
         );
 
@@ -176,8 +176,8 @@ impl RoundTrait for Round {
             );
         }
 
-        round.application_start_time = round_application_start_time;
-        round.application_end_time = round_application_end_time;
+        round.application_start_ms = round_application_start_ms;
+        round.application_end_ms = round_application_end_ms;
 
         write_round_info(env, &round);
         extend_instance(env);
@@ -216,7 +216,7 @@ impl RoundTrait for Round {
             );
         }
 
-        round.end_time = env.ledger().timestamp() * 1000;
+        round.voting_end_ms = env.ledger().timestamp() * 1000;
 
         write_round_info(env, &round);
         extend_instance(env);
@@ -274,11 +274,11 @@ impl RoundTrait for Round {
         applicant.require_auth();
 
         let round = read_round_info(env);
-        let current_time = env.ledger().timestamp() * 1000;
+        let current_ms = env.ledger().timestamp() * 1000;
 
         assert!(
-            round.application_start_time <= current_time
-                && current_time <= round.application_end_time,
+            round.application_start_ms <= current_ms
+                && current_ms <= round.application_end_ms,
             "Application period is not live"
         );
         assert!(!round.is_completed, "Round is completed");
@@ -310,7 +310,7 @@ impl RoundTrait for Round {
             project_id,
             applicant,
             status: ApplicationStatus::Pending,
-            submited_ms: current_time,
+            submited_ms: current_ms,
             review_note,
             updated_ms: None,
         };
@@ -332,11 +332,11 @@ impl RoundTrait for Round {
         admin.require_auth();
 
         let round = read_round_info(env);
-        let current_time = env.ledger().timestamp() * 1000;
+        let current_ms = env.ledger().timestamp() * 1000;
 
         assert!(
-            round.application_start_time <= current_time
-                && current_time <= round.application_end_time,
+            round.application_start_ms <= current_ms
+                && current_ms <= round.application_end_ms,
             "Application period is not live"
         );
         assert!(!round.is_completed, "Round is completed");
@@ -357,7 +357,7 @@ impl RoundTrait for Round {
             updated_application.review_note = review_note;
         }
 
-        updated_application.updated_ms = Some(current_time);
+        updated_application.updated_ms = Some(current_ms);
 
         if updated_application.status == ApplicationStatus::Approved {
             let approved_project = read_approved_projects(env);
@@ -393,9 +393,11 @@ impl RoundTrait for Round {
         assert!(balance > amount_i128, "Insufficient balance");
 
         token_client.transfer(&actor, &env.current_contract_address(), &amount_i128);
-        let round = read_round_info(env);
+        let mut round = read_round_info(env);
 
-        add_total_funding(env, amount);
+        round.vault_balance += amount;
+        
+        write_round_info(env, &round);
         extend_instance(env);
         log_deposit(env, round.id, actor, amount);
     }
@@ -404,10 +406,10 @@ impl RoundTrait for Round {
         voter.require_auth();
 
         let round = read_round_info(env);
-        let current_time = env.ledger().timestamp() * 1000;
+        let current_ms = env.ledger().timestamp() * 1000;
 
         assert!(
-            round.start_time <= current_time && current_time <= round.end_time,
+            round.voting_start_ms <= current_ms && current_ms <= round.voting_end_ms,
             "Voting period is not live"
         );
         assert!(!round.is_completed, "Round is completed");
@@ -435,14 +437,15 @@ impl RoundTrait for Round {
 
         let projects = read_approved_projects(env);
         let total_available_pairs: u64 = (projects.len() * (projects.len() - 1)).into();
+        let projects = read_approved_projects(env);
         picks.iter().for_each(|picked_pair| {
             let picked_index: u64 = picked_pair.pair_id.into();
             assert!(
-                picked_index < total_available_pairs,
+                picked_index < total_available_pairs/2,
                 "Picked pair is greater than total available pairs"
             );
 
-            let pair = get_pair_by_index(env, total_available_pairs, picked_index);
+            let pair = get_pair_by_index(env, total_available_pairs/2, picked_index, projects.clone());
             let is_project_in_pair = pair
                 .projects
                 .iter()
@@ -461,7 +464,7 @@ impl RoundTrait for Round {
         let voting_result = VotingResult {
             voter: voter.clone(),
             picks: picked_pairs,
-            voting_time: current_time,
+            voted_ms: current_ms,
         };
 
         add_voting_result(env, voting_result.clone());
@@ -533,14 +536,14 @@ impl RoundTrait for Round {
         admin.require_auth();
 
         let round = read_round_info(env);
-        let current_time = env.ledger().timestamp() * 1000;
+        let current_ms = env.ledger().timestamp() * 1000;
 
         assert!(
-            round.start_time <= current_time,
+            round.voting_start_ms <= current_ms,
             "Voting period is not started"
         );
 
-        assert!(current_time >= round.end_time, "Voting period is not ended");
+        assert!(current_ms >= round.voting_end_ms, "Voting period is not ended");
 
         if round.owner != admin {
             round
@@ -550,9 +553,7 @@ impl RoundTrait for Round {
                 .expect("Only round owner or round admin can trigger payouts");
         }
 
-        let total_funding = read_total_funding(env);
-        assert!(total_funding > 0, "Total funding is 0");
-
+        assert!(round.vault_balance > 0, "Total funding is 0");
         let token_contract = read_token_address(env);
         let token_client = TokenClient::new(env, &token_contract);
         let project_registry_contract = read_project_contract(env);
@@ -560,9 +561,11 @@ impl RoundTrait for Round {
             project_registry::Client::new(env, &project_registry_contract);
         let results = calculate_voting_results(env);
 
+        let mut updated_round = round.clone();
+
         results.iter().for_each(|result| {
             if result.allocation > 0 {
-                let payout_amount = (total_funding * result.allocation) / 10000;
+                let payout_amount = (round.vault_balance * result.allocation) / 10000;
                 let payout_amount_i128: i128 = payout_amount.try_into().expect("Conversion failed");
 
                 let detail_project = project_registry_client
@@ -575,11 +578,11 @@ impl RoundTrait for Round {
                     &payout_amount_i128,
                 );
 
+                updated_round.vault_balance -= payout_amount;
                 log_payout(env, round.id, detail_project.payout_address, payout_amount);
             }
         });
 
-        let mut updated_round = round.clone();
         updated_round.is_completed = true;
         write_round_info(env, &updated_round);
         extend_instance(env);
@@ -594,10 +597,10 @@ impl RoundTrait for Round {
 
     fn can_vote(env: &Env, voter: Address) -> bool {
         let round = read_round_info(env);
-        let current_time = env.ledger().timestamp() * 1000;
+        let current_ms = env.ledger().timestamp() * 1000;
         extend_instance(env);
 
-        if round.start_time <= current_time && current_time <= round.end_time {
+        if round.voting_start_ms <= current_ms && current_ms <= round.voting_end_ms {
             if round.is_completed {
                 return false;
             }
@@ -627,18 +630,18 @@ impl RoundTrait for Round {
 
     fn is_voting_live(env: &Env) -> bool {
         let round = read_round_info(env);
-        let current_time = env.ledger().timestamp() * 1000;
+        let current_ms = env.ledger().timestamp() * 1000;
         extend_instance(env);
 
-        round.start_time <= current_time && current_time <= round.end_time
+        round.voting_start_ms <= current_ms && current_ms <= round.voting_end_ms
     }
 
     fn is_application_live(env: &Env) -> bool {
         let round = read_round_info(env);
-        let current_time = env.ledger().timestamp() * 1000;
+        let current_ms = env.ledger().timestamp() * 1000;
         extend_instance(env);
 
-        round.application_start_time <= current_time && current_time <= round.application_end_time
+        round.application_start_ms <= current_ms && current_ms <= round.application_end_ms
     }
 
     fn get_all_applications(
@@ -668,7 +671,8 @@ impl RoundTrait for Round {
     }
 
     fn total_funding(env: &Env) -> u128 {
-        let total_funding = read_total_funding(env);
+        let round = read_round_info(env);
+        let total_funding = round.vault_balance;
         extend_instance(env);
 
         total_funding
@@ -813,7 +817,20 @@ impl RoundTrait for Round {
         round
     }
 
-    fn get_pairs(env: &Env) -> Vec<Pair> {
+    // get_pairs is test only & protected and check correctness of pairs generated. use get_pair_to_vote for users
+    fn get_pairs(env: &Env, admin: Address) -> Vec<Pair> {
+        admin.require_auth();
+
+        let round = read_round_info(env);
+
+        if round.owner != admin {
+            let admin_index = round.admins.first_index_of(admin.clone());
+            assert!(
+                admin_index.is_some(),
+                "Only round owner or round admin can view all pairs"
+            );
+        }
+
         let pairs = get_all_pairs(env);
         extend_instance(env);
 
@@ -824,7 +841,7 @@ impl RoundTrait for Round {
         let approved_project = read_approved_projects(env);
         let total_available_pairs: u64 =
             (approved_project.len() * (approved_project.len() - 1)).into();
-        let pair = get_pair_by_index(env, total_available_pairs, index);
+        let pair = get_pair_by_index(env, total_available_pairs/2, index, approved_project.clone());
         extend_instance(env);
 
         pair

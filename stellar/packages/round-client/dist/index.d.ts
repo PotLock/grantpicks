@@ -6,7 +6,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CCKULADOOYY44BA4ZAWBDQJZ4ATOXRW44ZSCVE37ICZUH4VR43JVVB6H";
+        readonly contractId: "CB3SLA64YJC7FVV6LUSI6BYITTTNTCAML7LIZPUIBAM33I7KP22DMG7D";
     };
 };
 export type ApplicationStatus = {
@@ -88,6 +88,81 @@ export interface ProjectVotingResult {
 export interface Contact {
     name: string;
     value: string;
+}
+export type ProjectStatus = {
+    tag: "New";
+    values: void;
+} | {
+    tag: "Approved";
+    values: void;
+} | {
+    tag: "Rejected";
+    values: void;
+} | {
+    tag: "Completed";
+    values: void;
+};
+export interface Project {
+    admins: Array<string>;
+    contacts: Array<ProjectContact>;
+    contracts: Array<ProjectContract>;
+    id: u128;
+    image_url: string;
+    name: string;
+    overview: string;
+    owner: string;
+    payout_address: string;
+    repositories: Array<ProjectRepository>;
+    status: ProjectStatus;
+    submited_ms: u64;
+    team_members: Array<ProjectTeamMember>;
+    updated_ms: Option<u64>;
+}
+export interface ProjectParams {
+    admins: Array<string>;
+    contacts: Array<ProjectContact>;
+    contracts: Array<ProjectContract>;
+    fundings: Array<ProjectFundingHistory>;
+    image_url: string;
+    name: string;
+    overview: string;
+    payout_address: string;
+    repositories: Array<ProjectRepository>;
+    team_members: Array<ProjectTeamMember>;
+}
+export interface UpdateProjectParams {
+    contacts: Array<ProjectContact>;
+    contracts: Array<ProjectContract>;
+    fundings: Array<ProjectFundingHistory>;
+    image_url: string;
+    name: string;
+    overview: string;
+    payout_address: string;
+    repositories: Array<ProjectRepository>;
+    team_members: Array<ProjectTeamMember>;
+}
+export interface ProjectContact {
+    name: string;
+    value: string;
+}
+export interface ProjectContract {
+    contract_address: string;
+    name: string;
+}
+export interface ProjectTeamMember {
+    name: string;
+    value: string;
+}
+export interface ProjectRepository {
+    label: string;
+    url: string;
+}
+export interface ProjectFundingHistory {
+    amount: u128;
+    denomiation: string;
+    description: string;
+    funded_ms: u64;
+    source: string;
 }
 export type ContractKey = {
     tag: "RoundInfo";
@@ -722,23 +797,6 @@ export interface Client {
         simulate?: boolean;
     }) => Promise<AssembledTransaction<boolean>>;
     /**
-     * Construct and simulate a get_round_info transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
-     */
-    get_round_info: (options?: {
-        /**
-         * The fee to pay for the transaction. Default: BASE_FEE
-         */
-        fee?: number;
-        /**
-         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
-         */
-        timeoutInSeconds?: number;
-        /**
-         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
-         */
-        simulate?: boolean;
-    }) => Promise<AssembledTransaction<RoundDetail>>;
-    /**
      * Construct and simulate a get_pairs transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
     get_pairs: ({ admin }: {
@@ -852,7 +910,6 @@ export declare class Client extends ContractClient {
         remove_from_white_list: (json: string) => AssembledTransaction<null>;
         whitelist_status: (json: string) => AssembledTransaction<boolean>;
         blacklist_status: (json: string) => AssembledTransaction<boolean>;
-        get_round_info: (json: string) => AssembledTransaction<RoundDetail>;
         get_pairs: (json: string) => AssembledTransaction<Pair[]>;
         get_pair_by_index: (json: string) => AssembledTransaction<Pair>;
         change_number_of_votes: (json: string) => AssembledTransaction<null>;

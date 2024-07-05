@@ -33,13 +33,20 @@ if (typeof window !== 'undefined') {
 export const networks = {
   testnet: {
     networkPassphrase: "Test SDF Network ; September 2015",
-    contractId: "CDB5LZOKKHA6VNN2XUUR5QGCAIGFEM46YWKABVAUTREU2MMVCSF7RDON",
+    contractId: "CACV6DZCROHXP4D35OJM4V3CR2QWEITGEI742NMVXKM4Z3R4LIAFAO6L",
   }
 } as const
 
 
 export interface RoundInfo {
   contract_address: string;
+  round_id: u128;
+}
+
+
+export interface RoundInfoWithDetail {
+  contract_address: string;
+  detail: RoundDetail;
   round_id: u128;
 }
 
@@ -69,11 +76,11 @@ export interface Contact {
 export type ContractKey = {tag: "RoundNumber", values: void} | {tag: "Rounds", values: void} | {tag: "Admin", values: void} | {tag: "Owner", values: void} | {tag: "Wasm", values: void} | {tag: "TokenContract", values: void} | {tag: "ProjectContract", values: void};
 
 
-export interface CreateRoundParamsExternal {
+export interface RCCreateParams {
   admins: Array<string>;
   application_end_ms: u64;
   application_start_ms: u64;
-  contacts: Array<ContactExternal>;
+  contacts: Array<RCContact>;
   description: string;
   expected_amount: u128;
   id: u128;
@@ -87,9 +94,30 @@ export interface CreateRoundParamsExternal {
 }
 
 
-export interface ContactExternal {
+export interface RCContact {
   name: string;
   value: string;
+}
+
+
+export interface RoundDetail {
+  admins: Array<string>;
+  application_end_ms: u64;
+  application_start_ms: u64;
+  contacts: Array<RCContact>;
+  description: string;
+  expected_amount: u128;
+  id: u128;
+  is_completed: boolean;
+  max_participants: u32;
+  name: string;
+  num_picks_per_voter: u32;
+  owner: string;
+  use_whitelist: boolean;
+  vault_balance: u128;
+  video_url: string;
+  voting_end_ms: u64;
+  voting_start_ms: u64;
 }
 
 export const Errors = {
@@ -155,7 +183,7 @@ export interface Client {
      * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
      */
     simulate?: boolean;
-  }) => Promise<AssembledTransaction<Array<RoundInfo>>>
+  }) => Promise<AssembledTransaction<Array<RoundInfoWithDetail>>>
 
   /**
    * Construct and simulate a add_admin transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
@@ -262,26 +290,28 @@ export class Client extends ContractClient {
   constructor(public readonly options: ContractClientOptions) {
     super(
       new ContractSpec([ "AAAAAQAAAAAAAAAAAAAACVJvdW5kSW5mbwAAAAAAAAIAAAAAAAAAEGNvbnRyYWN0X2FkZHJlc3MAAAATAAAAAAAAAAhyb3VuZF9pZAAAAAo=",
+        "AAAAAQAAAAAAAAAAAAAAE1JvdW5kSW5mb1dpdGhEZXRhaWwAAAAAAwAAAAAAAAAQY29udHJhY3RfYWRkcmVzcwAAABMAAAAAAAAABmRldGFpbAAAAAAH0AAAAAtSb3VuZERldGFpbAAAAAAAAAAACHJvdW5kX2lkAAAACg==",
         "AAAAAQAAAAAAAAAAAAAAEUNyZWF0ZVJvdW5kUGFyYW1zAAAAAAAADQAAAAAAAAAGYWRtaW5zAAAAAAPqAAAAEwAAAAAAAAASYXBwbGljYXRpb25fZW5kX21zAAAAAAAGAAAAAAAAABRhcHBsaWNhdGlvbl9zdGFydF9tcwAAAAYAAAAAAAAACGNvbnRhY3RzAAAD6gAAB9AAAAAHQ29udGFjdAAAAAAAAAAAC2Rlc2NyaXB0aW9uAAAAABAAAAAAAAAAD2V4cGVjdGVkX2Ftb3VudAAAAAAKAAAAAAAAABBtYXhfcGFydGljaXBhbnRzAAAD6AAAAAQAAAAAAAAABG5hbWUAAAAQAAAAAAAAABNudW1fcGlja3NfcGVyX3ZvdGVyAAAAA+gAAAAEAAAAAAAAAA11c2Vfd2hpdGVsaXN0AAAAAAAD6AAAAAEAAAAAAAAACXZpZGVvX3VybAAAAAAAABAAAAAAAAAADXZvdGluZ19lbmRfbXMAAAAAAAAGAAAAAAAAAA92b3Rpbmdfc3RhcnRfbXMAAAAABg==",
         "AAAAAQAAAAAAAAAAAAAAB0NvbnRhY3QAAAAAAgAAAAAAAAAEbmFtZQAAABAAAAAAAAAABXZhbHVlAAAAAAAAEA==",
         "AAAAAAAAAAAAAAAKaW5pdGlhbGl6ZQAAAAAABAAAAAAAAAAFb3duZXIAAAAAAAATAAAAAAAAAA10b2tlbl9hZGRyZXNzAAAAAAAAEwAAAAAAAAAQcmVnaXN0cnlfYWRkcmVzcwAAABMAAAAAAAAACXdhc21faGFzaAAAAAAAA+4AAAAgAAAAAA==",
         "AAAAAAAAAAAAAAAMY3JlYXRlX3JvdW5kAAAAAgAAAAAAAAAFYWRtaW4AAAAAAAATAAAAAAAAAAZwYXJhbXMAAAAAB9AAAAARQ3JlYXRlUm91bmRQYXJhbXMAAAAAAAABAAAH0AAAAAlSb3VuZEluZm8AAAA=",
-        "AAAAAAAAAAAAAAAKZ2V0X3JvdW5kcwAAAAAAAgAAAAAAAAAEc2tpcAAAA+gAAAAGAAAAAAAAAAVsaW1pdAAAAAAAA+gAAAAGAAAAAQAAA+oAAAfQAAAACVJvdW5kSW5mbwAAAA==",
+        "AAAAAAAAAAAAAAAKZ2V0X3JvdW5kcwAAAAAAAgAAAAAAAAAEc2tpcAAAA+gAAAAGAAAAAAAAAAVsaW1pdAAAAAAAA+gAAAAGAAAAAQAAA+oAAAfQAAAAE1JvdW5kSW5mb1dpdGhEZXRhaWwA",
         "AAAAAAAAAAAAAAAJYWRkX2FkbWluAAAAAAAAAgAAAAAAAAAFb3duZXIAAAAAAAATAAAAAAAAAAVhZG1pbgAAAAAAABMAAAAA",
         "AAAAAAAAAAAAAAASdHJhbnNmZXJfb3duZXJzaGlwAAAAAAACAAAAAAAAAAVvd25lcgAAAAAAABMAAAAAAAAACW5ld19vd25lcgAAAAAAABMAAAAA",
         "AAAAAAAAAAAAAAAMcmVtb3ZlX2FkbWluAAAAAgAAAAAAAAAFb3duZXIAAAAAAAATAAAAAAAAAAVhZG1pbgAAAAAAABMAAAAA",
         "AAAAAAAAAAAAAAAGYWRtaW5zAAAAAAAAAAAAAQAAA+oAAAAT",
         "AAAAAAAAAAAAAAAFb3duZXIAAAAAAAAAAAAAAQAAABM=",
         "AAAAAgAAAAAAAAAAAAAAC0NvbnRyYWN0S2V5AAAAAAcAAAAAAAAAAAAAAAtSb3VuZE51bWJlcgAAAAAAAAAAAAAAAAZSb3VuZHMAAAAAAAAAAAAAAAAABUFkbWluAAAAAAAAAAAAAAAAAAAFT3duZXIAAAAAAAAAAAAAAAAAAARXYXNtAAAAAAAAAAAAAAANVG9rZW5Db250cmFjdAAAAAAAAAAAAAAAAAAAD1Byb2plY3RDb250cmFjdAA=",
-        "AAAAAQAAAAAAAAAAAAAAGUNyZWF0ZVJvdW5kUGFyYW1zRXh0ZXJuYWwAAAAAAAAOAAAAAAAAAAZhZG1pbnMAAAAAA+oAAAATAAAAAAAAABJhcHBsaWNhdGlvbl9lbmRfbXMAAAAAAAYAAAAAAAAAFGFwcGxpY2F0aW9uX3N0YXJ0X21zAAAABgAAAAAAAAAIY29udGFjdHMAAAPqAAAH0AAAAA9Db250YWN0RXh0ZXJuYWwAAAAAAAAAAAtkZXNjcmlwdGlvbgAAAAAQAAAAAAAAAA9leHBlY3RlZF9hbW91bnQAAAAACgAAAAAAAAACaWQAAAAAAAoAAAAAAAAAEG1heF9wYXJ0aWNpcGFudHMAAAPoAAAABAAAAAAAAAAEbmFtZQAAABAAAAAAAAAAE251bV9waWNrc19wZXJfdm90ZXIAAAAD6AAAAAQAAAAAAAAADXVzZV93aGl0ZWxpc3QAAAAAAAPoAAAAAQAAAAAAAAAJdmlkZW9fdXJsAAAAAAAAEAAAAAAAAAANdm90aW5nX2VuZF9tcwAAAAAAAAYAAAAAAAAAD3ZvdGluZ19zdGFydF9tcwAAAAAG",
-        "AAAAAQAAAAAAAAAAAAAAD0NvbnRhY3RFeHRlcm5hbAAAAAACAAAAAAAAAARuYW1lAAAAEAAAAAAAAAAFdmFsdWUAAAAAAAAQ" ]),
+        "AAAAAQAAAAAAAAAAAAAADlJDQ3JlYXRlUGFyYW1zAAAAAAAOAAAAAAAAAAZhZG1pbnMAAAAAA+oAAAATAAAAAAAAABJhcHBsaWNhdGlvbl9lbmRfbXMAAAAAAAYAAAAAAAAAFGFwcGxpY2F0aW9uX3N0YXJ0X21zAAAABgAAAAAAAAAIY29udGFjdHMAAAPqAAAH0AAAAAlSQ0NvbnRhY3QAAAAAAAAAAAAAC2Rlc2NyaXB0aW9uAAAAABAAAAAAAAAAD2V4cGVjdGVkX2Ftb3VudAAAAAAKAAAAAAAAAAJpZAAAAAAACgAAAAAAAAAQbWF4X3BhcnRpY2lwYW50cwAAA+gAAAAEAAAAAAAAAARuYW1lAAAAEAAAAAAAAAATbnVtX3BpY2tzX3Blcl92b3RlcgAAAAPoAAAABAAAAAAAAAANdXNlX3doaXRlbGlzdAAAAAAAA+gAAAABAAAAAAAAAAl2aWRlb191cmwAAAAAAAAQAAAAAAAAAA12b3RpbmdfZW5kX21zAAAAAAAABgAAAAAAAAAPdm90aW5nX3N0YXJ0X21zAAAAAAY=",
+        "AAAAAQAAAAAAAAAAAAAACVJDQ29udGFjdAAAAAAAAAIAAAAAAAAABG5hbWUAAAAQAAAAAAAAAAV2YWx1ZQAAAAAAABA=",
+        "AAAAAQAAAAAAAAAAAAAAC1JvdW5kRGV0YWlsAAAAABEAAAAAAAAABmFkbWlucwAAAAAD6gAAABMAAAAAAAAAEmFwcGxpY2F0aW9uX2VuZF9tcwAAAAAABgAAAAAAAAAUYXBwbGljYXRpb25fc3RhcnRfbXMAAAAGAAAAAAAAAAhjb250YWN0cwAAA+oAAAfQAAAACVJDQ29udGFjdAAAAAAAAAAAAAALZGVzY3JpcHRpb24AAAAAEAAAAAAAAAAPZXhwZWN0ZWRfYW1vdW50AAAAAAoAAAAAAAAAAmlkAAAAAAAKAAAAAAAAAAxpc19jb21wbGV0ZWQAAAABAAAAAAAAABBtYXhfcGFydGljaXBhbnRzAAAABAAAAAAAAAAEbmFtZQAAABAAAAAAAAAAE251bV9waWNrc19wZXJfdm90ZXIAAAAABAAAAAAAAAAFb3duZXIAAAAAAAATAAAAAAAAAA11c2Vfd2hpdGVsaXN0AAAAAAAAAQAAAAAAAAANdmF1bHRfYmFsYW5jZQAAAAAAAAoAAAAAAAAACXZpZGVvX3VybAAAAAAAABAAAAAAAAAADXZvdGluZ19lbmRfbXMAAAAAAAAGAAAAAAAAAA92b3Rpbmdfc3RhcnRfbXMAAAAABg==" ]),
       options
     )
   }
   public readonly fromJSON = {
     initialize: this.txFromJSON<null>,
         create_round: this.txFromJSON<RoundInfo>,
-        get_rounds: this.txFromJSON<Array<RoundInfo>>,
+        get_rounds: this.txFromJSON<Array<RoundInfoWithDetail>>,
         add_admin: this.txFromJSON<null>,
         transfer_ownership: this.txFromJSON<null>,
         remove_admin: this.txFromJSON<null>,

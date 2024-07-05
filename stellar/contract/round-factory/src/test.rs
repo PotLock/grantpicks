@@ -88,7 +88,7 @@ fn test_create_round() {
 
     let round_client = round::Client::new(&env, &detail_info.contract_address);
 
-    let round = round_client.get_round_info();
+    let round = round_client.round_info();
     assert_eq!(round.name, params.name);
     assert_eq!(round.voting_start_ms, params.voting_start_ms);
 }

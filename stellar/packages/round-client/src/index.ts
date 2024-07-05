@@ -33,7 +33,7 @@ if (typeof window !== 'undefined') {
 export const networks = {
   testnet: {
     networkPassphrase: "Test SDF Network ; September 2015",
-    contractId: "CCKULADOOYY44BA4ZAWBDQJZ4ATOXRW44ZSCVE37ICZUH4VR43JVVB6H",
+    contractId: "CB3SLA64YJC7FVV6LUSI6BYITTTNTCAML7LIZPUIBAM33I7KP22DMG7D",
   }
 } as const
 
@@ -125,6 +125,86 @@ export interface ProjectVotingResult {
 export interface Contact {
   name: string;
   value: string;
+}
+
+export type ProjectStatus = {tag: "New", values: void} | {tag: "Approved", values: void} | {tag: "Rejected", values: void} | {tag: "Completed", values: void};
+
+
+export interface Project {
+  admins: Array<string>;
+  contacts: Array<ProjectContact>;
+  contracts: Array<ProjectContract>;
+  id: u128;
+  image_url: string;
+  name: string;
+  overview: string;
+  owner: string;
+  payout_address: string;
+  repositories: Array<ProjectRepository>;
+  status: ProjectStatus;
+  submited_ms: u64;
+  team_members: Array<ProjectTeamMember>;
+  updated_ms: Option<u64>;
+}
+
+
+export interface ProjectParams {
+  admins: Array<string>;
+  contacts: Array<ProjectContact>;
+  contracts: Array<ProjectContract>;
+  fundings: Array<ProjectFundingHistory>;
+  image_url: string;
+  name: string;
+  overview: string;
+  payout_address: string;
+  repositories: Array<ProjectRepository>;
+  team_members: Array<ProjectTeamMember>;
+}
+
+
+export interface UpdateProjectParams {
+  contacts: Array<ProjectContact>;
+  contracts: Array<ProjectContract>;
+  fundings: Array<ProjectFundingHistory>;
+  image_url: string;
+  name: string;
+  overview: string;
+  payout_address: string;
+  repositories: Array<ProjectRepository>;
+  team_members: Array<ProjectTeamMember>;
+}
+
+
+export interface ProjectContact {
+  name: string;
+  value: string;
+}
+
+
+export interface ProjectContract {
+  contract_address: string;
+  name: string;
+}
+
+
+export interface ProjectTeamMember {
+  name: string;
+  value: string;
+}
+
+
+export interface ProjectRepository {
+  label: string;
+  url: string;
+}
+
+
+export interface ProjectFundingHistory {
+  amount: u128;
+  denomiation: string;
+  description: string;
+  funded_ms: u64;
+  source: string;
 }
 
 export type ContractKey = {tag: "RoundInfo", values: void} | {tag: "WhitelistAndBlacklist", values: void} | {tag: "ProjectApplicants", values: void} | {tag: "ApprovedProjects", values: void} | {tag: "ApplicationNumber", values: void} | {tag: "TokenContract", values: void} | {tag: "ProjectContract", values: void} | {tag: "VotingState", values: void} | {tag: "Votes", values: void} | {tag: "ProjectVotingCount", values: void};
@@ -755,26 +835,6 @@ export interface Client {
   }) => Promise<AssembledTransaction<boolean>>
 
   /**
-   * Construct and simulate a get_round_info transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
-   */
-  get_round_info: (options?: {
-    /**
-     * The fee to pay for the transaction. Default: BASE_FEE
-     */
-    fee?: number;
-
-    /**
-     * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
-     */
-    timeoutInSeconds?: number;
-
-    /**
-     * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
-     */
-    simulate?: boolean;
-  }) => Promise<AssembledTransaction<RoundDetail>>
-
-  /**
    * Construct and simulate a get_pairs transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
    */
   get_pairs: ({admin}: {admin: string}, options?: {
@@ -899,11 +959,19 @@ export class Client extends ContractClient {
         "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",
-        "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",
+        "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" ]),
       options
     )
@@ -940,7 +1008,6 @@ export class Client extends ContractClient {
         remove_from_white_list: this.txFromJSON<null>,
         whitelist_status: this.txFromJSON<boolean>,
         blacklist_status: this.txFromJSON<boolean>,
-        get_round_info: this.txFromJSON<RoundDetail>,
         get_pairs: this.txFromJSON<Array<Pair>>,
         get_pair_by_index: this.txFromJSON<Pair>,
         change_number_of_votes: this.txFromJSON<null>,

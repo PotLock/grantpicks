@@ -1,4 +1,4 @@
-use crate::{data_type::RoundInfo, storage_key::ContractKey};
+use crate::{data_type::{RoundInfo, RoundInfoWithDetail}, external::RoundClient, storage_key::ContractKey};
 use loam_sdk::soroban_sdk::{Env, Vec};
 
 pub fn read_round_number(env: &Env) -> u128 {
@@ -28,15 +28,24 @@ pub fn add_round(env: &Env, round: &RoundInfo) {
     env.storage().persistent().set(&key, &rounds);
 }
 
-pub fn find_round(env: &Env, skip: Option<u64>, limit: Option<u64>) -> Vec<RoundInfo> {
+pub fn find_round(env: &Env, skip: Option<u64>, limit: Option<u64>) -> Vec<RoundInfoWithDetail> {
     let rounds = read_round(env);
     let skip: usize = skip.unwrap_or(0).try_into().unwrap();
-    let limit: usize = limit.unwrap_or(10).try_into().unwrap();
-    assert!(limit <= 20, "limit should be less than or equal to 20");
-    let mut found_rounds: Vec<RoundInfo> = Vec::new(env);
+    let limit: usize = limit.unwrap_or(5).try_into().unwrap();
+
+    assert!(limit <= 10, "limit should be less than or equal to 10");
+
+    let mut found_rounds: Vec<RoundInfoWithDetail> = Vec::new(env);
 
     rounds.iter().skip(skip).take(limit).for_each(|round| {
-        found_rounds.push_back(round.clone());
+        let client = RoundClient::new(env, &round.contract_address);
+        let detail = client.round_info();
+        
+        found_rounds.push_back(RoundInfoWithDetail{
+            round_id: round.round_id,
+            contract_address: round.contract_address,
+            detail,
+        });
     });
 
     found_rounds

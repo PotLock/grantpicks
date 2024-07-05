@@ -1,15 +1,9 @@
 use crate::{
-    approval_writer::{is_project_approved, read_approved_projects},
-    data_type::{CreateRoundParams, RoundDetail},
-    project_registry_writer::read_project_contract,
-    utils::get_ledger_second_as_millis,
-    voter_writer::{is_black_listed, is_white_listed},
-    voting_writer::get_voting_state,
+    approval_writer::{is_project_approved, read_approved_projects}, data_type::{CreateRoundParams, RoundDetail}, external::ProjectRegistryClient, project_registry_writer::read_project_contract, utils::get_ledger_second_as_millis, voter_writer::{is_black_listed, is_white_listed}, voting_writer::get_voting_state
 };
 use loam_sdk::soroban_sdk::{Address, Env, String, Vec};
-loam_sdk::import_contract!(project_registry);
 
-pub fn validate_round_detail(env: &Env, round_detail: &CreateRoundParams) {
+pub fn validate_round_detail(round_detail: &CreateRoundParams) {
     assert!(
         round_detail.voting_start_ms < round_detail.voting_end_ms,
         "Round start time must be less than round end time"
@@ -28,10 +22,6 @@ pub fn validate_round_detail(env: &Env, round_detail: &CreateRoundParams) {
     assert!(
         round_detail.expected_amount > 0,
         "Expected Amount must be greater than 0"
-    );
-    assert!(
-        !round_detail.admins.is_empty(),
-        "Round admins must not empty"
     );
 
     assert!(
@@ -117,7 +107,7 @@ pub fn validate_not_approved_projects(env: &Env, project_id: u128) {
 
 pub fn validate_project_to_approve(env: &Env, project_ids: &Vec<u128>) {
     let project_contract = read_project_contract(env);
-    let project_client = project_registry::Client::new(env, &project_contract);
+    let project_client = ProjectRegistryClient::new(env, &project_contract);
     let total_projects: u128 = project_client.get_total_projects().into();
 
     project_ids.iter().for_each(|project_id| {
@@ -132,7 +122,7 @@ pub fn validate_project_to_approve(env: &Env, project_ids: &Vec<u128>) {
 
 pub fn validate_project_to_apply(env: &Env, project_id: u128) {
     let project_contract = read_project_contract(env);
-    let project_client = project_registry::Client::new(env, &project_contract);
+    let project_client = ProjectRegistryClient::new(env, &project_contract);
     let project = project_client.get_project_by_id(&project_id);
     assert!(
         project.is_some(),

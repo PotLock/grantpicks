@@ -1,4 +1,4 @@
-use crate::data_type::{CreateRoundParams, RoundInfo};
+use crate::data_type::{CreateRoundParams, RoundInfo, RoundInfoWithDetail};
 use loam_sdk::soroban_sdk::{Address, BytesN, Env, Vec};
 
 pub trait RoundFactoryTrait {
@@ -10,7 +10,7 @@ pub trait RoundFactoryTrait {
         wasm_hash: BytesN<32>,
     );
     fn create_round(env: &Env, admin: Address, params: CreateRoundParams) -> RoundInfo;
-    fn get_rounds(env: &Env, skip: Option<u64>, limit: Option<u64>) -> Vec<RoundInfo>;
+    fn get_rounds(env: &Env, skip: Option<u64>, limit: Option<u64>) -> Vec<RoundInfoWithDetail>;
     fn add_admin(env: &Env, owner: Address, admin: Address);
     fn remove_admin(env: &Env, owner: Address, admin: Address);
     fn transfer_ownership(env: &Env, owner: Address, new_owner: Address);

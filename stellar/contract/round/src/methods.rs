@@ -59,7 +59,6 @@ pub trait RoundTrait {
     fn remove_from_white_list(env: &Env, admin: Address, address: Address);
     fn whitelist_status(env: &Env, address: Address) -> bool;
     fn blacklist_status(env: &Env, address: Address) -> bool;
-    fn get_round_info(env: &Env) -> RoundDetail;
     fn get_pairs(env: &Env, admin: Address) -> Vec<Pair>;
     fn get_pair_by_index(env: &Env, index: u32) -> Pair;
 }

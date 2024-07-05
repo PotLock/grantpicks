@@ -46,7 +46,7 @@ pub fn is_owner(env: &Env, admin: &Address) -> bool {
 
 pub fn validate_owner_or_admin(env: &Env, admin: &Address) {
     assert!(
-        is_owner_or_admin(env, &admin),
+        is_owner_or_admin(env, admin),
         "Only the contract owner or admin can performe action"
     );
 }

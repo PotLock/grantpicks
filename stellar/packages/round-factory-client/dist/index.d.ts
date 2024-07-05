@@ -1,3 +1,4 @@
+/// <reference types="node" resolution-mode="require"/>
 import { Buffer } from "buffer";
 import { AssembledTransaction, Client as ContractClient, ClientOptions as ContractClientOptions } from '@stellar/stellar-sdk/contract';
 import type { u32, u64, u128, Option } from '@stellar/stellar-sdk/contract';
@@ -7,7 +8,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CCJDKTQT6H6N76CQVH4U4PUWFNIRXFEM4IYUALVJQZDTL4BUWMEUBTPJ";
+        readonly contractId: "CDB5LZOKKHA6VNN2XUUR5QGCAIGFEM46YWKABVAUTREU2MMVCSF7RDON";
     };
 };
 export interface RoundInfo {
@@ -55,6 +56,26 @@ export type ContractKey = {
     tag: "ProjectContract";
     values: void;
 };
+export interface CreateRoundParamsExternal {
+    admins: Array<string>;
+    application_end_ms: u64;
+    application_start_ms: u64;
+    contacts: Array<ContactExternal>;
+    description: string;
+    expected_amount: u128;
+    id: u128;
+    max_participants: Option<u32>;
+    name: string;
+    num_picks_per_voter: Option<u32>;
+    use_whitelist: Option<boolean>;
+    video_url: string;
+    voting_end_ms: u64;
+    voting_start_ms: u64;
+}
+export interface ContactExternal {
+    name: string;
+    value: string;
+}
 export declare const Errors: {};
 export interface Client {
     /**

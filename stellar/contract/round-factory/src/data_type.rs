@@ -1,11 +1,22 @@
 use loam_sdk::soroban_sdk::{self, contracttype, Address, String, Vec};
 
+use crate::external::RoundDetail;
+
 #[contracttype]
 #[derive(Clone, Eq, PartialEq)]
 pub struct RoundInfo {
     pub round_id: u128,
     pub contract_address: Address,
 }
+
+#[contracttype]
+#[derive(Clone, Eq, PartialEq)]
+pub struct RoundInfoWithDetail {
+    pub round_id: u128,
+    pub contract_address: Address,
+    pub detail: RoundDetail
+}
+
 
 #[contracttype]
 #[derive(Clone, Eq, PartialEq)]

@@ -1,8 +1,11 @@
-export default async function createRandomRounds(params, app) {
-    let tx = await app.round_factory_contract.create_round({
-        admin: app.wallet.account.publicKey,
-        params: {
-            admins: [],
+export async function initRound(params, app) {
+    let tx = await app.round_contract(params[0]).initialize({
+        owner: app.wallet.account.publicKey,
+        token_address: process.env.NATIVE_TOKEN || '',
+        registry_address: process.env.PROJECT_REGISTRY_CONTRACT_ID || '',
+        round_detail: {
+            id: BigInt(1),
+            admins: [app.wallet.account.publicKey],
             application_start_ms: BigInt(new Date().getTime() + 1000),
             application_end_ms: BigInt(new Date().getTime() + 1000 * 60 * 60 * 24 * 7),
             voting_start_ms: BigInt(new Date().getTime() + 1000 * 60 * 60 * 24 * 8),

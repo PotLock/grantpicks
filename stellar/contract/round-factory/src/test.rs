@@ -79,18 +79,18 @@ fn test_create_round() {
     };
 
     let round_info = round_factory.create_round(&admin, &params);
-    // let info = round_factory.get_rounds(&None, &None);
-    // assert!(info.len() == 1);
-    // let detail_info = info.get(0).unwrap();
+    let info = round_factory.get_rounds(&None, &None);
+    assert!(info.len() == 1);
+    let detail_info = info.get(0).unwrap();
 
-    // assert_eq!(detail_info.round_id, 1);
-    // assert_eq!(detail_info.contract_address, round_info.contract_address);
+    assert_eq!(detail_info.round_id, 1);
+    assert_eq!(detail_info.contract_address, round_info.contract_address);
 
-    // let round_client = round::Client::new(&env, &detail_info.contract_address);
+    let round_client = round::Client::new(&env, &detail_info.contract_address);
 
-    // let round = round_client.get_round_info();
-    // assert_eq!(round.name, params.name);
-    // assert_eq!(round.start_time, params.start_time);
+    let round = round_client.get_round_info();
+    assert_eq!(round.name, params.name);
+    assert_eq!(round.voting_start_ms, params.voting_start_ms);
 }
 
 #[test]

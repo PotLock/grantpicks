@@ -1,18 +1,8 @@
 use loam_sdk::soroban_sdk::{self, contract, contractimpl, Address, BytesN, Env, Vec};
 
 use crate::{
-    admin_writer::{add_admin, read_admins, read_owner, remove_admin, write_owner},
-    data_type::{CreateRoundParams, RoundInfo},
-    events::log_create_round_contract_event,
-    methods::RoundFactoryTrait,
-    project_registry_writer::{read_project_contract, write_project_contract},
-    round_writer::{add_round, find_round, increment_round_number},
-    storage::extend_instance,
-    token_writer::{read_token_address, write_token_address},
-    validation::{validate_owner, validate_owner_or_admin, validate_round},
-    wasm_writer::{read_wasm_hash, write_wasm_hash},
+    admin_writer::{add_admin, read_admins, read_owner, remove_admin, write_owner}, data_type::{CreateRoundParams, RoundInfo, RoundInfoWithDetail}, events::log_create_round_contract_event, external::{RCContact, RCCreateParams, RoundClient}, methods::RoundFactoryTrait, project_registry_writer::{read_project_contract, write_project_contract}, round_writer::{add_round, find_round, increment_round_number}, storage::extend_instance, token_writer::{read_token_address, write_token_address}, validation::{validate_owner, validate_owner_or_admin, validate_round}, wasm_writer::{read_wasm_hash, write_wasm_hash}
 };
-loam_sdk::import_contract!(round);
 
 #[contract]
 pub struct RoundFactory;
@@ -48,13 +38,13 @@ impl RoundFactoryTrait for RoundFactory {
             .with_address(contract_address, salt)
             .deploy(wasm_hash);
 
-        let round_client = round::Client::new(env, &deployed_address);
+        let round_client = RoundClient::new(env, &deployed_address);
         let token_address = read_token_address(env);
         let registry_address = read_project_contract(env);
 
-        let mut contacts: Vec<round::Contact> = Vec::new(env);
+        let mut contacts: Vec<RCContact> = Vec::new(env);
         for contact in params.contacts {
-            contacts.push_back(round::Contact {
+            contacts.push_back(RCContact{
                 name: contact.name,
                 value: contact.value,
             });
@@ -64,7 +54,7 @@ impl RoundFactoryTrait for RoundFactory {
             &admin,
             &token_address,
             &registry_address,
-            &round::CreateRoundParams {
+            &RCCreateParams {
                 id: round_id,
                 name: params.name,
                 description: params.description,
@@ -94,7 +84,7 @@ impl RoundFactoryTrait for RoundFactory {
         round_info
     }
 
-    fn get_rounds(env: &Env, skip: Option<u64>, limit: Option<u64>) -> Vec<RoundInfo> {
+    fn get_rounds(env: &Env, skip: Option<u64>, limit: Option<u64>) -> Vec<RoundInfoWithDetail> {
         let rounds = find_round(env, skip, limit);
         extend_instance(env);
 

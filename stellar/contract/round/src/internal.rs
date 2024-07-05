@@ -2,47 +2,30 @@ use crate::{
     application_writer::{
         add_application, find_applications, get_application, get_application_by_id,
         increment_application_number, update_application,
-    },
-    approval_writer::{
+    }, approval_writer::{
         add_approved_project, is_project_approved, read_approved_projects, remove_approved_project,
-    },
-    calculation::calculate_voting_results,
-    data_type::{
+    }, calculation::calculate_voting_results, data_type::{
         ApplicationStatus, CreateRoundParams, Pair, PickResult, PickedPair, ProjectApplication,
         ProjectVotingResult, RoundDetail, VotingResult,
-    },
-    events::{
-        log_create_round, log_deposit, log_payout, log_project_application,
-        log_project_application_update, log_update_approved_projects, log_update_round,
-        log_update_user_flag, log_update_white_list, log_vote,
-    },
-    methods::RoundTrait,
-    pair::{get_all_pairs, get_pair_by_index, get_random_pairs},
-    project_registry_writer::{read_project_contract, write_project_contract},
-    round_writer::{is_initialized, read_round_info, write_round_info},
-    storage::extend_instance,
-    token_writer::{read_token_address, write_token_address},
-    utils::{count_total_available_pairs, get_ledger_second_as_millis},
-    validation::{
+    }, events::{
+        log_create_round, log_deposit, log_payout, log_project_application, log_project_application_update, log_update_approved_projects, log_update_round, log_update_user_flag, log_update_white_list, log_vote
+    }, external::ProjectRegistryClient, methods::RoundTrait, pair::{get_all_pairs, get_pair_by_index, get_random_pairs}, project_registry_writer::{read_project_contract, write_project_contract}, round_writer::{is_initialized, read_round_info, write_round_info}, storage::extend_instance, token_writer::{read_token_address, write_token_address}, utils::{count_total_available_pairs, get_ledger_second_as_millis}, validation::{
         validate_application_period, validate_approved_projects, validate_blacklist,
         validate_blacklist_already, validate_can_payout, validate_has_voted,
         validate_max_participant, validate_max_participants, validate_not_blacklist,
         validate_number_of_votes, validate_owner, validate_owner_or_admin, validate_pick_per_votes,
         validate_project_to_apply, validate_project_to_approve, validate_review_notes,
         validate_round_detail, validate_vault_fund, validate_voting_period, validate_whitelist,
-    },
-    voter_writer::{
+    }, voter_writer::{
         add_to_black_list, add_to_white_list, is_black_listed, is_white_listed,
         remove_from_black_list, remove_from_white_list,
-    },
-    voting_writer::{
+    }, voting_writer::{
         add_voting_result, find_voting_result, get_voting_state, increment_voting_count,
         read_voting_state, set_voting_state,
-    },
+    }
 };
 use loam_sdk::soroban_sdk::{self, contract, contractimpl, token::TokenClient, String, Vec};
 use loam_sdk::soroban_sdk::{Address, Env};
-loam_sdk::import_contract!(project_registry);
 
 #[contract]
 pub struct Round;
@@ -61,7 +44,7 @@ impl RoundTrait for Round {
         let round_init = is_initialized(env);
         assert!(!round_init, "Round already initialized");
 
-        validate_round_detail(env, &round_detail);
+        validate_round_detail(&round_detail);
 
         let mut num_picks_per_voter = 2;
 
@@ -93,7 +76,7 @@ impl RoundTrait for Round {
         write_round_info(env, &round_info);
         write_token_address(env, &token_address);
         write_project_contract(env, &registry_address);
-        // log_create_round(env, round_info);
+        log_create_round(env, round_info);
     }
 
     fn change_voting_period(env: &Env, admin: Address, round_start_ms: u64, round_end_ms: u64) {
@@ -418,8 +401,7 @@ impl RoundTrait for Round {
         let token_contract = read_token_address(env);
         let token_client = TokenClient::new(env, &token_contract);
         let project_registry_contract = read_project_contract(env);
-        let project_registry_client =
-            project_registry::Client::new(env, &project_registry_contract);
+        let project_registry_client = ProjectRegistryClient::new(env, &project_registry_contract);
         let results = calculate_voting_results(env);
 
         let mut updated_round = round.clone();
@@ -619,13 +601,6 @@ impl RoundTrait for Round {
 
     fn blacklist_status(env: &Env, address: Address) -> bool {
         is_black_listed(env, address)
-    }
-
-    fn get_round_info(env: &Env) -> RoundDetail {
-        let round = read_round_info(env);
-        extend_instance(env);
-
-        round
     }
 
     // get_pairs is test only & protected and check correctness of pairs generated. use get_pair_to_vote for users

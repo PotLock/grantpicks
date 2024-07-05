@@ -12,7 +12,7 @@ mod storage;
 mod storage_key;
 mod test;
 mod token_writer;
-mod wasm_writer;
 mod validation;
+mod wasm_writer;
 
 pub use crate::internal::RoundFactory;

@@ -2,22 +2,43 @@ use crate::{
     application_writer::{
         add_application, find_applications, get_application, get_application_by_id,
         increment_application_number, update_application,
-    }, approval_writer::{
+    },
+    approval_writer::{
         add_approved_project, is_project_approved, read_approved_projects, remove_approved_project,
-    }, calculation::calculate_voting_results, data_type::{
+    },
+    calculation::calculate_voting_results,
+    data_type::{
         ApplicationStatus, CreateRoundParams, Pair, PickResult, PickedPair, ProjectApplication,
         ProjectVotingResult, RoundDetail, VotingResult,
-    }, events::{
+    },
+    events::{
         log_create_round, log_deposit, log_payout, log_project_application,
         log_project_application_update, log_update_approved_projects, log_update_round,
         log_update_user_flag, log_update_white_list, log_vote,
-    }, methods::RoundTrait, pair::{get_all_pairs, get_pair_by_index, get_random_pairs}, project_registry_writer::{read_project_contract, write_project_contract}, round_writer::{is_initialized, read_round_info, write_round_info}, storage::extend_instance, token_writer::{read_token_address, write_token_address}, utils::{count_total_available_pairs, get_ledger_second_as_millis}, validation::{validate_application_period, validate_approved_projects, validate_blacklist, validate_blacklist_already, validate_can_payout, validate_has_voted, validate_max_participant, validate_max_participants, validate_not_blacklist, validate_number_of_votes, validate_owner, validate_owner_or_admin, validate_project_to_apply, validate_project_to_approve, validate_review_notes, validate_round_detail, validate_vault_fund, validate_voting_period, validate_whitelist}, voter_writer::{
+    },
+    methods::RoundTrait,
+    pair::{get_all_pairs, get_pair_by_index, get_random_pairs},
+    project_registry_writer::{read_project_contract, write_project_contract},
+    round_writer::{is_initialized, read_round_info, write_round_info},
+    storage::extend_instance,
+    token_writer::{read_token_address, write_token_address},
+    utils::{count_total_available_pairs, get_ledger_second_as_millis},
+    validation::{
+        validate_application_period, validate_approved_projects, validate_blacklist,
+        validate_blacklist_already, validate_can_payout, validate_has_voted,
+        validate_max_participant, validate_max_participants, validate_not_blacklist,
+        validate_number_of_votes, validate_owner, validate_owner_or_admin, validate_pick_per_votes,
+        validate_project_to_apply, validate_project_to_approve, validate_review_notes,
+        validate_round_detail, validate_vault_fund, validate_voting_period, validate_whitelist,
+    },
+    voter_writer::{
         add_to_black_list, add_to_white_list, is_black_listed, is_white_listed,
         remove_from_black_list, remove_from_white_list,
-    }, voting_writer::{
+    },
+    voting_writer::{
         add_voting_result, find_voting_result, get_voting_state, increment_voting_count,
         read_voting_state, set_voting_state,
-    }
+    },
 };
 use loam_sdk::soroban_sdk::{self, contract, contractimpl, token::TokenClient, String, Vec};
 use loam_sdk::soroban_sdk::{Address, Env};
@@ -46,16 +67,9 @@ impl RoundTrait for Round {
 
         if round_detail.num_picks_per_voter.is_some() {
             num_picks_per_voter = round_detail.num_picks_per_voter.unwrap();
-            assert!(
-                num_picks_per_voter > 0,
-                "Number of picks per voter must be greater than 0"
-            );
-            assert!(
-                num_picks_per_voter <= 10,
-                "Number of picks per voter must be less than or equal 10"
-            );
-        }      
-        
+            validate_pick_per_votes(num_picks_per_voter);
+        }
+
         let round_info = RoundDetail {
             id: round_detail.id,
             name: round_detail.name,
@@ -79,7 +93,7 @@ impl RoundTrait for Round {
         write_round_info(env, &round_info);
         write_token_address(env, &token_address);
         write_project_contract(env, &registry_address);
-        log_create_round(env, round_info);
+        // log_create_round(env, round_info);
     }
 
     fn change_voting_period(env: &Env, admin: Address, round_start_ms: u64, round_end_ms: u64) {
@@ -196,7 +210,7 @@ impl RoundTrait for Round {
         let current_ms = env.ledger().timestamp() * 1000;
 
         validate_application_period(env, &round);
-        
+
         if round.use_whitelist {
             validate_whitelist(env, &applicant);
         }
@@ -289,7 +303,7 @@ impl RoundTrait for Round {
         let mut round = read_round_info(env);
 
         round.vault_balance += amount;
-        
+
         write_round_info(env, &round);
         extend_instance(env);
         log_deposit(env, round.id, actor, amount);
@@ -323,7 +337,7 @@ impl RoundTrait for Round {
                 "Picked pair is greater than total available pairs"
             );
 
-            let pair = get_pair_by_index(env, total_available_pairs, picked_index, projects.clone());
+            let pair = get_pair_by_index(env, total_available_pairs, picked_index, &projects);
             let is_project_in_pair = pair.projects.first_index_of(picked_pair.voted_project_id);
             assert!(is_project_in_pair.is_some(), "Project not in pair");
 
@@ -631,7 +645,7 @@ impl RoundTrait for Round {
     fn get_pair_by_index(env: &Env, index: u32) -> Pair {
         let approved_project = read_approved_projects(env);
         let total_available_pairs = count_total_available_pairs(approved_project.len());
-        let pair = get_pair_by_index(env, total_available_pairs, index, approved_project.clone());
+        let pair = get_pair_by_index(env, total_available_pairs, index, &approved_project);
         extend_instance(env);
 
         pair
@@ -643,7 +657,7 @@ impl RoundTrait for Round {
         let mut round = read_round_info(env);
 
         validate_owner_or_admin(env, &admin, &round);
-        
+
         assert!(
             num_picks_per_voter > 0,
             "Number of picks per voter must be greater than 0"
@@ -663,7 +677,7 @@ impl RoundTrait for Round {
         extend_instance(env);
     }
 
-    fn transfer_ownership(env: &Env, owner: Address, new_owner: Address){
+    fn transfer_ownership(env: &Env, owner: Address, new_owner: Address) {
         owner.require_auth();
 
         let mut round = read_round_info(env);

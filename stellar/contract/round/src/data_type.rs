@@ -30,9 +30,6 @@ pub struct RoundDetail {
     pub max_participants: u32,
 }
 
-/*
-{admins: [CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4], amount: 5, application_end_ms: 10000, application_start_ms: 0, contacts: [], description: "description", id: 1, max_participants: 10, name: "name", num_picks_per_voter: 2, use_whitelist: false, video_url: "image_url", voting_end_ms: 30000, voting_start_ms: 20000}]]
-*/
 #[contracttype]
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct CreateRoundParams {

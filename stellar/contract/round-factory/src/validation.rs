@@ -1,10 +1,13 @@
+use crate::{
+    admin_writer::{read_admins, read_owner},
+    data_type::CreateRoundParams,
+};
 use loam_sdk::soroban_sdk::{Address, Env};
-use crate::{admin_writer::{read_admins, read_owner}, data_type::CreateRoundParams};
 
 pub fn validate_round(params: &CreateRoundParams) {
-  assert!(
-    params.voting_start_ms < params.voting_end_ms,
-    "Round start time must be less than round end time"
+    assert!(
+        params.voting_start_ms < params.voting_end_ms,
+        "Round start time must be less than round end time"
     );
 
     assert!(
@@ -42,9 +45,15 @@ pub fn is_owner(env: &Env, admin: &Address) -> bool {
 }
 
 pub fn validate_owner_or_admin(env: &Env, admin: &Address) {
-    assert!(is_owner_or_admin(env, &admin), "Only the contract owner or admin can performe action");
+    assert!(
+        is_owner_or_admin(env, &admin),
+        "Only the contract owner or admin can performe action"
+    );
 }
 
 pub fn validate_owner(env: &Env, admin: &Address) {
-    assert!(is_owner(env, admin), "Only the contract owner can performe action");
+    assert!(
+        is_owner(env, admin),
+        "Only the contract owner can performe action"
+    );
 }

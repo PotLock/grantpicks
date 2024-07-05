@@ -4,6 +4,9 @@
 	"description": "",
 	"author": "dev@potlock.org",
 	"license": "MIT",
+	"workspaces": [
+		"packages/*"
+	],
 	"scripts": {
 		"contract:test": "npm run contract:build && cargo test",
 		"contract:build": "bash build.sh",

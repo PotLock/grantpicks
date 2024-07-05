@@ -27,7 +27,12 @@ fn deploy_registry_contract<'a>(env: &Env, admin: &Address) -> project_registry:
     contract
 }
 
-fn generate_fake_project(env: &Env, owner: &Address, project_contract: &project_registry::Client, total: u64) {
+fn generate_fake_project(
+    env: &Env,
+    owner: &Address,
+    project_contract: &project_registry::Client,
+    total: u64,
+) {
     let admin = Address::generate(&env);
     let mut project_contracts: Vec<project_registry::ProjectContract> = Vec::new(&env);
     let mut project_contacts: Vec<project_registry::ProjectContact> = Vec::new(&env);
@@ -68,7 +73,7 @@ fn generate_fake_project(env: &Env, owner: &Address, project_contract: &project_
 
     for _i in 0..total {
         let project_params = &project_registry::ProjectParams {
-            image_url: String::from_str(&env, "image_url"),
+            image_url: String::from_str(&env, "video_url"),
             name: String::from_str(&env, "name"),
             overview: String::from_str(&env, "overview"),
             payout_address: owner.clone(),
@@ -623,7 +628,7 @@ fn test_voting_deposit_and_payout() {
 }
 
 /**
- * Note: 
+ * Note:
  * Don't change this test, it's a critical test for pairs
  * posibilities = (num_of_projects * (num_of_projects - 1))/num_of_project_per_pair
  * expected_generated_pairs_per_project = num_of_projects - 1
@@ -667,7 +672,7 @@ fn test_get_all_pairs() {
 
     let num_of_projects: u32 = 15;
     let num_of_project_per_pair: u32 = 2;
-    let posibilities:u32 = (num_of_projects * (num_of_projects - 1))/num_of_project_per_pair;
+    let posibilities: u32 = (num_of_projects * (num_of_projects - 1)) / num_of_project_per_pair;
     let expected_generated_pairs_per_project = num_of_projects - 1;
     let mut project_ids: Vec<u128> = Vec::new(&env);
     for i in 0..num_of_projects {
@@ -880,16 +885,9 @@ fn test_application_period() {
 
     let new_application_start_ms = get_ledger_second_as_millis(&env) + 1000;
     let new_application_end_ms = get_ledger_second_as_millis(&env) + 2000;
-    round.change_application_period(
-        &admin,
-        &new_application_start_ms,
-        &new_application_end_ms,
-    );
+    round.change_application_period(&admin, &new_application_start_ms, &new_application_end_ms);
 
     let round_info = round.round_info();
-    assert_eq!(
-        round_info.application_start_ms,
-        new_application_start_ms
-    );
+    assert_eq!(round_info.application_start_ms, new_application_start_ms);
     assert_eq!(round_info.application_end_ms, new_application_end_ms);
 }

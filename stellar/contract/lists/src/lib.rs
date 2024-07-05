@@ -12,7 +12,7 @@ mod storage;
 mod storage_key;
 mod test;
 mod upvotes_writer;
-mod validation;
 mod utils;
+mod validation;
 
 pub use crate::internal::ListsContract;

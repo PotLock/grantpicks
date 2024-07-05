@@ -1,7 +1,16 @@
 use loam_sdk::soroban_sdk::{self, contract, contractimpl, Address, BytesN, Env, Vec};
 
 use crate::{
-    admin_writer::{add_admin, read_admins, read_owner, remove_admin, write_owner}, data_type::{CreateRoundParams, RoundInfo}, events::log_create_round_contract_event, methods::RoundFactoryTrait, project_registry_writer::{read_project_contract, write_project_contract}, round_writer::{add_round, find_round, increment_round_number}, storage::extend_instance, token_writer::{read_token_address, write_token_address}, validation::{validate_owner, validate_owner_or_admin, validate_round}, wasm_writer::{read_wasm_hash, write_wasm_hash}
+    admin_writer::{add_admin, read_admins, read_owner, remove_admin, write_owner},
+    data_type::{CreateRoundParams, RoundInfo},
+    events::log_create_round_contract_event,
+    methods::RoundFactoryTrait,
+    project_registry_writer::{read_project_contract, write_project_contract},
+    round_writer::{add_round, find_round, increment_round_number},
+    storage::extend_instance,
+    token_writer::{read_token_address, write_token_address},
+    validation::{validate_owner, validate_owner_or_admin, validate_round},
+    wasm_writer::{read_wasm_hash, write_wasm_hash},
 };
 loam_sdk::import_contract!(round);
 
@@ -10,7 +19,13 @@ pub struct RoundFactory;
 
 #[contractimpl]
 impl RoundFactoryTrait for RoundFactory {
-    fn initialize(env: &Env, owner: Address, token_address: Address, registry_address: Address, wasm_hash: BytesN<32>) {
+    fn initialize(
+        env: &Env,
+        owner: Address,
+        token_address: Address,
+        registry_address: Address,
+        wasm_hash: BytesN<32>,
+    ) {
         write_owner(env, &owner);
         write_wasm_hash(env, &wasm_hash);
         write_token_address(env, &token_address);

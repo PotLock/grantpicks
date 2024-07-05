@@ -1,5 +1,5 @@
-use loam_sdk::soroban_sdk::Env;
 use crate::storage_key::ContractKey;
+use loam_sdk::soroban_sdk::Env;
 
 pub const DAY_IN_LEDGERS: u32 = 17280;
 pub const PERSISTENT_BUMP_CONSTANT: u32 = DAY_IN_LEDGERS * 180;

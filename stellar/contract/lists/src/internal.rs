@@ -4,26 +4,38 @@ use crate::{
     data_type::{
         ListExternal, ListInternal, RegistrationExternal, RegistrationInput, RegistrationInternal,
         RegistrationStatus,
-    }, events::{
+    },
+    events::{
         log_create_list_event, log_create_registration_event, log_delete_list_event,
         log_delete_registration_event, log_transfer_ownership_event, log_unvote_list_event,
         log_update_admins_event, log_update_list_event, log_update_registration_event,
         log_upvote_list_event,
-    }, lists_writer::{
+    },
+    lists_writer::{
         add_admin_to_list, add_list, add_list_to_owned_list, add_list_to_registrant_lists,
         clear_admins, get_list_by_id, get_lists_registered_by, increment_lists_number,
         read_admins_of_list, read_lists, read_lists_number, read_lists_owned_by,
         remove_admin_from_list, remove_list, remove_list_from_owned_list,
         remove_list_to_registrant_lists,
-    }, methods::ListsTrait, owner_writer::{read_contract_owner, write_contract_owner}, registration_writer::{
+    },
+    methods::ListsTrait,
+    owner_writer::{read_contract_owner, write_contract_owner},
+    registration_writer::{
         add_registration, add_registration_id_to_user, add_registration_to_list,
         get_registration_by_id, get_registrations_of_list, get_user_registration_ids_of,
         increment_registration_number, read_registration_number, remove_registration,
         remove_registration_id_to_user, remove_registration_to_list,
-    }, storage::extend_instance, upvotes_writer::{
+    },
+    storage::extend_instance,
+    upvotes_writer::{
         add_upvote_to_list, add_upvoted_list_to_user, clear_upvotes_for_list, read_list_upvotes,
         read_user_upvoted_lists, remove_upvote_from_list, remove_upvoted_list_from_user,
-    }, utils::unwrap_or_blank, validation::{validate_cover_image_url, validate_description, validate_has_upvoted_list, validate_name, validate_upvotes_status, validate_valid_list_id}
+    },
+    utils::unwrap_or_blank,
+    validation::{
+        validate_cover_image_url, validate_description, validate_has_upvoted_list, validate_name,
+        validate_upvotes_status, validate_valid_list_id,
+    },
 };
 
 #[contract]
@@ -50,7 +62,7 @@ impl ListsTrait for ListsContract {
         validate_name(&name);
 
         if description.is_some() {
-           validate_description(&description)
+            validate_description(&description);
         }
 
         if cover_image_url.is_some() {

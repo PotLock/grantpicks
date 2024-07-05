@@ -7,7 +7,10 @@ use crate::project_writer::{
 };
 use crate::soroban_sdk::{self, contract, contractimpl, Address, Env, Vec};
 use crate::storage::extend_instance;
-use crate::validation::{validate_application, validate_contract_owner, validate_owner, validate_owner_or_admin, validate_update_project};
+use crate::validation::{
+    validate_application, validate_contract_owner, validate_owner, validate_owner_or_admin,
+    validate_update_project,
+};
 
 #[contract]
 pub struct ProjectRegistry;
@@ -127,7 +130,7 @@ impl ProjectRegistryTrait for ProjectRegistry {
         assert!(project.is_some(), "project not found");
 
         let mut uproject = project.unwrap();
-        
+
         validate_owner(&admin, &uproject);
 
         let index = uproject.admins.first_index_of(&admin_to_remove.clone());

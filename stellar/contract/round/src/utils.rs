@@ -1,6 +1,5 @@
 use loam_sdk::soroban_sdk::Env;
 
-
 pub fn count_total_available_pairs(num_of_projects: u32) -> u32 {
     num_of_projects * (num_of_projects - 1) / 2
 }
@@ -20,5 +19,5 @@ pub fn get_arithmetic_index(num_of_projects: u32, index: u32) -> (u32, u32) {
 }
 
 pub fn get_ledger_second_as_millis(env: &Env) -> u64 {
-  env.ledger().timestamp() * 1000
+    env.ledger().timestamp() * 1000
 }

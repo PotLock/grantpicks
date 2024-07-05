@@ -15,9 +15,9 @@ mod storage;
 mod storage_key;
 mod test;
 mod token_writer;
+mod utils;
+mod validation;
 mod voter_writer;
 mod voting_writer;
-mod validation;
-mod utils;
 
 pub use crate::internal::Round;

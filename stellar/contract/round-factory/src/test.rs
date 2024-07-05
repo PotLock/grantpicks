@@ -36,7 +36,7 @@ fn create_token<'a>(env: &Env, admin: &Address) -> (TokenClient<'a>, StellarAsse
 }
 
 fn get_ledger_second_as_millis(env: &Env) -> u64 {
-  env.ledger().timestamp() * 1000
+    env.ledger().timestamp() * 1000
 }
 
 #[test]
@@ -51,8 +51,13 @@ fn test_create_round() {
     let token_address = token_client.address;
     let round_factory = deploy_contract(&env, &admin);
 
-    let wasm_hash = env.deployer().upload_contract_wasm(project_registry::WASM);
-    round_factory.initialize(&admin, &token_address, &registry_contract.address, &wasm_hash);
+    let wasm_hash = env.deployer().upload_contract_wasm(round::WASM);
+    round_factory.initialize(
+        &admin,
+        &token_address,
+        &registry_contract.address,
+        &wasm_hash,
+    );
 
     let mut admins = Vec::new(&env);
     admins.push_back(user1.clone());
@@ -60,7 +65,7 @@ fn test_create_round() {
     let params = CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
-        video_url: String::from_str(&env, "image_url"),
+        video_url: String::from_str(&env, "video_url"),
         contacts: Vec::new(&env),
         voting_start_ms: get_ledger_second_as_millis(&env) + 20000,
         voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
@@ -100,7 +105,12 @@ fn test_add_remove_admin() {
     let round_factory = deploy_contract(&env, &admin);
 
     let wasm_hash = env.deployer().upload_contract_wasm(project_registry::WASM);
-    round_factory.initialize(&admin, &token_address, &registry_contract.address, &wasm_hash);
+    round_factory.initialize(
+        &admin,
+        &token_address,
+        &registry_contract.address,
+        &wasm_hash,
+    );
 
     let new_admin = Address::generate(&env);
     round_factory.add_admin(&admin, &new_admin);
@@ -122,7 +132,12 @@ fn transfer_owmership() {
     let round_factory = deploy_contract(&env, &admin);
 
     let wasm_hash = env.deployer().upload_contract_wasm(project_registry::WASM);
-    round_factory.initialize(&admin, &token_address, &registry_contract.address, &wasm_hash);
+    round_factory.initialize(
+        &admin,
+        &token_address,
+        &registry_contract.address,
+        &wasm_hash,
+    );
 
     assert!(round_factory.owner() == admin);
     let new_admin = Address::generate(&env);

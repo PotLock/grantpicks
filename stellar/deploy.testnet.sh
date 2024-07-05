@@ -11,7 +11,7 @@ echo "registry contract id: $registry_contract_id"
 echo "factory contract id: $factory_contract_id"
 echo "deployer address: $my_address"
 
-wasm_hash=($(soroban contract install --wasm target/loam/round_factory.wasm --source alice --network testnet))
+wasm_hash=($(soroban contract install --wasm target/loam/round.wasm --source alice --network testnet))
 
 soroban contract invoke --source alice --network testnet --id ${lists_contract_id} -- initialize --owner ${my_address} 
 soroban contract invoke --source alice --network testnet --id ${registry_contract_id} -- initialize --contract_owner ${my_address} 

@@ -14,7 +14,9 @@ const UserMenu = ({
 	onShowChooseWallet,
 	onCloseChooseWalletMenu,
 	onClose,
+	isOpen,
 }: {
+	isOpen: boolean
 	onShowChooseWallet: () => void
 	onCloseChooseWalletMenu: () => void
 	onClose: () => void
@@ -23,8 +25,8 @@ const UserMenu = ({
 	const { connectedWallet, nearAccounts, onSignOut, stellarPubKey } =
 		useWallet()
 	return (
-		<Menu onClose={onClose} position={`right-0 -bottom-72`}>
-			<div className="p-4 rounded-2xl bg-white shadow-xl border border-grantpicks-black-200 min-w-[320px]">
+		<Menu isOpen={isOpen} onClose={onClose} position={`right-0 -bottom-72`}>
+			<div className="p-4 rounded-t-2xl md:rounded-2xl bg-white shadow-xl border border-grantpicks-black-200 min-w-[320px]">
 				<div className="flex items-center justify-between mb-4">
 					<div className="flex items-center space-x-2">
 						<div className="bg-grantpicks-black-200 rounded-full w-10 h-10" />

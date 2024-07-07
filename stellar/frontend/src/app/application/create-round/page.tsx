@@ -165,6 +165,7 @@ const CreateRoundPage = () => {
 									</div>
 									{showContactType && (
 										<Menu
+											isOpen={showContactType}
 											onClose={() => setShowContactType(false)}
 											position="right-0 left-0 -bottom-[150px]"
 										>

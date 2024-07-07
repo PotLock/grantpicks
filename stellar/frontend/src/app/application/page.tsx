@@ -2,13 +2,14 @@
 
 import React from 'react'
 import ApplicationLayout from '../components/pages/application/Layout'
-import TopNav from '../components/commons/TopNav'
-import WalletProvider from '../providers/WalletProvider'
+import Header from '../components/pages/application/Header'
+import Rounds from '../components/pages/application/Rounds'
 
 const AppPage = () => {
 	return (
 		<ApplicationLayout>
-			<TopNav />
+			<Header />
+			<Rounds />
 		</ApplicationLayout>
 	)
 }

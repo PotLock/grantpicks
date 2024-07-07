@@ -24,8 +24,8 @@ const AddAdminsModal = ({
 	const [searchProject, setSearchProject] = useState<string>('')
 	return (
 		<Modal isOpen={isOpen} onClose={onClose}>
-			<div className="bg-white w-[45vw] mx-auto rounded-xl border border-black/10 shadow">
-				<div className="px-6 pb-6 pt-8 bg-grantpicks-black-200 rounded-t-xl relative rounded-xl">
+			<div className="bg-white w-11/12 md:w-[60vw] lg:w-[45vw] mx-auto rounded-xl border border-black/10 shadow">
+				<div className="px-6 pb-6 pt-8 bg-grantpicks-black-50 rounded-t-xl relative rounded-xl">
 					<IconClose
 						size={24}
 						className="fill-grantpicks-black-400 absolute right-4 top-4 cursor-pointer transition hover:opacity-80"

@@ -22,8 +22,8 @@ const AddProjectsModal = ({
 	const [searchProject, setSearchProject] = useState<string>('')
 	return (
 		<Modal isOpen={isOpen} onClose={onClose}>
-			<div className="bg-white w-[45vw] mx-auto rounded-xl border border-black/10 shadow">
-				<div className="p-4 bg-grantpicks-black-200 flex items-center justify-between rounded-t-xl">
+			<div className="bg-white w-11/12 md:w-[60vw] lg:w-[45vw] mx-auto rounded-xl border border-black/10 shadow">
+				<div className="p-4 bg-grantpicks-black-50 flex items-center justify-between rounded-t-xl">
 					<div>
 						<p className="text-base font-bold text-grantpicks-black-950">
 							Add Projects

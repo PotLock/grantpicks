@@ -74,21 +74,18 @@ const TopNav = () => {
 							CONNECT WALLET
 						</Button>
 					)}
-					{showMenu ? (
-						showMenu === 'user' && !!connectedWallet ? (
-							<UserMenu
-								onShowChooseWallet={() => setShowMenu('choose-wallet')}
-								onCloseChooseWalletMenu={() => setShowMenu(null)}
-								onClose={() => setShowMenu(null)}
-							/>
-						) : (
-							<ChooseWalletMenu
-								isConnected={!!connectedWallet}
-								onClose={() => setShowMenu(null)}
-								onBack={() => setShowMenu('user')}
-							/>
-						)
-					) : null}
+					<UserMenu
+						isOpen={showMenu === 'user'}
+						onShowChooseWallet={() => setShowMenu('choose-wallet')}
+						onCloseChooseWalletMenu={() => setShowMenu(null)}
+						onClose={() => setShowMenu(null)}
+					/>
+					<ChooseWalletMenu
+						isOpen={showMenu === 'choose-wallet'}
+						isConnected={!!connectedWallet}
+						onClose={() => setShowMenu(null)}
+						onBack={() => setShowMenu('user')}
+					/>
 				</div>
 			</div>
 		</div>

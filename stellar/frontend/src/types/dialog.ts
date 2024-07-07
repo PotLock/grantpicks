@@ -1,14 +1,21 @@
 export interface DialogProps {
 	onClose: () => void
-	isOpen?: boolean
+	isOpen: boolean
 }
 
 export interface IMenuProps extends DialogProps {
 	children: React.ReactNode
+	position: string
 	closeOnBgClick?: boolean
 	closeOnEscape?: boolean
 	className?: string
-	position?: string
+}
+
+export interface IDrawerProps extends DialogProps {
+	children?: React.ReactNode
+	closeOnBgClick?: boolean
+	closeOnEscape?: boolean
+	className?: string
 }
 
 export interface BaseModalProps {

@@ -1,18 +1,17 @@
-import { IMenuProps } from '@/types/dialog'
+import { IDrawerProps } from '@/types/dialog'
 import clsx from 'clsx'
 import React, { useEffect, useRef } from 'react'
+import IconClose from '../svgs/IconClose'
 
-const Menu = ({
-	onClose,
+const Drawer = ({
 	isOpen,
 	className,
-	position,
 	closeOnBgClick = true,
 	closeOnEscape = true,
+	onClose,
 	children,
-}: IMenuProps) => {
-	const menuRef = useRef<HTMLDivElement>(null)
-
+}: IDrawerProps) => {
+	const drawerRef = useRef<HTMLDivElement>(null)
 	useEffect(() => {
 		const onKeydown = (e: KeyboardEvent) => {
 			if (e.key === 'Escape') {
@@ -28,42 +27,36 @@ const Menu = ({
 	}, [onClose, closeOnEscape])
 
 	const _bgClick = (e: React.MouseEvent<HTMLDivElement>) => {
-		if (e.target === menuRef.current && closeOnBgClick) {
+		console.log('lalla')
+		if (e.target === drawerRef.current && closeOnBgClick) {
 			onClose()
 		}
 	}
-
 	return (
 		<>
 			{isOpen && (
 				<div
-					ref={menuRef}
+					ref={drawerRef}
 					className={clsx('fixed inset-0 z-50 bg-black/10 max-w-full mx-auto')}
 					onClick={(e) => _bgClick(e)}
 				/>
 			)}
-			{isOpen && (
-				<div
-					className={clsx(
-						`absolute hidden md:block z-[60]`,
-						position,
-						className,
-					)}
-				>
-					{children}
-				</div>
-			)}
 			<div
 				className={clsx(
-					`fixed block md:hidden bottom-0 inset-x-0 z-[60] transition-transform transform-gpu duration-500`,
-					isOpen ? 'translate-y-[0%]' : 'translate-y-[100%]',
+					`fixed right-0 inset-y-0 w-full md:w-[360px] z-[60] transition-transform transform-gpu duration-500 min-h-screen`,
+					isOpen ? 'translate-x-[0%]' : 'translate-x-[100%]',
 					className,
 				)}
 			>
+				<IconClose
+					size={24}
+					className="fill-grantpicks-black-600 absolute top-5 right-5 cursor-pointer hover:opacity-70 transition"
+					onClick={onClose}
+				/>
 				{children}
 			</div>
 		</>
 	)
 }
 
-export default Menu
+export default Drawer

@@ -8,6 +8,7 @@ import {
 	SignMessageMethod,
 } from '@near-wallet-selector/core/src/lib/wallet'
 import { WalletSelectorModal } from '@near-wallet-selector/modal-ui'
+import { Dispatch, SetStateAction } from 'react'
 
 export interface IWalletContext {
 	connectedWallet: 'near' | 'stellar' | null
@@ -23,4 +24,13 @@ export interface IWalletContext {
 	stellarKit: StellarWalletsKit | null
 	stellarPubKey: string
 	onOpenStellarWallet: (onSelected?: (option: ISupportedWallet) => void) => void
+}
+
+export interface IModalContextProps {
+	isOpen: boolean
+}
+
+export interface IModalContext {
+	successFundRoundModalProps: IModalContextProps
+	setSuccessFundRoundModalProps: Dispatch<SetStateAction<IModalContextProps>>
 }

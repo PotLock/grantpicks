@@ -7,10 +7,12 @@ import clsx from 'clsx'
 import Menu from '../../commons/Menu'
 
 const ChooseWalletMenu = ({
+	isOpen,
 	onClose,
 	onBack,
 	isConnected,
 }: {
+	isOpen: boolean
 	onClose: () => void
 	onBack: () => void
 	isConnected: boolean
@@ -19,12 +21,13 @@ const ChooseWalletMenu = ({
 
 	return (
 		<Menu
+			isOpen={isOpen}
 			onClose={onClose}
 			position={`right-0 ${isConnected ? `-bottom-[220px]` : `-bottom-48`}`}
 		>
 			<div
 				className={clsx(
-					`p-4 rounded-2xl bg-white shadow-xl border border-grantpicks-black-200`,
+					`p-4 rounded-t-2xl md:rounded-2xl bg-white shadow-xl border border-grantpicks-black-200`,
 				)}
 			>
 				{isConnected && (

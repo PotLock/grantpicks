@@ -13,4 +13,5 @@ pub enum ContractKey {
     VotingState,
     Votes,
     ProjectVotingCount,
+    Admin,
 }

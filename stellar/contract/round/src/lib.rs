@@ -1,6 +1,7 @@
 #![no_std]
 pub(crate) use loam_sdk::soroban_sdk;
 
+mod admin_writer;
 mod application_writer;
 mod approval_writer;
 mod calculation;

@@ -1,3 +1,5 @@
+/// <reference types="node" resolution-mode="require"/>
+import { Buffer } from "buffer";
 import { AssembledTransaction, Client as ContractClient, ClientOptions as ContractClientOptions } from '@stellar/stellar-sdk/contract';
 import type { u32, u64, u128, Option } from '@stellar/stellar-sdk/contract';
 export * from '@stellar/stellar-sdk';
@@ -6,7 +8,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CAA5IGYOAWTPLXHDUGM32AWPYB5V75YXBBFVQQOUBG5KZTBCS5RGSQF5";
+        readonly contractId: "CAL56IJ7N6KUESFPCGI47OBHL6MRC5VXXFGNCY5UD5AFQ4GECIS2LEXY";
     };
 };
 export type ProjectStatus = {
@@ -294,6 +296,26 @@ export interface Client {
          */
         simulate?: boolean;
     }) => Promise<AssembledTransaction<u32>>;
+    /**
+     * Construct and simulate a upgrade transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     */
+    upgrade: ({ owner, new_wasm_hash }: {
+        owner: string;
+        new_wasm_hash: Buffer;
+    }, options?: {
+        /**
+         * The fee to pay for the transaction. Default: BASE_FEE
+         */
+        fee?: number;
+        /**
+         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+         */
+        timeoutInSeconds?: number;
+        /**
+         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+         */
+        simulate?: boolean;
+    }) => Promise<AssembledTransaction<null>>;
 }
 export declare class Client extends ContractClient {
     readonly options: ContractClientOptions;
@@ -309,5 +331,6 @@ export declare class Client extends ContractClient {
         get_projects: (json: string) => AssembledTransaction<Project[]>;
         get_project_admins: (json: string) => AssembledTransaction<string[]>;
         get_total_projects: (json: string) => AssembledTransaction<number>;
+        upgrade: (json: string) => AssembledTransaction<null>;
     };
 }

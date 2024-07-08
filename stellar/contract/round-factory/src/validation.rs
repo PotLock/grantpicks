@@ -35,8 +35,7 @@ pub fn is_owner_or_admin(env: &Env, admin: &Address) -> bool {
     }
 
     let admins = read_admins(env);
-    let is_admin = admins.first_index_of(admin.clone());
-    is_admin.is_some()
+    admins.contains(admin.clone())
 }
 
 pub fn is_owner(env: &Env, admin: &Address) -> bool {

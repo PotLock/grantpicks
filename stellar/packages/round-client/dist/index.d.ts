@@ -1,3 +1,5 @@
+/// <reference types="node" resolution-mode="require"/>
+import { Buffer } from "buffer";
 import { AssembledTransaction, Client as ContractClient, ClientOptions as ContractClientOptions } from '@stellar/stellar-sdk/contract';
 import type { u32, u64, u128, Option } from '@stellar/stellar-sdk/contract';
 export * from '@stellar/stellar-sdk';
@@ -6,7 +8,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CB3SLA64YJC7FVV6LUSI6BYITTTNTCAML7LIZPUIBAM33I7KP22DMG7D";
+        readonly contractId: "CDDGEZXKESDUGZ34W3LF7I5F6TBUKHH3ABXQIZNMBVNHJHX7GT64NMQL";
     };
 };
 export type ApplicationStatus = {
@@ -20,7 +22,6 @@ export type ApplicationStatus = {
     values: void;
 };
 export interface RoundDetail {
-    admins: Array<string>;
     application_end_ms: u64;
     application_start_ms: u64;
     contacts: Array<Contact>;
@@ -193,6 +194,9 @@ export type ContractKey = {
     values: void;
 } | {
     tag: "ProjectVotingCount";
+    values: void;
+} | {
+    tag: "Admin";
     values: void;
 };
 export declare const Errors: {};
@@ -874,6 +878,43 @@ export interface Client {
          */
         simulate?: boolean;
     }) => Promise<AssembledTransaction<null>>;
+    /**
+     * Construct and simulate a upgrade transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     */
+    upgrade: ({ owner, new_wasm_hash }: {
+        owner: string;
+        new_wasm_hash: Buffer;
+    }, options?: {
+        /**
+         * The fee to pay for the transaction. Default: BASE_FEE
+         */
+        fee?: number;
+        /**
+         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+         */
+        timeoutInSeconds?: number;
+        /**
+         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+         */
+        simulate?: boolean;
+    }) => Promise<AssembledTransaction<null>>;
+    /**
+     * Construct and simulate a admins transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     */
+    admins: (options?: {
+        /**
+         * The fee to pay for the transaction. Default: BASE_FEE
+         */
+        fee?: number;
+        /**
+         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+         */
+        timeoutInSeconds?: number;
+        /**
+         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+         */
+        simulate?: boolean;
+    }) => Promise<AssembledTransaction<Array<string>>>;
 }
 export declare class Client extends ContractClient {
     readonly options: ContractClientOptions;
@@ -914,5 +955,7 @@ export declare class Client extends ContractClient {
         get_pair_by_index: (json: string) => AssembledTransaction<Pair>;
         change_number_of_votes: (json: string) => AssembledTransaction<null>;
         transfer_ownership: (json: string) => AssembledTransaction<null>;
+        upgrade: (json: string) => AssembledTransaction<null>;
+        admins: (json: string) => AssembledTransaction<string[]>;
     };
 }

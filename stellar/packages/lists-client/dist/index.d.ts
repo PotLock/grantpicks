@@ -1,3 +1,5 @@
+/// <reference types="node" resolution-mode="require"/>
+import { Buffer } from "buffer";
 import { AssembledTransaction, Client as ContractClient, ClientOptions as ContractClientOptions } from '@stellar/stellar-sdk/contract';
 import type { u64, u128, Option } from '@stellar/stellar-sdk/contract';
 export * from '@stellar/stellar-sdk';
@@ -6,7 +8,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CA2U6UWYH3V2JCZ5EJT33QIRJHIHX6JQ5NCKZLH2YSYWNVF5K4HNI25X";
+        readonly contractId: "CBYOYIB4UZYCYBQ6VZUUK2EAMKAJOC5ZKGDPGWEAJHVBHXGV5E2ZHAZ7";
     };
 };
 export type RegistrationStatus = {
@@ -617,6 +619,26 @@ export interface Client {
          */
         simulate?: boolean;
     }) => Promise<AssembledTransaction<string>>;
+    /**
+     * Construct and simulate a upgrade transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     */
+    upgrade: ({ owner, wasm_hash }: {
+        owner: string;
+        wasm_hash: Buffer;
+    }, options?: {
+        /**
+         * The fee to pay for the transaction. Default: BASE_FEE
+         */
+        fee?: number;
+        /**
+         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+         */
+        timeoutInSeconds?: number;
+        /**
+         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+         */
+        simulate?: boolean;
+    }) => Promise<AssembledTransaction<null>>;
 }
 export declare class Client extends ContractClient {
     readonly options: ContractClientOptions;
@@ -646,5 +668,6 @@ export declare class Client extends ContractClient {
         get_registrations_for_registrant: (json: string) => AssembledTransaction<RegistrationExternal[]>;
         is_registered: (json: string) => AssembledTransaction<boolean>;
         owner: (json: string) => AssembledTransaction<string>;
+        upgrade: (json: string) => AssembledTransaction<null>;
     };
 }

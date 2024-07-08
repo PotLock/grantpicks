@@ -8,7 +8,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CACV6DZCROHXP4D35OJM4V3CR2QWEITGEI742NMVXKM4Z3R4LIAFAO6L";
+        readonly contractId: "CCAMKPINOH75XFIZK5GKHWZJ5S45ZWFPL4O7L26QGS7ZYBCM62FU6EGX";
     };
 };
 export interface RoundInfo {
@@ -39,28 +39,6 @@ export interface Contact {
     name: string;
     value: string;
 }
-export type ContractKey = {
-    tag: "RoundNumber";
-    values: void;
-} | {
-    tag: "Rounds";
-    values: void;
-} | {
-    tag: "Admin";
-    values: void;
-} | {
-    tag: "Owner";
-    values: void;
-} | {
-    tag: "Wasm";
-    values: void;
-} | {
-    tag: "TokenContract";
-    values: void;
-} | {
-    tag: "ProjectContract";
-    values: void;
-};
 export interface RCCreateParams {
     admins: Array<string>;
     application_end_ms: u64;
@@ -100,6 +78,28 @@ export interface RoundDetail {
     voting_end_ms: u64;
     voting_start_ms: u64;
 }
+export type ContractKey = {
+    tag: "RoundNumber";
+    values: void;
+} | {
+    tag: "Rounds";
+    values: void;
+} | {
+    tag: "Admin";
+    values: void;
+} | {
+    tag: "Owner";
+    values: void;
+} | {
+    tag: "Wasm";
+    values: void;
+} | {
+    tag: "TokenContract";
+    values: void;
+} | {
+    tag: "ProjectContract";
+    values: void;
+};
 export declare const Errors: {};
 export interface Client {
     /**
@@ -258,6 +258,26 @@ export interface Client {
          */
         simulate?: boolean;
     }) => Promise<AssembledTransaction<string>>;
+    /**
+     * Construct and simulate a upgrade transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     */
+    upgrade: ({ owner, new_wasm_hash }: {
+        owner: string;
+        new_wasm_hash: Buffer;
+    }, options?: {
+        /**
+         * The fee to pay for the transaction. Default: BASE_FEE
+         */
+        fee?: number;
+        /**
+         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+         */
+        timeoutInSeconds?: number;
+        /**
+         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+         */
+        simulate?: boolean;
+    }) => Promise<AssembledTransaction<null>>;
 }
 export declare class Client extends ContractClient {
     readonly options: ContractClientOptions;
@@ -271,5 +291,6 @@ export declare class Client extends ContractClient {
         remove_admin: (json: string) => AssembledTransaction<null>;
         admins: (json: string) => AssembledTransaction<string[]>;
         owner: (json: string) => AssembledTransaction<string>;
+        upgrade: (json: string) => AssembledTransaction<null>;
     };
 }

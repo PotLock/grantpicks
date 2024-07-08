@@ -10,7 +10,7 @@ if (typeof window !== 'undefined') {
 export const networks = {
     testnet: {
         networkPassphrase: "Test SDF Network ; September 2015",
-        contractId: "CAA5IGYOAWTPLXHDUGM32AWPYB5V75YXBBFVQQOUBG5KZTBCS5RGSQF5",
+        contractId: "CAL56IJ7N6KUESFPCGI47OBHL6MRC5VXXFGNCY5UD5AFQ4GECIS2LEXY",
     }
 };
 export const Errors = {};
@@ -36,6 +36,7 @@ export class Client extends ContractClient {
             "AAAAAAAAAAAAAAAMZ2V0X3Byb2plY3RzAAAAAgAAAAAAAAAEc2tpcAAAA+gAAAAGAAAAAAAAAAVsaW1pdAAAAAAAA+gAAAAGAAAAAQAAA+oAAAfQAAAAB1Byb2plY3QA",
             "AAAAAAAAAAAAAAASZ2V0X3Byb2plY3RfYWRtaW5zAAAAAAABAAAAAAAAAApwcm9qZWN0X2lkAAAAAAAKAAAAAQAAA+oAAAAT",
             "AAAAAAAAAAAAAAASZ2V0X3RvdGFsX3Byb2plY3RzAAAAAAAAAAAAAQAAAAQ=",
+            "AAAAAAAAAAAAAAAHdXBncmFkZQAAAAACAAAAAAAAAAVvd25lcgAAAAAAABMAAAAAAAAADW5ld193YXNtX2hhc2gAAAAAAAPuAAAAIAAAAAA=",
             "AAAAAgAAAAAAAAAAAAAAC0NvbnRyYWN0S2V5AAAAAAMAAAAAAAAAAAAAAA1OdW1PZlByb2plY3RzAAAAAAAAAAAAAAAAAAAIUHJvamVjdHMAAAAAAAAAAAAAAA1SZWdpc3RyeUFkbWluAAAA"]), options);
         this.options = options;
     }
@@ -49,6 +50,7 @@ export class Client extends ContractClient {
         get_project_by_id: (this.txFromJSON),
         get_projects: (this.txFromJSON),
         get_project_admins: (this.txFromJSON),
-        get_total_projects: (this.txFromJSON)
+        get_total_projects: (this.txFromJSON),
+        upgrade: (this.txFromJSON)
     };
 }

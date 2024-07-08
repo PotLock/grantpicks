@@ -16,9 +16,7 @@ pub fn write_approved_projects(env: &Env, approved_projects: &Vec<u128>) {
 
 pub fn is_project_approved(env: &Env, project_id: u128) -> bool {
     let approved_projects = read_approved_projects(env);
-    let index = approved_projects.first_index_of(project_id);
-
-    index.is_some()
+    approved_projects.contains(project_id)
 }
 
 pub fn add_approved_project(env: &Env, project_id: u128) {

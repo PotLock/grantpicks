@@ -1,4 +1,5 @@
 use crate::{
+    admin_writer::is_admin,
     approval_writer::{is_project_approved, read_approved_projects},
     data_type::{CreateRoundParams, RoundDetail},
     external::ProjectRegistryClient,
@@ -42,15 +43,14 @@ pub fn validate_round_detail(round_detail: &CreateRoundParams) {
 
 pub fn validate_owner_or_admin(env: &Env, admin: &Address, round: &RoundDetail) {
     if round.owner != admin.clone() {
-        let admin_index = round.admins.first_index_of(admin.clone());
         assert!(
-            admin_index.is_some(),
+            is_admin(env, admin),
             "Only round owner or round admin can change voting period"
         );
     }
 }
 
-pub fn validate_owner(env: &Env, owner: &Address, round: &RoundDetail) {
+pub fn validate_owner(owner: &Address, round: &RoundDetail) {
     assert!(
         round.owner == owner.clone(),
         "Only round owner can change round detail"

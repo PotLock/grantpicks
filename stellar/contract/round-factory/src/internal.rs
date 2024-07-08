@@ -107,7 +107,7 @@ impl RoundFactoryTrait for RoundFactory {
         validate_owner(env, &owner);
 
         let admins = read_admins(env);
-        let is_exist = admins.first_index_of(admin.clone()).is_some();
+        let is_exist = admins.contains(admin.clone());
 
         assert!(!is_exist, "Admin already exists");
 

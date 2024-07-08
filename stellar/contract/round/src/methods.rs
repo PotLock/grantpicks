@@ -62,4 +62,5 @@ pub trait RoundTrait {
     fn get_pairs(env: &Env, admin: Address) -> Vec<Pair>;
     fn get_pair_by_index(env: &Env, index: u32) -> Pair;
     fn upgrade(env: &Env, owner: Address, new_wasm_hash: BytesN<32>);
+    fn admins(env: &Env) -> Vec<Address>;
 }

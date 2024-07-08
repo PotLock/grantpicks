@@ -135,8 +135,9 @@ fn test_round_initialize() {
     );
 
     let round_info = round.round_info();
+    let admins = round.admins();
     assert_eq!(round_info.expected_amount, 5);
-    assert_eq!(round_info.admins, admins);
+    assert_eq!(admins, admins);
     assert_eq!(round_info.owner, admin);
     assert_eq!(round_info.is_completed, false);
     assert_eq!(round_info.use_whitelist, false);
@@ -520,13 +521,15 @@ fn test_add_remove_admin() {
     let new_admin = Address::generate(&env);
     round.add_admin(&admin, &new_admin);
 
-    let round_info = round.round_info();
-    assert_eq!(round_info.admins.len(), 2);
+    let mut admins = round.admins();
+    assert_eq!(admins.len(), 2);
 
     round.remove_admin(&admin, &new_admin);
 
-    // let round_info = round.round_info();
-    // assert_eq!(round_info.admins.len(), 1);
+    admins = round.admins();
+
+    let round_info = round.round_info();
+    assert_eq!(admins.len(), 1);
 }
 
 #[test]

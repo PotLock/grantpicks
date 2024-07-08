@@ -1,4 +1,5 @@
 use crate::{
+    admin_writer::{add_admin, read_admins, remove_admin, write_admins},
     application_writer::{
         add_application, find_applications, get_application, get_application_by_id,
         increment_application_number, update_application,
@@ -81,7 +82,6 @@ impl RoundTrait for Round {
             video_url: round_detail.video_url,
             contacts: round_detail.contacts,
             owner,
-            admins: round_detail.admins,
             application_start_ms: round_detail.application_start_ms,
             application_end_ms: round_detail.application_end_ms,
             expected_amount: round_detail.expected_amount,
@@ -93,6 +93,7 @@ impl RoundTrait for Round {
         };
 
         write_round_info(env, &round_info);
+        write_admins(env, &round_detail.admins);
         write_token_address(env, &token_address);
         write_project_contract(env, &registry_address);
         log_create_round(env, round_info);
@@ -173,11 +174,10 @@ impl RoundTrait for Round {
         admin.require_auth();
         assert!(admin != round_admin, "Admin and round admin cannot be same");
 
-        let mut round = read_round_info(env);
+        let round = read_round_info(env);
+        validate_owner(&admin, &round);
 
-        validate_owner(env, &admin, &round);
-
-        round.admins.push_back(round_admin);
+        add_admin(env, round_admin);
 
         write_round_info(env, &round);
         extend_instance(env);
@@ -190,19 +190,12 @@ impl RoundTrait for Round {
 
         let round = read_round_info(env);
 
-        validate_owner(env, &admin, &round);
+        validate_owner(&admin, &round);
 
-        let index = round
-            .admins
-            .first_index_of(&round_admin)
-            .expect("Round admin not found");
+        remove_admin(env, &round_admin);
 
-        let mut updated_round = round.clone();
-        updated_round.admins.remove(index);
-
-        write_round_info(env, &updated_round);
         extend_instance(env);
-        log_update_round(env, updated_round);
+        log_update_round(env, round);
     }
 
     fn apply_project(env: &Env, project_id: u128, applicant: Address) -> u128 {
@@ -340,8 +333,8 @@ impl RoundTrait for Round {
             );
 
             let pair = get_pair_by_index(env, total_available_pairs, picked_index, &projects);
-            let is_project_in_pair = pair.projects.first_index_of(picked_pair.voted_project_id);
-            assert!(is_project_in_pair.is_some(), "Project not in pair");
+            let is_project_in_pair = pair.projects.contains(picked_pair.voted_project_id);
+            assert!(is_project_in_pair, "Project not in pair");
 
             let pick_result = PickResult {
                 pair_id: picked_pair.pair_id,
@@ -676,7 +669,7 @@ impl RoundTrait for Round {
 
         let mut round = read_round_info(env);
 
-        validate_owner(env, &owner, &round);
+        validate_owner(&owner, &round);
 
         round.owner = new_owner;
 
@@ -688,10 +681,16 @@ impl RoundTrait for Round {
         owner.require_auth();
 
         let round = read_round_info(env);
-        validate_owner(env, &owner, &round);
+        validate_owner(&owner, &round);
 
         env.deployer().update_current_contract_wasm(new_wasm_hash);
 
         extend_instance(env);
+    }
+
+    fn admins(env: &Env) -> Vec<Address> {
+        let admins = read_admins(env);
+        extend_instance(env);
+        admins
     }
 }

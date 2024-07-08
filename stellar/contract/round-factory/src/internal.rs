@@ -1,7 +1,17 @@
 use loam_sdk::soroban_sdk::{self, contract, contractimpl, Address, BytesN, Env, Vec};
 
 use crate::{
-    admin_writer::{add_admin, read_admins, read_owner, remove_admin, write_owner}, data_type::{CreateRoundParams, RoundInfo, RoundInfoWithDetail}, events::log_create_round_contract_event, external::{RCContact, RCCreateParams, RoundClient}, methods::RoundFactoryTrait, project_registry_writer::{read_project_contract, write_project_contract}, round_writer::{add_round, find_round, increment_round_number}, storage::extend_instance, token_writer::{read_token_address, write_token_address}, validation::{validate_owner, validate_owner_or_admin, validate_round}, wasm_writer::{read_wasm_hash, write_wasm_hash}
+    admin_writer::{add_admin, read_admins, read_owner, remove_admin, write_owner},
+    data_type::{CreateRoundParams, RoundInfo, RoundInfoWithDetail},
+    events::log_create_round_contract_event,
+    external::{RCContact, RCCreateParams, RoundClient},
+    methods::RoundFactoryTrait,
+    project_registry_writer::{read_project_contract, write_project_contract},
+    round_writer::{add_round, find_round, increment_round_number},
+    storage::extend_instance,
+    token_writer::{read_token_address, write_token_address},
+    validation::{validate_owner, validate_owner_or_admin, validate_round},
+    wasm_writer::{read_wasm_hash, write_wasm_hash},
 };
 
 #[contract]
@@ -44,7 +54,7 @@ impl RoundFactoryTrait for RoundFactory {
 
         let mut contacts: Vec<RCContact> = Vec::new(env);
         for contact in params.contacts {
-            contacts.push_back(RCContact{
+            contacts.push_back(RCContact {
                 name: contact.name,
                 value: contact.value,
             });
@@ -138,5 +148,14 @@ impl RoundFactoryTrait for RoundFactory {
         extend_instance(env);
 
         owner
+    }
+
+    fn upgrade(env: &Env, owner: Address, new_wasm_hash: BytesN<32>) {
+        owner.require_auth();
+
+        validate_owner(env, &owner);
+
+        write_wasm_hash(env, &new_wasm_hash);
+        extend_instance(env);
     }
 }

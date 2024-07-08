@@ -1,4 +1,4 @@
-use loam_sdk::soroban_sdk::{Address, Env, String, Vec};
+use loam_sdk::soroban_sdk::{Address, BytesN, Env, String, Vec};
 
 use crate::data_type::{ListExternal, RegistrationExternal, RegistrationInput, RegistrationStatus};
 
@@ -114,4 +114,5 @@ pub trait ListsTrait {
     ) -> bool;
 
     fn owner(env: &Env) -> Address;
+    fn upgrade(env: &Env, owner: Address, new_wasm_hash: BytesN<32>);
 }

@@ -1,16 +1,16 @@
 use loam_sdk::soroban_sdk::{self, contractclient, contracttype, Address, Env, String, Vec};
 
 #[contractclient(name = "RoundClient")]
-pub trait RoundTrait{
-  fn initialize(
-    env: &Env,
-    owner: Address,
-    token_address: Address,
-    registry_address: Address,
-    round_detail: RCCreateParams,
-  );
+pub trait RoundTrait {
+    fn initialize(
+        env: &Env,
+        owner: Address,
+        token_address: Address,
+        registry_address: Address,
+        round_detail: RCCreateParams,
+    );
 
-  fn round_info(env: &Env) -> RoundDetail;
+    fn round_info(env: &Env) -> RoundDetail;
 }
 
 #[contracttype]

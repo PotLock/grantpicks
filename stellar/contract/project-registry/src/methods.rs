@@ -1,4 +1,4 @@
-use loam_sdk::soroban_sdk::{Address, Env, Vec};
+use loam_sdk::soroban_sdk::{Address, BytesN, Env, Vec};
 
 use crate::data_type::{Project, ProjectParams, ProjectStatus, UpdateProjectParams};
 
@@ -23,4 +23,5 @@ pub trait ProjectRegistryTrait {
     fn get_projects(env: &Env, skip: Option<u64>, limit: Option<u64>) -> Vec<Project>;
     fn get_project_admins(env: &Env, project_id: u128) -> Vec<Address>;
     fn get_total_projects(env: &Env) -> u32;
+    fn upgrade(env: &Env, owner: Address, new_wasm_hash: BytesN<32>);
 }

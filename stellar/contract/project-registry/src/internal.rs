@@ -1,3 +1,5 @@
+use loam_sdk::soroban_sdk::BytesN;
+
 use crate::admin::{read_contract_owner, write_contract_owner};
 use crate::data_type::{Project, ProjectParams, ProjectStatus, UpdateProjectParams};
 use crate::events::{log_create_project_event, log_update_project_event};
@@ -171,5 +173,15 @@ impl ProjectRegistryTrait for ProjectRegistry {
         extend_instance(env);
 
         projects.len()
+    }
+
+    fn upgrade(env: &Env, owner: Address, new_wasm_hash: BytesN<32>) {
+        owner.require_auth();
+
+        validate_contract_owner(env, &owner);
+
+        env.deployer().update_current_contract_wasm(new_wasm_hash);
+
+        extend_instance(env);
     }
 }

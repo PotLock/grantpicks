@@ -16,4 +16,5 @@ pub trait RoundFactoryTrait {
     fn transfer_ownership(env: &Env, owner: Address, new_owner: Address);
     fn admins(env: &Env) -> Vec<Address>;
     fn owner(env: &Env) -> Address;
+    fn upgrade(env: &Env, owner: Address, new_wasm_hash: BytesN<32>);
 }

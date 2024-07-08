@@ -34,3 +34,7 @@ pub fn validate_has_upvoted_list(env: &Env, voter: &Address, list_id: u128) {
     let upvotes = read_list_upvotes(env, list_id);
     assert!(upvotes.contains(voter), "Not upvoted");
 }
+
+pub fn validate_contract_owner(owner: &Address, caller: &Address) {
+    assert!(caller == owner, "Only contract owner can call this method");
+}

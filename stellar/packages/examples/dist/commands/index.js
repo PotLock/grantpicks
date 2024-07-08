@@ -1,6 +1,7 @@
 import createRandomRounds from './round-factory/create-random.js';
 import getRound from './round-factory/get-round.js';
 import initRoundF from './round-factory/init.js';
+import { addAdmin } from './round/add-admin.js';
 import { roundInfo } from './round/info.js';
 import { initRound } from './round/init.js';
 async function commands(params, app) {
@@ -20,6 +21,9 @@ async function commands(params, app) {
             break;
         case 'round-info':
             result = await roundInfo(params.slice(1), app);
+            break;
+        case 'add-admin':
+            result = await addAdmin(params.slice(1), app);
             break;
     }
     console.log('result', result);

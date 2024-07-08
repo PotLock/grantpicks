@@ -2,7 +2,7 @@ use crate::data_type::{
     ApplicationStatus, CreateRoundParams, Pair, PickedPair, ProjectApplication,
     ProjectVotingResult, RoundDetail, VotingResult,
 };
-use loam_sdk::soroban_sdk::{Address, Env, String, Vec};
+use loam_sdk::soroban_sdk::{Address, BytesN, Env, String, Vec};
 
 pub trait RoundTrait {
     fn initialize(
@@ -61,4 +61,5 @@ pub trait RoundTrait {
     fn blacklist_status(env: &Env, address: Address) -> bool;
     fn get_pairs(env: &Env, admin: Address) -> Vec<Pair>;
     fn get_pair_by_index(env: &Env, index: u32) -> Pair;
+    fn upgrade(env: &Env, owner: Address, new_wasm_hash: BytesN<32>);
 }

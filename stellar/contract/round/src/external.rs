@@ -1,9 +1,9 @@
-use loam_sdk::soroban_sdk::{self, contractclient, contracttype, Env, Address, String, Vec};
+use loam_sdk::soroban_sdk::{self, contractclient, contracttype, Address, Env, String, Vec};
 
-#[contractclient(name="ProjectRegistryClient")]
+#[contractclient(name = "ProjectRegistryClient")]
 pub trait ProjectRegistryTrait {
-  fn get_project_by_id(env: &Env, project_id: u128) -> Option<Project>;
-  fn get_total_projects(env: &Env) -> u32;
+    fn get_project_by_id(env: &Env, project_id: u128) -> Option<Project>;
+    fn get_total_projects(env: &Env) -> u32;
 }
 
 #[contracttype]

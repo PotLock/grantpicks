@@ -1,4 +1,4 @@
-use loam_sdk::soroban_sdk::{self, contract, contractimpl, Address, Env, Map, String, Vec};
+use loam_sdk::soroban_sdk::{self, contract, contractimpl, Address, BytesN, Env, Map, String, Vec};
 
 use crate::{
     data_type::{
@@ -33,8 +33,8 @@ use crate::{
     },
     utils::unwrap_or_blank,
     validation::{
-        validate_cover_image_url, validate_description, validate_has_upvoted_list, validate_name,
-        validate_upvotes_status, validate_valid_list_id,
+        validate_contract_owner, validate_cover_image_url, validate_description,
+        validate_has_upvoted_list, validate_name, validate_upvotes_status, validate_valid_list_id,
     },
 };
 
@@ -994,5 +994,15 @@ impl ListsTrait for ListsContract {
 
     fn owner(env: &Env) -> Address {
         read_contract_owner(env)
+    }
+
+    fn upgrade(env: &Env, owner: Address, wasm_hash: BytesN<32>) {
+        owner.require_auth();
+
+        let contract_owner = read_contract_owner(env);
+        validate_contract_owner(&contract_owner, &owner);
+
+        env.deployer().update_current_contract_wasm(wasm_hash);
+        extend_instance(env);
     }
 }

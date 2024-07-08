@@ -14,9 +14,8 @@ pub struct RoundInfo {
 pub struct RoundInfoWithDetail {
     pub round_id: u128,
     pub contract_address: Address,
-    pub detail: RoundDetail
+    pub detail: RoundDetail,
 }
-
 
 #[contracttype]
 #[derive(Clone, Eq, PartialEq)]

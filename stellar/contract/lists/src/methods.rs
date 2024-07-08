@@ -115,4 +115,5 @@ pub trait ListsTrait {
 
     fn owner(env: &Env) -> Address;
     fn upgrade(env: &Env, owner: Address, new_wasm_hash: BytesN<32>);
+    fn admins(env: &Env, list_id: u128) -> Vec<Address>;
 }

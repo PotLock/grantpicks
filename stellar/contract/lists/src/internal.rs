@@ -1005,4 +1005,11 @@ impl ListsTrait for ListsContract {
         env.deployer().update_current_contract_wasm(wasm_hash);
         extend_instance(env);
     }
+
+    fn admins(env: &Env, list_id: u128) -> Vec<Address> {
+        let admins = read_admins_of_list(env, list_id);
+        extend_instance(env);
+        
+        admins
+    }
 }

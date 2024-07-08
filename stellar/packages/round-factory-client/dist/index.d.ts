@@ -8,7 +8,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CCAMKPINOH75XFIZK5GKHWZJ5S45ZWFPL4O7L26QGS7ZYBCM62FU6EGX";
+        readonly contractId: "CBT2ARJZIGLHWKTJ3WET5L4NYFABO7MLTSAIU35BJXFYO62XLSZX2QS2";
     };
 };
 export interface RoundInfo {
@@ -60,7 +60,6 @@ export interface RCContact {
     value: string;
 }
 export interface RoundDetail {
-    admins: Array<string>;
     application_end_ms: u64;
     application_start_ms: u64;
     contacts: Array<RCContact>;

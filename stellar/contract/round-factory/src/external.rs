@@ -50,7 +50,6 @@ pub struct RoundDetail {
     pub voting_start_ms: u64,
     pub voting_end_ms: u64,
     pub owner: Address,
-    pub admins: Vec<Address>,
     pub application_start_ms: u64,
     pub application_end_ms: u64,
     pub expected_amount: u128,

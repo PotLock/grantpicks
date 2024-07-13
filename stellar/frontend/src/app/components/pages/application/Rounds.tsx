@@ -13,6 +13,7 @@ import MoreVertMenu from './MoreVertMenu'
 import RoundDetailDrawer from './RoundDetailDrawer'
 import ApplicationsDrawer from './ApplicationsDrawer'
 import FundRoundModal from './FundRoundModal'
+import { useModalContext } from '@/app/providers/ModalProvider'
 
 const ApplicationRoundsItem = () => {
 	const { selectedRoundType } = useRoundStore()
@@ -20,6 +21,7 @@ const ApplicationRoundsItem = () => {
 	const [showDetailDrawer, setShowDetailDrawer] = useState<boolean>(false)
 	const [showAppsDrawer, setShowAppsDrawer] = useState<boolean>(false)
 	const [showFundRoundModal, setShowFundRoundModal] = useState<boolean>(false)
+	const { setApplyProjectInitProps } = useModalContext()
 
 	return (
 		<div className="p-4 md:p-5 rounded-xl border border-black/10">
@@ -131,7 +133,16 @@ const ApplicationRoundsItem = () => {
 			</div>
 			<div className="w-full">
 				<Button
-					onClick={() => {}}
+					onClick={() => {
+						if (selectedRoundType === 'on-going') {
+						} else if (selectedRoundType === 'upcoming') {
+							setApplyProjectInitProps((prev) => ({
+								...prev,
+								isOpen: true,
+							}))
+						} else {
+						}
+					}}
 					isFullWidth
 					className="!border !border-grantpicks-black-200 !py-2"
 					color="white"

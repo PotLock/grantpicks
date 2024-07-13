@@ -13,6 +13,7 @@ const InputTextArea = forwardRef<HTMLTextAreaElement, InputTextAreaProps>(
 			disabled,
 			required,
 			label,
+			rows = 4,
 			hintLabel,
 			errorMessage,
 			textAlign = 'left',
@@ -34,7 +35,7 @@ const InputTextArea = forwardRef<HTMLTextAreaElement, InputTextAreaProps>(
 						disabled={disabled}
 						value={value}
 						name={name}
-						rows={4}
+						rows={rows}
 						className={clsx(
 							`py-3 px-3 outline-none flex-1 bg-white rounded-xl w-full text-grantpicks-black-950 placeholder-grantpicks-black-400 focus:shadow-xl ${className}`,
 							focus
@@ -61,7 +62,7 @@ const InputTextArea = forwardRef<HTMLTextAreaElement, InputTextAreaProps>(
 					</p>
 				)}
 				{errorMessage && (
-					<p className="flex items-center text-xs text-red-500 pl-3 cursor-default">
+					<p className="flex items-center text-xs text-red-500 cursor-default">
 						{errorMessage}
 					</p>
 				)}

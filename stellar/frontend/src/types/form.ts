@@ -9,6 +9,7 @@ export interface InputProps {
 	name?: string
 	required?: boolean
 	onChange?: React.ChangeEventHandler<HTMLInputElement>
+	onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>
 	disabled?: boolean
 	customLabel?: React.ReactNode
 	label?: string
@@ -18,6 +19,7 @@ export interface InputProps {
 	suffixIcon?: React.ReactNode
 	errorMessage?: JSX.Element
 	textAlign?: 'left' | 'center' | 'right'
+	isStopPropagation?: boolean
 }
 
 export interface InputTextAreaProps {
@@ -73,4 +75,49 @@ export type CreateRoundData = {
 	voting_duration: Date
 	projects: IProjectCreateRound[]
 	admins: IAdminCreateRound[]
+}
+
+export type CreateProjectStep1Data = {
+	title: string
+	project_id: string
+	description: string
+	considering_desc: string
+}
+
+export type CreateProjectStep2Data = {
+	member: string
+}
+
+export type CreateProjectStep3Data = {
+	smart_contracts: {
+		id: string
+		chain: string
+		address: string
+	}[]
+	is_open_source: boolean
+	github_urls: { id: string; github_url: string }[]
+	contacts: {
+		id: string
+		platform: string
+		link_url: string
+	}[]
+}
+
+export type CreateProjectStep4Data = {
+	funding_histories: {
+		id: string
+		source: string
+		date: Date
+		denomination: string
+		amount: string
+		description: string
+	}[]
+	is_havent_raised: boolean
+}
+
+export type CreateProjectStep5Data = {
+	video: {
+		url: string
+		file?: File
+	}
 }

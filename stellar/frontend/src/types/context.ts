@@ -33,4 +33,44 @@ export interface IModalContextProps {
 export interface IModalContext {
 	successFundRoundModalProps: IModalContextProps
 	setSuccessFundRoundModalProps: Dispatch<SetStateAction<IModalContextProps>>
+	setApplyProjectInitProps: Dispatch<SetStateAction<IModalContextProps>>
+	setCreateProjectFormMainProps: Dispatch<SetStateAction<IModalContextProps>>
+}
+
+export interface ICreateProjectForm {
+	title: string
+	project_id: string
+	description: string
+	considering_desc: string
+	team_member: string[]
+	smart_contracts: {
+		chain: string
+		address: string
+	}[]
+	is_open_source: boolean
+	github_urls: string[]
+	contacts: {
+		platform: string
+		link_url: string
+	}[]
+	funding_histories: {
+		source: string
+		date: Date
+		denomination: string
+		amount: string
+		description: string
+	}[]
+	is_havent_raised: boolean
+	video: {
+		url: string
+		file?: File
+	}
+}
+
+export interface ICreateProjectFormContext {
+	data: ICreateProjectForm
+	setData: Dispatch<SetStateAction<ICreateProjectForm>>
+	step: number
+	setStep: Dispatch<SetStateAction<number>>
+	onClose: () => void
 }

@@ -5,6 +5,7 @@ import 'react-datepicker/dist/react-datepicker.css'
 import '@near-wallet-selector/modal-ui/styles.css'
 import WalletProvider from './providers/WalletProvider'
 import ModalProvider from './providers/ModalProvider'
+import { Toaster } from 'react-hot-toast'
 
 const titiliumWeb = Titillium_Web({
 	subsets: ['latin'],
@@ -26,7 +27,10 @@ export default function RootLayout({
 		<html lang="en">
 			<body className={titiliumWeb.className}>
 				<WalletProvider>
-					<ModalProvider>{children}</ModalProvider>
+					<ModalProvider>
+						{children}
+						<Toaster />
+					</ModalProvider>
 				</WalletProvider>
 			</body>
 		</html>

@@ -6,7 +6,7 @@ import InputText from '../../commons/InputText'
 import IconStellar from '../../svgs/IconStellar'
 import { getPriceCrypto } from '@/services/common'
 import Button from '../../commons/Button'
-import { useModal } from '@/app/providers/ModalProvider'
+import { useModalContext } from '@/app/providers/ModalProvider'
 
 interface FundROundModalProps extends BaseModalProps {}
 
@@ -14,7 +14,7 @@ const FundRoundModal = ({ isOpen, onClose }: FundROundModalProps) => {
 	const [stellarPrice, setStellarPrice] = useState<number>(0.0)
 	const [amount, setAmount] = useState<string>('')
 	const [amountUsd, setAmountUsd] = useState<string>('0.00')
-	const { setSuccessFundRoundModalProps } = useModal()
+	const { setSuccessFundRoundModalProps } = useModalContext()
 
 	useEffect(() => {
 		const getPriceStellarToUsd = async () => {

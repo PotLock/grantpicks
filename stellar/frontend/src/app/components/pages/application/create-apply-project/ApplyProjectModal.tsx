@@ -137,6 +137,7 @@ const ApplyProjectModal = ({ isOpen, onClose }: BaseModalProps) => {
 								onClose()
 							}}
 							isFullWidth
+							className="!py-3"
 						>
 							<div className="flex items-center space-x-2">
 								<IconProject size={18} className="fill-grantpicks-black-400" />

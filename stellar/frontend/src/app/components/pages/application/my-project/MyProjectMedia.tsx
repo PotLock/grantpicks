@@ -1,28 +1,31 @@
 import Button from '@/app/components/commons/Button'
 import InputText from '@/app/components/commons/InputText'
-import IconCheckCircle from '@/app/components/svgs/IconCheckCircle'
-import IconProject from '@/app/components/svgs/IconProject'
-import IconTrash from '@/app/components/svgs/IconTrash'
-import { CreateProjectStep5Data } from '@/types/form'
-import React, { useCallback, useRef, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { useCreateProject } from './CreateProjectFormMainModal'
-import { useDropzone } from 'react-dropzone'
-import IconVideo from '@/app/components/svgs/IconVideo'
-import toast from 'react-hot-toast'
-import { toastOptions } from '@/constants/style'
-import { YOUTUBE_URL_REGEX } from '@/constants/regex'
-import IconPlay from '@/app/components/svgs/IconPlay'
+import InputTextArea from '@/app/components/commons/InputTextArea'
+import IconCloseFilled from '@/app/components/svgs/IconCloseFilled'
 import IconPause from '@/app/components/svgs/IconPause'
-import PreviousConfirmationModal from './PreviousConfirmationModal'
+import IconPlay from '@/app/components/svgs/IconPlay'
+import IconTrash from '@/app/components/svgs/IconTrash'
+import IconVideo from '@/app/components/svgs/IconVideo'
+import { YOUTUBE_URL_REGEX } from '@/constants/regex'
+import { toastOptions } from '@/constants/style'
+import {
+	CreateProjectStep1Data,
+	CreateProjectStep2Data,
+	CreateProjectStep5Data,
+} from '@/types/form'
+import React, { useCallback, useRef, useState } from 'react'
+import { useDropzone } from 'react-dropzone'
+import { useForm } from 'react-hook-form'
+import toast from 'react-hot-toast'
 
-const CreateProjectStep5 = () => {
-	const { setStep } = useCreateProject()
-	const [showPrevConfirm, setShowPrevConfirm] = useState<boolean>(false)
+const MyProjectMedia = () => {
+	const [members, setMembers] = useState<string[]>([])
 	const {
+		control,
+		register,
+		watch,
 		handleSubmit,
 		setValue,
-		reset,
 		formState: { errors },
 	} = useForm<CreateProjectStep5Data>()
 	const [accFiles, setAccFiles] = useState<File[]>([])
@@ -33,6 +36,7 @@ const CreateProjectStep5 = () => {
 	const [videoPlayed, setVideoPlayed] = useState<boolean>(false)
 
 	const onDrop = useCallback(async (acceptedFiles: File[]) => {
+		console.log('accfile', acceptedFiles)
 		if (acceptedFiles[0].size / 10 ** 6 > 25) {
 			toast.error('Max. file size is 25 MB', {
 				style: toastOptions.error.style,
@@ -53,33 +57,16 @@ const CreateProjectStep5 = () => {
 		},
 	})
 
-	const onProceed = () => {
-		setStep(5)
-	}
+	const onSaveChangesMedia = () => {}
 
 	return (
-		<div className="bg-grantpicks-black-50 rounded-b-xl w-full relative overflow-y-auto max-h-[80vh]">
-			<div className="pt-10 pb-6 px-4 md:px-6 border-b border-black/10">
-				<div className="flex items-center space-x-2 mb-4">
-					<IconCheckCircle size={18} className="fill-grantpicks-green-600" />
-					<p className="text-sm font-semibold text-grantpicks-black-950">
-						YOUR PROGRESS HAS BEEN SAVED
-					</p>
-				</div>
-				<div className="flex items-center mb-4">
-					<div className="bg-grantpicks-alpha-50/5 border border-grantpicks-alpha-50/[0.07] flex items-center space-x-2 px-2 py-1 rounded-full">
-						<IconProject size={18} className="fill-grantpicks-black-400" />
-						<p className="text-sm font-bold text-grantpicks-black-950">
-							Step 5 of 5
-						</p>
-					</div>
-				</div>
+		<div className="w-full lg:w-[70%] border border-black/10 bg-white rounded-xl text-grantpicks-black-950">
+			<div className="p-3 md:p-5">
 				<p className="text-lg md:text-xl lg:text-2xl font-semibold text-grantpicks-black-950 mb-6">
-					You’ve made it all the way here, add a 3min video to give more
-					insights about your project.{' '}
+					Media
 				</p>
 				{accFiles.length === 0 ? (
-					<div className="bg-white rounded-xl p-4 md:p-6 border border-black/10">
+					<div className="bg-white rounded-xl p-4 md:p-6 border border-black/10 w-full">
 						<div
 							{...getRootProps()}
 							className="border border-dashed rounded-xl border-black/10 p-4 flex flex-col items-center relative"
@@ -130,7 +117,7 @@ const CreateProjectStep5 = () => {
 						</div>
 					</div>
 				) : (
-					<div className="rounded-xl relative bg-white w-full border border-black/10">
+					<div className="rounded-xl relative bg-white w-full border border-black/10 w-full">
 						<div className="flex items-center justify-between px-4 py-3">
 							<p className="text-sm font-semibold text-grantpicks-black-950">
 								{accFiles[0].name}
@@ -187,45 +174,30 @@ const CreateProjectStep5 = () => {
 					</div>
 				)}
 			</div>
-			<div className="p-5 md:p-6 flex items-center space-x-4">
-				<div className="flex-1">
+			<div className="p-3 md:p-5 flex flex-col md:flex-row items-center md:justify-end space-x-0 md:space-x-4 space-y-4 md:space-y-0">
+				<div className="w-full lg:w-auto">
 					<Button
 						color="white"
 						isFullWidth
-						onClick={() => setShowPrevConfirm(true)}
+						onClick={() => {}}
 						className="!py-3 !border !border-grantpicks-black-400"
 					>
-						Previous
+						Discard
 					</Button>
 				</div>
-				<div className="flex-1">
+				<div className="w-full lg:w-auto">
 					<Button
-						color={accFiles.length === 0 ? `disabled` : `black-950`}
 						isFullWidth
-						isDisabled={accFiles.length === 0}
-						onClick={handleSubmit(onProceed)}
+						color="black-950"
+						onClick={handleSubmit(onSaveChangesMedia)}
 						className="!py-3"
 					>
-						Proceed to apply
+						Save changes
 					</Button>
 				</div>
 			</div>
-			<PreviousConfirmationModal
-				isOpen={showPrevConfirm}
-				onPrevious={() => {
-					reset({})
-					setShowPrevConfirm(false)
-					setAccFiles([])
-					setAccFileUrls([])
-					setLinkInput('')
-					setIsDirtyInput(false)
-					setVideoPlayed(false)
-					setStep(4)
-				}}
-				onClose={() => setShowPrevConfirm(false)}
-			/>
 		</div>
 	)
 }
 
-export default CreateProjectStep5
+export default MyProjectMedia

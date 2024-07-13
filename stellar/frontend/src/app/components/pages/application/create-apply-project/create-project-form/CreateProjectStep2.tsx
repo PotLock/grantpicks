@@ -1,25 +1,24 @@
 import Button from '@/app/components/commons/Button'
 import InputText from '@/app/components/commons/InputText'
-import InputTextArea from '@/app/components/commons/InputTextArea'
 import IconCheckCircle from '@/app/components/svgs/IconCheckCircle'
-import IconClose from '@/app/components/svgs/IconClose'
 import IconProject from '@/app/components/svgs/IconProject'
-import IconTrash from '@/app/components/svgs/IconTrash'
-import { CreateProjectStep1Data, CreateProjectStep2Data } from '@/types/form'
+import { CreateProjectStep2Data } from '@/types/form'
 import React, { useEffect, useState } from 'react'
-import { SubmitHandler, useFieldArray, useForm } from 'react-hook-form'
+import { SubmitHandler, useForm } from 'react-hook-form'
 import { useCreateProject } from './CreateProjectFormMainModal'
 import IconCloseFilled from '@/app/components/svgs/IconCloseFilled'
+import PreviousConfirmationModal from './PreviousConfirmationModal'
 
 const CreateProjectStep2 = () => {
 	const [members, setMembers] = useState<string[]>([])
+	const [showPrevConfirm, setShowPrevConfirm] = useState<boolean>(false)
 	const { setStep, data, setData, step } = useCreateProject()
 	const {
-		control,
 		register,
 		watch,
 		handleSubmit,
 		setValue,
+		reset,
 		formState: { errors },
 	} = useForm<CreateProjectStep2Data>()
 
@@ -115,7 +114,7 @@ const CreateProjectStep2 = () => {
 					<Button
 						color="white"
 						isFullWidth
-						onClick={() => setStep(1)}
+						onClick={() => setShowPrevConfirm(true)}
 						className="!py-3 !border !border-grantpicks-black-400"
 					>
 						Previous
@@ -132,6 +131,16 @@ const CreateProjectStep2 = () => {
 					</Button>
 				</div>
 			</div>
+			<PreviousConfirmationModal
+				isOpen={showPrevConfirm}
+				onPrevious={() => {
+					reset({})
+					setMembers([])
+					setShowPrevConfirm(false)
+					setStep(1)
+				}}
+				onClose={() => setShowPrevConfirm(false)}
+			/>
 		</div>
 	)
 }

@@ -7,6 +7,7 @@ const Modal = ({
 	children,
 	closeOnBgClick,
 	closeOnEscape,
+	zIndex = 100,
 }: BaseModalProps) => {
 	const modalRef = useRef<HTMLDivElement>(null)
 
@@ -35,7 +36,10 @@ const Modal = ({
 		<div
 			ref={modalRef}
 			onClick={(e) => bgClick(e)}
-			className="fixed z-[100] inset-0 bg-black/30 flex items-center"
+			className="fixed inset-0 bg-black/30 flex items-center"
+			style={{
+				zIndex,
+			}}
 		>
 			{children}
 		</div>

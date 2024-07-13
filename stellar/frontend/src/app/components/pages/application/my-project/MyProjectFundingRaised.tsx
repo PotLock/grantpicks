@@ -1,27 +1,20 @@
 import Button from '@/app/components/commons/Button'
+import Checkbox from '@/app/components/commons/CheckBox'
 import InputText from '@/app/components/commons/InputText'
 import InputTextArea from '@/app/components/commons/InputTextArea'
-import IconCheckCircle from '@/app/components/svgs/IconCheckCircle'
-import IconProject from '@/app/components/svgs/IconProject'
+import Menu from '@/app/components/commons/Menu'
+import IconAdd from '@/app/components/svgs/IconAdd'
+import IconCalendar from '@/app/components/svgs/IconCalendar'
 import IconTrash from '@/app/components/svgs/IconTrash'
+import IconUnfoldMore from '@/app/components/svgs/IconUnfoldMore'
 import { CreateProjectStep4Data } from '@/types/form'
 import React, { useState } from 'react'
-import {
-	Controller,
-	SubmitHandler,
-	useFieldArray,
-	useForm,
-} from 'react-hook-form'
-import { useCreateProject } from './CreateProjectFormMainModal'
-import IconAdd from '@/app/components/svgs/IconAdd'
-import Checkbox from '@/app/components/commons/CheckBox'
 import DatePicker from 'react-datepicker'
-import IconCalendar from '@/app/components/svgs/IconCalendar'
-import PreviousConfirmationModal from './PreviousConfirmationModal'
+import { Controller, useFieldArray, useForm } from 'react-hook-form'
 
-const CreateProjectStep4 = () => {
-	const { setStep, data, setData } = useCreateProject()
-	const [showPrevConfirm, setShowPrevConfirm] = useState<boolean>(false)
+const MyProjectFundingRaised = () => {
+	const [showContractMenu, setShowContractMenu] = useState<boolean[]>([])
+	const [showContactMenu, setShowContactMenu] = useState<boolean[]>([])
 	const {
 		control,
 		register,
@@ -32,24 +25,15 @@ const CreateProjectStep4 = () => {
 		formState: { errors },
 	} = useForm<CreateProjectStep4Data>({
 		defaultValues: {
-			funding_histories:
-				data.funding_histories.length > 0
-					? data.funding_histories.map((history) => ({
-							source: history.source || '',
-							date: history.date || new Date(),
-							denomination: history.denomination || '',
-							amount: history.amount || '',
-							description: history.description || '',
-						}))
-					: [
-							{
-								source: '',
-								date: new Date(),
-								denomination: '',
-								amount: '',
-								description: '',
-							},
-						],
+			funding_histories: [
+				{
+					source: '',
+					date: new Date(),
+					denomination: '',
+					amount: '',
+					description: '',
+				},
+			],
 		},
 	})
 	const {
@@ -61,36 +45,18 @@ const CreateProjectStep4 = () => {
 		name: 'funding_histories',
 	})
 
-	const onNextStep4: SubmitHandler<CreateProjectStep4Data> = (submitData) => {
-		setData({
-			...data,
-			funding_histories: submitData.funding_histories,
-		})
-		setStep(5)
-	}
+	const onSaveChanges = () => {}
 
-	console.log('githubs', watch())
 	return (
-		<div className="bg-grantpicks-black-50 rounded-b-xl w-full relative overflow-y-auto h-[70vh]">
-			<div className="pt-10 px-4 md:px-6 border-b border-black/10">
-				<div className="flex items-center space-x-2 mb-4">
-					<IconCheckCircle size={18} className="fill-grantpicks-green-600" />
-					<p className="text-sm font-semibold text-grantpicks-black-950">
-						YOUR PROGRESS HAS BEEN SAVED
-					</p>
-				</div>
-				<div className="flex items-center mb-4">
-					<div className="bg-grantpicks-alpha-50/5 border border-grantpicks-alpha-50/[0.07] flex items-center space-x-2 px-2 py-1 rounded-full">
-						<IconProject size={18} className="fill-grantpicks-black-400" />
-						<p className="text-sm font-bold text-grantpicks-black-950">
-							Step 4 of 5
-						</p>
-					</div>
-				</div>
-				<p className="text-lg md:text-xl lg:text-2xl font-semibold text-grantpicks-black-950">
-					Let’s add your funding history{' '}
+		<div className="w-full lg:w-[70%] border border-black/10 bg-white rounded-xl text-grantpicks-black-950">
+			<div className="p-3 md:p-5">
+				<p className="text-lg md:text-xl lg:text-2xl font-semibold text-grantpicks-black-950 mb-6">
+					Links
 				</p>
 				<div className="py-4 md:py-6">
+					<p className="text-grantpicks-black-950 mb-2">
+						Smart Contracts <span className="text-grantpicks-red-600">*</span>
+					</p>
 					<div className="flex flex-col space-y-4 mb-6">
 						{fieldHistories.map((history, index) => (
 							<div
@@ -230,39 +196,30 @@ const CreateProjectStep4 = () => {
 					</div>
 				</div>
 			</div>
-			<div className="p-5 md:p-6 flex items-center space-x-4">
-				<div className="flex-1">
+			<div className="p-3 md:p-5 flex flex-col md:flex-row items-center md:justify-end space-x-0 md:space-x-4 space-y-4 md:space-y-0">
+				<div className="w-full lg:w-auto">
 					<Button
 						color="white"
 						isFullWidth
-						onClick={() => setShowPrevConfirm(true)}
+						onClick={() => {}}
 						className="!py-3 !border !border-grantpicks-black-400"
 					>
-						Previous
+						Discard
 					</Button>
 				</div>
-				<div className="flex-1">
+				<div className="w-full lg:w-auto">
 					<Button
 						color="black-950"
 						isFullWidth
-						onClick={handleSubmit(onNextStep4)}
+						onClick={handleSubmit(onSaveChanges)}
 						className="!py-3"
 					>
-						Next
+						Save changes
 					</Button>
 				</div>
 			</div>
-			<PreviousConfirmationModal
-				isOpen={showPrevConfirm}
-				onPrevious={() => {
-					reset({})
-					setShowPrevConfirm(false)
-					setStep(3)
-				}}
-				onClose={() => setShowPrevConfirm(false)}
-			/>
 		</div>
 	)
 }
 
-export default CreateProjectStep4
+export default MyProjectFundingRaised

@@ -24,4 +24,5 @@ export interface BaseModalProps {
 	children?: React.ReactNode
 	closeOnEscape?: boolean
 	closeOnBgClick?: boolean
+	zIndex?: number
 }

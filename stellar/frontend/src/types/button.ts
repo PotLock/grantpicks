@@ -7,6 +7,7 @@ export type TColor =
 	| 'alpha-50'
 	| 'white'
 	| 'transparent'
+	| 'red'
 
 export interface ButtonProps {
 	color: TColor
@@ -20,4 +21,5 @@ export interface ButtonProps {
 	icon?: React.ReactNode
 	type?: 'button' | 'reset' | 'submit'
 	iconPosition?: 'left' | 'right'
+	textAlign?: 'left' | 'center' | 'right'
 }

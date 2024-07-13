@@ -30,7 +30,7 @@ const InputText = forwardRef<HTMLInputElement, InputProps>(
 			<div className={label ? `gap-y-[10px]` : `gap-y-0`}>
 				{customLabel ||
 					(label && (
-						<p className="font-semibold text-grantpicks-black-950 mb-2 cursor-default">
+						<p className="font-semibold text-sm text-grantpicks-black-950 mb-2 cursor-default">
 							{label}
 							{required && <span className="text-red-500 ml-1">*</span>}
 						</p>

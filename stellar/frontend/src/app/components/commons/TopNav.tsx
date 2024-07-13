@@ -6,16 +6,22 @@ import UserMenu from '../pages/application/UserMenu'
 import IconExpandMore from '../svgs/IconExpandMore'
 import IconExpandLess from '../svgs/IconExpandLess'
 import { prettyTruncate } from '@/utils/helper'
+import { useRouter } from 'next/navigation'
 
 const TopNav = () => {
 	const { connectedWallet, nearAccounts, stellarPubKey } = useWallet()
 	const [showMenu, setShowMenu] = useState<'choose-wallet' | 'user' | null>(
 		null,
 	)
+	const router = useRouter()
+
 	return (
 		<div className="flex fixed z-20 inset-x-0 items-center justify-between px-[5vw] md:px-[10vw] xl:px-[15vw] py-4 bg-white">
-			<div>
-				<p className="text-xl md:text-3xl xl:text-5xl font-black text-grantpicks-black-950">
+			<div
+				className="cursor-pointer transition"
+				onClick={() => router.push(`/application`)}
+			>
+				<p className="text-base md:text-lg xl:text-xl font-black text-grantpicks-black-950">
 					GRANTPICKS
 				</p>
 			</div>

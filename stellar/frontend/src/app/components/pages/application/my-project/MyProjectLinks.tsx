@@ -1,23 +1,17 @@
 import Button from '@/app/components/commons/Button'
+import Checkbox from '@/app/components/commons/CheckBox'
 import InputText from '@/app/components/commons/InputText'
-import IconCheckCircle from '@/app/components/svgs/IconCheckCircle'
-import IconProject from '@/app/components/svgs/IconProject'
-import IconTrash from '@/app/components/svgs/IconTrash'
-import { CreateProjectStep3Data } from '@/types/form'
-import React, { useEffect, useState } from 'react'
-import { SubmitHandler, useFieldArray, useForm } from 'react-hook-form'
-import { useCreateProject } from './CreateProjectFormMainModal'
-import IconUnfoldMore from '@/app/components/svgs/IconUnfoldMore'
 import Menu from '@/app/components/commons/Menu'
 import IconAdd from '@/app/components/svgs/IconAdd'
-import Checkbox from '@/app/components/commons/CheckBox'
-import PreviousConfirmationModal from './PreviousConfirmationModal'
+import IconTrash from '@/app/components/svgs/IconTrash'
+import IconUnfoldMore from '@/app/components/svgs/IconUnfoldMore'
+import { CreateProjectStep3Data } from '@/types/form'
+import React, { useState } from 'react'
+import { useFieldArray, useForm } from 'react-hook-form'
 
-const CreateProjectStep3 = () => {
+const MyProjectLinks = () => {
 	const [showContractMenu, setShowContractMenu] = useState<boolean[]>([])
 	const [showContactMenu, setShowContactMenu] = useState<boolean[]>([])
-	const [showPrevConfirm, setShowPrevConfirm] = useState<boolean>(false)
-	const { setStep, step, data, setData } = useCreateProject()
 	const {
 		control,
 		register,
@@ -28,46 +22,26 @@ const CreateProjectStep3 = () => {
 		formState: { errors },
 	} = useForm<CreateProjectStep3Data>({
 		defaultValues: {
-			smart_contracts:
-				data.smart_contracts.length > 0
-					? data.smart_contracts.map((contract) => ({
-							id: '',
-							chain: contract.chain || '',
-							address: contract.address || '',
-						}))
-					: [
-							{
-								id: '',
-								chain: '',
-								address: '',
-							},
-						],
-			contacts:
-				data.contacts.length > 0
-					? data.contacts.map((contact) => ({
-							id: '',
-							platform: contact.platform || '',
-							link_url: contact.link_url || '',
-						}))
-					: [
-							{
-								id: '',
-								platform: '',
-								link_url: '',
-							},
-						],
-			github_urls:
-				data.github_urls.length > 0
-					? data.github_urls.map((url) => ({
-							id: '',
-							github_url: url || '',
-						}))
-					: [
-							{
-								id: '',
-								github_url: '',
-							},
-						],
+			smart_contracts: [
+				{
+					id: '',
+					chain: '',
+					address: '',
+				},
+			],
+			contacts: [
+				{
+					id: '',
+					platform: '',
+					link_url: '',
+				},
+			],
+			github_urls: [
+				{
+					id: '',
+					github_url: '',
+				},
+			],
 		},
 	})
 	const {
@@ -95,40 +69,13 @@ const CreateProjectStep3 = () => {
 		name: 'contacts',
 	})
 
-	const onNextStep3: SubmitHandler<CreateProjectStep3Data> = (submitData) => {
-		setData({
-			...data,
-			smart_contracts: submitData.smart_contracts,
-			is_open_source: submitData.is_open_source,
-			github_urls: submitData.github_urls.map((url) => url.github_url),
-			contacts: submitData.contacts,
-		})
-		setStep(4)
-	}
-
-	useEffect(() => {
-		setShowContractMenu((prev) => [...prev, false])
-	}, [])
+	const onSaveChanges = () => {}
 
 	return (
-		<div className="bg-grantpicks-black-50 rounded-b-xl w-full relative overflow-y-auto h-[70vh]">
-			<div className="pt-10 px-4 md:px-6 border-b border-black/10">
-				<div className="flex items-center space-x-2 mb-4">
-					<IconCheckCircle size={18} className="fill-grantpicks-green-600" />
-					<p className="text-sm font-semibold text-grantpicks-black-950">
-						YOUR PROGRESS HAS BEEN SAVED
-					</p>
-				</div>
-				<div className="flex items-center mb-4">
-					<div className="bg-grantpicks-alpha-50/5 border border-grantpicks-alpha-50/[0.07] flex items-center space-x-2 px-2 py-1 rounded-full">
-						<IconProject size={18} className="fill-grantpicks-black-400" />
-						<p className="text-sm font-bold text-grantpicks-black-950">
-							Step 3 of 5
-						</p>
-					</div>
-				</div>
-				<p className="text-lg md:text-xl lg:text-2xl font-semibold text-grantpicks-black-950">
-					Share your project details
+		<div className="w-full lg:w-[70%] border border-black/10 bg-white rounded-xl text-grantpicks-black-950">
+			<div className="p-3 md:p-5">
+				<p className="text-lg md:text-xl lg:text-2xl font-semibold text-grantpicks-black-950 mb-6">
+					Links
 				</p>
 				<div className="py-4 md:py-6">
 					<p className="text-grantpicks-black-950 mb-2">
@@ -465,39 +412,30 @@ const CreateProjectStep3 = () => {
 					</div>
 				</div>
 			</div>
-			<div className="p-5 md:p-6 flex items-center space-x-4">
-				<div className="flex-1">
+			<div className="p-3 md:p-5 flex flex-col md:flex-row items-center md:justify-end space-x-0 md:space-x-4 space-y-4 md:space-y-0">
+				<div className="w-full lg:w-auto">
 					<Button
 						color="white"
 						isFullWidth
-						onClick={() => setShowPrevConfirm(true)}
+						onClick={() => {}}
 						className="!py-3 !border !border-grantpicks-black-400"
 					>
-						Previous
+						Discard
 					</Button>
 				</div>
-				<div className="flex-1">
+				<div className="w-full lg:w-auto">
 					<Button
 						color="black-950"
 						isFullWidth
-						onClick={handleSubmit(onNextStep3)}
+						onClick={handleSubmit(onSaveChanges)}
 						className="!py-3"
 					>
-						Next
+						Save changes
 					</Button>
 				</div>
 			</div>
-			<PreviousConfirmationModal
-				isOpen={showPrevConfirm}
-				onPrevious={() => {
-					reset({})
-					setShowPrevConfirm(false)
-					setStep(2)
-				}}
-				onClose={() => setShowPrevConfirm(false)}
-			/>
 		</div>
 	)
 }
 
-export default CreateProjectStep3
+export default MyProjectLinks

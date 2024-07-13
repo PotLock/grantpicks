@@ -24,7 +24,7 @@ const InputTextArea = forwardRef<HTMLTextAreaElement, InputTextAreaProps>(
 		return (
 			<div className={label ? `gap-y-[10px]` : `gap-y-0`}>
 				{label && (
-					<p className="font-semibold text-grantpicks-black-950 mb-2 cursor-default">
+					<p className="font-semibold text-sm text-grantpicks-black-950 mb-2 cursor-default">
 						{label}
 						{required && <span className="text-red-500">*</span>}
 					</p>

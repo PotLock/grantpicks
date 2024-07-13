@@ -37,7 +37,9 @@
 		"react": "^18",
 		"react-datepicker": "^7.2.0",
 		"react-dom": "^18",
+		"react-dropzone": "^14.2.3",
 		"react-hook-form": "^7.52.0",
+		"react-hot-toast": "^2.4.1",
 		"react-switch": "^7.0.0",
 		"rxjs": "^7.8.1",
 		"zustand": "^4.5.4"
@@ -46,6 +48,7 @@
 		"@types/node": "^20",
 		"@types/react": "^18",
 		"@types/react-dom": "^18",
+		"@types/react-dropzone": "^5.1.0",
 		"eslint": "^8",
 		"eslint-config-next": "14.2.4",
 		"husky": "^9.0.11",

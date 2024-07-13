@@ -219,7 +219,7 @@ const CreateRoundPage = () => {
 							</div>
 							{errors.contact_address?.type === 'required' && (
 								<p className="text-red-500 text-xs mt-1 ml-2">
-									Round title is required
+									Contact address is required
 								</p>
 							)}
 							<p className="text-xs font-normal text-grantpicks-black-600">

@@ -12,6 +12,7 @@ const InputText = forwardRef<HTMLInputElement, InputProps>(
 			type,
 			required,
 			onChange,
+			onKeyDown,
 			disabled,
 			customLabel,
 			label,
@@ -20,6 +21,7 @@ const InputText = forwardRef<HTMLInputElement, InputProps>(
 			suffixIcon,
 			errorMessage,
 			textAlign = 'left',
+			isStopPropagation,
 		},
 		ref,
 	) => {
@@ -66,6 +68,8 @@ const InputText = forwardRef<HTMLInputElement, InputProps>(
 						onBlur={() => setFocus(false)}
 						placeholder={placeholder}
 						onChange={onChange}
+						onKeyDown={onKeyDown}
+						onClick={(e) => isStopPropagation && e.stopPropagation()}
 					/>
 					{suffixIcon && (
 						<div className="absolute right-0 pr-3 inset-y-0 flex items-center justify-center">

@@ -6,12 +6,12 @@ use loam_sdk::soroban_sdk::{Map, Vec};
 use crate::data_type::{ApplicationStatus, CreateRoundParams, Pair, PickedPair};
 use crate::soroban_sdk::{testutils::Address as _, Address, Env, String};
 use crate::utils::get_ledger_second_as_millis;
-use crate::{internal::Round, internal::RoundClient};
+use crate::{internal::RoundContract, internal::RoundContractClient};
 
 loam_sdk::import_contract!(project_registry);
 
-fn deploy_contract<'a>(env: &Env, _admin: &Address) -> RoundClient<'a> {
-    let contract = RoundClient::new(env, &env.register_contract(None, Round {}));
+fn deploy_contract<'a>(env: &Env, _admin: &Address) -> RoundContractClient<'a> {
+    let contract = RoundContractClient::new(env, &env.register_contract(None, RoundContract {}));
 
     contract
 }
@@ -99,7 +99,7 @@ fn create_token<'a>(env: &Env, admin: &Address) -> (TokenClient<'a>, StellarAsse
 }
 
 #[test]
-fn test_round_initialize() {
+fn test_round_create() {
     let env = Env::default();
     env.mock_all_auths();
     let admin = Address::generate(&env);
@@ -111,7 +111,6 @@ fn test_round_initialize() {
     admins.push_back(admin.clone());
 
     let round_detail = &CreateRoundParams {
-        id: 1,
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         video_url: String::from_str(&env, "video_url"),
@@ -127,21 +126,24 @@ fn test_round_initialize() {
         max_participants: Some(10),
     };
 
-    round.initialize(
-        &admin,
-        &token_contract.address,
-        &project_contract.address,
-        round_detail,
-    );
+    round.initialize(&admin, &token_contract.address, &project_contract.address);
 
-    let round_info = round.round_info();
-    let admins = round.admins();
+    let created_round = round.create_round(&admin, &round_detail);
+
+    let round_info = round.round_info(&created_round.id);
+    let admins = round.admins(&created_round.id);
     assert_eq!(round_info.expected_amount, 5);
     assert_eq!(admins, admins);
     assert_eq!(round_info.owner, admin);
     assert_eq!(round_info.is_completed, false);
     assert_eq!(round_info.use_whitelist, false);
     assert_eq!(round_info.num_picks_per_voter, 2);
+
+    let all_rounds = round.get_rounds(&None, &None);
+    assert_eq!(all_rounds.len(), 1);
+
+    let factory_round = all_rounds.get(0).unwrap();
+    assert_eq!(factory_round, round_info);
 }
 
 #[test]
@@ -157,7 +159,6 @@ fn test_apply_applications() {
     admins.push_back(admin.clone());
 
     let round_detail = &CreateRoundParams {
-        id: 1,
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         video_url: String::from_str(&env, "video_url"),
@@ -173,18 +174,18 @@ fn test_apply_applications() {
         max_participants: Some(10),
     };
 
-    round.initialize(
-        &admin,
-        &token_contract.address,
-        &project_contract.address,
-        round_detail,
-    );
+    round.initialize(&admin, &token_contract.address, &project_contract.address);
+
+    let created_round = round.create_round(&admin, &round_detail);
 
     let project_id = 1;
     let applicant = Address::generate(&env);
-    let application_id = round.apply_project(&project_id, &applicant);
+    let application_id = round.apply_project(&created_round.id, &project_id, &applicant);
 
-    let application = round.get_all_applications(&None, &None).get(0).unwrap();
+    let application = round
+        .get_all_applications(&created_round.id, &None, &None)
+        .get(0)
+        .unwrap();
     assert_eq!(application.application_id, application_id);
     assert_eq!(application.project_id, project_id);
     assert_eq!(application.applicant, applicant);
@@ -204,7 +205,6 @@ fn test_review_application() {
     admins.push_back(admin.clone());
 
     let round_detail = &CreateRoundParams {
-        id: 1,
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         video_url: String::from_str(&env, "video_url"),
@@ -220,26 +220,26 @@ fn test_review_application() {
         max_participants: Some(10),
     };
 
-    round.initialize(
-        &admin,
-        &token_contract.address,
-        &project_contract.address,
-        round_detail,
-    );
+    round.initialize(&admin, &token_contract.address, &project_contract.address);
 
+    let created_round = round.create_round(&admin, &round_detail);
     let project_id = 1;
     let applicant = Address::generate(&env);
-    let application_id = round.apply_project(&project_id, &applicant);
+    let application_id = round.apply_project(&created_round.id, &project_id, &applicant);
 
     let review_note = String::from_str(&env, "review_note");
     round.review_application(
+        &created_round.id,
         &admin,
         &application_id,
         &ApplicationStatus::Approved,
         &Some(review_note.clone()),
     );
 
-    let application = round.get_all_applications(&None, &None).get(0).unwrap();
+    let application = round
+        .get_all_applications(&created_round.id, &None, &None)
+        .get(0)
+        .unwrap();
     assert_eq!(application.status, ApplicationStatus::Approved);
     assert_eq!(application.review_note, review_note);
 }
@@ -258,7 +258,6 @@ fn test_whitelist_applicant() {
     admins.push_back(admin.clone());
 
     let round_detail = &CreateRoundParams {
-        id: 1,
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         video_url: String::from_str(&env, "video_url"),
@@ -274,16 +273,12 @@ fn test_whitelist_applicant() {
         max_participants: Some(10),
     };
 
-    round.initialize(
-        &admin,
-        &token_contract.address,
-        &project_contract.address,
-        round_detail,
-    );
+    round.initialize(&admin, &token_contract.address, &project_contract.address);
 
+    let created_round = round.create_round(&admin, &round_detail);
     let project_id = 1;
     let applicant = Address::generate(&env);
-    round.apply_project(&project_id, &applicant);
+    round.apply_project(&created_round.id, &project_id, &applicant);
 }
 
 #[test]
@@ -300,7 +295,6 @@ fn test_whitelist_voters() {
     admins.push_back(admin.clone());
 
     let round_detail = &CreateRoundParams {
-        id: 1,
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         video_url: String::from_str(&env, "video_url"),
@@ -316,21 +310,23 @@ fn test_whitelist_voters() {
         max_participants: Some(10),
     };
 
-    round.initialize(
-        &admin,
-        &token_contract.address,
-        &project_contract.address,
-        round_detail,
-    );
+    round.initialize(&admin, &token_contract.address, &project_contract.address);
 
+    let created_round = round.create_round(&admin, &round_detail);
     let project_id = 1;
     let applicant = Address::generate(&env);
 
-    round.add_white_list(&admin, &applicant);
+    round.add_white_list(&created_round.id, &admin, &applicant);
 
-    let application_id = round.apply_project(&project_id, &applicant);
+    let application_id = round.apply_project(&created_round.id, &project_id, &applicant);
 
-    round.review_application(&admin, &application_id, &ApplicationStatus::Approved, &None);
+    round.review_application(
+        &created_round.id,
+        &admin,
+        &application_id,
+        &ApplicationStatus::Approved,
+        &None,
+    );
 
     let voter = Address::generate(&env);
     let mut picks: Vec<PickedPair> = Vec::new(&env);
@@ -338,7 +334,7 @@ fn test_whitelist_voters() {
         pair_id: 0,
         voted_project_id: project_id,
     });
-    round.vote(&voter, &picks);
+    round.vote(&created_round.id, &voter, &picks);
 }
 
 #[test]
@@ -355,7 +351,6 @@ fn test_blacklist() {
     admins.push_back(admin.clone());
 
     let round_detail = &CreateRoundParams {
-        id: 1,
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         video_url: String::from_str(&env, "video_url"),
@@ -371,17 +366,13 @@ fn test_blacklist() {
         max_participants: Some(10),
     };
 
-    round.initialize(
-        &admin,
-        &token_contract.address,
-        &project_contract.address,
-        round_detail,
-    );
+    round.initialize(&admin, &token_contract.address, &project_contract.address);
 
+    let created_round = round.create_round(&admin, &round_detail);
     let project_id = 1;
     let applicant = Address::generate(&env);
-    round.flag_voter(&admin, &applicant);
-    round.apply_project(&project_id, &applicant);
+    round.flag_voter(&created_round.id, &admin, &applicant);
+    round.apply_project(&created_round.id, &project_id, &applicant);
     // round.apply_project(&project_id, &applicant);
 }
 
@@ -398,7 +389,6 @@ fn test_voting() {
     admins.push_back(admin.clone());
 
     let round_detail = &CreateRoundParams {
-        id: 1,
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         video_url: String::from_str(&env, "video_url"),
@@ -414,38 +404,43 @@ fn test_voting() {
         max_participants: Some(10),
     };
 
-    round.initialize(
-        &admin,
-        &token_contract.address,
-        &project_contract.address,
-        round_detail,
-    );
+    round.initialize(&admin, &token_contract.address, &project_contract.address);
 
+    let created_round = round.create_round(&admin, &round_detail);
     let project_id = 1;
     let project_id2 = 2;
     let project_id3 = 3;
     let project_id4 = 4;
     let applicant = Address::generate(&env);
 
-    let application_id = round.apply_project(&project_id, &applicant);
-    let application_id2 = round.apply_project(&project_id2, &applicant);
-    let application_id3 = round.apply_project(&project_id3, &applicant);
-    let application_id4 = round.apply_project(&project_id4, &applicant);
+    let application_id = round.apply_project(&created_round.id, &project_id, &applicant);
+    let application_id2 = round.apply_project(&created_round.id, &project_id2, &applicant);
+    let application_id3 = round.apply_project(&created_round.id, &project_id3, &applicant);
+    let application_id4 = round.apply_project(&created_round.id, &project_id4, &applicant);
 
-    round.review_application(&admin, &application_id, &ApplicationStatus::Approved, &None);
     round.review_application(
+        &created_round.id,
+        &admin,
+        &application_id,
+        &ApplicationStatus::Approved,
+        &None,
+    );
+    round.review_application(
+        &created_round.id,
         &admin,
         &application_id2,
         &ApplicationStatus::Approved,
         &None,
     );
     round.review_application(
+        &created_round.id,
         &admin,
         &application_id3,
         &ApplicationStatus::Approved,
         &None,
     );
     round.review_application(
+        &created_round.id,
         &admin,
         &application_id4,
         &ApplicationStatus::Approved,
@@ -453,7 +448,7 @@ fn test_voting() {
     );
 
     let voter = Address::generate(&env);
-    let pair_to_vote = round.get_pair_to_vote();
+    let pair_to_vote = round.get_pair_to_vote(&created_round.id);
     let mut picks: Vec<PickedPair> = Vec::new(&env);
     picks.push_back(PickedPair {
         pair_id: pair_to_vote.get(0).unwrap().pair_id,
@@ -465,9 +460,9 @@ fn test_voting() {
         voted_project_id: pair_to_vote.get(1).unwrap().projects.get(0).unwrap(),
     });
 
-    round.vote(&voter, &picks);
+    round.vote(&created_round.id, &voter, &picks);
 
-    let results = round.calculate_results();
+    let results = round.calculate_results(&created_round.id);
 
     assert_eq!(results.len(), 4);
 
@@ -495,7 +490,6 @@ fn test_add_remove_admin() {
     admins.push_back(admin.clone());
 
     let round_detail = &CreateRoundParams {
-        id: 1,
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         video_url: String::from_str(&env, "video_url"),
@@ -511,24 +505,20 @@ fn test_add_remove_admin() {
         max_participants: Some(10),
     };
 
-    round.initialize(
-        &admin,
-        &token_contract.address,
-        &project_contract.address,
-        round_detail,
-    );
+    round.initialize(&admin, &token_contract.address, &project_contract.address);
 
+    let created_round = round.create_round(&admin, &round_detail);
     let new_admin = Address::generate(&env);
-    round.add_admin(&admin, &new_admin);
+    round.add_admin(&created_round.id, &admin, &new_admin);
 
-    let mut admins = round.admins();
+    let mut admins = round.admins(&created_round.id);
     assert_eq!(admins.len(), 2);
 
-    round.remove_admin(&admin, &new_admin);
+    round.remove_admin(&created_round.id, &admin, &new_admin);
 
-    admins = round.admins();
+    admins = round.admins(&created_round.id);
 
-    let round_info = round.round_info();
+    let round_info = round.round_info(&created_round.id);
     assert_eq!(admins.len(), 1);
 }
 
@@ -547,7 +537,6 @@ fn test_voting_deposit_and_payout() {
     let deposit = 100 * 10u128.pow(7);
 
     let round_detail = &CreateRoundParams {
-        id: 1,
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         video_url: String::from_str(&env, "video_url"),
@@ -563,24 +552,20 @@ fn test_voting_deposit_and_payout() {
         max_participants: Some(10),
     };
 
-    round.initialize(
-        &admin,
-        &token_contract.address,
-        &project_contract.address,
-        round_detail,
-    );
+    round.initialize(&admin, &token_contract.address, &project_contract.address);
 
+    let created_round = round.create_round(&admin, &round_detail);
     let mut project_ids: Vec<u128> = Vec::new(&env);
     for i in 0..10 {
         project_ids.push_back(i + 1);
     }
-    round.add_approved_project(&admin, &project_ids);
+    round.add_approved_project(&created_round.id, &admin, &project_ids);
 
     let voter = Address::generate(&env);
     let voter2 = Address::generate(&env);
     let cindy = Address::generate(&env);
 
-    let voter_pairs = round.get_pair_to_vote();
+    let voter_pairs = round.get_pair_to_vote(&created_round.id);
     assert!(!voter_pairs.is_empty());
 
     let mut picks: Vec<PickedPair> = Vec::new(&env);
@@ -598,11 +583,11 @@ fn test_voting_deposit_and_payout() {
 
     token_admin.mint(&cindy, &deposit_i128);
 
-    round.deposit(&cindy, &(deposit / 2));
+    round.deposit(&created_round.id, &cindy, &(deposit / 2));
 
-    round.vote(&voter, &picks);
+    round.vote(&created_round.id, &voter, &picks);
 
-    let voter_pairs2 = round.get_pair_to_vote();
+    let voter_pairs2 = round.get_pair_to_vote(&created_round.id);
     assert!(!voter_pairs2.is_empty());
 
     let mut picks2: Vec<PickedPair> = Vec::new(&env);
@@ -616,15 +601,15 @@ fn test_voting_deposit_and_payout() {
         voted_project_id: voter_pairs2.get(0).unwrap().projects.get(0).unwrap(),
     });
 
-    round.vote(&voter2, &picks2);
+    round.vote(&created_round.id, &voter2, &picks2);
 
-    let results = round.calculate_results();
+    let results = round.calculate_results(&created_round.id);
     assert_eq!(results.len(), 10);
 
-    round.complete_vote(&admin);
+    round.complete_vote(&created_round.id, &admin);
 
     let admin_balance = token_contract.balance(&admin);
-    round.trigger_payouts(&admin);
+    round.trigger_payouts(&created_round.id, &admin);
     let new_admin_balance = token_contract.balance(&admin);
 
     assert!(new_admin_balance > admin_balance);
@@ -650,7 +635,6 @@ fn test_get_all_pairs() {
     admins.push_back(admin.clone());
 
     let round_detail = &CreateRoundParams {
-        id: 1,
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         video_url: String::from_str(&env, "video_url"),
@@ -666,13 +650,9 @@ fn test_get_all_pairs() {
         max_participants: Some(15),
     };
 
-    round.initialize(
-        &admin,
-        &token_contract.address,
-        &project_contract.address,
-        round_detail,
-    );
+    round.initialize(&admin, &token_contract.address, &project_contract.address);
 
+    let created_round = round.create_round(&admin, &round_detail);
     let num_of_projects: u32 = 15;
     let num_of_project_per_pair: u32 = 2;
     let posibilities: u32 = (num_of_projects * (num_of_projects - 1)) / num_of_project_per_pair;
@@ -682,15 +662,15 @@ fn test_get_all_pairs() {
         let project_id: u128 = (i + 1).try_into().unwrap();
         project_ids.push_back(project_id);
     }
-    round.add_approved_project(&admin, &project_ids);
+    round.add_approved_project(&created_round.id, &admin, &project_ids);
 
-    let pairs = round.get_pairs(&admin);
+    let pairs = round.get_pairs(&created_round.id, &admin);
     assert_eq!(pairs.len(), posibilities as u32);
 
     let mut correctness_test: Map<u128, u32> = Map::new(&env);
     let mut generated_pairs: Map<u128, Vec<Pair>> = Map::new(&env);
     for i in 0..posibilities {
-        let pair = round.get_pair_by_index(&i);
+        let pair = round.get_pair_by_index(&created_round.id, &i);
         pair.projects.iter().for_each(|project_id| {
             if correctness_test.contains_key(project_id) {
                 correctness_test.set(project_id, correctness_test.get(project_id).unwrap() + 1);
@@ -732,7 +712,6 @@ fn test_change_number_of_votes() {
     admins.push_back(admin.clone());
 
     let round_detail = &CreateRoundParams {
-        id: 1,
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         video_url: String::from_str(&env, "video_url"),
@@ -748,17 +727,13 @@ fn test_change_number_of_votes() {
         max_participants: Some(10),
     };
 
-    round.initialize(
-        &admin,
-        &token_contract.address,
-        &project_contract.address,
-        round_detail,
-    );
+    round.initialize(&admin, &token_contract.address, &project_contract.address);
 
+    let created_round = round.create_round(&admin, &round_detail);
     let new_num_picks_per_voter = 3;
-    round.change_number_of_votes(&admin, &new_num_picks_per_voter);
+    round.change_number_of_votes(&created_round.id, &admin, &new_num_picks_per_voter);
 
-    let round_info = round.round_info();
+    let round_info = round.round_info(&created_round.id);
     assert_eq!(round_info.num_picks_per_voter, new_num_picks_per_voter);
 }
 
@@ -775,7 +750,6 @@ fn test_change_amount() {
     admins.push_back(admin.clone());
 
     let round_detail = &CreateRoundParams {
-        id: 1,
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         video_url: String::from_str(&env, "video_url"),
@@ -791,17 +765,13 @@ fn test_change_amount() {
         max_participants: Some(10),
     };
 
-    round.initialize(
-        &admin,
-        &token_contract.address,
-        &project_contract.address,
-        round_detail,
-    );
+    round.initialize(&admin, &token_contract.address, &project_contract.address);
 
+    let created_round = round.create_round(&admin, &round_detail);
     let new_amount = 10;
-    round.change_amount(&admin, &new_amount);
+    round.change_amount(&created_round.id, &admin, &new_amount);
 
-    let round_info = round.round_info();
+    let round_info = round.round_info(&created_round.id);
     assert_eq!(round_info.expected_amount, new_amount);
 }
 
@@ -818,7 +788,6 @@ fn test_change_voting_period() {
     admins.push_back(admin.clone());
 
     let round_detail = &CreateRoundParams {
-        id: 1,
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         video_url: String::from_str(&env, "video_url"),
@@ -834,18 +803,14 @@ fn test_change_voting_period() {
         max_participants: Some(10),
     };
 
-    round.initialize(
-        &admin,
-        &token_contract.address,
-        &project_contract.address,
-        round_detail,
-    );
+    round.initialize(&admin, &token_contract.address, &project_contract.address);
 
+    let created_round = round.create_round(&admin, &round_detail);
     let new_start_ms = get_ledger_second_as_millis(&env) + 1000;
     let new_end_ms = get_ledger_second_as_millis(&env) + 2000;
-    round.change_voting_period(&admin, &new_start_ms, &new_end_ms);
+    round.change_voting_period(&created_round.id, &admin, &new_start_ms, &new_end_ms);
 
-    let round_info = round.round_info();
+    let round_info = round.round_info(&created_round.id);
     assert_eq!(round_info.voting_start_ms, new_start_ms);
     assert_eq!(round_info.voting_end_ms, new_end_ms);
 }
@@ -863,7 +828,6 @@ fn test_application_period() {
     admins.push_back(admin.clone());
 
     let round_detail = &CreateRoundParams {
-        id: 1,
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         video_url: String::from_str(&env, "video_url"),
@@ -879,18 +843,19 @@ fn test_application_period() {
         max_participants: Some(10),
     };
 
-    round.initialize(
-        &admin,
-        &token_contract.address,
-        &project_contract.address,
-        round_detail,
-    );
+    round.initialize(&admin, &token_contract.address, &project_contract.address);
 
+    let created_round = round.create_round(&admin, &round_detail);
     let new_application_start_ms = get_ledger_second_as_millis(&env) + 1000;
     let new_application_end_ms = get_ledger_second_as_millis(&env) + 2000;
-    round.change_application_period(&admin, &new_application_start_ms, &new_application_end_ms);
+    round.change_application_period(
+        &created_round.id,
+        &admin,
+        &new_application_start_ms,
+        &new_application_end_ms,
+    );
 
-    let round_info = round.round_info();
+    let round_info = round.round_info(&created_round.id);
     assert_eq!(round_info.application_start_ms, new_application_start_ms);
     assert_eq!(round_info.application_end_ms, new_application_end_ms);
 }

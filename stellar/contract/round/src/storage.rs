@@ -7,14 +7,20 @@ pub const PERSISTENT_BUMP_CONSTANT: u32 = DAY_IN_LEDGERS * 180;
 pub const PERSISTENT_BUMP_CONSTANT_THRESHOLD: u32 = DAY_IN_LEDGERS * 90;
 
 pub fn extend_instance(env: &Env) {
-    extend_persistent(env, &ContractKey::RoundInfo);
-    extend_persistent(env, &ContractKey::ProjectApplicants);
-    extend_persistent(env, &ContractKey::WhitelistAndBlacklist);
+    extend_persistent(env, &ContractKey::FactoryOwner);
+    extend_persistent(env, &ContractKey::RoundNumber);
     extend_persistent(env, &ContractKey::TokenContract);
-    extend_persistent(env, &ContractKey::ApplicationNumber);
-    extend_persistent(env, &ContractKey::Votes);
-    extend_persistent(env, &ContractKey::VotingState);
-    extend_persistent(env, &ContractKey::Admin);
+    extend_persistent(env, &ContractKey::ProjectContract);
+}
+
+pub fn extend_round(env: &Env, round_id: u128) {
+    extend_persistent(env, &&ContractKey::RoundInfo(round_id));
+    extend_persistent(env, &ContractKey::ApplicationNumber(round_id));
+    extend_persistent(env, &ContractKey::Votes(round_id));
+    extend_persistent(env, &ContractKey::VotingState(round_id));
+    extend_persistent(env, &ContractKey::Admin(round_id));
+    extend_persistent(env, &ContractKey::ProjectApplicants(round_id));
+    extend_persistent(env, &ContractKey::WhitelistAndBlacklist(round_id));
 }
 
 pub fn extend_persistent(env: &Env, key: &ContractKey) {
@@ -25,4 +31,8 @@ pub fn extend_persistent(env: &Env, key: &ContractKey) {
             PERSISTENT_BUMP_CONSTANT,
         );
     }
+}
+
+pub fn has_storage(env: &Env, key: &ContractKey) -> bool {
+    env.storage().persistent().has(key)
 }

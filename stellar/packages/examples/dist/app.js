@@ -1,6 +1,5 @@
 import { Client as ListClient } from 'lists-client';
 import { Client as ProjectClient } from 'project-registry-client';
-import { Client as RoundFactoryClient } from 'round-factory-client';
 import { Client as RoundClient } from 'round-client';
 class App {
     constructor(network, wallet) {
@@ -23,7 +22,7 @@ class App {
         this._wallet = wallet;
         let lists_contract_id = process.env.LISTS_CONTRACT_ID || '';
         let project_registry_contract_id = process.env.PROJECT_REGISTRY_CONTRACT_ID || '';
-        let round_factory_contract_id = process.env.ROUND_FACTORY_CONTRACT_ID || '';
+        let round_contract_id = process.env.ROUND_CONTRACT_ID || '';
         this._lists_contract = new ListClient({
             ...config,
             contractId: lists_contract_id,
@@ -32,9 +31,9 @@ class App {
             ...config,
             contractId: project_registry_contract_id,
         });
-        this._round_factory_contract = new RoundFactoryClient({
+        this._round_contract = new RoundClient({
             ...config,
-            contractId: round_factory_contract_id,
+            contractId: round_contract_id,
         });
     }
     get lists_contract() {
@@ -43,17 +42,11 @@ class App {
     get project_contract() {
         return this._project_contract;
     }
-    get round_factory_contract() {
-        return this._round_factory_contract;
+    get round_contract() {
+        return this._round_contract;
     }
     get wallet() {
         return this._wallet;
-    }
-    round_contract(contractId) {
-        return new RoundClient({
-            ...this._template_config,
-            contractId,
-        });
     }
 }
 export default App;

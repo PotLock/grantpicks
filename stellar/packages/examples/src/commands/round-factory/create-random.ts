@@ -1,9 +1,9 @@
 import App from '../../app.js'
 
 export default async function createRandomRounds(params: string[], app: App) {
-	let tx = await app.round_factory_contract.create_round({
-		admin: app.wallet.account.publicKey,
-		params: {
+	let tx = await app.round_contract.create_round({
+		owner: app.wallet.account.publicKey,
+		round_detail: {
 			admins: [app.wallet.account.publicKey],
 			application_start_ms: BigInt(new Date().getTime() + 1000),
 			application_end_ms: BigInt(new Date().getTime() + 1000 * 60 * 60 * 24 * 7),

@@ -1,5 +1,5 @@
 [workspace]
-members = ["./contract/project-registry","./contract/round","./contract/round-factory","./contract/lists"]
+members = ["./contract/project-registry","./contract/round","./contract/lists"]
 resolver = "2"
 
 [workspace.dependencies]

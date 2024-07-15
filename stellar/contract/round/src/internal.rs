@@ -1,3 +1,9 @@
+use core::result;
+
+use loam_sdk::soroban_sdk::{
+    self, contract, contractimpl, token::TokenClient, Address, BytesN, Env, String, Vec,
+};
+
 use crate::{
     admin_writer::{add_admin, read_admins, remove_admin, write_admins},
     application_writer::{
@@ -8,6 +14,7 @@ use crate::{
         add_approved_project, is_project_approved, read_approved_projects, remove_approved_project,
     },
     calculation::calculate_voting_results,
+    core::IsRound,
     data_type::{
         ApplicationStatus, CreateRoundParams, Pair, PickResult, PickedPair, ProjectApplication,
         ProjectVotingResult, RoundDetail, VotingResult,
@@ -18,20 +25,22 @@ use crate::{
         log_update_user_flag, log_update_white_list, log_vote,
     },
     external::ProjectRegistryClient,
-    methods::RoundTrait,
-    pair::{get_all_pairs, get_pair_by_index, get_random_pairs},
+    factory::{self, RoundFactory},
+    owner_writer::{read_factory_owner, write_factory_owner},
+    pair::{get_all_pairs, get_all_rounds, get_pair_by_index, get_random_pairs},
     project_registry_writer::{read_project_contract, write_project_contract},
-    round_writer::{is_initialized, read_round_info, write_round_info},
-    storage::extend_instance,
+    round_writer::{increment_round_number, is_initialized, read_round_info, write_round_info},
+    storage::{extend_instance, extend_round},
     token_writer::{read_token_address, write_token_address},
     utils::{count_total_available_pairs, get_ledger_second_as_millis},
     validation::{
         validate_application_period, validate_approved_projects, validate_blacklist,
-        validate_blacklist_already, validate_can_payout, validate_has_voted,
-        validate_max_participant, validate_max_participants, validate_not_blacklist,
-        validate_number_of_votes, validate_owner, validate_owner_or_admin, validate_pick_per_votes,
-        validate_project_to_apply, validate_project_to_approve, validate_review_notes,
-        validate_round_detail, validate_vault_fund, validate_voting_period, validate_whitelist,
+        validate_blacklist_already, validate_can_payout, validate_contract_owner,
+        validate_has_voted, validate_max_participant, validate_max_participants,
+        validate_not_blacklist, validate_number_of_votes, validate_owner, validate_owner_or_admin,
+        validate_pick_per_votes, validate_project_to_apply, validate_project_to_approve,
+        validate_review_notes, validate_round_detail, validate_vault_fund, validate_voting_period,
+        validate_whitelist,
     },
     voter_writer::{
         add_to_black_list, add_to_white_list, is_black_listed, is_white_listed,
@@ -42,23 +51,19 @@ use crate::{
         read_voting_state, set_voting_state,
     },
 };
-use loam_sdk::soroban_sdk::{
-    self, contract, contractimpl, token::TokenClient, BytesN, String, Vec,
-};
-use loam_sdk::soroban_sdk::{Address, Env};
 
 #[contract]
-pub struct Round;
+pub struct RoundContract;
 
 #[contractimpl]
-impl RoundTrait for Round {
-    fn initialize(
-        env: &Env,
-        owner: Address,
-        token_address: Address,
-        registry_address: Address,
-        round_detail: CreateRoundParams,
-    ) {
+impl RoundFactory for RoundContract {
+    fn initialize(env: &Env, owner: Address, token_address: Address, registry_address: Address) {
+        write_factory_owner(env, &owner);
+        write_token_address(env, &token_address);
+        write_project_contract(env, &registry_address);
+    }
+
+    fn create_round(env: &Env, owner: Address, round_detail: CreateRoundParams) -> RoundDetail {
         owner.require_auth();
 
         let round_init = is_initialized(env);
@@ -73,8 +78,10 @@ impl RoundTrait for Round {
             validate_pick_per_votes(num_picks_per_voter);
         }
 
+        let round_id = increment_round_number(env);
+
         let round_info = RoundDetail {
-            id: round_detail.id,
+            id: round_id,
             name: round_detail.name,
             description: round_detail.description,
             voting_start_ms: round_detail.voting_start_ms,
@@ -92,14 +99,50 @@ impl RoundTrait for Round {
             vault_balance: 0,
         };
 
-        write_round_info(env, &round_info);
-        write_admins(env, &round_detail.admins);
-        write_token_address(env, &token_address);
-        write_project_contract(env, &registry_address);
-        log_create_round(env, round_info);
+        write_round_info(env, round_id, &round_info);
+        write_admins(env, round_id, &round_detail.admins);
+        extend_instance(env);
+        log_create_round(env, round_info.clone());
+
+        round_info
     }
 
-    fn change_voting_period(env: &Env, admin: Address, round_start_ms: u64, round_end_ms: u64) {
+    fn get_rounds(env: &Env, skip: Option<u64>, limit: Option<u64>) -> Vec<RoundDetail> {
+        let results = get_all_rounds(env, skip, limit);
+        extend_instance(env);
+
+        results
+    }
+
+    fn upgrade(env: &Env, owner: Address, new_wasm_hash: BytesN<32>) {
+        owner.require_auth();
+
+        validate_contract_owner(env, &owner);
+
+        env.deployer().update_current_contract_wasm(new_wasm_hash);
+
+        extend_instance(env);
+    }
+
+    fn transfer_ownership(env: &Env, owner: Address, new_owner: Address) {
+        owner.require_auth();
+
+        validate_contract_owner(env, &owner);
+        write_factory_owner(env, &new_owner);
+
+        extend_instance(env);
+    }
+}
+
+#[contractimpl]
+impl IsRound for RoundContract {
+    fn change_voting_period(
+        env: &Env,
+        round_id: u128,
+        admin: Address,
+        round_start_ms: u64,
+        round_end_ms: u64,
+    ) {
         admin.require_auth();
 
         assert!(
@@ -107,20 +150,22 @@ impl RoundTrait for Round {
             "Round start time must be less than round end time"
         );
 
-        let mut round = read_round_info(env);
+        let mut round = read_round_info(env, round_id);
 
         validate_owner_or_admin(env, &admin, &round);
 
         round.voting_start_ms = round_start_ms;
         round.voting_end_ms = round_end_ms;
 
-        write_round_info(env, &round);
+        write_round_info(env, round_id, &round);
         extend_instance(env);
+        extend_round(env, round_id);
         log_update_round(env, round);
     }
 
     fn change_application_period(
         env: &Env,
+        round_id: u128,
         admin: Address,
         round_application_start_ms: u64,
         round_application_end_ms: u64,
@@ -132,92 +177,97 @@ impl RoundTrait for Round {
             "Round application start time must be less than round application end time"
         );
 
-        let mut round = read_round_info(env);
+        let mut round = read_round_info(env, round_id);
 
         validate_owner_or_admin(env, &admin, &round);
 
         round.application_start_ms = round_application_start_ms;
         round.application_end_ms = round_application_end_ms;
 
-        write_round_info(env, &round);
+        write_round_info(env, round_id, &round);
         extend_instance(env);
+        extend_round(env, round_id);
         log_update_round(env, round);
     }
 
-    fn change_amount(env: &Env, admin: Address, amount: u128) {
+    fn change_amount(env: &Env, round_id: u128, admin: Address, amount: u128) {
         admin.require_auth();
 
-        let mut round = read_round_info(env);
+        let mut round = read_round_info(env, round_id);
 
         validate_owner_or_admin(env, &admin, &round);
 
         round.expected_amount = amount;
 
-        write_round_info(env, &round);
+        write_round_info(env, round_id, &round);
         extend_instance(env);
+        extend_round(env, round_id);
     }
 
-    fn complete_vote(env: &Env, admin: Address) {
+    fn complete_vote(env: &Env, round_id: u128, admin: Address) {
         admin.require_auth();
 
-        let mut round = read_round_info(env);
+        let mut round = read_round_info(env, round_id);
 
         validate_owner_or_admin(env, &admin, &round);
 
         round.voting_end_ms = env.ledger().timestamp() * 1000;
 
-        write_round_info(env, &round);
+        write_round_info(env, round_id, &round);
         extend_instance(env);
+        extend_round(env, round_id);
     }
 
-    fn add_admin(env: &Env, admin: Address, round_admin: Address) {
+    fn add_admin(env: &Env, round_id: u128, admin: Address, round_admin: Address) {
         admin.require_auth();
         assert!(admin != round_admin, "Admin and round admin cannot be same");
 
-        let round = read_round_info(env);
+        let round = read_round_info(env, round_id);
         validate_owner(&admin, &round);
 
-        add_admin(env, round_admin);
+        add_admin(env, round_id, round_admin);
 
-        write_round_info(env, &round);
+        write_round_info(env, round_id, &round);
         extend_instance(env);
+        extend_round(env, round_id);
         log_update_round(env, round);
     }
 
-    fn remove_admin(env: &Env, admin: Address, round_admin: Address) {
+    fn remove_admin(env: &Env, round_id: u128, admin: Address, round_admin: Address) {
         admin.require_auth();
         assert!(admin != round_admin, "Admin and round admin cannot be same");
 
-        let round = read_round_info(env);
+        let round = read_round_info(env, round_id);
 
         validate_owner(&admin, &round);
 
-        remove_admin(env, &round_admin);
+        remove_admin(env, round_id, &round_admin);
 
         extend_instance(env);
+        extend_round(env, round_id);
         log_update_round(env, round);
     }
 
-    fn apply_project(env: &Env, project_id: u128, applicant: Address) -> u128 {
+    fn apply_project(env: &Env, round_id: u128, project_id: u128, applicant: Address) -> u128 {
         applicant.require_auth();
 
-        let round = read_round_info(env);
+        let round = read_round_info(env, round_id);
         let current_ms = env.ledger().timestamp() * 1000;
 
         validate_application_period(env, &round);
 
         if round.use_whitelist {
-            validate_whitelist(env, &applicant);
+            validate_whitelist(env, round_id, &applicant);
         }
 
-        validate_blacklist(env, &applicant);
+        validate_blacklist(env, round_id, &applicant);
         validate_project_to_apply(env, project_id);
 
-        let existing_application = get_application(env, project_id);
+        let existing_application = get_application(env, round_id, project_id);
 
         assert!(existing_application.is_none(), "Application already exists");
 
-        let application_id = increment_application_number(env);
+        let application_id = increment_application_number(env, round_id);
         let review_note = String::from_str(env, "");
         let application = ProjectApplication {
             application_id,
@@ -229,8 +279,9 @@ impl RoundTrait for Round {
             updated_ms: None,
         };
 
-        add_application(env, application.clone());
+        add_application(env, round_id, application.clone());
         extend_instance(env);
+        extend_round(env, round_id);
         log_project_application(env, application);
 
         application_id
@@ -238,6 +289,7 @@ impl RoundTrait for Round {
 
     fn review_application(
         env: &Env,
+        round_id: u128,
         admin: Address,
         application_id: u128,
         status: ApplicationStatus,
@@ -245,12 +297,12 @@ impl RoundTrait for Round {
     ) {
         admin.require_auth();
 
-        let round = read_round_info(env);
+        let round = read_round_info(env, round_id);
 
         validate_owner_or_admin(env, &admin, &round);
         validate_application_period(env, &round);
 
-        let application = get_application_by_id(env, application_id);
+        let application = get_application_by_id(env, round_id, application_id);
 
         assert!(application.is_some(), "Application not found");
 
@@ -269,21 +321,22 @@ impl RoundTrait for Round {
         if updated_application.status == ApplicationStatus::Approved {
             validate_max_participant(env, &round);
 
-            add_approved_project(env, updated_application.project_id);
+            add_approved_project(env, round_id, updated_application.project_id);
         } else {
-            let is_approved = is_project_approved(env, updated_application.project_id);
+            let is_approved = is_project_approved(env, round_id, updated_application.project_id);
 
             if is_approved {
-                remove_approved_project(env, updated_application.project_id);
+                remove_approved_project(env, round_id, updated_application.project_id);
             }
         }
 
-        update_application(env, updated_application.clone());
+        update_application(env, round_id, updated_application.clone());
         extend_instance(env);
+        extend_round(env, round_id);
         log_project_application_update(env, updated_application);
     }
 
-    fn deposit(env: &Env, actor: Address, amount: u128) {
+    fn deposit(env: &Env, round_id: u128, actor: Address, amount: u128) {
         actor.require_auth();
 
         let token_contract = read_token_address(env);
@@ -295,36 +348,37 @@ impl RoundTrait for Round {
         assert!(balance > amount_i128, "Insufficient balance");
 
         token_client.transfer(&actor, &env.current_contract_address(), &amount_i128);
-        let mut round = read_round_info(env);
+        let mut round = read_round_info(env, round_id);
 
         round.vault_balance += amount;
 
-        write_round_info(env, &round);
+        write_round_info(env, round_id, &round);
         extend_instance(env);
+        extend_round(env, round_id);
         log_deposit(env, round.id, actor, amount);
     }
 
-    fn vote(env: &Env, voter: Address, picks: Vec<PickedPair>) {
+    fn vote(env: &Env, round_id: u128, voter: Address, picks: Vec<PickedPair>) {
         voter.require_auth();
 
-        let round = read_round_info(env);
+        let round = read_round_info(env, round_id);
         let current_ms = env.ledger().timestamp() * 1000;
 
         validate_voting_period(env, &round);
         validate_number_of_votes(round.num_picks_per_voter, picks.len());
 
         if round.use_whitelist {
-            validate_whitelist(env, &voter);
+            validate_whitelist(env, round_id, &voter);
         }
 
-        validate_blacklist(env, &voter);
-        validate_has_voted(env, &voter);
+        validate_blacklist(env, round_id, &voter);
+        validate_has_voted(env, round_id, &voter);
 
         let mut picked_pairs: Vec<PickResult> = Vec::new(env);
 
-        let projects = read_approved_projects(env);
+        let projects = read_approved_projects(env, round_id);
         let total_available_pairs = count_total_available_pairs(projects.len());
-        let projects = read_approved_projects(env);
+        let projects = read_approved_projects(env, round_id);
         picks.iter().for_each(|picked_pair| {
             let picked_index = picked_pair.pair_id;
             assert!(
@@ -341,7 +395,7 @@ impl RoundTrait for Round {
                 project_id: picked_pair.voted_project_id,
             };
 
-            increment_voting_count(env, picked_pair.voted_project_id);
+            increment_voting_count(env, round_id, picked_pair.voted_project_id);
             picked_pairs.push_back(pick_result);
         });
 
@@ -351,60 +405,65 @@ impl RoundTrait for Round {
             voted_ms: current_ms,
         };
 
-        add_voting_result(env, voting_result.clone());
-        set_voting_state(env, voter, true);
+        add_voting_result(env, round_id, voting_result.clone());
+        set_voting_state(env, round_id, voter, true);
         extend_instance(env);
+        extend_round(env, round_id);
         log_vote(env, round.id, voting_result);
     }
 
-    fn get_pair_to_vote(env: &Env) -> Vec<Pair> {
-        let round = read_round_info(env);
-        let pairs = get_random_pairs(env, round.num_picks_per_voter.into());
+    fn get_pair_to_vote(env: &Env, round_id: u128) -> Vec<Pair> {
+        let round = read_round_info(env, round_id);
+        let pairs = get_random_pairs(env, round_id, round.num_picks_per_voter.into());
         extend_instance(env);
+        extend_round(env, round_id);
         pairs
     }
 
-    fn flag_voter(env: &Env, admin: Address, voter: Address) {
+    fn flag_voter(env: &Env, round_id: u128, admin: Address, voter: Address) {
         admin.require_auth();
 
-        let round = read_round_info(env);
+        let round = read_round_info(env, round_id);
 
         validate_owner_or_admin(env, &admin, &round);
 
-        let is_white_listed = is_white_listed(env, voter.clone());
+        let is_white_listed = is_white_listed(env, round_id, voter.clone());
         assert!(!is_white_listed, "Voter is white listed");
 
-        validate_blacklist_already(env, &voter);
+        validate_blacklist_already(env, round_id, &voter);
 
-        add_to_black_list(env, voter.clone());
+        add_to_black_list(env, round_id, voter.clone());
         extend_instance(env);
+        extend_round(env, round_id);
         log_update_user_flag(env, round.id, voter, true);
     }
 
-    fn unflag_voter(env: &Env, admin: Address, voter: Address) {
+    fn unflag_voter(env: &Env, round_id: u128, admin: Address, voter: Address) {
         admin.require_auth();
 
-        let round = read_round_info(env);
+        let round = read_round_info(env, round_id);
 
         validate_owner_or_admin(env, &admin, &round);
-        validate_not_blacklist(env, &voter);
+        validate_not_blacklist(env, round_id, &voter);
 
-        remove_from_black_list(env, voter.clone());
+        remove_from_black_list(env, round_id, voter.clone());
         extend_instance(env);
+        extend_round(env, round_id);
         log_update_user_flag(env, round.id, voter, false);
     }
 
-    fn calculate_results(env: &Env) -> Vec<ProjectVotingResult> {
-        let results = calculate_voting_results(env);
+    fn calculate_results(env: &Env, round_id: u128) -> Vec<ProjectVotingResult> {
+        let results = calculate_voting_results(env, round_id);
         extend_instance(env);
+        extend_round(env, round_id);
 
         results
     }
 
-    fn trigger_payouts(env: &Env, admin: Address) {
+    fn trigger_payouts(env: &Env, round_id: u128, admin: Address) {
         admin.require_auth();
 
-        let round = read_round_info(env);
+        let round = read_round_info(env, round_id);
 
         validate_owner_or_admin(env, &admin, &round);
         validate_can_payout(env, &round);
@@ -414,7 +473,7 @@ impl RoundTrait for Round {
         let token_client = TokenClient::new(env, &token_contract);
         let project_registry_contract = read_project_contract(env);
         let project_registry_client = ProjectRegistryClient::new(env, &project_registry_contract);
-        let results = calculate_voting_results(env);
+        let results = calculate_voting_results(env, round_id);
 
         let mut updated_round = round.clone();
 
@@ -439,21 +498,29 @@ impl RoundTrait for Round {
         });
 
         updated_round.is_completed = true;
-        write_round_info(env, &updated_round);
+        write_round_info(env, round_id, &updated_round);
         extend_instance(env);
+        extend_round(env, round_id);
     }
 
-    fn get_all_voters(env: &Env, skip: Option<u64>, limit: Option<u64>) -> Vec<VotingResult> {
-        let results = find_voting_result(env, skip, limit);
+    fn get_all_voters(
+        env: &Env,
+        round_id: u128,
+        skip: Option<u64>,
+        limit: Option<u64>,
+    ) -> Vec<VotingResult> {
+        let results = find_voting_result(env, round_id, skip, limit);
         extend_instance(env);
+        extend_round(env, round_id);
 
         results
     }
 
-    fn can_vote(env: &Env, voter: Address) -> bool {
-        let round = read_round_info(env);
+    fn can_vote(env: &Env, round_id: u128, voter: Address) -> bool {
+        let round = read_round_info(env, round_id);
         let current_ms = env.ledger().timestamp() * 1000;
         extend_instance(env);
+        extend_round(env, round_id);
 
         if round.voting_start_ms <= current_ms && current_ms <= round.voting_end_ms {
             if round.is_completed {
@@ -461,11 +528,11 @@ impl RoundTrait for Round {
             }
 
             if round.use_whitelist {
-                let is_white_listed = is_white_listed(env, voter.clone());
+                let is_white_listed = is_white_listed(env, round_id, voter.clone());
                 return is_white_listed;
             }
 
-            let is_black_listed = is_black_listed(env, voter.clone());
+            let is_black_listed = is_black_listed(env, round_id, voter.clone());
             if is_black_listed {
                 return false;
             }
@@ -476,172 +543,188 @@ impl RoundTrait for Round {
         false
     }
 
-    fn round_info(env: &Env) -> RoundDetail {
-        let round = read_round_info(env);
+    fn round_info(env: &Env, round_id: u128) -> RoundDetail {
+        let round = read_round_info(env, round_id);
         extend_instance(env);
+        extend_round(env, round_id);
 
         round
     }
 
-    fn is_voting_live(env: &Env) -> bool {
-        let round = read_round_info(env);
+    fn is_voting_live(env: &Env, round_id: u128) -> bool {
+        let round = read_round_info(env, round_id);
         let current_ms = env.ledger().timestamp() * 1000;
         extend_instance(env);
 
         round.voting_start_ms <= current_ms && current_ms <= round.voting_end_ms
     }
 
-    fn is_application_live(env: &Env) -> bool {
-        let round = read_round_info(env);
+    fn is_application_live(env: &Env, round_id: u128) -> bool {
+        let round = read_round_info(env, round_id);
         let current_ms = env.ledger().timestamp() * 1000;
         extend_instance(env);
+        extend_round(env, round_id);
 
         round.application_start_ms <= current_ms && current_ms <= round.application_end_ms
     }
 
     fn get_all_applications(
         env: &Env,
+        round_id: u128,
         skip: Option<u64>,
         limit: Option<u64>,
     ) -> Vec<ProjectApplication> {
         // implementation goes here
-        let applications = find_applications(env, skip, limit);
+        let applications = find_applications(env, round_id, skip, limit);
         extend_instance(env);
+        extend_round(env, round_id);
 
         applications
     }
 
-    fn is_payout_done(env: &Env) -> bool {
-        let round = read_round_info(env);
+    fn is_payout_done(env: &Env, round_id: u128) -> bool {
+        let round = read_round_info(env, round_id);
         extend_instance(env);
+        extend_round(env, round_id);
 
         round.is_completed
     }
 
-    fn user_has_vote(env: &Env, voter: Address) -> bool {
-        let state = get_voting_state(env, voter);
+    fn user_has_vote(env: &Env, round_id: u128, voter: Address) -> bool {
+        let state = get_voting_state(env, round_id, voter);
         extend_instance(env);
 
         state
     }
 
-    fn total_funding(env: &Env) -> u128 {
-        let round = read_round_info(env);
+    fn total_funding(env: &Env, round_id: u128) -> u128 {
+        let round = read_round_info(env, round_id);
         let total_funding = round.vault_balance;
         extend_instance(env);
+        extend_round(env, round_id);
 
         total_funding
     }
 
-    fn add_approved_project(env: &Env, admin: Address, project_ids: Vec<u128>) {
+    fn add_approved_project(env: &Env, round_id: u128, admin: Address, project_ids: Vec<u128>) {
         admin.require_auth();
 
-        let round = read_round_info(env);
+        let round = read_round_info(env, round_id);
 
         validate_owner_or_admin(env, &admin, &round);
         validate_max_participants(env, &round, &project_ids);
-        validate_project_to_approve(env, &project_ids);
+        validate_project_to_approve(env, round_id, &project_ids);
 
         project_ids.iter().for_each(|project_id| {
-            add_approved_project(env, project_id);
+            add_approved_project(env, round_id, project_id);
         });
 
-        let new_approved_project = read_approved_projects(env);
+        let new_approved_project = read_approved_projects(env, round_id);
         log_update_approved_projects(env, round.id, new_approved_project);
         extend_instance(env);
+        extend_round(env, round_id);
     }
 
-    fn remove_approved_project(env: &Env, admin: Address, project_ids: Vec<u128>) {
+    fn remove_approved_project(env: &Env, round_id: u128, admin: Address, project_ids: Vec<u128>) {
         admin.require_auth();
 
-        let round = read_round_info(env);
+        let round = read_round_info(env, round_id);
 
         validate_owner_or_admin(env, &admin, &round);
 
         project_ids.iter().for_each(|project_id| {
-            validate_approved_projects(env, project_id);
+            validate_approved_projects(env, round_id, project_id);
         });
 
         project_ids.iter().for_each(|project_id| {
-            remove_approved_project(env, project_id);
+            remove_approved_project(env, round_id, project_id);
         });
 
-        let new_approved_project = read_approved_projects(env);
+        let new_approved_project = read_approved_projects(env, round_id);
         log_update_approved_projects(env, round.id, new_approved_project);
         extend_instance(env);
+        extend_round(env, round_id);
     }
 
-    fn add_white_list(env: &Env, admin: Address, address: Address) {
+    fn add_white_list(env: &Env, round_id: u128, admin: Address, address: Address) {
         admin.require_auth();
 
-        let round = read_round_info(env);
+        let round = read_round_info(env, round_id);
 
         validate_owner_or_admin(env, &admin, &round);
 
-        let is_black_listed = is_black_listed(env, address.clone());
+        let is_black_listed = is_black_listed(env, round_id, address.clone());
         assert!(!is_black_listed, "Address is black listed");
 
-        let is_white_listed = is_white_listed(env, address.clone());
+        let is_white_listed = is_white_listed(env, round_id, address.clone());
         assert!(!is_white_listed, "Address already white listed");
 
-        add_to_white_list(env, address.clone());
+        add_to_white_list(env, round_id, address.clone());
         extend_instance(env);
+        extend_round(env, round_id);
         log_update_white_list(env, round.id, address, true);
     }
 
-    fn remove_from_white_list(env: &Env, admin: Address, address: Address) {
+    fn remove_from_white_list(env: &Env, round_id: u128, admin: Address, address: Address) {
         admin.require_auth();
 
-        let round = read_round_info(env);
+        let round = read_round_info(env, round_id);
 
         validate_owner_or_admin(env, &admin, &round);
 
-        let is_white_listed = is_white_listed(env, address.clone());
+        let is_white_listed = is_white_listed(env, round_id, address.clone());
         assert!(is_white_listed, "Address is not white listed");
 
-        let is_black_listed = is_black_listed(env, address.clone());
+        let is_black_listed = is_black_listed(env, round_id, address.clone());
         assert!(!is_black_listed, "Address is black listed");
 
-        remove_from_white_list(env, address.clone());
+        remove_from_white_list(env, round_id, address.clone());
         extend_instance(env);
+        extend_round(env, round_id);
         log_update_white_list(env, round.id, address, false);
     }
 
-    fn whitelist_status(env: &Env, address: Address) -> bool {
-        is_white_listed(env, address)
+    fn whitelist_status(env: &Env, round_id: u128, address: Address) -> bool {
+        extend_instance(env);
+        extend_round(env, round_id);
+        is_white_listed(env, round_id, address)
     }
 
-    fn blacklist_status(env: &Env, address: Address) -> bool {
-        is_black_listed(env, address)
+    fn blacklist_status(env: &Env, round_id: u128, address: Address) -> bool {
+        extend_instance(env);
+        extend_round(env, round_id);
+        is_black_listed(env, round_id, address)
     }
 
     // get_pairs is test only & protected and check correctness of pairs generated. use get_pair_to_vote for users
-    fn get_pairs(env: &Env, admin: Address) -> Vec<Pair> {
+    fn get_pairs(env: &Env, round_id: u128, admin: Address) -> Vec<Pair> {
         admin.require_auth();
 
-        let round = read_round_info(env);
+        let round = read_round_info(env, round_id);
 
         validate_owner_or_admin(env, &admin, &round);
 
-        let pairs = get_all_pairs(env);
+        let pairs = get_all_pairs(env, round_id);
         extend_instance(env);
+        extend_round(env, round_id);
 
         pairs
     }
 
-    fn get_pair_by_index(env: &Env, index: u32) -> Pair {
-        let approved_project = read_approved_projects(env);
+    fn get_pair_by_index(env: &Env, round_id: u128, index: u32) -> Pair {
+        let approved_project = read_approved_projects(env, round_id);
         let total_available_pairs = count_total_available_pairs(approved_project.len());
         let pair = get_pair_by_index(env, total_available_pairs, index, &approved_project);
         extend_instance(env);
+        extend_round(env, round_id);
 
         pair
     }
 
-    fn change_number_of_votes(env: &Env, admin: Address, num_picks_per_voter: u32) {
+    fn change_number_of_votes(env: &Env, round_id: u128, admin: Address, num_picks_per_voter: u32) {
         admin.require_auth();
 
-        let mut round = read_round_info(env);
+        let mut round = read_round_info(env, round_id);
 
         validate_owner_or_admin(env, &admin, &round);
 
@@ -650,7 +733,7 @@ impl RoundTrait for Round {
             "Number of picks per voter must be greater than 0"
         );
 
-        let states = read_voting_state(env);
+        let states = read_voting_state(env, round_id);
         let votes = states.len();
 
         assert!(
@@ -660,37 +743,29 @@ impl RoundTrait for Round {
 
         round.num_picks_per_voter = num_picks_per_voter;
 
-        write_round_info(env, &round);
+        write_round_info(env, round_id, &round);
+        extend_round(env, round_id);
         extend_instance(env);
     }
 
-    fn transfer_ownership(env: &Env, owner: Address, new_owner: Address) {
+    fn transfer_round_ownership(env: &Env, round_id: u128, owner: Address, new_owner: Address) {
         owner.require_auth();
 
-        let mut round = read_round_info(env);
+        let mut round = read_round_info(env, round_id);
 
         validate_owner(&owner, &round);
 
         round.owner = new_owner;
 
-        write_round_info(env, &round);
+        write_round_info(env, round_id, &round);
         extend_instance(env);
+        extend_round(env, round_id);
     }
 
-    fn upgrade(env: &Env, owner: Address, new_wasm_hash: BytesN<32>) {
-        owner.require_auth();
-
-        let round = read_round_info(env);
-        validate_owner(&owner, &round);
-
-        env.deployer().update_current_contract_wasm(new_wasm_hash);
-
+    fn admins(env: &Env, round_id: u128) -> Vec<Address> {
+        let admins = read_admins(env, round_id);
         extend_instance(env);
-    }
-
-    fn admins(env: &Env) -> Vec<Address> {
-        let admins = read_admins(env);
-        extend_instance(env);
+        extend_round(env, round_id);
         admins
     }
 }

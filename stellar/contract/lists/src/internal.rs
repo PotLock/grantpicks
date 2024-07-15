@@ -1009,7 +1009,7 @@ impl ListsTrait for ListsContract {
     fn admins(env: &Env, list_id: u128) -> Vec<Address> {
         let admins = read_admins_of_list(env, list_id);
         extend_instance(env);
-        
+
         admins
     }
 }

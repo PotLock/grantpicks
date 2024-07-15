@@ -3,15 +3,17 @@ use crate::soroban_sdk::{self, contracttype};
 #[contracttype]
 #[derive(Clone)]
 pub enum ContractKey {
-    RoundInfo,
-    WhitelistAndBlacklist,
-    ProjectApplicants,
-    ApprovedProjects,
-    ApplicationNumber,
+    FactoryOwner,
+    RoundNumber,
     TokenContract,
     ProjectContract,
-    VotingState,
-    Votes,
-    ProjectVotingCount,
-    Admin,
+    RoundInfo(u128),
+    WhitelistAndBlacklist(u128),
+    ProjectApplicants(u128),
+    ApprovedProjects(u128),
+    ApplicationNumber(u128),
+    VotingState(u128),
+    Votes(u128),
+    ProjectVotingCount(u128),
+    Admin(u128),
 }

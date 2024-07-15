@@ -32,7 +32,6 @@ pub struct RoundDetail {
 #[contracttype]
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct CreateRoundParams {
-    pub id: u128,
     pub name: String,
     pub description: String,
     pub video_url: String,

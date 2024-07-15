@@ -3,6 +3,7 @@ use crate::{
     approval_writer::{is_project_approved, read_approved_projects},
     data_type::{CreateRoundParams, RoundDetail},
     external::ProjectRegistryClient,
+    owner_writer::read_factory_owner,
     project_registry_writer::read_project_contract,
     utils::get_ledger_second_as_millis,
     voter_writer::{is_black_listed, is_white_listed},
@@ -44,7 +45,7 @@ pub fn validate_round_detail(round_detail: &CreateRoundParams) {
 pub fn validate_owner_or_admin(env: &Env, admin: &Address, round: &RoundDetail) {
     if round.owner != admin.clone() {
         assert!(
-            is_admin(env, admin),
+            is_admin(env, round.id, admin),
             "Only round owner or round admin can change voting period"
         );
     }
@@ -101,17 +102,17 @@ pub fn validate_application_period(env: &Env, round: &RoundDetail) {
     assert!(!round.is_completed, "Round is completed");
 }
 
-pub fn validate_approved_projects(env: &Env, project_id: u128) {
-    let already_approved = is_project_approved(env, project_id);
+pub fn validate_approved_projects(env: &Env, round_id: u128, project_id: u128) {
+    let already_approved = is_project_approved(env, round_id, project_id);
     assert!(already_approved, "Project not approved");
 }
 
-pub fn validate_not_approved_projects(env: &Env, project_id: u128) {
-    let already_approved = is_project_approved(env, project_id);
+pub fn validate_not_approved_projects(env: &Env, round_id: u128, project_id: u128) {
+    let already_approved = is_project_approved(env, round_id, project_id);
     assert!(!already_approved, "Project already approved");
 }
 
-pub fn validate_project_to_approve(env: &Env, project_ids: &Vec<u128>) {
+pub fn validate_project_to_approve(env: &Env, round_id: u128, project_ids: &Vec<u128>) {
     let project_contract = read_project_contract(env);
     let project_client = ProjectRegistryClient::new(env, &project_contract);
     let total_projects: u128 = project_client.get_total_projects().into();
@@ -122,7 +123,7 @@ pub fn validate_project_to_approve(env: &Env, project_ids: &Vec<u128>) {
             "Project not found in registry"
         );
 
-        validate_not_approved_projects(env, project_id);
+        validate_not_approved_projects(env, round_id, project_id);
     });
 }
 
@@ -137,7 +138,7 @@ pub fn validate_project_to_apply(env: &Env, project_id: u128) {
 }
 
 pub fn validate_max_participants(env: &Env, round: &RoundDetail, project_ids: &Vec<u128>) {
-    let approved_project = read_approved_projects(env);
+    let approved_project = read_approved_projects(env, round.id);
     assert!(
         approved_project.len() + project_ids.len() <= round.max_participants,
         "Maximum project participants {}",
@@ -146,7 +147,7 @@ pub fn validate_max_participants(env: &Env, round: &RoundDetail, project_ids: &V
 }
 
 pub fn validate_max_participant(env: &Env, round: &RoundDetail) {
-    let approved_project = read_approved_projects(env);
+    let approved_project = read_approved_projects(env, round.id);
     assert!(
         approved_project.len() < round.max_participants,
         "Maximum project participants {}",
@@ -154,8 +155,8 @@ pub fn validate_max_participant(env: &Env, round: &RoundDetail) {
     );
 }
 
-pub fn validate_has_voted(env: &Env, voter: &Address) {
-    let state = get_voting_state(env, voter.clone());
+pub fn validate_has_voted(env: &Env, round_id: u128, voter: &Address) {
+    let state = get_voting_state(env, round_id, voter.clone());
     assert!(
         !state,
         "Voter already voted. Can not vote again in same round"
@@ -169,23 +170,23 @@ pub fn validate_number_of_votes(required: u32, voted: u32) {
     );
 }
 
-pub fn validate_blacklist(env: &Env, voter: &Address) {
-    let is_black_listed = is_black_listed(env, voter.clone());
+pub fn validate_blacklist(env: &Env, round_id: u128, voter: &Address) {
+    let is_black_listed = is_black_listed(env, round_id, voter.clone());
     assert!(!is_black_listed, "Voter is black listed");
 }
 
-pub fn validate_blacklist_already(env: &Env, voter: &Address) {
-    let is_black_listed = is_black_listed(env, voter.clone());
+pub fn validate_blacklist_already(env: &Env, round_id: u128, voter: &Address) {
+    let is_black_listed = is_black_listed(env, round_id, voter.clone());
     assert!(!is_black_listed, "Voter is already black listed");
 }
 
-pub fn validate_not_blacklist(env: &Env, voter: &Address) {
-    let is_black_listed = is_black_listed(env, voter.clone());
+pub fn validate_not_blacklist(env: &Env, round_id: u128, voter: &Address) {
+    let is_black_listed = is_black_listed(env, round_id, voter.clone());
     assert!(is_black_listed, "Voter is not black listed");
 }
 
-pub fn validate_whitelist(env: &Env, voter: &Address) {
-    let is_white_listed = is_white_listed(env, voter.clone());
+pub fn validate_whitelist(env: &Env, round_id: u128, voter: &Address) {
+    let is_white_listed = is_white_listed(env, round_id, voter.clone());
     assert!(is_white_listed, "Voter is not white listed");
 }
 
@@ -204,5 +205,13 @@ pub fn validate_pick_per_votes(num_picks_per_voter: u32) {
     assert!(
         num_picks_per_voter <= 10,
         "Number of picks per voter must be less than or equal 10"
+    );
+}
+
+pub fn validate_contract_owner(env: &Env, admin: &Address) {
+    let contract_owner = read_factory_owner(env);
+    assert!(
+        &contract_owner == admin,
+        "Only contract owner can call this method"
     );
 }

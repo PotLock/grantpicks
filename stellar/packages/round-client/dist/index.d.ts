@@ -8,7 +8,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CA4XSZM255322M4GKEE5DUJC4HV3O5ZAMOIJHM3NMFNNRKDZJHXZLLYF";
+        readonly contractId: "CDU4HQHX4QBUBCALG4OAS3NI2D2ENLKACLYKVS6RMUWKUD4YFLUYLUWK";
     };
 };
 export type ApplicationStatus = {
@@ -273,6 +273,26 @@ export interface Client {
     upgrade: ({ owner, new_wasm_hash }: {
         owner: string;
         new_wasm_hash: Buffer;
+    }, options?: {
+        /**
+         * The fee to pay for the transaction. Default: BASE_FEE
+         */
+        fee?: number;
+        /**
+         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+         */
+        timeoutInSeconds?: number;
+        /**
+         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+         */
+        simulate?: boolean;
+    }) => Promise<AssembledTransaction<null>>;
+    /**
+     * Construct and simulate a transfer_ownership transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     */
+    transfer_ownership: ({ owner, new_owner }: {
+        owner: string;
+        new_owner: string;
     }, options?: {
         /**
          * The fee to pay for the transaction. Default: BASE_FEE
@@ -1011,6 +1031,7 @@ export declare class Client extends ContractClient {
         create_round: (json: string) => AssembledTransaction<RoundDetail>;
         get_rounds: (json: string) => AssembledTransaction<RoundDetail[]>;
         upgrade: (json: string) => AssembledTransaction<null>;
+        transfer_ownership: (json: string) => AssembledTransaction<null>;
         change_voting_period: (json: string) => AssembledTransaction<null>;
         change_application_period: (json: string) => AssembledTransaction<null>;
         change_amount: (json: string) => AssembledTransaction<null>;

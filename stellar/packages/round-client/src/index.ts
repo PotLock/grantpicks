@@ -33,7 +33,7 @@ if (typeof window !== 'undefined') {
 export const networks = {
   testnet: {
     networkPassphrase: "Test SDF Network ; September 2015",
-    contractId: "CA4XSZM255322M4GKEE5DUJC4HV3O5ZAMOIJHM3NMFNNRKDZJHXZLLYF",
+    contractId: "CDU4HQHX4QBUBCALG4OAS3NI2D2ENLKACLYKVS6RMUWKUD4YFLUYLUWK",
   }
 } as const
 
@@ -276,6 +276,26 @@ export interface Client {
    * Construct and simulate a upgrade transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
    */
   upgrade: ({owner, new_wasm_hash}: {owner: string, new_wasm_hash: Buffer}, options?: {
+    /**
+     * The fee to pay for the transaction. Default: BASE_FEE
+     */
+    fee?: number;
+
+    /**
+     * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+     */
+    timeoutInSeconds?: number;
+
+    /**
+     * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+     */
+    simulate?: boolean;
+  }) => Promise<AssembledTransaction<null>>
+
+  /**
+   * Construct and simulate a transfer_ownership transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+   */
+  transfer_ownership: ({owner, new_owner}: {owner: string, new_owner: string}, options?: {
     /**
      * The fee to pay for the transaction. Default: BASE_FEE
      */
@@ -1019,6 +1039,7 @@ export class Client extends ContractClient {
         "AAAAAAAAAAAAAAAMY3JlYXRlX3JvdW5kAAAAAgAAAAAAAAAFb3duZXIAAAAAAAATAAAAAAAAAAxyb3VuZF9kZXRhaWwAAAfQAAAAEUNyZWF0ZVJvdW5kUGFyYW1zAAAAAAAAAQAAB9AAAAALUm91bmREZXRhaWwA",
         "AAAAAAAAAAAAAAAKZ2V0X3JvdW5kcwAAAAAAAgAAAAAAAAAEc2tpcAAAA+gAAAAGAAAAAAAAAAVsaW1pdAAAAAAAA+gAAAAGAAAAAQAAA+oAAAfQAAAAC1JvdW5kRGV0YWlsAA==",
         "AAAAAAAAAAAAAAAHdXBncmFkZQAAAAACAAAAAAAAAAVvd25lcgAAAAAAABMAAAAAAAAADW5ld193YXNtX2hhc2gAAAAAAAPuAAAAIAAAAAA=",
+        "AAAAAAAAAAAAAAASdHJhbnNmZXJfb3duZXJzaGlwAAAAAAACAAAAAAAAAAVvd25lcgAAAAAAABMAAAAAAAAACW5ld19vd25lcgAAAAAAABMAAAAA",
         "AAAAAAAAAAAAAAAUY2hhbmdlX3ZvdGluZ19wZXJpb2QAAAAEAAAAAAAAAAhyb3VuZF9pZAAAAAoAAAAAAAAABWFkbWluAAAAAAAAEwAAAAAAAAAOcm91bmRfc3RhcnRfbXMAAAAAAAYAAAAAAAAADHJvdW5kX2VuZF9tcwAAAAYAAAAA",
         "AAAAAAAAAAAAAAAZY2hhbmdlX2FwcGxpY2F0aW9uX3BlcmlvZAAAAAAAAAQAAAAAAAAACHJvdW5kX2lkAAAACgAAAAAAAAAFYWRtaW4AAAAAAAATAAAAAAAAABpyb3VuZF9hcHBsaWNhdGlvbl9zdGFydF9tcwAAAAAABgAAAAAAAAAYcm91bmRfYXBwbGljYXRpb25fZW5kX21zAAAABgAAAAA=",
         "AAAAAAAAAAAAAAANY2hhbmdlX2Ftb3VudAAAAAAAAAMAAAAAAAAACHJvdW5kX2lkAAAACgAAAAAAAAAFYWRtaW4AAAAAAAATAAAAAAAAAAZhbW91bnQAAAAAAAoAAAAA",
@@ -1063,6 +1084,7 @@ export class Client extends ContractClient {
         create_round: this.txFromJSON<RoundDetail>,
         get_rounds: this.txFromJSON<Array<RoundDetail>>,
         upgrade: this.txFromJSON<null>,
+        transfer_ownership: this.txFromJSON<null>,
         change_voting_period: this.txFromJSON<null>,
         change_application_period: this.txFromJSON<null>,
         change_amount: this.txFromJSON<null>,

@@ -67,7 +67,7 @@ impl RoundFactory for RoundContract {
         owner.require_auth();
 
         let round_init = is_initialized(env);
-        assert!(!round_init, "Round already initialized");
+        assert!(round_init, "Round not initialized");
 
         validate_round_detail(&round_detail);
 

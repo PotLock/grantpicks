@@ -13,7 +13,7 @@ pub fn read_round_info(env: &Env, round_id: u128) -> RoundDetail {
 }
 
 pub fn is_initialized(env: &Env) -> bool {
-    let key = ContractKey::RoundNumber;
+    let key = ContractKey::FactoryOwner;
     env.storage().persistent().has(&key)
 }
 

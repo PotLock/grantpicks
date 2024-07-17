@@ -1,26 +1,37 @@
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::json_types::U128;
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::{env, log, near_bindgen, AccountId, PanicOnDefault};
+use near_sdk::store::{LookupMap, LookupSet, UnorderedMap, UnorderedSet};
+use near_sdk::{
+    env, log, near_bindgen, require, serde_json::json, AccountId, BorshStorageKey, NearToken,
+    PanicOnDefault, Promise,
+};
 use std::collections::{HashMap, HashSet};
+
+pub mod constants;
+pub mod events;
+pub mod rounds;
+pub mod utils;
+pub mod validation;
+pub use crate::constants::*;
+pub use crate::events::*;
+pub use crate::rounds::*;
+pub use crate::utils::*;
+pub use crate::validation::*;
+
+pub const EVENT_JSON_PREFIX: &str = "EVENT_JSON:";
 
 pub type TimestampMs = u64;
 pub type RoundId = u64;
+pub type InternalId = u32; // internal project ID, to save on storage
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
 #[borsh(crate = "near_sdk::borsh")]
 #[serde(crate = "near_sdk::serde")]
-pub struct Contact {
-    id: String,
-    value: String,
-}
-
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
-#[borsh(crate = "near_sdk::borsh")]
-#[serde(crate = "near_sdk::serde")]
-pub struct Requirement {
-    id: String,
-    value: String,
+pub struct VotingResult {
+    // keyed at the voter's account ID
+    picks: String,
+    voted_ms: TimestampMs,
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
@@ -39,8 +50,9 @@ pub enum ApplicationStatus {
     Pending,
     Approved,
     Rejected,
-    InReview,
 }
+
+pub type ApplicationId = u64;
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
 #[borsh(crate = "near_sdk::borsh")]
@@ -53,43 +65,40 @@ pub struct Application {
     pub review_notes: Option<String>,
 }
 
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
+#[derive(BorshSerialize, BorshStorageKey)]
 #[borsh(crate = "near_sdk::borsh")]
-#[serde(crate = "near_sdk::serde")]
-pub struct Round {
-    id: RoundId,
-    owner: AccountId,
-    admins: Vec<AccountId>,
-    application_start_ms: TimestampMs,
-    application_end_ms: TimestampMs,
-    voting_start_ms: TimestampMs,
-    voting_end_ms: TimestampMs,
-    blacklisted_voters: Vec<AccountId>,
-    whitelisted_voters: Option<Vec<AccountId>>,
-    expected_amount: U128,
-    vault_balance: U128,
-    name: String,
-    description: Option<String>,
-    contacts: Vec<Contact>,
-    image_url: Option<String>,
-    application_questions: Vec<String>,
-    application_requirements: Vec<Requirement>,
-    voting_requirements: Vec<Requirement>,
-    num_picks_per_voter: u8,
-    applications: HashMap<AccountId, Application>,
-    approved_applicants: HashSet<AccountId>,
-    votes: HashMap<AccountId, String>,
-    payouts: HashMap<AccountId, Payout>,
+pub enum StorageKey {
+    RoundsById,
+    ProjectIdToInternalId,
+    InternalIdToProjectId,
+    ApplicationsById,
+    ApplicationIdsByRoundId,
+    ApplicationIdsByRoundIdInner { round_id: RoundId },
+    VotesByRoundId,
+    VotesByRoundIdInner { round_id: RoundId },
+    VotingCountPerProjectByRoundId,
+    VotingCountPerProjectByRoundIdInner { round_id: RoundId },
+    PayoutsByRoundId,
+    PayoutsByRoundIdInner { round_id: RoundId },
 }
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 #[borsh(crate = "near_sdk::borsh")]
 pub struct Contract {
-    rounds_by_id: HashMap<u64, Round>,
-    project_id_to_internal_id: HashMap<AccountId, u32>,
-    internal_id_to_project_id: HashMap<u32, AccountId>,
-    next_internal_id: u32,
+    rounds_by_id: UnorderedMap<RoundId, RoundDetail>,
+    next_round_id: RoundId,
+    project_id_to_internal_id: LookupMap<AccountId, InternalId>,
+    internal_id_to_project_id: UnorderedMap<InternalId, AccountId>,
+    next_internal_id: InternalId,
+    applications_by_id: UnorderedMap<ApplicationId, Application>,
+    next_application_id: ApplicationId,
+    application_ids_by_round_id: UnorderedMap<RoundId, UnorderedSet<ApplicationId>>,
+    // approved_application_ids_by_round_id: UnorderedMap<RoundId, UnorderedSet<ApplicationId>>, // can add in if useful
+    votes_by_round_id: UnorderedMap<RoundId, UnorderedMap<AccountId, VotingResult>>,
+    voting_count_per_project_by_round_id: UnorderedMap<RoundId, UnorderedMap<InternalId, u32>>,
+    payouts_by_round_id: UnorderedMap<RoundId, UnorderedMap<InternalId, Payout>>,
+    default_page_size: u64, // TODO: make this configurable by owner/admin
 }
 
 const PICK_DELIMITER: &str = ":";
@@ -99,105 +108,21 @@ impl Contract {
     #[init]
     pub fn new() -> Self {
         Self {
-            rounds_by_id: HashMap::new(),
-            project_id_to_internal_id: HashMap::new(),
-            internal_id_to_project_id: HashMap::new(),
-            next_internal_id: 0,
+            rounds_by_id: UnorderedMap::new(StorageKey::RoundsById),
+            next_round_id: 1,
+            project_id_to_internal_id: LookupMap::new(StorageKey::ProjectIdToInternalId),
+            internal_id_to_project_id: UnorderedMap::new(StorageKey::InternalIdToProjectId),
+            next_internal_id: 1,
+            applications_by_id: UnorderedMap::new(StorageKey::ApplicationsById),
+            next_application_id: 1,
+            application_ids_by_round_id: UnorderedMap::new(StorageKey::ApplicationIdsByRoundId),
+            votes_by_round_id: UnorderedMap::new(StorageKey::VotesByRoundId),
+            voting_count_per_project_by_round_id: UnorderedMap::new(
+                StorageKey::VotingCountPerProjectByRoundId,
+            ),
+            payouts_by_round_id: UnorderedMap::new(StorageKey::PayoutsByRoundId),
+            default_page_size: DEFAULT_PAGE_SIZE, // TODO: make this configurable by owner/admin
         }
-    }
-
-    pub fn create_round(
-        &mut self,
-        owner: Option<AccountId>,
-        admins: Option<Vec<AccountId>>,
-        application_start_ms: TimestampMs,
-        application_end_ms: TimestampMs,
-        voting_start_ms: TimestampMs,
-        voting_end_ms: TimestampMs,
-        blacklisted_voters: Option<Vec<AccountId>>,
-        whitelisted_voters: Option<Vec<AccountId>>,
-        expected_amount: U128,
-        name: String,
-        description: Option<String>,
-        contacts: Vec<Contact>,
-        image_url: Option<String>,
-        application_questions: Option<Vec<String>>,
-        application_requirements: Option<Vec<Requirement>>,
-        voting_requirements: Option<Vec<Requirement>>,
-        num_picks_per_voter: u8,
-        projects: Option<Vec<AccountId>>,
-    ) -> &Round {
-        let id = (self.rounds_by_id.len() + 1) as u64;
-        let mut round = Round {
-            id,
-            owner: owner.unwrap_or_else(|| env::predecessor_account_id()),
-            admins: admins.unwrap_or_else(|| vec![]),
-            application_start_ms,
-            application_end_ms,
-            voting_start_ms,
-            voting_end_ms,
-            blacklisted_voters: blacklisted_voters.unwrap_or_else(|| vec![]),
-            whitelisted_voters,
-            expected_amount,
-            vault_balance: U128(0),
-            name,
-            description,
-            contacts,
-            image_url,
-            application_questions: application_questions.unwrap_or_else(|| vec![]),
-            application_requirements: application_requirements.unwrap_or_else(|| vec![]),
-            voting_requirements: voting_requirements.unwrap_or_else(|| vec![]),
-            num_picks_per_voter,
-            applications: HashMap::new(),
-            approved_applicants: HashSet::new(),
-            votes: HashMap::new(),
-            payouts: HashMap::new(),
-        };
-
-        if let Some(projects) = projects {
-            for project in projects {
-                let internal_id = self.next_internal_id;
-                self.project_id_to_internal_id
-                    .insert(project.clone(), internal_id);
-                self.internal_id_to_project_id
-                    .insert(internal_id, project.clone());
-                round.approved_applicants.insert(project);
-                self.next_internal_id += 1;
-            }
-        }
-
-        self.rounds_by_id.insert(id, round);
-        self.rounds_by_id.get(&id).unwrap()
-    }
-
-    /// Retrieve a round by its ID
-    pub fn get_round(&self, round_id: RoundId) -> &Round {
-        self.rounds_by_id.get(&round_id).expect("Round not found")
-    }
-
-    pub fn add_projects_to_round(&mut self, round_id: RoundId, projects: Vec<AccountId>) -> &Round {
-        let caller = env::predecessor_account_id();
-        let round = self
-            .rounds_by_id
-            .get_mut(&round_id)
-            .expect("Round not found");
-
-        // Verify caller is owner or admin
-        if round.owner != caller && !round.admins.contains(&caller) {
-            panic!("Only owner or admin can add projects to round");
-        }
-
-        for project in projects {
-            let internal_id = self.next_internal_id;
-            self.project_id_to_internal_id
-                .insert(project.clone(), internal_id);
-            self.internal_id_to_project_id
-                .insert(internal_id, project.clone());
-            round.approved_applicants.insert(project);
-            self.next_internal_id += 1;
-        }
-
-        self.rounds_by_id.get(&round_id).unwrap()
     }
 
     pub fn submit_vote(&mut self, round_id: RoundId, picks: Vec<String>) {

@@ -6,24 +6,28 @@ use near_sdk::{
     env, log, near_bindgen, require, serde_json::json, AccountId, BorshStorageKey, NearToken,
     PanicOnDefault, Promise,
 };
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
+pub mod applications;
 pub mod constants;
 pub mod events;
 pub mod rounds;
 pub mod utils;
 pub mod validation;
+pub mod votes;
+pub use crate::applications::*;
 pub use crate::constants::*;
 pub use crate::events::*;
 pub use crate::rounds::*;
 pub use crate::utils::*;
 pub use crate::validation::*;
+pub use crate::votes::*;
 
 pub const EVENT_JSON_PREFIX: &str = "EVENT_JSON:";
 
 pub type TimestampMs = u64;
 pub type RoundId = u64;
-pub type InternalId = u32; // internal project ID, to save on storage
+pub type InternalProjectId = u32; // internal project ID, to save on storage
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
 #[borsh(crate = "near_sdk::borsh")]
@@ -43,37 +47,17 @@ pub struct Payout {
     error: Option<String>,
 }
 
-#[derive(BorshDeserialize, BorshSerialize, PartialEq, Debug, Clone, Serialize, Deserialize)]
-#[borsh(crate = "near_sdk::borsh")]
-#[serde(crate = "near_sdk::serde")]
-pub enum ApplicationStatus {
-    Pending,
-    Approved,
-    Rejected,
-}
-
-pub type ApplicationId = u64;
-
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
-#[borsh(crate = "near_sdk::borsh")]
-#[serde(crate = "near_sdk::serde")]
-pub struct Application {
-    pub message: Option<String>,
-    pub status: ApplicationStatus,
-    pub submitted_at: TimestampMs,
-    pub updated_at: Option<TimestampMs>,
-    pub review_notes: Option<String>,
-}
-
 #[derive(BorshSerialize, BorshStorageKey)]
 #[borsh(crate = "near_sdk::borsh")]
 pub enum StorageKey {
     RoundsById,
-    ProjectIdToInternalId,
-    InternalIdToProjectId,
-    ApplicationsById,
-    ApplicationIdsByRoundId,
-    ApplicationIdsByRoundIdInner { round_id: RoundId },
+    ProjectIdToInternalProjectId,
+    InternalProjectIdToProjectId,
+    // ApplicationsById,
+    // ApplicationIdsByRoundId,
+    // ApplicationIdsByRoundIdInner { round_id: RoundId },
+    ApplicationsForRoundByInternalProjectId,
+    ApplicationsForRoundByInternalProjectIdInner { round_id: RoundId },
     VotesByRoundId,
     VotesByRoundIdInner { round_id: RoundId },
     VotingCountPerProjectByRoundId,
@@ -88,16 +72,20 @@ pub enum StorageKey {
 pub struct Contract {
     rounds_by_id: UnorderedMap<RoundId, RoundDetail>,
     next_round_id: RoundId,
-    project_id_to_internal_id: LookupMap<AccountId, InternalId>,
-    internal_id_to_project_id: UnorderedMap<InternalId, AccountId>,
-    next_internal_id: InternalId,
-    applications_by_id: UnorderedMap<ApplicationId, Application>,
-    next_application_id: ApplicationId,
-    application_ids_by_round_id: UnorderedMap<RoundId, UnorderedSet<ApplicationId>>,
+    project_id_to_internal_id: LookupMap<AccountId, InternalProjectId>,
+    internal_id_to_project_id: UnorderedMap<InternalProjectId, AccountId>,
+    next_internal_project_id: InternalProjectId,
+    // applications_by_id: UnorderedMap<ApplicationId, Application>, // TODO: is this needed?
+    // next_application_id: ApplicationId, // TODO: is this needed?
+    // project_ids_for_round
+    applications_for_round_by_internal_project_id:
+        UnorderedMap<RoundId, UnorderedMap<InternalProjectId, RoundApplication>>,
+    // application_ids_by_round_id: UnorderedMap<RoundId, UnorderedSet<ApplicationId>>,
     // approved_application_ids_by_round_id: UnorderedMap<RoundId, UnorderedSet<ApplicationId>>, // can add in if useful
     votes_by_round_id: UnorderedMap<RoundId, UnorderedMap<AccountId, VotingResult>>,
-    voting_count_per_project_by_round_id: UnorderedMap<RoundId, UnorderedMap<InternalId, u32>>,
-    payouts_by_round_id: UnorderedMap<RoundId, UnorderedMap<InternalId, Payout>>,
+    voting_count_per_project_by_round_id:
+        UnorderedMap<RoundId, UnorderedMap<InternalProjectId, u32>>,
+    payouts_by_round_id: UnorderedMap<RoundId, UnorderedMap<InternalProjectId, Payout>>,
     default_page_size: u64, // TODO: make this configurable by owner/admin
 }
 
@@ -110,9 +98,9 @@ impl Contract {
         Self {
             rounds_by_id: UnorderedMap::new(StorageKey::RoundsById),
             next_round_id: 1,
-            project_id_to_internal_id: LookupMap::new(StorageKey::ProjectIdToInternalId),
-            internal_id_to_project_id: UnorderedMap::new(StorageKey::InternalIdToProjectId),
-            next_internal_id: 1,
+            project_id_to_internal_id: LookupMap::new(StorageKey::ProjectIdToInternalProjectId),
+            internal_id_to_project_id: UnorderedMap::new(StorageKey::InternalProjectIdToProjectId),
+            next_internal_project_id: 1,
             applications_by_id: UnorderedMap::new(StorageKey::ApplicationsById),
             next_application_id: 1,
             application_ids_by_round_id: UnorderedMap::new(StorageKey::ApplicationIdsByRoundId),

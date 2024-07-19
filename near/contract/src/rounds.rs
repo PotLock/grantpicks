@@ -11,9 +11,10 @@ pub struct CreateRoundParams {
     pub contacts: Vec<Contact>,
     pub voting_start_ms: u64,
     pub voting_end_ms: u64,
-    pub application_start_ms: u64,
-    pub application_end_ms: u64,
-    pub expected_amount: U128, // NB: on Stellar this is an int (u128)
+    pub allow_applications: bool,
+    pub application_start_ms: Option<u64>, // must be present if allow_applications is true
+    pub application_end_ms: Option<u64>,   // must be present if allow_applications is true
+    pub expected_amount: U128,             // NB: on Stellar this is an int (u128)
     pub use_whitelist: Option<bool>,
     pub num_picks_per_voter: u32,
     pub max_participants: Option<u32>,
@@ -29,14 +30,15 @@ pub struct RoundDetail {
     pub name: String,
     pub description: String,
     pub contacts: Vec<Contact>,
-    pub application_start_ms: TimestampMs,
-    pub application_end_ms: TimestampMs,
+    pub allow_applications: bool,
+    pub application_start_ms: Option<TimestampMs>, // must be present if allow_applications is true
+    pub application_end_ms: Option<TimestampMs>,   // must be present if allow_applications is true
     pub voting_start_ms: TimestampMs,
     pub voting_end_ms: TimestampMs,
     pub blacklisted_voters: Vec<AccountId>, // todo: if these will grow large, consider storing on top-level contract instead
     pub whitelisted_voters: Option<Vec<AccountId>>, // todo: if these will grow large, consider storing on top-level contract instead
     pub use_whitelist: bool,
-    pub expected_amount: U128,
+    pub expected_amount: U128, // NB: on Stellar this is an int (u128)
     pub vault_balance: U128,
     pub num_picks_per_voter: u32,
     pub max_participants: u32,
@@ -48,6 +50,13 @@ pub struct RoundDetail {
 pub struct Contact {
     name: String,
     value: String,
+}
+
+impl RoundDetail {
+    pub fn is_caller_owner_or_admin(&self) -> bool {
+        let caller = env::predecessor_account_id();
+        self.owner == *caller || self.admins.contains(&caller)
+    }
 }
 
 #[near_bindgen]
@@ -63,6 +72,7 @@ impl Contract {
             name: round_detail.name,
             description: round_detail.description,
             contacts: round_detail.contacts,
+            allow_applications: round_detail.allow_applications,
             application_start_ms: round_detail.application_start_ms,
             application_end_ms: round_detail.application_end_ms,
             voting_start_ms: round_detail.voting_start_ms,
@@ -78,6 +88,12 @@ impl Contract {
         validate_round_detail(&round);
         self.rounds_by_id.insert(id, round.clone());
         self.next_round_id += 1;
+        self.applications_for_round_by_internal_project_id.insert(
+            id,
+            UnorderedMap::new(StorageKey::ApplicationsForRoundByInternalProjectIdInner {
+                round_id: id,
+            }),
+        );
         refund_deposit(initial_storage_usage, None);
         log_create_round(&round);
         self.rounds_by_id.get(&id).unwrap()
@@ -113,6 +129,42 @@ impl Contract {
     }
 
     #[payable]
+    /// Must have no balance & no applications
+    pub fn delete_round(&mut self, round_id: RoundId) -> RoundDetail {
+        let initial_storage_usage = env::storage_usage();
+        let caller = env::predecessor_account_id();
+        let round = self
+            .rounds_by_id
+            .get(&round_id)
+            .expect("Round not found")
+            .clone();
+
+        // Verify caller is owner
+        if round.owner != caller {
+            panic!("Only owner can delete round");
+        }
+
+        // Verify no balance
+        assert_eq!(round.vault_balance.0, 0, "Round must have no balance");
+
+        // Verify no applications
+        let applications_for_round = self
+            .applications_for_round_by_internal_project_id
+            .get(&round_id)
+            .expect("Applications for round not found");
+        assert_eq!(
+            applications_for_round.len(),
+            0,
+            "Round must have no applications"
+        );
+
+        self.rounds_by_id.remove(&round_id);
+        refund_deposit(initial_storage_usage, None);
+        log_delete_round(&round);
+        round
+    }
+
+    #[payable]
     pub fn change_voting_period(
         &mut self,
         round_id: RoundId,
@@ -142,6 +194,44 @@ impl Contract {
     }
 
     #[payable]
+    pub fn change_allow_applications(
+        &mut self,
+        round_id: RoundId,
+        allow_applications: bool,
+        start_ms: Option<TimestampMs>,
+        end_ms: Option<TimestampMs>,
+    ) -> &RoundDetail {
+        let initial_storage_usage = env::storage_usage();
+        let caller = env::predecessor_account_id();
+        let mut round = self
+            .rounds_by_id
+            .get(&round_id)
+            .expect("Round not found")
+            .clone();
+
+        // Verify caller is owner or admin
+        if round.owner != caller && !round.admins.contains(&caller) {
+            panic!("Only owner or admin can change allow applications");
+        }
+
+        round.allow_applications = allow_applications;
+        // if applications are not allowed, then application start and end times should be removed...
+        if !allow_applications {
+            round.application_start_ms = None;
+            round.application_end_ms = None;
+        } else {
+            // ...and vice versa, they should be provided (validate_round_detail will verify this)
+            round.application_start_ms = start_ms;
+            round.application_end_ms = end_ms;
+        }
+        validate_round_detail(&round);
+        self.rounds_by_id.insert(round_id, round.clone());
+        refund_deposit(initial_storage_usage, None);
+        log_update_round(&round);
+        self.rounds_by_id.get(&round_id).unwrap()
+    }
+
+    #[payable]
     pub fn change_application_period(
         &mut self,
         round_id: RoundId,
@@ -161,8 +251,8 @@ impl Contract {
             panic!("Only owner or admin can change application period");
         }
 
-        round.application_start_ms = start_ms;
-        round.application_end_ms = end_ms;
+        round.application_start_ms = Some(start_ms);
+        round.application_end_ms = Some(end_ms);
         validate_round_detail(&round);
         self.rounds_by_id.insert(round_id, round.clone());
         refund_deposit(initial_storage_usage, None);
@@ -336,10 +426,10 @@ impl Contract {
             .collect()
     }
 
-    // /// Retrieve a round by its ID
-    // pub fn get_round(&self, round_id: RoundId) -> &Round {
-    //     self.rounds_by_id.get(&round_id).expect("Round not found")
-    // }
+    /// Retrieve a round by its ID
+    pub fn get_round(&self, round_id: RoundId) -> &RoundDetail {
+        self.rounds_by_id.get(&round_id).expect("Round not found")
+    }
 
     // pub fn add_projects_to_round(&mut self, round_id: RoundId, projects: Vec<AccountId>) -> &Round {
     //     let caller = env::predecessor_account_id();

@@ -601,6 +601,14 @@
     "@near-wallet-selector/wallet-utils" "8.9.10"
     is-mobile "4.0.0"
 
+"@near-wallet-selector/okx-wallet@^8.9.10":
+  version "8.9.10"
+  resolved "https://registry.yarnpkg.com/@near-wallet-selector/okx-wallet/-/okx-wallet-8.9.10.tgz#cc16b829cc61bf13da48463d75fbaa4614fff415"
+  integrity sha512-kklbIdQdsAl0CYvlrwdiXlUtEeriWnTQUiBo0XCUBFdjhoK98tNA0OarRnt/wXjM3IxQNMOuqoCFO03YAg0niQ==
+  dependencies:
+    "@near-wallet-selector/core" "8.9.10"
+    is-mobile "4.0.0"
+
 "@near-wallet-selector/sender@^8.9.10":
   version "8.9.10"
   resolved "https://registry.yarnpkg.com/@near-wallet-selector/sender/-/sender-8.9.10.tgz#da3af4133d6c965cc1a321dc67eaae9bb02b6e4a"

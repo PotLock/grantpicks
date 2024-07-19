@@ -7,22 +7,15 @@ import IconStellar from '../../svgs/IconStellar'
 import { getPriceCrypto } from '@/services/common'
 import Button from '../../commons/Button'
 import { useModalContext } from '@/app/providers/ModalProvider'
+import { useGlobalContext } from '@/app/providers/GlobalProvider'
 
 interface FundROundModalProps extends BaseModalProps {}
 
 const FundRoundModal = ({ isOpen, onClose }: FundROundModalProps) => {
-	const [stellarPrice, setStellarPrice] = useState<number>(0.0)
 	const [amount, setAmount] = useState<string>('')
 	const [amountUsd, setAmountUsd] = useState<string>('0.00')
 	const { setSuccessFundRoundModalProps } = useModalContext()
-
-	useEffect(() => {
-		const getPriceStellarToUsd = async () => {
-			const res = await getPriceCrypto('XLM', 'USD')
-			setStellarPrice(res?.data['USD'] || 0)
-		}
-		getPriceStellarToUsd()
-	}, [])
+	const { stellarPrice } = useGlobalContext()
 
 	return (
 		<Modal isOpen={isOpen} onClose={onClose}>

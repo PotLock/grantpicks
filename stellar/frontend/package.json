@@ -26,6 +26,7 @@
 		"@near-wallet-selector/nearfi": "^8.9.10",
 		"@near-wallet-selector/nightly": "^8.9.10",
 		"@near-wallet-selector/nightly-connect": "^8.7.0",
+		"@near-wallet-selector/okx-wallet": "^8.9.10",
 		"@near-wallet-selector/sender": "^8.9.10",
 		"@near-wallet-selector/wallet-connect": "^8.9.10",
 		"axios": "^1.7.2",

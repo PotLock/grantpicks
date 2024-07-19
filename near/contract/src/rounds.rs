@@ -23,7 +23,7 @@ pub struct CreateRoundParams {
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
 #[borsh(crate = "near_sdk::borsh")]
 #[serde(crate = "near_sdk::serde")]
-pub struct RoundDetail {
+pub struct RoundDetailInternal {
     pub id: RoundId,
     pub owner: AccountId,
     pub admins: Vec<AccountId>,
@@ -38,10 +38,89 @@ pub struct RoundDetail {
     pub blacklisted_voters: Vec<AccountId>, // todo: if these will grow large, consider storing on top-level contract instead
     pub whitelisted_voters: Option<Vec<AccountId>>, // todo: if these will grow large, consider storing on top-level contract instead
     pub use_whitelist: bool,
-    pub expected_amount: U128, // NB: on Stellar this is an int (u128)
-    pub vault_balance: U128,
+    pub expected_amount: u128,
+    pub vault_balance: u128,
     pub num_picks_per_voter: u32,
     pub max_participants: u32,
+}
+
+impl RoundDetailInternal {
+    pub fn is_caller_owner_or_admin(&self) -> bool {
+        let caller = env::predecessor_account_id();
+        self.owner == *caller || self.admins.contains(&caller)
+    }
+
+    pub fn to_external(self) -> RoundDetailExternal {
+        RoundDetailExternal {
+            id: self.id,
+            owner: self.owner,
+            admins: self.admins,
+            name: self.name,
+            description: self.description,
+            contacts: self.contacts,
+            allow_applications: self.allow_applications,
+            application_start_ms: self.application_start_ms,
+            application_end_ms: self.application_end_ms,
+            voting_start_ms: self.voting_start_ms,
+            voting_end_ms: self.voting_end_ms,
+            blacklisted_voters: self.blacklisted_voters,
+            whitelisted_voters: self.whitelisted_voters,
+            use_whitelist: self.use_whitelist,
+            expected_amount: U128(self.expected_amount),
+            vault_balance: U128(self.vault_balance),
+            num_picks_per_voter: self.num_picks_per_voter,
+            max_participants: self.max_participants,
+        }
+    }
+}
+
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
+#[borsh(crate = "near_sdk::borsh")]
+#[serde(crate = "near_sdk::serde")]
+pub struct RoundDetailExternal {
+    pub id: RoundId,
+    pub owner: AccountId,
+    pub admins: Vec<AccountId>,
+    pub name: String,
+    pub description: String,
+    pub contacts: Vec<Contact>,
+    pub allow_applications: bool,
+    pub application_start_ms: Option<TimestampMs>, // must be present if allow_applications is true
+    pub application_end_ms: Option<TimestampMs>,   // must be present if allow_applications is true
+    pub voting_start_ms: TimestampMs,
+    pub voting_end_ms: TimestampMs,
+    pub blacklisted_voters: Vec<AccountId>, // todo: if these will grow large, consider storing on top-level contract instead
+    pub whitelisted_voters: Option<Vec<AccountId>>, // todo: if these will grow large, consider storing on top-level contract instead
+    pub use_whitelist: bool,
+    pub expected_amount: U128, // String for JSON purposes. NB: on Stellar this is an int (u128)
+    pub vault_balance: U128,   // String for JSON purposes. NB: on Stellar this is an int (u128)
+    pub num_picks_per_voter: u32,
+    pub max_participants: u32,
+}
+
+impl RoundDetailExternal {
+    pub fn to_internal(self) -> RoundDetailInternal {
+        RoundDetailInternal {
+            id: self.id,
+            owner: self.owner,
+            admins: self.admins,
+            name: self.name,
+            description: self.description,
+            contacts: self.contacts,
+            allow_applications: self.allow_applications,
+            application_start_ms: self.application_start_ms,
+            application_end_ms: self.application_end_ms,
+            voting_start_ms: self.voting_start_ms,
+            voting_end_ms: self.voting_end_ms,
+            blacklisted_voters: self.blacklisted_voters,
+            whitelisted_voters: self.whitelisted_voters,
+            use_whitelist: self.use_whitelist,
+            expected_amount: self.expected_amount.0,
+            vault_balance: self.vault_balance.0,
+            num_picks_per_voter: self.num_picks_per_voter,
+            max_participants: self.max_participants,
+        }
+    }
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
@@ -52,20 +131,13 @@ pub struct Contact {
     value: String,
 }
 
-impl RoundDetail {
-    pub fn is_caller_owner_or_admin(&self) -> bool {
-        let caller = env::predecessor_account_id();
-        self.owner == *caller || self.admins.contains(&caller)
-    }
-}
-
 #[near_bindgen]
 impl Contract {
     #[payable]
-    pub fn create_round(&mut self, round_detail: CreateRoundParams) -> &RoundDetail {
+    pub fn create_round(&mut self, round_detail: CreateRoundParams) -> RoundDetailExternal {
         let initial_storage_usage = env::storage_usage();
         let id = self.next_round_id;
-        let round = RoundDetail {
+        let round = RoundDetailInternal {
             id,
             owner: round_detail.owner,
             admins: round_detail.admins,
@@ -80,8 +152,8 @@ impl Contract {
             blacklisted_voters: vec![],
             whitelisted_voters: None,
             use_whitelist: round_detail.use_whitelist.unwrap_or(false),
-            expected_amount: round_detail.expected_amount,
-            vault_balance: U128(0),
+            expected_amount: round_detail.expected_amount.0,
+            vault_balance: 0,
             num_picks_per_voter: round_detail.num_picks_per_voter,
             max_participants: round_detail.max_participants.unwrap_or(0),
         };
@@ -101,16 +173,17 @@ impl Contract {
         );
         // clean-up
         refund_deposit(initial_storage_usage, None);
-        log_create_round(&round);
-        self.rounds_by_id.get(&id).unwrap()
+        let round_external = round.to_external();
+        log_create_round(&round_external);
+        round_external.clone()
     }
 
     #[payable]
     pub fn update_round(
         &mut self,
         round_id: RoundId,
-        mut round_detail: RoundDetail,
-    ) -> &RoundDetail {
+        mut round_detail: RoundDetailExternal,
+    ) -> RoundDetailExternal {
         let initial_storage_usage = env::storage_usage();
         let caller = env::predecessor_account_id();
         let round = self
@@ -128,15 +201,38 @@ impl Contract {
             round_detail.admins = round.admins.clone();
         }
 
-        self.rounds_by_id.insert(round_id, round_detail.clone());
+        let round_detail_internal = RoundDetailInternal {
+            id: round_detail.id,
+            owner: round_detail.owner,
+            admins: round_detail.admins,
+            name: round_detail.name,
+            description: round_detail.description,
+            contacts: round_detail.contacts,
+            allow_applications: round_detail.allow_applications,
+            application_start_ms: round_detail.application_start_ms,
+            application_end_ms: round_detail.application_end_ms,
+            voting_start_ms: round_detail.voting_start_ms,
+            voting_end_ms: round_detail.voting_end_ms,
+            blacklisted_voters: round_detail.blacklisted_voters,
+            whitelisted_voters: round_detail.whitelisted_voters,
+            use_whitelist: round_detail.use_whitelist,
+            expected_amount: round_detail.expected_amount.0,
+            vault_balance: round_detail.vault_balance.0,
+            num_picks_per_voter: round_detail.num_picks_per_voter,
+            max_participants: round_detail.max_participants,
+        };
+
+        self.rounds_by_id
+            .insert(round_id, round_detail_internal.clone());
         refund_deposit(initial_storage_usage, None);
-        log_update_round(&round_detail);
-        self.rounds_by_id.get(&round_id).unwrap()
+        let round_external = round_detail_internal.to_external();
+        log_update_round(&round_external);
+        round_external.clone()
     }
 
     #[payable]
     /// Must have no balance & no applications
-    pub fn delete_round(&mut self, round_id: RoundId) -> RoundDetail {
+    pub fn delete_round(&mut self, round_id: RoundId) -> RoundDetailExternal {
         let initial_storage_usage = env::storage_usage();
         let caller = env::predecessor_account_id();
         let round = self
@@ -151,7 +247,7 @@ impl Contract {
         }
 
         // Verify no balance
-        assert_eq!(round.vault_balance.0, 0, "Round must have no balance");
+        assert_eq!(round.vault_balance, 0, "Round must have no balance");
 
         // Verify no applications
         let applications_for_round = self
@@ -168,8 +264,9 @@ impl Contract {
         self.applications_for_round_by_internal_project_id
             .remove(&round_id);
         refund_deposit(initial_storage_usage, None);
-        log_delete_round(&round);
-        round
+        let round_external = round.to_external();
+        log_delete_round(&round_external);
+        round_external
     }
 
     #[payable]
@@ -178,7 +275,7 @@ impl Contract {
         round_id: RoundId,
         start_ms: TimestampMs,
         end_ms: TimestampMs,
-    ) -> &RoundDetail {
+    ) -> RoundDetailExternal {
         let initial_storage_usage = env::storage_usage();
         let caller = env::predecessor_account_id();
         let mut round = self
@@ -197,8 +294,9 @@ impl Contract {
         validate_round_detail(&round);
         self.rounds_by_id.insert(round_id, round.clone());
         refund_deposit(initial_storage_usage, None);
-        log_update_round(&round);
-        self.rounds_by_id.get(&round_id).unwrap()
+        let round_external = round.to_external();
+        log_update_round(&round_external);
+        round_external
     }
 
     #[payable]
@@ -208,7 +306,7 @@ impl Contract {
         allow_applications: bool,
         start_ms: Option<TimestampMs>,
         end_ms: Option<TimestampMs>,
-    ) -> &RoundDetail {
+    ) -> RoundDetailExternal {
         let initial_storage_usage = env::storage_usage();
         let caller = env::predecessor_account_id();
         let mut round = self
@@ -235,8 +333,9 @@ impl Contract {
         validate_round_detail(&round);
         self.rounds_by_id.insert(round_id, round.clone());
         refund_deposit(initial_storage_usage, None);
-        log_update_round(&round);
-        self.rounds_by_id.get(&round_id).unwrap()
+        let round_external = round.to_external();
+        log_update_round(&round_external);
+        round_external
     }
 
     #[payable]
@@ -245,7 +344,7 @@ impl Contract {
         round_id: RoundId,
         start_ms: TimestampMs,
         end_ms: TimestampMs,
-    ) -> &RoundDetail {
+    ) -> RoundDetailExternal {
         let initial_storage_usage = env::storage_usage();
         let caller = env::predecessor_account_id();
         let mut round = self
@@ -264,8 +363,9 @@ impl Contract {
         validate_round_detail(&round);
         self.rounds_by_id.insert(round_id, round.clone());
         refund_deposit(initial_storage_usage, None);
-        log_update_round(&round);
-        self.rounds_by_id.get(&round_id).unwrap()
+        let round_external = round.to_external();
+        log_update_round(&round_external);
+        round_external
     }
 
     #[payable]
@@ -273,7 +373,7 @@ impl Contract {
         &mut self,
         round_id: RoundId,
         expected_amount: U128,
-    ) -> &RoundDetail {
+    ) -> RoundDetailExternal {
         let initial_storage_usage = env::storage_usage();
         let caller = env::predecessor_account_id();
         let mut round = self
@@ -287,16 +387,17 @@ impl Contract {
             panic!("Only owner or admin can change expected amount");
         }
 
-        round.expected_amount = expected_amount;
+        round.expected_amount = expected_amount.0;
         validate_round_detail(&round);
         self.rounds_by_id.insert(round_id, round.clone());
         refund_deposit(initial_storage_usage, None);
-        log_update_round(&round);
-        self.rounds_by_id.get(&round_id).unwrap()
+        let round_external = round.to_external();
+        log_update_round(&round_external);
+        round_external
     }
 
     #[payable]
-    pub fn close_voting_period(&mut self, round_id: RoundId) -> &RoundDetail {
+    pub fn close_voting_period(&mut self, round_id: RoundId) -> RoundDetailExternal {
         let initial_storage_usage = env::storage_usage();
         let caller = env::predecessor_account_id();
         let mut round = self
@@ -314,12 +415,13 @@ impl Contract {
         validate_round_detail(&round);
         self.rounds_by_id.insert(round_id, round.clone());
         refund_deposit(initial_storage_usage, None);
-        log_update_round(&round);
-        self.rounds_by_id.get(&round_id).unwrap()
+        let round_external = round.to_external();
+        log_update_round(&round_external);
+        round_external
     }
 
     #[payable]
-    pub fn add_admins(&mut self, round_id: RoundId, admins: Vec<AccountId>) -> &RoundDetail {
+    pub fn add_admins(&mut self, round_id: RoundId, admins: Vec<AccountId>) -> RoundDetailExternal {
         let initial_storage_usage = env::storage_usage();
         let caller = env::predecessor_account_id();
         let mut round = self
@@ -341,12 +443,17 @@ impl Contract {
 
         self.rounds_by_id.insert(round_id, round.clone());
         refund_deposit(initial_storage_usage, None);
-        log_update_round(&round);
-        self.rounds_by_id.get(&round_id).unwrap()
+        let round_external = round.to_external();
+        log_update_round(&round_external);
+        round_external
     }
 
     #[payable]
-    pub fn remove_admins(&mut self, round_id: RoundId, admins: Vec<AccountId>) -> &RoundDetail {
+    pub fn remove_admins(
+        &mut self,
+        round_id: RoundId,
+        admins: Vec<AccountId>,
+    ) -> RoundDetailExternal {
         let initial_storage_usage = env::storage_usage();
         let caller = env::predecessor_account_id();
         let mut round = self
@@ -369,12 +476,13 @@ impl Contract {
 
         self.rounds_by_id.insert(round_id, round.clone());
         refund_deposit(initial_storage_usage, None);
-        log_update_round(&round);
-        self.rounds_by_id.get(&round_id).unwrap()
+        let round_external = round.to_external();
+        log_update_round(&round_external);
+        round_external
     }
 
     #[payable]
-    pub fn set_admins(&mut self, round_id: RoundId, admins: Vec<AccountId>) -> &RoundDetail {
+    pub fn set_admins(&mut self, round_id: RoundId, admins: Vec<AccountId>) -> RoundDetailExternal {
         let initial_storage_usage = env::storage_usage();
         let caller = env::predecessor_account_id();
         let mut round = self
@@ -392,12 +500,13 @@ impl Contract {
 
         self.rounds_by_id.insert(round_id, round.clone());
         refund_deposit(initial_storage_usage, None);
-        log_update_round(&round);
-        self.rounds_by_id.get(&round_id).unwrap()
+        let round_external = round.to_external();
+        log_update_round(&round_external);
+        round_external
     }
 
     #[payable]
-    pub fn clear_admins(&mut self, round_id: RoundId) -> &RoundDetail {
+    pub fn clear_admins(&mut self, round_id: RoundId) -> RoundDetailExternal {
         let initial_storage_usage = env::storage_usage();
         let caller = env::predecessor_account_id();
         let mut round = self
@@ -415,12 +524,13 @@ impl Contract {
 
         self.rounds_by_id.insert(round_id, round.clone());
         refund_deposit(initial_storage_usage, None);
-        log_update_round(&round);
-        self.rounds_by_id.get(&round_id).unwrap()
+        let round_external = round.to_external();
+        log_update_round(&round_external);
+        round_external
     }
 
     #[payable]
-    pub fn deposit_to_round(&mut self, round_id: RoundId) -> &RoundDetail {
+    pub fn deposit_to_round(&mut self, round_id: RoundId) -> RoundDetailExternal {
         let initial_storage_usage = env::storage_usage();
         let round = self
             .rounds_by_id
@@ -429,21 +539,30 @@ impl Contract {
             .clone();
         let caller = env::predecessor_account_id();
         let attached_deposit = env::attached_deposit();
-        let vault_balance = round.vault_balance.0 + attached_deposit.as_yoctonear();
-        let round = RoundDetail {
-            vault_balance: U128(vault_balance),
+        let vault_balance = round.vault_balance + attached_deposit.as_yoctonear();
+        let round = RoundDetailInternal {
+            vault_balance,
             ..round
         };
         self.rounds_by_id.insert(round_id, round.clone());
         refund_deposit(initial_storage_usage, None);
-        log_deposit(&round, U128(attached_deposit.as_yoctonear()), &caller);
-        self.rounds_by_id.get(&round_id).unwrap()
+        let round_external = round.to_external();
+        log_deposit(
+            &round_external,
+            U128(attached_deposit.as_yoctonear()),
+            &caller,
+        );
+        round_external
         // TODO: determine whether deposit record should be saved on-chain (not currently done, only event is logged)
     }
 
     // GETTER/VIEW METHODS
 
-    pub fn get_rounds(&self, from_index: Option<u64>, limit: Option<u64>) -> Vec<RoundDetail> {
+    pub fn get_rounds(
+        &self,
+        from_index: Option<u64>,
+        limit: Option<u64>,
+    ) -> Vec<RoundDetailExternal> {
         let from_index = from_index.unwrap_or(0);
         let limit = limit.unwrap_or(self.default_page_size);
         if from_index > self.rounds_by_id.len() as u64 {
@@ -454,13 +573,17 @@ impl Contract {
             .iter()
             .skip(from_index as usize)
             .take(limit as usize)
-            .map(|(_, round)| round.clone())
+            .map(|(_, round)| round.clone().to_external())
             .collect()
     }
 
     /// Retrieve a round by its ID
-    pub fn get_round(&self, round_id: RoundId) -> &RoundDetail {
-        self.rounds_by_id.get(&round_id).expect("Round not found")
+    pub fn get_round(&self, round_id: RoundId) -> RoundDetailExternal {
+        self.rounds_by_id
+            .get(&round_id)
+            .expect("Round not found")
+            .clone()
+            .to_external()
     }
 
     // pub fn add_projects_to_round(&mut self, round_id: RoundId, projects: Vec<AccountId>) -> &Round {

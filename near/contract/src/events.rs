@@ -1,7 +1,7 @@
 use crate::*;
 
 /// create round
-pub(crate) fn log_create_round(round_detail: &RoundDetail) {
+pub(crate) fn log_create_round(round_detail: &RoundDetailExternal) {
     env::log_str(
         format!(
             "{}{}",
@@ -22,7 +22,7 @@ pub(crate) fn log_create_round(round_detail: &RoundDetail) {
 }
 
 /// update round
-pub(crate) fn log_update_round(round_detail: &RoundDetail) {
+pub(crate) fn log_update_round(round_detail: &RoundDetailExternal) {
     env::log_str(
         format!(
             "{}{}",
@@ -43,7 +43,7 @@ pub(crate) fn log_update_round(round_detail: &RoundDetail) {
 }
 
 /// delete round
-pub(crate) fn log_delete_round(round_detail: &RoundDetail) {
+pub(crate) fn log_delete_round(round_detail: &RoundDetailExternal) {
     env::log_str(
         format!(
             "{}{}",
@@ -64,7 +64,7 @@ pub(crate) fn log_delete_round(round_detail: &RoundDetail) {
 }
 
 /// Deposit to round (vault)
-pub(crate) fn log_deposit(round: &RoundDetail, attached_deposit: U128, caller: &AccountId) {
+pub(crate) fn log_deposit(round: &RoundDetailExternal, attached_deposit: U128, caller: &AccountId) {
     env::log_str(
         format!(
             "{}{}",

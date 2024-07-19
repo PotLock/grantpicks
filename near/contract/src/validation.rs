@@ -1,6 +1,6 @@
 use crate::*;
 
-pub(crate) fn validate_round_detail(round_detail: &RoundDetail) {
+pub(crate) fn validate_round_detail(round_detail: &RoundDetailInternal) {
     if round_detail.allow_applications {
         if let Some(application_start_ms) = round_detail.application_start_ms {
             // must be less than application end time
@@ -40,7 +40,7 @@ pub(crate) fn validate_round_detail(round_detail: &RoundDetail) {
     );
 
     assert!(
-        round_detail.expected_amount.0 > 0,
+        round_detail.expected_amount > 0,
         "Expected Amount must be greater than 0"
     );
 

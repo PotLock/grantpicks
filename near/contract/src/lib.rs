@@ -72,7 +72,7 @@ pub enum StorageKey {
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 #[borsh(crate = "near_sdk::borsh")]
 pub struct Contract {
-    rounds_by_id: UnorderedMap<RoundId, RoundDetail>,
+    rounds_by_id: UnorderedMap<RoundId, RoundDetailInternal>,
     next_round_id: RoundId,
     project_id_to_internal_id: LookupMap<AccountId, InternalProjectId>,
     internal_id_to_project_id: UnorderedMap<InternalProjectId, AccountId>,
@@ -104,9 +104,12 @@ impl Contract {
             project_id_to_internal_id: LookupMap::new(StorageKey::ProjectIdToInternalProjectId),
             internal_id_to_project_id: UnorderedMap::new(StorageKey::InternalProjectIdToProjectId),
             next_internal_project_id: 1,
-            applications_by_id: UnorderedMap::new(StorageKey::ApplicationsById),
-            next_application_id: 1,
-            application_ids_by_round_id: UnorderedMap::new(StorageKey::ApplicationIdsByRoundId),
+            applications_for_round_by_internal_project_id: UnorderedMap::new(
+                StorageKey::ApplicationsForRoundByInternalProjectId,
+            ),
+            approved_internal_project_ids_for_round: UnorderedMap::new(
+                StorageKey::ApprovedInternalProjectIdsForRound,
+            ),
             votes_by_round_id: UnorderedMap::new(StorageKey::VotesByRoundId),
             voting_count_per_project_by_round_id: UnorderedMap::new(
                 StorageKey::VotingCountPerProjectByRoundId,
@@ -116,132 +119,132 @@ impl Contract {
         }
     }
 
-    pub fn submit_vote(&mut self, round_id: RoundId, picks: Vec<String>) {
-        let voter_id = env::predecessor_account_id();
-        let round = self
-            .rounds_by_id
-            .get_mut(&round_id)
-            .expect("Round not found");
+    // pub fn submit_vote(&mut self, round_id: RoundId, picks: Vec<String>) {
+    //     let voter_id = env::predecessor_account_id();
+    //     let round = self
+    //         .rounds_by_id
+    //         .get_mut(&round_id)
+    //         .expect("Round not found");
 
-        let mut internal_picks = Vec::new();
-        for pick in picks {
-            let projects: Vec<&str> = pick.split(PICK_DELIMITER).collect();
-            let project_a: AccountId = projects[0].parse().unwrap();
-            let project_b: AccountId = projects[1].parse().unwrap();
-            if projects.len() == 2 {
-                let project_a_internal_id = self
-                    .project_id_to_internal_id
-                    .get(&project_a)
-                    .expect("Invalid project ID")
-                    .to_string();
-                let project_b_internal_id = self
-                    .project_id_to_internal_id
-                    .get(&project_b)
-                    .expect("Invalid project ID")
-                    .to_string();
-                internal_picks.push(format!(
-                    "{}{}{}",
-                    project_a_internal_id, PICK_DELIMITER, project_b_internal_id
-                ));
-            }
-        }
+    //     let mut internal_picks = Vec::new();
+    //     for pick in picks {
+    //         let projects: Vec<&str> = pick.split(PICK_DELIMITER).collect();
+    //         let project_a: AccountId = projects[0].parse().unwrap();
+    //         let project_b: AccountId = projects[1].parse().unwrap();
+    //         if projects.len() == 2 {
+    //             let project_a_internal_id = self
+    //                 .project_id_to_internal_id
+    //                 .get(&project_a)
+    //                 .expect("Invalid project ID")
+    //                 .to_string();
+    //             let project_b_internal_id = self
+    //                 .project_id_to_internal_id
+    //                 .get(&project_b)
+    //                 .expect("Invalid project ID")
+    //                 .to_string();
+    //             internal_picks.push(format!(
+    //                 "{}{}{}",
+    //                 project_a_internal_id, PICK_DELIMITER, project_b_internal_id
+    //             ));
+    //         }
+    //     }
 
-        round.votes.insert(voter_id, internal_picks.join(","));
-    }
+    //     round.votes.insert(voter_id, internal_picks.join(","));
+    // }
 
-    pub fn get_picks(&self, round_id: RoundId) -> HashMap<AccountId, Vec<String>> {
-        let round = self.rounds_by_id.get(&round_id).expect("Round not found");
-        let mut picks_map = HashMap::new();
-        for (voter_id, picks_str) in &round.votes {
-            let picks: Vec<String> = picks_str
-                .split(',')
-                .map(|s| {
-                    let ids: Vec<&str> = s.split(PICK_DELIMITER).collect();
-                    let project_a = self
-                        .internal_id_to_project_id
-                        .get(&ids[0].parse::<u32>().unwrap())
-                        .expect("Invalid project ID");
-                    let project_b = self
-                        .internal_id_to_project_id
-                        .get(&ids[1].parse::<u32>().unwrap())
-                        .expect("Invalid project ID");
-                    format!("{}{}{}", project_a, PICK_DELIMITER, project_b)
-                })
-                .collect();
-            picks_map.insert(voter_id.clone(), picks);
-        }
-        picks_map
-    }
+    // pub fn get_picks(&self, round_id: RoundId) -> HashMap<AccountId, Vec<String>> {
+    //     let round = self.rounds_by_id.get(&round_id).expect("Round not found");
+    //     let mut picks_map = HashMap::new();
+    //     for (voter_id, picks_str) in &round.votes {
+    //         let picks: Vec<String> = picks_str
+    //             .split(',')
+    //             .map(|s| {
+    //                 let ids: Vec<&str> = s.split(PICK_DELIMITER).collect();
+    //                 let project_a = self
+    //                     .internal_id_to_project_id
+    //                     .get(&ids[0].parse::<u32>().unwrap())
+    //                     .expect("Invalid project ID");
+    //                 let project_b = self
+    //                     .internal_id_to_project_id
+    //                     .get(&ids[1].parse::<u32>().unwrap())
+    //                     .expect("Invalid project ID");
+    //                 format!("{}{}{}", project_a, PICK_DELIMITER, project_b)
+    //             })
+    //             .collect();
+    //         picks_map.insert(voter_id.clone(), picks);
+    //     }
+    //     picks_map
+    // }
 
-    /// Get a random number using `env::random_seed` and a shift amount.
-    pub(crate) fn get_random_number(shift_amount: u32) -> u64 {
-        let seed = env::random_seed();
-        let timestamp = env::block_timestamp().to_le_bytes();
+    // /// Get a random number using `env::random_seed` and a shift amount.
+    // pub(crate) fn get_random_number(shift_amount: u32) -> u64 {
+    //     let seed = env::random_seed();
+    //     let timestamp = env::block_timestamp().to_le_bytes();
 
-        // Prepend the timestamp to the seed
-        let mut new_seed = Vec::with_capacity(seed.len() + timestamp.len());
-        new_seed.extend_from_slice(&timestamp);
-        new_seed.extend_from_slice(&seed);
+    //     // Prepend the timestamp to the seed
+    //     let mut new_seed = Vec::with_capacity(seed.len() + timestamp.len());
+    //     new_seed.extend_from_slice(&timestamp);
+    //     new_seed.extend_from_slice(&seed);
 
-        // Rotate new_seed
-        let len = new_seed.len();
-        new_seed.rotate_left(shift_amount as usize % len);
+    //     // Rotate new_seed
+    //     let len = new_seed.len();
+    //     new_seed.rotate_left(shift_amount as usize % len);
 
-        // Copy to array and convert to u64
-        let mut arr: [u8; 8] = Default::default();
-        arr.copy_from_slice(&new_seed[..8]);
-        u64::from_le_bytes(arr)
-    }
+    //     // Copy to array and convert to u64
+    //     let mut arr: [u8; 8] = Default::default();
+    //     arr.copy_from_slice(&new_seed[..8]);
+    //     u64::from_le_bytes(arr)
+    // }
 
-    /// Get random pairs for voting
-    pub fn get_random_picks(&self, round_id: RoundId) -> Vec<String> {
-        let round = self.rounds_by_id.get(&round_id).expect("Round not found");
-        let approved_applicants: Vec<AccountId> =
-            round.approved_applicants.iter().cloned().collect();
-        let all_pairs = self.generate_all_pairs(&approved_applicants);
-        let num_picks = round.num_picks_per_voter as usize;
-        let mut selected_pairs = Vec::new();
-        let mut used_indices = std::collections::HashSet::new();
+    // /// Get random pairs for voting
+    // pub fn get_random_picks(&self, round_id: RoundId) -> Vec<String> {
+    //     let round = self.rounds_by_id.get(&round_id).expect("Round not found");
+    //     let approved_applicants: Vec<AccountId> =
+    //         round.approved_applicants.iter().cloned().collect();
+    //     let all_pairs = self.generate_all_pairs(&approved_applicants);
+    //     let num_picks = round.num_picks_per_voter as usize;
+    //     let mut selected_pairs = Vec::new();
+    //     let mut used_indices = std::collections::HashSet::new();
 
-        for i in 0..num_picks {
-            let random_num = Self::get_random_number(i as u32);
-            let mut index = (random_num % all_pairs.len() as u64) as usize;
+    //     for i in 0..num_picks {
+    //         let random_num = Self::get_random_number(i as u32);
+    //         let mut index = (random_num % all_pairs.len() as u64) as usize;
 
-            // Ensure the same pair is not picked more than once
-            while used_indices.contains(&index) {
-                index = (index + 1) % all_pairs.len();
-            }
+    //         // Ensure the same pair is not picked more than once
+    //         while used_indices.contains(&index) {
+    //             index = (index + 1) % all_pairs.len();
+    //         }
 
-            used_indices.insert(index);
-            selected_pairs.push(all_pairs[index].clone());
-        }
+    //         used_indices.insert(index);
+    //         selected_pairs.push(all_pairs[index].clone());
+    //     }
 
-        selected_pairs
-    }
+    //     selected_pairs
+    // }
 
-    /// Generate all possible pairs from a list of projects
-    pub(crate) fn generate_all_pairs(&self, projects: &[AccountId]) -> Vec<String> {
-        let mut pairs = Vec::new();
-        for i in 0..projects.len() {
-            for j in (i + 1)..projects.len() {
-                pairs.push(format!("{}{}{}", projects[i], PICK_DELIMITER, projects[j]));
-            }
-        }
-        pairs
-    }
+    // /// Generate all possible pairs from a list of projects
+    // pub(crate) fn generate_all_pairs(&self, projects: &[AccountId]) -> Vec<String> {
+    //     let mut pairs = Vec::new();
+    //     for i in 0..projects.len() {
+    //         for j in (i + 1)..projects.len() {
+    //             pairs.push(format!("{}{}{}", projects[i], PICK_DELIMITER, projects[j]));
+    //         }
+    //     }
+    //     pairs
+    // }
 
-    pub fn get_projects_with_ids(&self, from_index: u32, limit: u32) -> Vec<(AccountId, u32)> {
-        let start = (from_index * limit) as usize;
-        let end = ((from_index + 1) * limit) as usize;
-        self.project_id_to_internal_id
-            .iter()
-            .skip(start)
-            .take(end - start)
-            .map(|(project_id, internal_id)| (project_id.clone(), *internal_id))
-            .collect()
-    }
+    // pub fn get_projects_with_ids(&self, from_index: u32, limit: u32) -> Vec<(AccountId, u32)> {
+    //     let start = (from_index * limit) as usize;
+    //     let end = ((from_index + 1) * limit) as usize;
+    //     self.project_id_to_internal_id
+    //         .iter()
+    //         .skip(start)
+    //         .take(end - start)
+    //         .map(|(project_id, internal_id)| (project_id.clone(), *internal_id))
+    //         .collect()
+    // }
 
-    pub fn get_internal_project_ids(&self) -> Vec<u32> {
-        self.internal_id_to_project_id.keys().cloned().collect()
-    }
+    // pub fn get_internal_project_ids(&self) -> Vec<u32> {
+    //     self.internal_id_to_project_id.keys().cloned().collect()
+    // }
 }

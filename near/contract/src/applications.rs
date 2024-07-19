@@ -184,6 +184,10 @@ impl Contract {
                 is_owner_or_admin || application.status == ApplicationStatus::Pending,
                 "Cannot unapply from round if application is not Pending"
             );
+            assert!(
+                env::block_timestamp_ms() < round.voting_start_ms,
+                "Voting has already started"
+            );
             refund_deposit(initial_storage_usage, None);
             let app_external = RoundApplicationExternal {
                 round_id: application.round_id,
@@ -280,6 +284,11 @@ impl Contract {
         let application = applications_for_round
             .get_mut(internal_project_id)
             .expect("Application not found");
+        // validate voting period has not started
+        assert!(
+            env::block_timestamp_ms() < round.voting_start_ms,
+            "Voting has already started"
+        );
         application.status = status;
         application.review_note = Some(note);
         application.updated_ms = Some(env::block_timestamp_ms());

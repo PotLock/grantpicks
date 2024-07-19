@@ -58,6 +58,8 @@ pub enum StorageKey {
     // ApplicationIdsByRoundIdInner { round_id: RoundId },
     ApplicationsForRoundByInternalProjectId,
     ApplicationsForRoundByInternalProjectIdInner { round_id: RoundId },
+    ApprovedInternalProjectIdsForRound,
+    ApprovedInternalProjectIdsForRoundInner { round_id: RoundId },
     VotesByRoundId,
     VotesByRoundIdInner { round_id: RoundId },
     VotingCountPerProjectByRoundId,
@@ -80,6 +82,7 @@ pub struct Contract {
     // project_ids_for_round
     applications_for_round_by_internal_project_id:
         UnorderedMap<RoundId, UnorderedMap<InternalProjectId, RoundApplication>>,
+    approved_internal_project_ids_for_round: UnorderedMap<RoundId, UnorderedSet<InternalProjectId>>,
     // application_ids_by_round_id: UnorderedMap<RoundId, UnorderedSet<ApplicationId>>,
     // approved_application_ids_by_round_id: UnorderedMap<RoundId, UnorderedSet<ApplicationId>>, // can add in if useful
     votes_by_round_id: UnorderedMap<RoundId, UnorderedMap<AccountId, VotingResult>>,

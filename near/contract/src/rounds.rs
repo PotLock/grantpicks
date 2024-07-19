@@ -94,6 +94,12 @@ impl Contract {
                 round_id: id,
             }),
         );
+        // add new mapping for approved applicants
+        self.approved_internal_project_ids_for_round.insert(
+            id,
+            UnorderedSet::new(StorageKey::ApprovedInternalProjectIdsForRoundInner { round_id: id }),
+        );
+        // clean-up
         refund_deposit(initial_storage_usage, None);
         log_create_round(&round);
         self.rounds_by_id.get(&id).unwrap()
@@ -159,6 +165,8 @@ impl Contract {
         );
 
         self.rounds_by_id.remove(&round_id);
+        self.applications_for_round_by_internal_project_id
+            .remove(&round_id);
         refund_deposit(initial_storage_usage, None);
         log_delete_round(&round);
         round
@@ -410,6 +418,30 @@ impl Contract {
         log_update_round(&round);
         self.rounds_by_id.get(&round_id).unwrap()
     }
+
+    #[payable]
+    pub fn deposit_to_round(&mut self, round_id: RoundId) -> &RoundDetail {
+        let initial_storage_usage = env::storage_usage();
+        let round = self
+            .rounds_by_id
+            .get(&round_id)
+            .expect("Round not found")
+            .clone();
+        let caller = env::predecessor_account_id();
+        let attached_deposit = env::attached_deposit();
+        let vault_balance = round.vault_balance.0 + attached_deposit.as_yoctonear();
+        let round = RoundDetail {
+            vault_balance: U128(vault_balance),
+            ..round
+        };
+        self.rounds_by_id.insert(round_id, round.clone());
+        refund_deposit(initial_storage_usage, None);
+        log_deposit(&round, U128(attached_deposit.as_yoctonear()), &caller);
+        self.rounds_by_id.get(&round_id).unwrap()
+        // TODO: determine whether deposit record should be saved on-chain (not currently done, only event is logged)
+    }
+
+    // GETTER/VIEW METHODS
 
     pub fn get_rounds(&self, from_index: Option<u64>, limit: Option<u64>) -> Vec<RoundDetail> {
         let from_index = from_index.unwrap_or(0);

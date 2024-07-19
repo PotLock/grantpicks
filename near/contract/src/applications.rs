@@ -131,6 +131,9 @@ impl Contract {
         // store application (don't need to insert back into parent map, as it is a mutable reference)
         applications_for_round.insert(internal_project_id.clone(), application.clone());
 
+        // TODO: if admin, add to approved internal project IDs for round
+        // if is_owner_or_admin {
+
         // refund deposit
         refund_deposit(initial_storage_usage, None);
 
@@ -188,6 +191,15 @@ impl Contract {
                 env::block_timestamp_ms() < round.voting_start_ms,
                 "Voting has already started"
             );
+            // if owner/admin, remove from approved internal project IDs for round
+            if is_owner_or_admin {
+                let approved_internal_project_ids = self
+                    .approved_internal_project_ids_for_round
+                    .get_mut(&round_id)
+                    .expect("Approved internal project IDs for round not found");
+                approved_internal_project_ids.remove(internal_project_id);
+            }
+            // clean-up
             refund_deposit(initial_storage_usage, None);
             let app_external = RoundApplicationExternal {
                 round_id: application.round_id,
@@ -289,6 +301,25 @@ impl Contract {
             env::block_timestamp_ms() < round.voting_start_ms,
             "Voting has already started"
         );
+        // if Approving (and status is changing), check round.max_participants
+        if status != application.status {
+            let approved_applicants = self
+                .approved_internal_project_ids_for_round
+                .get_mut(&round_id)
+                .expect("Approved internal project IDs for round not found");
+            if status == ApplicationStatus::Approved {
+                let num_participants = approved_applicants.len();
+                assert!(
+                    num_participants < round.max_participants,
+                    "Round is already full"
+                );
+                // if approved, add to approved internal project IDs for round
+                approved_applicants.insert(internal_project_id.clone());
+            } else {
+                // if no longer approved, remove from approved internal project IDs for round
+                approved_applicants.remove(internal_project_id);
+            }
+        }
         application.status = status;
         application.review_note = Some(note);
         application.updated_ms = Some(env::block_timestamp_ms());

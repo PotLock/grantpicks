@@ -63,6 +63,29 @@ pub(crate) fn log_delete_round(round_detail: &RoundDetail) {
     );
 }
 
+/// Deposit to round (vault)
+pub(crate) fn log_deposit(round: &RoundDetail, attached_deposit: U128, caller: &AccountId) {
+    env::log_str(
+        format!(
+            "{}{}",
+            EVENT_JSON_PREFIX,
+            json!({
+                "standard": "potlock",
+                "version": "1.0.0",
+                "event": "deposit",
+                "data": [
+                    {
+                        "round": round,
+                        "attached_deposit": attached_deposit,
+                        "caller": caller,
+                    }
+                ]
+            })
+        )
+        .as_ref(),
+    );
+}
+
 /// create application
 pub(crate) fn log_create_application(application: &RoundApplicationExternal) {
     env::log_str(

@@ -48,10 +48,12 @@ const InputText = forwardRef<HTMLInputElement, InputProps>(
 						value={value}
 						name={name}
 						required={required}
+						style={{
+							paddingLeft: preffixIcon ? `40px` : `12px`,
+							paddingRight: suffixIcon ? `40px` : `12px`,
+						}}
 						className={clsx(
 							`py-3 px-3 outline-none flex-1 bg-white rounded-xl w-full text-grantpicks-black-950 placeholder-grantpicks-black-400 focus:shadow-xl ${className}`,
-							preffixIcon && `pl-10 pr-3`,
-							suffixIcon && `pr-10 pl-3`,
 							focus
 								? 'shadow-md border border-grantpicks-black-400'
 								: 'shadow-none',

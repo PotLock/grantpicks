@@ -74,3 +74,8 @@ export interface ICreateProjectFormContext {
 	setStep: Dispatch<SetStateAction<number>>
 	onClose: () => void
 }
+
+export interface IGlobalContext {
+	stellarPrice: number
+	nearPrice: number
+}

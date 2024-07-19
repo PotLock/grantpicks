@@ -22,10 +22,11 @@ import AddProjectsModal from '@/app/components/pages/create-round/AddProjectsMod
 import IconClose from '@/app/components/svgs/IconClose'
 import AddAdminsModal from '@/app/components/pages/create-round/AddAdminsModal'
 import clsx from 'clsx'
+import { useGlobalContext } from '@/app/providers/GlobalProvider'
 
 const CreateRoundPage = () => {
 	const [showContactType, setShowContactType] = useState<boolean>(false)
-	const [nearPrice, setNearPrice] = useState<number>(0.0)
+	const { nearPrice } = useGlobalContext()
 	const [amountUsd, setAmountUsd] = useState<string>('0.00')
 	const [expectAmountUsd, setExpectAmountUsd] = useState<string>('0.00')
 	const [showAddProjectsModal, setShowAddProjectsModal] =
@@ -57,15 +58,6 @@ const CreateRoundPage = () => {
 		control,
 		name: 'projects',
 	})
-
-	useEffect(() => {
-		const getPriceNearToUsd = async () => {
-			const res = await getPriceCrypto('NEAR', 'USD')
-			console.log('ress', res?.data)
-			setNearPrice(res?.data['USD'] || 0)
-		}
-		getPriceNearToUsd()
-	}, [])
 
 	return (
 		<CreateRoundLayout>

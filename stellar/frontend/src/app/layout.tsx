@@ -6,6 +6,7 @@ import '@near-wallet-selector/modal-ui/styles.css'
 import WalletProvider from './providers/WalletProvider'
 import ModalProvider from './providers/ModalProvider'
 import { Toaster } from 'react-hot-toast'
+import GlobalProvider from './providers/GlobalProvider'
 
 const titiliumWeb = Titillium_Web({
 	subsets: ['latin'],
@@ -26,12 +27,14 @@ export default function RootLayout({
 	return (
 		<html lang="en">
 			<body className={titiliumWeb.className}>
-				<WalletProvider>
-					<ModalProvider>
-						{children}
-						<Toaster />
-					</ModalProvider>
-				</WalletProvider>
+				<GlobalProvider>
+					<WalletProvider>
+						<ModalProvider>
+							{children}
+							<Toaster />
+						</ModalProvider>
+					</WalletProvider>
+				</GlobalProvider>
 			</body>
 		</html>
 	)

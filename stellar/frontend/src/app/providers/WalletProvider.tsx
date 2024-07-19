@@ -14,6 +14,8 @@ import { setupNearWallet } from '@near-wallet-selector/near-wallet'
 import { setupMyNearWallet } from '@near-wallet-selector/my-near-wallet'
 import { setupMeteorWallet } from '@near-wallet-selector/meteor-wallet'
 import { setupHereWallet } from '@near-wallet-selector/here-wallet'
+import { setupOKXWallet } from '@near-wallet-selector/okx-wallet'
+import { setupCoin98Wallet } from '@near-wallet-selector/coin98-wallet'
 import { setupSender } from '@near-wallet-selector/sender'
 import { localStorageConfigs } from '@/configs/local-storage'
 import {
@@ -53,6 +55,8 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 					setupMeteorWallet(),
 					setupSender(),
 					setupHereWallet(),
+					setupOKXWallet(),
+					setupCoin98Wallet(),
 				],
 			})
 

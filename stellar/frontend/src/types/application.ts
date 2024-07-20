@@ -1,1 +1,1 @@
-export type TApplicationDrawerTab = 'all' | 'pending' | 'accepted' | 'rejected'
+export type TApplicationDrawerTab = 'all' | 'pending' | 'approved' | 'rejected'

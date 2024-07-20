@@ -12,3 +12,8 @@ export const prettyTruncate = (str = '', len = 8, type?: string) => {
 	}
 	return str
 }
+
+export const formatStroopToXlm = (amount: bigint) => {
+	const res = (BigInt(amount as bigint) / BigInt(10 ** 7)).toString()
+	return res
+}

@@ -3,6 +3,7 @@ use loam_sdk::soroban_sdk::{self, contractclient, contracttype, Address, Env, St
 #[contractclient(name = "ProjectRegistryClient")]
 pub trait ProjectRegistryTrait {
     fn get_project_by_id(env: &Env, project_id: u128) -> Option<Project>;
+    fn get_project_from_applicant(env: &Env, applicant: Address) -> Option<Project>;
     fn get_total_projects(env: &Env) -> u32;
 }
 
@@ -20,6 +21,7 @@ pub enum ProjectStatus {
 pub struct Project {
     pub id: u128,
     pub image_url: String,
+    pub video_url: String,
     pub name: String,
     pub overview: String,
     pub owner: Address,
@@ -32,35 +34,6 @@ pub struct Project {
     pub submited_ms: u64,
     pub updated_ms: Option<u64>,
     pub admins: Vec<Address>,
-}
-
-#[contracttype]
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ProjectParams {
-    pub image_url: String,
-    pub name: String,
-    pub overview: String,
-    pub payout_address: Address,
-    pub contacts: Vec<ProjectContact>,
-    pub contracts: Vec<ProjectContract>,
-    pub team_members: Vec<ProjectTeamMember>,
-    pub repositories: Vec<ProjectRepository>,
-    pub fundings: Vec<ProjectFundingHistory>,
-    pub admins: Vec<Address>,
-}
-
-#[contracttype]
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct UpdateProjectParams {
-    pub image_url: String,
-    pub name: String,
-    pub overview: String,
-    pub payout_address: Address,
-    pub contacts: Vec<ProjectContact>,
-    pub contracts: Vec<ProjectContract>,
-    pub team_members: Vec<ProjectTeamMember>,
-    pub repositories: Vec<ProjectRepository>,
-    pub fundings: Vec<ProjectFundingHistory>,
 }
 
 #[contracttype]

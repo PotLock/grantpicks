@@ -65,6 +65,7 @@ fn test_apply() {
         &bob,
         &crate::data_type::ProjectParams {
             image_url: String::from_str(&env, "image url"),
+            video_url: String::from_str(&env, "video url"),
             name: String::from_str(&env, "name"),
             overview: String::from_str(&env, "overview"),
             payout_address: bob.clone(),
@@ -131,6 +132,7 @@ fn test_change_project_status() {
         &bob,
         &crate::data_type::ProjectParams {
             image_url: String::from_str(&env, "image url"),
+            video_url: String::from_str(&env, "video url"),
             name: String::from_str(&env, "name"),
             overview: String::from_str(&env, "overview"),
             payout_address: bob.clone(),
@@ -201,6 +203,7 @@ fn test_add_admin() {
         &bob,
         &crate::data_type::ProjectParams {
             image_url: String::from_str(&env, "image url"),
+            video_url: String::from_str(&env, "video url"),
             name: String::from_str(&env, "name"),
             overview: String::from_str(&env, "overview"),
             payout_address: bob.clone(),
@@ -272,6 +275,7 @@ fn test_remove_admin() {
         &bob,
         &crate::data_type::ProjectParams {
             image_url: String::from_str(&env, "image url"),
+            video_url: String::from_str(&env, "video url"),
             name: String::from_str(&env, "name"),
             overview: String::from_str(&env, "overview"),
             payout_address: bob.clone(),
@@ -348,6 +352,7 @@ fn test_get_projects() {
         &bob,
         &crate::data_type::ProjectParams {
             image_url: String::from_str(&env, "image url"),
+            video_url: String::from_str(&env, "video url"),
             name: String::from_str(&env, "name"),
             overview: String::from_str(&env, "overview"),
             payout_address: bob.clone(),
@@ -417,6 +422,7 @@ fn test_get_project_admins() {
         &bob,
         &crate::data_type::ProjectParams {
             image_url: String::from_str(&env, "image url"),
+            video_url: String::from_str(&env, "video url"),
             name: String::from_str(&env, "name"),
             overview: String::from_str(&env, "overview"),
             payout_address: bob.clone(),
@@ -487,6 +493,7 @@ fn test_get_project_by_id() {
         &bob,
         &crate::data_type::ProjectParams {
             image_url: String::from_str(&env, "image url"),
+            video_url: String::from_str(&env, "video url"),
             name: String::from_str(&env, "name"),
             overview: String::from_str(&env, "overview"),
             payout_address: bob.clone(),
@@ -555,6 +562,7 @@ fn test_update_project() {
         &bob,
         &crate::data_type::ProjectParams {
             image_url: String::from_str(&env, "image url"),
+            video_url: String::from_str(&env, "video url"),
             name: String::from_str(&env, "name"),
             overview: String::from_str(&env, "overview"),
             payout_address: bob.clone(),
@@ -605,7 +613,8 @@ fn test_update_project() {
         &alice,
         &project.id,
         &crate::data_type::UpdateProjectParams {
-            image_url: String::from_str(&env, "image url 2"),
+            image_url: String::from_str(&env, "image url"),
+            video_url: String::from_str(&env, "video url"),
             name: String::from_str(&env, "name 2"),
             overview: String::from_str(&env, "overview 2"),
             payout_address: bob.clone(),

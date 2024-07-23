@@ -10,6 +10,7 @@ pub fn extend_instance(env: &Env) {
     extend_persistent(env, &ContractKey::Projects);
     extend_persistent(env, &ContractKey::NumOfProjects);
     extend_persistent(env, &ContractKey::RegistryAdmin);
+    extend_persistent(env, &ContractKey::ApplicantToProjectID);
 }
 
 pub fn extend_persistent(env: &Env, key: &ContractKey) {

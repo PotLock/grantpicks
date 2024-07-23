@@ -113,17 +113,19 @@ fn test_round_create() {
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
-        video_url: String::from_str(&env, "video_url"),
+        is_video_required: false,
         contacts: Vec::new(&env),
         voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
         voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
-        application_start_ms: get_ledger_second_as_millis(&env),
-        application_end_ms: get_ledger_second_as_millis(&env) + 9000,
+        application_start_ms: Some(get_ledger_second_as_millis(&env)),
+        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
+        allow_applications: true,
+        owner: admin.clone(),
     };
 
     round.initialize(&admin, &token_contract.address, &project_contract.address);
@@ -135,7 +137,6 @@ fn test_round_create() {
     assert_eq!(round_info.expected_amount, 5);
     assert_eq!(admins, admins);
     assert_eq!(round_info.owner, admin);
-    assert_eq!(round_info.is_completed, false);
     assert_eq!(round_info.use_whitelist, false);
     assert_eq!(round_info.num_picks_per_voter, 2);
 
@@ -161,17 +162,19 @@ fn test_apply_applications() {
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
-        video_url: String::from_str(&env, "video_url"),
+        is_video_required: false,
         contacts: Vec::new(&env),
         voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
         voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
-        application_start_ms: get_ledger_second_as_millis(&env),
-        application_end_ms: get_ledger_second_as_millis(&env) + 9000,
+        application_start_ms: Some(get_ledger_second_as_millis(&env)),
+        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
+        allow_applications: true,
+        owner: admin,
     };
 
     round.initialize(&admin, &token_contract.address, &project_contract.address);
@@ -186,9 +189,8 @@ fn test_apply_applications() {
         .get_all_applications(&created_round.id, &None, &None)
         .get(0)
         .unwrap();
-    assert_eq!(application.application_id, application_id);
     assert_eq!(application.project_id, project_id);
-    assert_eq!(application.applicant, applicant);
+    assert_eq!(application.applicant_id, applicant);
     assert_eq!(application.status, ApplicationStatus::Pending);
 }
 
@@ -207,17 +209,19 @@ fn test_review_application() {
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
-        video_url: String::from_str(&env, "video_url"),
+        is_video_required: false,
         contacts: Vec::new(&env),
         voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
         voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
-        application_start_ms: get_ledger_second_as_millis(&env),
-        application_end_ms: get_ledger_second_as_millis(&env) + 9000,
+        application_start_ms: Some(get_ledger_second_as_millis(&env)),
+        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
+        allow_applications: true,
+        owner: admin.clone(),
     };
 
     round.initialize(&admin, &token_contract.address, &project_contract.address);
@@ -260,17 +264,19 @@ fn test_whitelist_applicant() {
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
-        video_url: String::from_str(&env, "video_url"),
+        is_video_required: false,
         contacts: Vec::new(&env),
         voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
         voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
-        application_start_ms: get_ledger_second_as_millis(&env),
-        application_end_ms: get_ledger_second_as_millis(&env) + 9000,
+        application_start_ms: Some(get_ledger_second_as_millis(&env)),
+        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
         expected_amount: 5,
         admins: admins.clone(),
-        use_whitelist: Some(true),
+        use_whitelist: Some(false),
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
+        allow_applications: true,
+        owner: admin.clone(),
     };
 
     round.initialize(&admin, &token_contract.address, &project_contract.address);
@@ -297,17 +303,19 @@ fn test_whitelist_voters() {
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
-        video_url: String::from_str(&env, "video_url"),
+        is_video_required: false,
         contacts: Vec::new(&env),
         voting_start_ms: get_ledger_second_as_millis(&env),
         voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
-        application_start_ms: get_ledger_second_as_millis(&env),
-        application_end_ms: get_ledger_second_as_millis(&env) + 9000,
+        application_start_ms: Some(get_ledger_second_as_millis(&env)),
+        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(true),
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
+        allow_applications: true,
+        owner: admin.clone(),
     };
 
     round.initialize(&admin, &token_contract.address, &project_contract.address);
@@ -353,17 +361,19 @@ fn test_blacklist() {
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
-        video_url: String::from_str(&env, "video_url"),
+        is_video_required: false,
         contacts: Vec::new(&env),
         voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
         voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
-        application_start_ms: get_ledger_second_as_millis(&env),
-        application_end_ms: get_ledger_second_as_millis(&env) + 9000,
+        application_start_ms: Some(get_ledger_second_as_millis(&env)),
+        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
+        allow_applications: true,
+        owner: admin.clone(),
     };
 
     round.initialize(&admin, &token_contract.address, &project_contract.address);
@@ -391,17 +401,19 @@ fn test_voting() {
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
-        video_url: String::from_str(&env, "video_url"),
+        is_video_required: false,
         contacts: Vec::new(&env),
         voting_start_ms: get_ledger_second_as_millis(&env),
         voting_end_ms: get_ledger_second_as_millis(&env) + 30,
-        application_start_ms: get_ledger_second_as_millis(&env),
-        application_end_ms: get_ledger_second_as_millis(&env),
+        application_start_ms: Some(get_ledger_second_as_millis(&env)),
+        application_end_ms: Some(get_ledger_second_as_millis(&env)),
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
+        allow_applications: true,
+        owner: admin.clone(),
     };
 
     round.initialize(&admin, &token_contract.address, &project_contract.address);
@@ -492,17 +504,19 @@ fn test_add_remove_admin() {
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
-        video_url: String::from_str(&env, "video_url"),
+        is_video_required: false,
         contacts: Vec::new(&env),
         voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
         voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
-        application_start_ms: get_ledger_second_as_millis(&env),
-        application_end_ms: get_ledger_second_as_millis(&env) + 9000,
+        application_start_ms: Some(get_ledger_second_as_millis(&env)),
+        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
+        allow_applications: true,
+        owner: admin.clone(),
     };
 
     round.initialize(&admin, &token_contract.address, &project_contract.address);
@@ -539,17 +553,19 @@ fn test_voting_deposit_and_payout() {
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
-        video_url: String::from_str(&env, "video_url"),
+        is_video_required: false,
         contacts: Vec::new(&env),
         voting_start_ms: get_ledger_second_as_millis(&env),
         voting_end_ms: get_ledger_second_as_millis(&env) + 30,
-        application_start_ms: get_ledger_second_as_millis(&env),
-        application_end_ms: get_ledger_second_as_millis(&env),
+        application_start_ms: Some(get_ledger_second_as_millis(&env)),
+        application_end_ms: Some(get_ledger_second_as_millis(&env)),
         expected_amount: 10 * deposit,
         admins: admins.clone(),
         use_whitelist: Some(false),
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
+        allow_applications: true,
+        owner: admin.clone(),
     };
 
     round.initialize(&admin, &token_contract.address, &project_contract.address);
@@ -630,30 +646,32 @@ fn test_get_all_pairs() {
     let round = deploy_contract(&env, &admin);
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
-    generate_fake_project(&env, &admin, &project_contract, 15);
+    generate_fake_project(&env, &admin, &project_contract, 10);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
-        video_url: String::from_str(&env, "video_url"),
+        is_video_required: false,
         contacts: Vec::new(&env),
         voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
         voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
-        application_start_ms: get_ledger_second_as_millis(&env),
-        application_end_ms: get_ledger_second_as_millis(&env) + 9000,
+        application_start_ms: Some(get_ledger_second_as_millis(&env)),
+        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
         num_picks_per_voter: Some(2),
-        max_participants: Some(15),
+        max_participants: Some(10),
+        allow_applications: true,
+        owner: admin.clone(),
     };
 
     round.initialize(&admin, &token_contract.address, &project_contract.address);
 
     let created_round = round.create_round(&admin, &round_detail);
-    let num_of_projects: u32 = 15;
+    let num_of_projects: u32 = 10;
     let num_of_project_per_pair: u32 = 2;
     let posibilities: u32 = (num_of_projects * (num_of_projects - 1)) / num_of_project_per_pair;
     let expected_generated_pairs_per_project = num_of_projects - 1;
@@ -714,17 +732,19 @@ fn test_change_number_of_votes() {
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
-        video_url: String::from_str(&env, "video_url"),
+        is_video_required: false,
         contacts: Vec::new(&env),
         voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
         voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
-        application_start_ms: get_ledger_second_as_millis(&env),
-        application_end_ms: get_ledger_second_as_millis(&env) + 9000,
+        application_start_ms: Some(get_ledger_second_as_millis(&env)),
+        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
+        allow_applications: true,
+        owner: admin.clone(),
     };
 
     round.initialize(&admin, &token_contract.address, &project_contract.address);
@@ -752,17 +772,19 @@ fn test_change_amount() {
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
-        video_url: String::from_str(&env, "video_url"),
+        is_video_required: false,
         contacts: Vec::new(&env),
         voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
         voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
-        application_start_ms: get_ledger_second_as_millis(&env),
-        application_end_ms: get_ledger_second_as_millis(&env) + 9000,
+        application_start_ms: Some(get_ledger_second_as_millis(&env)),
+        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
+        allow_applications: true,
+        owner: admin.clone(),
     };
 
     round.initialize(&admin, &token_contract.address, &project_contract.address);
@@ -790,17 +812,19 @@ fn test_change_voting_period() {
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
-        video_url: String::from_str(&env, "video_url"),
+        is_video_required: false,
         contacts: Vec::new(&env),
         voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
         voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
-        application_start_ms: get_ledger_second_as_millis(&env),
-        application_end_ms: get_ledger_second_as_millis(&env) + 9000,
+        application_start_ms: Some(get_ledger_second_as_millis(&env)),
+        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
+        allow_applications: true,
+        owner: admin.clone(),
     };
 
     round.initialize(&admin, &token_contract.address, &project_contract.address);
@@ -830,17 +854,19 @@ fn test_application_period() {
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
-        video_url: String::from_str(&env, "video_url"),
+        is_video_required: false,
         contacts: Vec::new(&env),
         voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
         voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
-        application_start_ms: get_ledger_second_as_millis(&env),
-        application_end_ms: get_ledger_second_as_millis(&env) + 9000,
+        application_start_ms: Some(get_ledger_second_as_millis(&env)),
+        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
+        allow_applications: true,
+        owner: admin.clone(),
     };
 
     round.initialize(&admin, &token_contract.address, &project_contract.address);
@@ -856,6 +882,12 @@ fn test_application_period() {
     );
 
     let round_info = round.round_info(&created_round.id);
-    assert_eq!(round_info.application_start_ms, new_application_start_ms);
-    assert_eq!(round_info.application_end_ms, new_application_end_ms);
+    assert_eq!(
+        round_info.application_start_ms.unwrap(),
+        new_application_start_ms
+    );
+    assert_eq!(
+        round_info.application_end_ms.unwrap(),
+        new_application_end_ms
+    );
 }

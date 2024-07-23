@@ -5,13 +5,14 @@ use crate::data_type::{Project, ProjectParams, ProjectStatus, UpdateProjectParam
 use crate::events::{log_create_project_event, log_update_project_event};
 use crate::methods::ProjectRegistryTrait;
 use crate::project_writer::{
-    add_project, find_projects, get_project, increment_project_num, read_projects, update_project,
+    add_project, find_projects, get_applicant_project_id, get_project, increment_project_num,
+    read_projects, update_project,
 };
 use crate::soroban_sdk::{self, contract, contractimpl, Address, Env, Vec};
 use crate::storage::extend_instance;
 use crate::validation::{
-    validate_application, validate_contract_owner, validate_owner, validate_owner_or_admin,
-    validate_update_project,
+    validate_applicant, validate_application, validate_contract_owner, validate_owner,
+    validate_owner_or_admin, validate_update_project,
 };
 
 #[contract]
@@ -26,6 +27,7 @@ impl ProjectRegistryTrait for ProjectRegistry {
     fn apply(env: &Env, applicant: Address, project_params: ProjectParams) -> Project {
         applicant.require_auth();
 
+        validate_applicant(env, &applicant);
         validate_application(&project_params);
 
         let project_id = increment_project_num(env);
@@ -40,6 +42,7 @@ impl ProjectRegistryTrait for ProjectRegistry {
             repositories: project_params.repositories,
             payout_address: project_params.payout_address,
             image_url: project_params.image_url,
+            video_url: project_params.video_url,
             status: ProjectStatus::New,
             submited_ms: env.ledger().timestamp() * 1000,
             updated_ms: None,
@@ -96,6 +99,7 @@ impl ProjectRegistryTrait for ProjectRegistry {
 
         uproject.name = new_project_params.name;
         uproject.image_url = new_project_params.image_url;
+        uproject.video_url = new_project_params.video_url;
         uproject.overview = new_project_params.overview;
         uproject.contacts = new_project_params.contacts;
         uproject.contracts = new_project_params.contracts;
@@ -183,5 +187,17 @@ impl ProjectRegistryTrait for ProjectRegistry {
         env.deployer().update_current_contract_wasm(new_wasm_hash);
 
         extend_instance(env);
+    }
+
+    fn get_project_from_applicant(env: &Env, applicant: Address) -> Option<Project> {
+        let project_id = get_applicant_project_id(env, &applicant);
+
+        if project_id.is_none() {
+            return None;
+        }
+
+        let project = get_project(env, project_id.unwrap());
+
+        project
     }
 }

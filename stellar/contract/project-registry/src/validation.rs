@@ -1,6 +1,7 @@
 use crate::{
     admin::{self, read_contract_owner},
     data_type::{Project, ProjectParams, UpdateProjectParams},
+    project_writer::is_applied,
 };
 use loam_sdk::soroban_sdk::{Address, Env};
 
@@ -95,5 +96,12 @@ pub fn validate_contract_owner(env: &Env, admin: &Address) {
     assert!(
         admin == &contract_admin,
         "only contract admin can change status"
+    );
+}
+
+pub fn validate_applicant(env: &Env, applicant: &Address) {
+    assert!(
+        !is_applied(env, applicant),
+        "You Already Apply Some Project"
     );
 }

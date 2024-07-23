@@ -14,6 +14,7 @@ pub enum ProjectStatus {
 pub struct Project {
     pub id: u128,
     pub image_url: String,
+    pub video_url: String,
     pub name: String,
     pub overview: String,
     pub owner: Address,
@@ -32,6 +33,7 @@ pub struct Project {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProjectParams {
     pub image_url: String,
+    pub video_url: String,
     pub name: String,
     pub overview: String,
     pub payout_address: Address,
@@ -47,6 +49,7 @@ pub struct ProjectParams {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UpdateProjectParams {
     pub image_url: String,
+    pub video_url: String,
     pub name: String,
     pub overview: String,
     pub payout_address: Address,

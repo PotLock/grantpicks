@@ -1,3 +1,5 @@
+use loam_sdk::soroban_sdk::{Address, Map};
+
 use crate::{
     data_type::Project,
     soroban_sdk::{Env, Vec},
@@ -76,4 +78,33 @@ pub fn update_project(env: &Env, project: Project) {
     projects.insert(index, project);
     let key = ContractKey::Projects;
     env.storage().persistent().set(&key, &projects);
+}
+
+pub fn read_applicant_project(env: &Env) -> Map<Address, u128> {
+    let key = ContractKey::ApplicantToProjectID;
+    match env.storage().persistent().get(&key) {
+        Some(data) => data,
+        None => Map::new(env),
+    }
+}
+
+pub fn write_applicant_project(env: &Env, data: &Map<Address, u128>) {
+    let key = ContractKey::ApplicantToProjectID;
+    env.storage().persistent().set(&key, data);
+}
+
+pub fn add_applicant_project(env: &Env, applicant: &Address, project_id: u128) {
+    let mut data = read_applicant_project(env);
+    data.set(applicant.clone(), project_id);
+    write_applicant_project(env, &data);
+}
+
+pub fn is_applied(env: &Env, applicant: &Address) -> bool {
+    let data = read_applicant_project(env);
+    data.contains_key(applicant.clone())
+}
+
+pub fn get_applicant_project_id(env: &Env, applicant: &Address) -> Option<u128> {
+    let data = read_applicant_project(env);
+    data.get(applicant.clone())
 }

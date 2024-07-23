@@ -1,13 +1,13 @@
 use loam_sdk::soroban_sdk::Env;
 
-use crate::{data_type::RoundDetail, storage_key::ContractKey};
+use crate::{data_type::RoundDetailInternal, storage_key::ContractKey};
 
-pub fn write_round_info(env: &Env, round_id: u128, round_info: &RoundDetail) {
+pub fn write_round_info(env: &Env, round_id: u128, round_info: &RoundDetailInternal) {
     let key = ContractKey::RoundInfo(round_id);
     env.storage().persistent().set(&key, round_info);
 }
 
-pub fn read_round_info(env: &Env, round_id: u128) -> RoundDetail {
+pub fn read_round_info(env: &Env, round_id: u128) -> RoundDetailInternal {
     let key = ContractKey::RoundInfo(round_id);
     env.storage().persistent().get(&key).unwrap()
 }

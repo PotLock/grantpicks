@@ -1,14 +1,12 @@
-use core::result;
-
 use loam_sdk::soroban_sdk::{
-    self, contract, contractimpl, token::TokenClient, Address, BytesN, Env, String, Vec,
+    self, contract, contractimpl, token::TokenClient, Address, BytesN, Env, Map, String, Vec,
 };
 
 use crate::{
     admin_writer::{add_admin, read_admins, remove_admin, write_admins},
     application_writer::{
-        add_application, find_applications, get_application, get_application_by_id,
-        increment_application_number, update_application,
+        add_application, delete_application, find_applications, get_application_by_applicant,
+        update_application,
     },
     approval_writer::{
         add_approved_project, is_project_approved, read_approved_projects, remove_approved_project,
@@ -16,18 +14,21 @@ use crate::{
     calculation::calculate_voting_results,
     core::IsRound,
     data_type::{
-        ApplicationStatus, CreateRoundParams, Pair, PickResult, PickedPair, ProjectApplication,
-        ProjectVotingResult, RoundDetail, VotingResult,
+        ApplicationStatus, CreateRoundParams, Pair, Payout, PickResult, PickedPair,
+        ProjectVotingResult, RoundApplicationExternal, RoundApplicationInternal,
+        RoundDetailExternal, RoundDetailInternal, VotingResult,
     },
     events::{
         log_create_round, log_deposit, log_payout, log_project_application,
-        log_project_application_update, log_update_approved_projects, log_update_round,
-        log_update_user_flag, log_update_white_list, log_vote,
+        log_project_application_delete, log_project_application_update,
+        log_update_approved_projects, log_update_round, log_update_user_flag,
+        log_update_white_list, log_vote,
     },
     external::ProjectRegistryClient,
-    factory::{self, RoundFactory},
-    owner_writer::{read_factory_owner, write_factory_owner},
+    factory::RoundFactory,
+    owner_writer::write_factory_owner,
     pair::{get_all_pairs, get_all_rounds, get_pair_by_index, get_random_pairs},
+    payout_writer::{has_paid, write_payouts},
     project_registry_writer::{read_project_contract, write_project_contract},
     round_writer::{increment_round_number, is_initialized, read_round_info, write_round_info},
     storage::{extend_instance, extend_round},
@@ -38,9 +39,9 @@ use crate::{
         validate_blacklist_already, validate_can_payout, validate_contract_owner,
         validate_has_voted, validate_max_participant, validate_max_participants,
         validate_not_blacklist, validate_number_of_votes, validate_owner, validate_owner_or_admin,
-        validate_pick_per_votes, validate_project_to_apply, validate_project_to_approve,
-        validate_review_notes, validate_round_detail, validate_vault_fund, validate_voting_period,
-        validate_whitelist,
+        validate_pick_per_votes, validate_project_to_approve, validate_review_notes,
+        validate_round_detail, validate_specify_applicant, validate_vault_fund,
+        validate_voting_not_started, validate_voting_period, validate_whitelist,
     },
     voter_writer::{
         add_to_black_list, add_to_white_list, is_black_listed, is_white_listed,
@@ -63,8 +64,12 @@ impl RoundFactory for RoundContract {
         write_project_contract(env, &registry_address);
     }
 
-    fn create_round(env: &Env, owner: Address, round_detail: CreateRoundParams) -> RoundDetail {
-        owner.require_auth();
+    fn create_round(
+        env: &Env,
+        caller: Address,
+        round_detail: CreateRoundParams,
+    ) -> RoundDetailExternal {
+        caller.require_auth();
 
         let round_init = is_initialized(env);
         assert!(round_init, "Round not initialized");
@@ -80,34 +85,34 @@ impl RoundFactory for RoundContract {
 
         let round_id = increment_round_number(env);
 
-        let round_info = RoundDetail {
+        let round_info = RoundDetailInternal {
             id: round_id,
             name: round_detail.name,
             description: round_detail.description,
             voting_start_ms: round_detail.voting_start_ms,
             voting_end_ms: round_detail.voting_end_ms,
-            video_url: round_detail.video_url,
+            is_video_required: round_detail.is_video_required,
             contacts: round_detail.contacts,
-            owner,
+            owner: round_detail.owner,
             application_start_ms: round_detail.application_start_ms,
             application_end_ms: round_detail.application_end_ms,
             expected_amount: round_detail.expected_amount,
-            is_completed: false,
             use_whitelist: round_detail.use_whitelist.unwrap_or(false),
             num_picks_per_voter,
             max_participants: round_detail.max_participants.unwrap_or(10),
             vault_balance: 0,
+            allow_applications: round_detail.allow_applications,
         };
 
         write_round_info(env, round_id, &round_info);
         write_admins(env, round_id, &round_detail.admins);
         extend_instance(env);
-        log_create_round(env, round_info.clone());
+        log_create_round(env, round_info.to_external());
 
-        round_info
+        round_info.to_external()
     }
 
-    fn get_rounds(env: &Env, skip: Option<u64>, limit: Option<u64>) -> Vec<RoundDetail> {
+    fn get_rounds(env: &Env, skip: Option<u64>, limit: Option<u64>) -> Vec<RoundDetailExternal> {
         let results = get_all_rounds(env, skip, limit);
         extend_instance(env);
 
@@ -160,7 +165,7 @@ impl IsRound for RoundContract {
         write_round_info(env, round_id, &round);
         extend_instance(env);
         extend_round(env, round_id);
-        log_update_round(env, round);
+        log_update_round(env, round.to_external());
     }
 
     fn change_application_period(
@@ -181,13 +186,13 @@ impl IsRound for RoundContract {
 
         validate_owner_or_admin(env, &admin, &round);
 
-        round.application_start_ms = round_application_start_ms;
-        round.application_end_ms = round_application_end_ms;
+        round.application_start_ms = Some(round_application_start_ms);
+        round.application_end_ms = Some(round_application_end_ms);
 
         write_round_info(env, round_id, &round);
         extend_instance(env);
         extend_round(env, round_id);
-        log_update_round(env, round);
+        log_update_round(env, round.to_external());
     }
 
     fn change_amount(env: &Env, round_id: u128, admin: Address, amount: u128) {
@@ -218,91 +223,130 @@ impl IsRound for RoundContract {
         extend_round(env, round_id);
     }
 
-    fn add_admin(env: &Env, round_id: u128, admin: Address, round_admin: Address) {
-        admin.require_auth();
-        assert!(admin != round_admin, "Admin and round admin cannot be same");
-
+    fn add_admin(env: &Env, round_id: u128, round_admin: Address) {
         let round = read_round_info(env, round_id);
-        validate_owner(&admin, &round);
+        assert!(round.owner != round_admin, "Can not add owner as admin");
 
+        round.owner.require_auth();
         add_admin(env, round_id, round_admin);
 
         write_round_info(env, round_id, &round);
         extend_instance(env);
         extend_round(env, round_id);
-        log_update_round(env, round);
+        log_update_round(env, round.to_external());
     }
 
-    fn remove_admin(env: &Env, round_id: u128, admin: Address, round_admin: Address) {
-        admin.require_auth();
-        assert!(admin != round_admin, "Admin and round admin cannot be same");
-
+    fn remove_admin(env: &Env, round_id: u128, round_admin: Address) {
         let round = read_round_info(env, round_id);
+        assert!(round.owner != round_admin, "Can not add owner as admin");
 
-        validate_owner(&admin, &round);
-
+        round.owner.require_auth();
         remove_admin(env, round_id, &round_admin);
 
         extend_instance(env);
         extend_round(env, round_id);
-        log_update_round(env, round);
+        log_update_round(env, round.to_external());
     }
 
-    fn apply_project(env: &Env, round_id: u128, project_id: u128, applicant: Address) -> u128 {
-        applicant.require_auth();
+    fn apply_to_round(
+        env: &Env,
+        round_id: u128,
+        caller: Address,
+        applicant: Option<Address>,
+        note: Option<String>,
+        review_note: Option<String>,
+    ) -> RoundApplicationExternal {
+        caller.require_auth();
 
         let round = read_round_info(env, round_id);
         let current_ms = env.ledger().timestamp() * 1000;
+        let is_owner_or_admin = round.is_caller_owner_or_admin(env, &caller);
 
-        validate_application_period(env, &round);
+        if is_owner_or_admin {
+            validate_voting_not_started(env, &round);
+        } else {
+            validate_application_period(env, &round);
 
-        if round.use_whitelist {
-            validate_whitelist(env, round_id, &applicant);
+            if round.use_whitelist {
+                validate_whitelist(env, round_id, &caller);
+            }
+
+            validate_blacklist(env, round_id, &caller);
         }
 
-        validate_blacklist(env, round_id, &applicant);
-        validate_project_to_apply(env, project_id);
+        let applicant = if let Some(applicant) = applicant {
+            validate_specify_applicant(is_owner_or_admin);
+            applicant
+        } else {
+            caller
+        };
 
-        let existing_application = get_application(env, round_id, project_id);
+        let project_contract = read_project_contract(env);
+        let project_client = ProjectRegistryClient::new(env, &project_contract);
+        let project = project_client.get_project_from_applicant(&applicant);
+        assert!(
+            project.is_some(),
+            "Project not found. Please register project first using project registry"
+        );
+
+        let uwrap_project = project.unwrap();
+
+        if round.is_video_required {
+            assert!(
+                !uwrap_project.video_url.is_empty(),
+                "Video is Required. Please Update Your Profile"
+            );
+        }
+
+        let existing_application = get_application_by_applicant(env, round_id, &applicant);
 
         assert!(existing_application.is_none(), "Application already exists");
 
-        let application_id = increment_application_number(env, round_id);
-        let review_note = String::from_str(env, "");
-        let application = ProjectApplication {
-            application_id,
-            project_id,
-            applicant,
+        let mut review_note_internal = String::from_str(env, "");
+        let mut applicant_note_internal = String::from_str(env, "");
+
+        if review_note.is_some() {
+            review_note_internal = review_note.unwrap()
+        }
+
+        if note.is_some() {
+            applicant_note_internal = note.unwrap();
+        }
+
+        let application = RoundApplicationInternal {
+            project_id: uwrap_project.id,
+            applicant_id: applicant,
             status: ApplicationStatus::Pending,
             submited_ms: current_ms,
-            review_note,
+            review_note: review_note_internal,
+            applicant_note: applicant_note_internal,
             updated_ms: None,
         };
 
-        add_application(env, round_id, application.clone());
+        add_application(env, round_id, &application);
         extend_instance(env);
         extend_round(env, round_id);
-        log_project_application(env, application);
+        log_project_application(env, application.to_external());
 
-        application_id
+        application.to_external()
     }
 
     fn review_application(
         env: &Env,
         round_id: u128,
-        admin: Address,
-        application_id: u128,
+        caller: Address,
+        applicant: Address,
         status: ApplicationStatus,
         note: Option<String>,
-    ) {
-        admin.require_auth();
+    ) -> RoundApplicationExternal {
+        caller.require_auth();
 
         let round = read_round_info(env, round_id);
 
-        validate_owner_or_admin(env, &admin, &round);
+        validate_owner_or_admin(env, &caller, &round);
         validate_application_period(env, &round);
 
-        let application = get_application_by_id(env, round_id, application_id);
+        let application = get_application_by_applicant(env, round_id, &applicant);
 
         assert!(application.is_some(), "Application not found");
 
@@ -330,10 +374,12 @@ impl IsRound for RoundContract {
             }
         }
 
-        update_application(env, round_id, updated_application.clone());
+        update_application(env, round_id, &updated_application);
         extend_instance(env);
         extend_round(env, round_id);
-        log_project_application_update(env, updated_application);
+        log_project_application_update(env, updated_application.to_external());
+
+        updated_application.to_external()
     }
 
     fn deposit(env: &Env, round_id: u128, actor: Address, amount: u128) {
@@ -477,6 +523,7 @@ impl IsRound for RoundContract {
 
         let mut updated_round = round.clone();
 
+        let mut payouts: Map<u128, Payout> = Map::new(env);
         results.iter().for_each(|result| {
             if result.allocation > 0 {
                 let payout_amount = (round.vault_balance * result.allocation) / 10000;
@@ -493,12 +540,26 @@ impl IsRound for RoundContract {
                 );
 
                 updated_round.vault_balance -= payout_amount;
-                log_payout(env, round.id, detail_project.payout_address, payout_amount);
+                log_payout(
+                    env,
+                    round.id,
+                    detail_project.payout_address.clone(),
+                    payout_amount,
+                );
+
+                let payout = Payout {
+                    project_id: detail_project.id,
+                    amount: payout_amount_i128,
+                    address: detail_project.payout_address,
+                    paid_at_ms: get_ledger_second_as_millis(env),
+                };
+
+                payouts.set(detail_project.id, payout);
             }
         });
 
-        updated_round.is_completed = true;
         write_round_info(env, round_id, &updated_round);
+        write_payouts(env, round_id, &payouts);
         extend_instance(env);
         extend_round(env, round_id);
     }
@@ -523,10 +584,6 @@ impl IsRound for RoundContract {
         extend_round(env, round_id);
 
         if round.voting_start_ms <= current_ms && current_ms <= round.voting_end_ms {
-            if round.is_completed {
-                return false;
-            }
-
             if round.use_whitelist {
                 let is_white_listed = is_white_listed(env, round_id, voter.clone());
                 return is_white_listed;
@@ -543,12 +600,12 @@ impl IsRound for RoundContract {
         false
     }
 
-    fn round_info(env: &Env, round_id: u128) -> RoundDetail {
+    fn round_info(env: &Env, round_id: u128) -> RoundDetailExternal {
         let round = read_round_info(env, round_id);
         extend_instance(env);
         extend_round(env, round_id);
 
-        round
+        round.to_external()
     }
 
     fn is_voting_live(env: &Env, round_id: u128) -> bool {
@@ -565,15 +622,16 @@ impl IsRound for RoundContract {
         extend_instance(env);
         extend_round(env, round_id);
 
-        round.application_start_ms <= current_ms && current_ms <= round.application_end_ms
+        round.application_start_ms.unwrap() <= current_ms
+            && current_ms <= round.application_end_ms.unwrap()
     }
 
-    fn get_all_applications(
+    fn get_applications_for_round(
         env: &Env,
         round_id: u128,
         skip: Option<u64>,
         limit: Option<u64>,
-    ) -> Vec<ProjectApplication> {
+    ) -> Vec<RoundApplicationExternal> {
         // implementation goes here
         let applications = find_applications(env, round_id, skip, limit);
         extend_instance(env);
@@ -582,12 +640,30 @@ impl IsRound for RoundContract {
         applications
     }
 
-    fn is_payout_done(env: &Env, round_id: u128) -> bool {
-        let round = read_round_info(env, round_id);
+    fn get_application(
+        env: &Env,
+        round_id: u128,
+        applicant: Address,
+    ) -> Option<RoundApplicationExternal> {
+        let application = get_application_by_applicant(env, round_id, &applicant);
+
         extend_instance(env);
         extend_round(env, round_id);
 
-        round.is_completed
+        if application.is_none() {
+            return None;
+        }
+
+        let external_application = application.unwrap().to_external();
+
+        Some(external_application)
+    }
+
+    fn is_payout_done(env: &Env, round_id: u128) -> bool {
+        extend_instance(env);
+        extend_round(env, round_id);
+
+        has_paid(env, round_id)
     }
 
     fn user_has_vote(env: &Env, round_id: u128, voter: Address) -> bool {
@@ -748,12 +824,14 @@ impl IsRound for RoundContract {
         extend_instance(env);
     }
 
-    fn transfer_round_ownership(env: &Env, round_id: u128, owner: Address, new_owner: Address) {
-        owner.require_auth();
-
+    fn transfer_round_ownership(env: &Env, round_id: u128, new_owner: Address) {
         let mut round = read_round_info(env, round_id);
+        assert!(
+            new_owner != round.owner,
+            "New Owner Must Be Different Address"
+        );
 
-        validate_owner(&owner, &round);
+        round.owner.require_auth();
 
         round.owner = new_owner;
 
@@ -767,5 +845,99 @@ impl IsRound for RoundContract {
         extend_instance(env);
         extend_round(env, round_id);
         admins
+    }
+
+    fn unapply_from_round(
+        env: &Env,
+        round_id: u128,
+        caller: Address,
+        applicant: Option<Address>,
+    ) -> RoundApplicationExternal {
+        caller.require_auth();
+
+        let round = read_round_info(env, round_id);
+        let is_owner_or_admin = round.is_caller_owner_or_admin(env, &caller);
+
+        let applicant = if let Some(applicant) = applicant {
+            validate_specify_applicant(is_owner_or_admin);
+            applicant
+        } else {
+            caller
+        };
+
+        validate_voting_not_started(env, &round);
+
+        let application = get_application_by_applicant(env, round_id, &applicant);
+
+        assert!(application.is_some(), "Application not found");
+
+        let application_internal = application.unwrap();
+
+        delete_application(env, round_id, &applicant);
+        extend_round(env, round_id);
+        extend_instance(env);
+        log_project_application_delete(env, application_internal.to_external());
+
+        application_internal.to_external()
+    }
+
+    fn update_applicant_note(
+        env: &Env,
+        round_id: u128,
+        caller: Address,
+        note: String,
+    ) -> RoundApplicationExternal {
+        caller.require_auth();
+
+        let applicant = caller;
+
+        let application = get_application_by_applicant(env, round_id, &applicant);
+
+        assert!(application.is_some(), "Application not found");
+
+        let mut application_internal = application.unwrap();
+        application_internal.applicant_note = note;
+
+        add_application(env, round_id, &application_internal);
+        extend_round(env, round_id);
+        extend_instance(env);
+        log_project_application_update(env, application_internal.to_external());
+
+        application_internal.to_external()
+    }
+
+    fn change_allow_applications(
+        env: &Env,
+        round_id: u128,
+        caller: Address,
+        allow_applications: bool,
+        start_ms: Option<u64>,
+        end_ms: Option<u64>,
+    ) -> RoundDetailExternal {
+        caller.require_auth();
+
+        assert!(
+            start_ms.unwrap() < end_ms.unwrap(),
+            "Round application start time must be less than round application end time"
+        );
+
+        let mut round = read_round_info(env, round_id);
+
+        validate_owner_or_admin(env, &caller, &round);
+
+        if !allow_applications {
+            round.application_start_ms = None;
+            round.application_end_ms = None;
+        } else {
+            round.application_start_ms = start_ms;
+            round.application_end_ms = end_ms;
+        }
+
+        write_round_info(env, round_id, &round);
+        extend_instance(env);
+        extend_round(env, round_id);
+        log_update_round(env, round.to_external());
+
+        round.to_external()
     }
 }

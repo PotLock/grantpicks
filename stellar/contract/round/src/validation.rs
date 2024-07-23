@@ -1,7 +1,7 @@
 use crate::{
     admin_writer::is_admin,
     approval_writer::{is_project_approved, read_approved_projects},
-    data_type::{CreateRoundParams, RoundDetail},
+    data_type::{CreateRoundParams, RoundDetailInternal},
     external::ProjectRegistryClient,
     owner_writer::read_factory_owner,
     project_registry_writer::read_project_contract,
@@ -18,12 +18,12 @@ pub fn validate_round_detail(round_detail: &CreateRoundParams) {
     );
 
     assert!(
-        round_detail.application_start_ms <= round_detail.application_end_ms,
+        round_detail.application_start_ms.unwrap() <= round_detail.application_end_ms.unwrap(),
         "Round application start time must be less than equal round application end time"
     );
 
     assert!(
-        round_detail.voting_start_ms >= round_detail.application_end_ms,
+        round_detail.voting_start_ms >= round_detail.application_end_ms.unwrap(),
         "Round start time must be greater than or equal round application end time"
     );
 
@@ -36,13 +36,9 @@ pub fn validate_round_detail(round_detail: &CreateRoundParams) {
         round_detail.contacts.len() <= 10,
         "Contact must be less than 10"
     );
-    assert!(
-        round_detail.video_url.len() <= 200,
-        "Video URL must be less than 200 characters. Use IPFS Hash Only"
-    );
 }
 
-pub fn validate_owner_or_admin(env: &Env, admin: &Address, round: &RoundDetail) {
+pub fn validate_owner_or_admin(env: &Env, admin: &Address, round: &RoundDetailInternal) {
     if round.owner != admin.clone() {
         assert!(
             is_admin(env, round.id, admin),
@@ -51,14 +47,14 @@ pub fn validate_owner_or_admin(env: &Env, admin: &Address, round: &RoundDetail) 
     }
 }
 
-pub fn validate_owner(owner: &Address, round: &RoundDetail) {
+pub fn validate_owner(owner: &Address, round: &RoundDetailInternal) {
     assert!(
         round.owner == owner.clone(),
         "Only round owner can change round detail"
     );
 }
 
-pub fn validate_can_payout(env: &Env, round: &RoundDetail) {
+pub fn validate_can_payout(env: &Env, round: &RoundDetailInternal) {
     let current_time = get_ledger_second_as_millis(env);
     assert!(
         round.voting_start_ms <= current_time,
@@ -71,12 +67,12 @@ pub fn validate_can_payout(env: &Env, round: &RoundDetail) {
     );
 }
 
-pub fn validate_vault_fund(round: &RoundDetail) {
+pub fn validate_vault_fund(round: &RoundDetailInternal) {
     let vault_fund = round.vault_balance;
     assert!(vault_fund > 0, "Vault fund must be greater than 0");
 }
 
-pub fn validate_voting_period(env: &Env, round: &RoundDetail) {
+pub fn validate_voting_period(env: &Env, round: &RoundDetailInternal) {
     let current_time = get_ledger_second_as_millis(env);
     assert!(
         current_time >= round.voting_start_ms,
@@ -86,20 +82,26 @@ pub fn validate_voting_period(env: &Env, round: &RoundDetail) {
         current_time < round.voting_end_ms,
         "Voting period has ended"
     );
-    assert!(!round.is_completed, "Round is completed");
 }
 
-pub fn validate_application_period(env: &Env, round: &RoundDetail) {
+pub fn validate_application_period(env: &Env, round: &RoundDetailInternal) {
     let current_time = get_ledger_second_as_millis(env);
     assert!(
-        current_time >= round.application_start_ms,
+        current_time >= round.application_start_ms.unwrap(),
         "Application period has not started yet"
     );
     assert!(
-        current_time <= round.application_end_ms,
+        current_time <= round.application_end_ms.unwrap(),
         "Application period has ended"
     );
-    assert!(!round.is_completed, "Round is completed");
+}
+
+pub fn validate_voting_not_started(env: &Env, round: &RoundDetailInternal) {
+    let current_time = get_ledger_second_as_millis(env);
+    assert!(
+        current_time < round.voting_start_ms,
+        "Voting has already started"
+    );
 }
 
 pub fn validate_approved_projects(env: &Env, round_id: u128, project_id: u128) {
@@ -127,17 +129,7 @@ pub fn validate_project_to_approve(env: &Env, round_id: u128, project_ids: &Vec<
     });
 }
 
-pub fn validate_project_to_apply(env: &Env, project_id: u128) {
-    let project_contract = read_project_contract(env);
-    let project_client = ProjectRegistryClient::new(env, &project_contract);
-    let project = project_client.get_project_by_id(&project_id);
-    assert!(
-        project.is_some(),
-        "Project not found. Please register project first using project registry"
-    );
-}
-
-pub fn validate_max_participants(env: &Env, round: &RoundDetail, project_ids: &Vec<u128>) {
+pub fn validate_max_participants(env: &Env, round: &RoundDetailInternal, project_ids: &Vec<u128>) {
     let approved_project = read_approved_projects(env, round.id);
     assert!(
         approved_project.len() + project_ids.len() <= round.max_participants,
@@ -146,7 +138,7 @@ pub fn validate_max_participants(env: &Env, round: &RoundDetail, project_ids: &V
     );
 }
 
-pub fn validate_max_participant(env: &Env, round: &RoundDetail) {
+pub fn validate_max_participant(env: &Env, round: &RoundDetailInternal) {
     let approved_project = read_approved_projects(env, round.id);
     assert!(
         approved_project.len() < round.max_participants,
@@ -213,5 +205,12 @@ pub fn validate_contract_owner(env: &Env, admin: &Address) {
     assert!(
         &contract_owner == admin,
         "Only contract owner can call this method"
+    );
+}
+
+pub fn validate_specify_applicant(is_owner_or_admin: bool) {
+    assert!(
+        is_owner_or_admin,
+        "Only round owner or admin can specify applicant"
     );
 }

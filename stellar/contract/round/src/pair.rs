@@ -1,8 +1,6 @@
-use core::result;
-
 use crate::{
     approval_writer::read_approved_projects,
-    data_type::{Pair, RoundDetail},
+    data_type::{Pair, RoundDetailExternal},
     round_writer::read_round_info,
     storage::has_storage,
     storage_key::ContractKey,
@@ -73,7 +71,11 @@ pub fn get_all_pairs(env: &Env, round_id: u128) -> Vec<Pair> {
     pairs
 }
 
-pub fn get_all_rounds(env: &Env, skip: Option<u64>, limit: Option<u64>) -> Vec<RoundDetail> {
+pub fn get_all_rounds(
+    env: &Env,
+    skip: Option<u64>,
+    limit: Option<u64>,
+) -> Vec<RoundDetailExternal> {
     let skip: u64 = skip.unwrap_or(0).try_into().unwrap();
     let mut limit: u64 = limit.unwrap_or(5).try_into().unwrap();
 
@@ -81,7 +83,7 @@ pub fn get_all_rounds(env: &Env, skip: Option<u64>, limit: Option<u64>) -> Vec<R
         limit = 10
     }
 
-    let mut results: Vec<RoundDetail> = Vec::new(env);
+    let mut results: Vec<RoundDetailExternal> = Vec::new(env);
 
     for i in skip..limit {
         let round_id: u128 = (i + 1).into();
@@ -89,7 +91,7 @@ pub fn get_all_rounds(env: &Env, skip: Option<u64>, limit: Option<u64>) -> Vec<R
 
         if has_storage(env, &key) {
             let detail = read_round_info(env, round_id);
-            results.push_back(detail);
+            results.push_back(detail.to_external());
         }
     }
 

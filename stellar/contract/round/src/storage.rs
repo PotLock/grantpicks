@@ -15,7 +15,6 @@ pub fn extend_instance(env: &Env) {
 
 pub fn extend_round(env: &Env, round_id: u128) {
     extend_persistent(env, &&ContractKey::RoundInfo(round_id));
-    extend_persistent(env, &ContractKey::ApplicationNumber(round_id));
     extend_persistent(env, &ContractKey::Votes(round_id));
     extend_persistent(env, &ContractKey::VotingState(round_id));
     extend_persistent(env, &ContractKey::Admin(round_id));

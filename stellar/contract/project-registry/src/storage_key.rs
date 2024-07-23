@@ -6,4 +6,5 @@ pub enum ContractKey {
     NumOfProjects,
     Projects,
     RegistryAdmin,
+    ApplicantToProjectID,
 }

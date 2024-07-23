@@ -9,7 +9,7 @@ pub fn read_voters(env: &Env, round_id: u128) -> Map<Address, bool> {
     }
 }
 
-pub fn write_list(env: &Env, round_id: u128, voters: &Map<Address, bool>) {
+pub fn write_voters(env: &Env, round_id: u128, voters: &Map<Address, bool>) {
     let key = ContractKey::WhitelistAndBlacklist(round_id);
     env.storage().persistent().set(&key, voters);
 }
@@ -17,7 +17,7 @@ pub fn write_list(env: &Env, round_id: u128, voters: &Map<Address, bool>) {
 pub fn add_to_white_list(env: &Env, round_id: u128, voter: Address) {
     let mut voters = read_voters(env, round_id);
     voters.set(voter, true);
-    write_list(env, round_id, &voters);
+    write_voters(env, round_id, &voters);
 }
 
 pub fn remove_from_white_list(env: &Env, round_id: u128, voter: Address) {
@@ -33,13 +33,13 @@ pub fn is_white_listed(env: &Env, round_id: u128, voter: Address) -> bool {
 pub fn add_to_black_list(env: &Env, round_id: u128, voter: Address) {
     let mut voters = read_voters(env, round_id);
     voters.set(voter, false);
-    write_list(env, round_id, &voters);
+    write_voters(env, round_id, &voters);
 }
 
 pub fn remove_from_black_list(env: &Env, round_id: u128, voter: Address) {
     let mut voters = read_voters(env, round_id);
     voters.remove_unchecked(voter);
-    write_list(env, round_id, &voters);
+    write_voters(env, round_id, &voters);
 }
 
 pub fn is_black_listed(env: &Env, round_id: u128, voter: Address) -> bool {

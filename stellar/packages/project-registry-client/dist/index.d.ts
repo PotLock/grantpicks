@@ -1,4 +1,3 @@
-/// <reference types="node" resolution-mode="require"/>
 import { Buffer } from "buffer";
 import { AssembledTransaction, Client as ContractClient, ClientOptions as ContractClientOptions } from '@stellar/stellar-sdk/contract';
 import type { u32, u64, u128, Option } from '@stellar/stellar-sdk/contract';
@@ -8,7 +7,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CBGD4FHWUJZQRW2MZ3WWRZPYUJLTNXRNVO7BSAJMI6QVAIUSIAOP6IQI";
+        readonly contractId: "CDEXA7LEVB73KUX4T5JZ4G77QGDLIGX6XF4VKFZX7TLNMMSVUDUBWFDN";
     };
 };
 export type ProjectStatus = {
@@ -39,6 +38,7 @@ export interface Project {
     submited_ms: u64;
     team_members: Array<ProjectTeamMember>;
     updated_ms: Option<u64>;
+    video_url: string;
 }
 export interface ProjectParams {
     admins: Array<string>;
@@ -51,6 +51,7 @@ export interface ProjectParams {
     payout_address: string;
     repositories: Array<ProjectRepository>;
     team_members: Array<ProjectTeamMember>;
+    video_url: string;
 }
 export interface UpdateProjectParams {
     contacts: Array<ProjectContact>;
@@ -62,6 +63,7 @@ export interface UpdateProjectParams {
     payout_address: string;
     repositories: Array<ProjectRepository>;
     team_members: Array<ProjectTeamMember>;
+    video_url: string;
 }
 export interface ProjectContact {
     name: string;
@@ -94,6 +96,9 @@ export type ContractKey = {
     values: void;
 } | {
     tag: "RegistryAdmin";
+    values: void;
+} | {
+    tag: "ApplicantToProjectID";
     values: void;
 };
 export declare const Errors: {};
@@ -316,6 +321,25 @@ export interface Client {
          */
         simulate?: boolean;
     }) => Promise<AssembledTransaction<null>>;
+    /**
+     * Construct and simulate a get_project_from_applicant transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     */
+    get_project_from_applicant: ({ applicant }: {
+        applicant: string;
+    }, options?: {
+        /**
+         * The fee to pay for the transaction. Default: BASE_FEE
+         */
+        fee?: number;
+        /**
+         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+         */
+        timeoutInSeconds?: number;
+        /**
+         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+         */
+        simulate?: boolean;
+    }) => Promise<AssembledTransaction<Option<Project>>>;
 }
 export declare class Client extends ContractClient {
     readonly options: ContractClientOptions;
@@ -332,5 +356,6 @@ export declare class Client extends ContractClient {
         get_project_admins: (json: string) => AssembledTransaction<string[]>;
         get_total_projects: (json: string) => AssembledTransaction<number>;
         upgrade: (json: string) => AssembledTransaction<null>;
+        get_project_from_applicant: (json: string) => AssembledTransaction<Option<Project>>;
     };
 }

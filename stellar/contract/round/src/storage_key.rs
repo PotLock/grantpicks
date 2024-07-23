@@ -11,7 +11,7 @@ pub enum ContractKey {
     WhitelistAndBlacklist(u128),
     ProjectApplicants(u128),
     ApprovedProjects(u128),
-    ApplicationNumber(u128),
+    Payouts(u128),
     VotingState(u128),
     Votes(u128),
     ProjectVotingCount(u128),

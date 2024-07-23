@@ -33,7 +33,7 @@ if (typeof window !== 'undefined') {
 export const networks = {
   testnet: {
     networkPassphrase: "Test SDF Network ; September 2015",
-    contractId: "CDJQCGNDMB7OVPRD7NLIUKTGUAMADKFYWPORHIPPF4FCPJIZOPPPRA4O",
+    contractId: "CBGGQY3ZJNBPBKKD7YF3IX6UJAYXOIP2SCRNJHEJPQCKJULMAJGJUL2L",
   }
 } as const
 
@@ -106,7 +106,7 @@ export interface RegistrationInput {
 export type ContractKey = {tag: "ContractOwner", values: void} | {tag: "ListsNumber", values: void} | {tag: "Lists", values: void} | {tag: "ListAdmins", values: void} | {tag: "OwnedList", values: void} | {tag: "RegistrantList", values: void} | {tag: "RegistrationsNumber", values: void} | {tag: "Registrations", values: void} | {tag: "ListRegistration", values: void} | {tag: "RegistrationsIDs", values: void} | {tag: "Upvotes", values: void} | {tag: "UserUpvotes", values: void};
 
 export const Errors = {
-  
+
 }
 
 export interface Client {

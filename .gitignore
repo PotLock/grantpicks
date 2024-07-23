@@ -5,3 +5,4 @@ stellar/node_modules
 node_modules
 target
 .env
+.history

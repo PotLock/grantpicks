@@ -23,5 +23,6 @@ pub trait ProjectRegistryTrait {
     fn get_projects(env: &Env, skip: Option<u64>, limit: Option<u64>) -> Vec<Project>;
     fn get_project_admins(env: &Env, project_id: u128) -> Vec<Address>;
     fn get_total_projects(env: &Env) -> u32;
+    fn get_project_from_applicant(env: &Env, applicant: Address) -> Option<Project>;
     fn upgrade(env: &Env, owner: Address, new_wasm_hash: BytesN<32>);
 }

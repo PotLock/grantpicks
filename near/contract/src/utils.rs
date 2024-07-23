@@ -1,6 +1,6 @@
 use crate::*;
 
-pub fn refund_deposit(initial_storage_usage: u64, refund_to: Option<AccountId>) {
+pub(crate) fn refund_deposit(initial_storage_usage: u64, refund_to: Option<AccountId>) {
     let refund_to = refund_to.unwrap_or_else(env::predecessor_account_id);
     let attached_deposit = env::attached_deposit();
     let mut refund = attached_deposit.as_yoctonear();
@@ -32,4 +32,47 @@ pub fn refund_deposit(initial_storage_usage: u64, refund_to: Option<AccountId>) 
         );
         Promise::new(refund_to).transfer(NearToken::from_yoctonear(refund));
     }
+}
+
+/// Cloned directly from stellar implementation
+/// Calculates the indices of a unique pair of projects based on the given index.
+pub(crate) fn get_arithmetic_index(num_of_projects: u32, index: u32) -> (u32, u32) {
+    // Initialize the sum and first project index
+    let mut sum = 0;
+    let mut first_project_index = 0;
+
+    // Loop to determine the correct first project index
+    // The loop continues until the sum of pairs up to the current first project index exceeds the given index
+    while sum + (num_of_projects - first_project_index - 1) <= index {
+        // Update the sum to include the number of pairs that can be formed with the current first project index
+        sum += num_of_projects - first_project_index - 1;
+        // Move to the next project index
+        first_project_index += 1;
+    }
+
+    // Calculate the second project index based on the remaining index
+    let second_project_index = first_project_index + 1 + (index - sum);
+
+    // Return the pair of project indices
+    (first_project_index, second_project_index)
+}
+
+/// Get a random number using `env::random_seed` and a shift amount.
+pub(crate) fn get_random_number(shift_amount: u32) -> u64 {
+    let seed = env::random_seed();
+    let timestamp = env::block_timestamp().to_le_bytes();
+
+    // Prepend the timestamp to the seed
+    let mut new_seed = Vec::with_capacity(seed.len() + timestamp.len());
+    new_seed.extend_from_slice(&timestamp);
+    new_seed.extend_from_slice(&seed);
+
+    // Rotate new_seed
+    let len = new_seed.len();
+    new_seed.rotate_left(shift_amount as usize % len);
+
+    // Copy to array and convert to u64
+    let mut arr: [u8; 8] = Default::default();
+    arr.copy_from_slice(&new_seed[..8]);
+    u64::from_le_bytes(arr)
 }

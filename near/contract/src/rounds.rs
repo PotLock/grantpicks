@@ -45,11 +45,6 @@ pub struct RoundDetailInternal {
 }
 
 impl RoundDetailInternal {
-    pub fn is_caller_owner_or_admin(&self) -> bool {
-        let caller = env::predecessor_account_id();
-        self.owner == *caller || self.admins.contains(&caller)
-    }
-
     pub fn to_external(self) -> RoundDetailExternal {
         RoundDetailExternal {
             id: self.id,
@@ -71,6 +66,53 @@ impl RoundDetailInternal {
             num_picks_per_voter: self.num_picks_per_voter,
             max_participants: self.max_participants,
         }
+    }
+
+    pub fn is_caller_owner_or_admin(&self) -> bool {
+        let caller = env::predecessor_account_id();
+        self.owner == *caller || self.admins.contains(&caller)
+    }
+
+    pub fn assert_caller_is_owner_or_admin(&self) {
+        assert!(
+            self.is_caller_owner_or_admin(),
+            "Caller must be owner or admin"
+        );
+    }
+
+    pub fn assert_voting_live(&self) {
+        assert!(
+            self.voting_start_ms <= env::block_timestamp_ms(),
+            "Voting has not started yet"
+        );
+        assert!(
+            self.voting_end_ms >= env::block_timestamp_ms(),
+            "Voting has ended"
+        );
+    }
+
+    pub fn assert_voting_ended(&self) {
+        assert!(
+            self.voting_end_ms < env::block_timestamp_ms(),
+            "Voting has not ended yet"
+        );
+    }
+
+    pub fn validate_whitelist_blacklist(&self) {
+        let caller = env::predecessor_account_id();
+        if self.use_whitelist {
+            assert!(
+                self.whitelisted_voters
+                    .as_ref()
+                    .expect("Whitelist must be provided")
+                    .contains(&caller),
+                "Caller is not whitelisted"
+            );
+        }
+        assert!(
+            !self.blacklisted_voters.contains(&caller),
+            "Caller is blacklisted"
+        );
     }
 }
 
@@ -171,6 +213,16 @@ impl Contract {
             id,
             UnorderedSet::new(StorageKey::ApprovedInternalProjectIdsForRoundInner { round_id: id }),
         );
+        // add new mapping for votes
+        self.votes_by_round_id.insert(
+            id,
+            UnorderedMap::new(StorageKey::VotesByRoundIdInner { round_id: id }),
+        );
+        // add new mapping for vote counts by project
+        self.voting_count_per_project_by_round_id.insert(
+            id,
+            UnorderedMap::new(StorageKey::VotingCountPerProjectByRoundIdInner { round_id: id }),
+        );
         // clean-up
         refund_deposit(initial_storage_usage, None);
         let round_external = round.to_external();
@@ -192,9 +244,7 @@ impl Contract {
             .expect("Round not found");
 
         // Verify caller is owner or admin
-        if round.owner != caller && !round.admins.contains(&caller) {
-            panic!("Only owner or admin can update round");
-        }
+        round.assert_caller_is_owner_or_admin();
 
         // If not owner, set admins to existing
         if round.owner != caller {
@@ -231,7 +281,7 @@ impl Contract {
     }
 
     #[payable]
-    /// Must have no balance & no applications
+    /// Must have no balance, no applications & no votes
     pub fn delete_round(&mut self, round_id: RoundId) -> RoundDetailExternal {
         let initial_storage_usage = env::storage_usage();
         let caller = env::predecessor_account_id();
@@ -260,9 +310,23 @@ impl Contract {
             "Round must have no applications"
         );
 
+        // Verify no votes
+        let votes_for_round = self
+            .votes_by_round_id
+            .get(&round_id)
+            .expect("Votes for round not found");
+        assert_eq!(votes_for_round.len(), 0, "Round must have no votes");
+
+        // Remove records from mappings
         self.rounds_by_id.remove(&round_id);
         self.applications_for_round_by_internal_project_id
             .remove(&round_id);
+        self.approved_internal_project_ids_for_round
+            .remove(&round_id);
+        self.votes_by_round_id.remove(&round_id);
+        self.voting_count_per_project_by_round_id.remove(&round_id);
+
+        // clean-up
         refund_deposit(initial_storage_usage, None);
         let round_external = round.to_external();
         log_delete_round(&round_external);
@@ -285,9 +349,7 @@ impl Contract {
             .clone();
 
         // Verify caller is owner or admin
-        if round.owner != caller && !round.admins.contains(&caller) {
-            panic!("Only owner or admin can change voting period");
-        }
+        round.assert_caller_is_owner_or_admin();
 
         round.voting_start_ms = start_ms;
         round.voting_end_ms = end_ms;
@@ -316,9 +378,7 @@ impl Contract {
             .clone();
 
         // Verify caller is owner or admin
-        if round.owner != caller && !round.admins.contains(&caller) {
-            panic!("Only owner or admin can change allow applications");
-        }
+        round.assert_caller_is_owner_or_admin();
 
         round.allow_applications = allow_applications;
         // if applications are not allowed, then application start and end times should be removed...
@@ -354,9 +414,7 @@ impl Contract {
             .clone();
 
         // Verify caller is owner or admin
-        if round.owner != caller && !round.admins.contains(&caller) {
-            panic!("Only owner or admin can change application period");
-        }
+        round.assert_caller_is_owner_or_admin();
 
         round.application_start_ms = Some(start_ms);
         round.application_end_ms = Some(end_ms);
@@ -383,9 +441,7 @@ impl Contract {
             .clone();
 
         // Verify caller is owner or admin
-        if round.owner != caller && !round.admins.contains(&caller) {
-            panic!("Only owner or admin can change expected amount");
-        }
+        round.assert_caller_is_owner_or_admin();
 
         round.expected_amount = expected_amount.0;
         validate_round_detail(&round);
@@ -407,9 +463,7 @@ impl Contract {
             .clone();
 
         // Verify caller is owner or admin
-        if round.owner != caller && !round.admins.contains(&caller) {
-            panic!("Only owner or admin can close voting period");
-        }
+        round.assert_caller_is_owner_or_admin();
 
         round.voting_end_ms = env::block_timestamp_ms();
         validate_round_detail(&round);
@@ -554,6 +608,65 @@ impl Contract {
         );
         round_external
         // TODO: determine whether deposit record should be saved on-chain (not currently done, only event is logged)
+    }
+
+    #[payable]
+    pub fn flag_voters(
+        &mut self,
+        round_id: RoundId,
+        voters: Vec<AccountId>,
+    ) -> RoundDetailExternal {
+        let initial_storage_usage = env::storage_usage();
+        let mut round = self
+            .rounds_by_id
+            .get(&round_id)
+            .expect("Round not found")
+            .clone();
+
+        // Verify caller is owner or admin
+        round.assert_caller_is_owner_or_admin();
+
+        for voter in voters {
+            if !round.blacklisted_voters.contains(&voter) {
+                round.blacklisted_voters.push(voter);
+            }
+        }
+
+        self.rounds_by_id.insert(round_id, round.clone());
+        refund_deposit(initial_storage_usage, None);
+        let round_external = round.to_external();
+        log_update_round(&round_external);
+        round_external
+    }
+
+    #[payable]
+    pub fn unflag_voters(
+        &mut self,
+        round_id: RoundId,
+        voters: Vec<AccountId>,
+    ) -> RoundDetailExternal {
+        let initial_storage_usage = env::storage_usage();
+        let mut round = self
+            .rounds_by_id
+            .get(&round_id)
+            .expect("Round not found")
+            .clone();
+
+        // Verify caller is owner or admin
+        round.assert_caller_is_owner_or_admin();
+
+        round.blacklisted_voters = round
+            .blacklisted_voters
+            .iter()
+            .filter(|voter| !voters.contains(voter))
+            .cloned()
+            .collect();
+
+        self.rounds_by_id.insert(round_id, round.clone());
+        refund_deposit(initial_storage_usage, None);
+        let round_external = round.to_external();
+        log_update_round(&round_external);
+        round_external
     }
 
     // GETTER/VIEW METHODS

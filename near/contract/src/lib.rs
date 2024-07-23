@@ -32,15 +32,6 @@ pub type InternalProjectId = u32; // internal project ID, to save on storage
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
 #[borsh(crate = "near_sdk::borsh")]
 #[serde(crate = "near_sdk::serde")]
-pub struct VotingResult {
-    // keyed at the voter's account ID
-    picks: String,
-    voted_ms: TimestampMs,
-}
-
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
-#[borsh(crate = "near_sdk::borsh")]
-#[serde(crate = "near_sdk::serde")]
 pub struct Payout {
     amount: String,
     paid_at_ms: TimestampMs,
@@ -53,9 +44,6 @@ pub enum StorageKey {
     RoundsById,
     ProjectIdToInternalProjectId,
     InternalProjectIdToProjectId,
-    // ApplicationsById,
-    // ApplicationIdsByRoundId,
-    // ApplicationIdsByRoundIdInner { round_id: RoundId },
     ApplicationsForRoundByInternalProjectId,
     ApplicationsForRoundByInternalProjectIdInner { round_id: RoundId },
     ApprovedInternalProjectIdsForRound,
@@ -77,14 +65,9 @@ pub struct Contract {
     project_id_to_internal_id: LookupMap<AccountId, InternalProjectId>,
     internal_id_to_project_id: UnorderedMap<InternalProjectId, AccountId>,
     next_internal_project_id: InternalProjectId,
-    // applications_by_id: UnorderedMap<ApplicationId, Application>, // TODO: is this needed?
-    // next_application_id: ApplicationId, // TODO: is this needed?
-    // project_ids_for_round
     applications_for_round_by_internal_project_id:
         UnorderedMap<RoundId, UnorderedMap<InternalProjectId, RoundApplication>>,
     approved_internal_project_ids_for_round: UnorderedMap<RoundId, UnorderedSet<InternalProjectId>>,
-    // application_ids_by_round_id: UnorderedMap<RoundId, UnorderedSet<ApplicationId>>,
-    // approved_application_ids_by_round_id: UnorderedMap<RoundId, UnorderedSet<ApplicationId>>, // can add in if useful
     votes_by_round_id: UnorderedMap<RoundId, UnorderedMap<AccountId, VotingResult>>,
     voting_count_per_project_by_round_id:
         UnorderedMap<RoundId, UnorderedMap<InternalProjectId, u32>>,

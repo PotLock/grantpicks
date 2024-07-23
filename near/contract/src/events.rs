@@ -148,3 +148,24 @@ pub(crate) fn log_delete_application(application: &RoundApplicationExternal) {
         .as_ref(),
     );
 }
+
+/// vote
+pub(crate) fn log_vote(vote: &VotingResult) {
+    env::log_str(
+        format!(
+            "{}{}",
+            EVENT_JSON_PREFIX,
+            json!({
+                "standard": "potlock",
+                "version": "1.0.0",
+                "event": "vote",
+                "data": [
+                    {
+                        "vote": vote,
+                    }
+                ]
+            })
+        )
+        .as_ref(),
+    );
+}

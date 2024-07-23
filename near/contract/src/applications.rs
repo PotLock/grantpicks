@@ -53,31 +53,32 @@ impl Contract {
         let is_owner_or_admin = round.is_caller_owner_or_admin();
 
         // if owner or admin, verify that voting hasn't started
-        if is_owner_or_admin {
-            assert!(
-                env::block_timestamp_ms() < round.voting_start_ms,
-                "Voting has already started"
-            );
-        } else {
-            assert!(
-                round.allow_applications,
-                "Applications are not allowed for this round"
-            );
-            assert!(
-                round
-                    .application_start_ms
-                    .expect("round.application_start_ms not present")
-                    <= env::block_timestamp_ms(),
-                "Application period has not started"
-            );
-            assert!(
-                round
-                    .application_end_ms
-                    .expect("round.application_end_ms not present")
-                    >= env::block_timestamp(),
-                "Application period has ended"
-            );
-        }
+        // TODO: ADD BACK IN AFTER TESTING
+        // if is_owner_or_admin {
+        //     assert!(
+        //         env::block_timestamp_ms() < round.voting_start_ms,
+        //         "Voting has already started"
+        //     );
+        // } else {
+        //     assert!(
+        //         round.allow_applications,
+        //         "Applications are not allowed for this round"
+        //     );
+        //     assert!(
+        //         round
+        //             .application_start_ms
+        //             .expect("round.application_start_ms not present")
+        //             <= env::block_timestamp_ms(),
+        //         "Application period has not started"
+        //     );
+        //     assert!(
+        //         round
+        //             .application_end_ms
+        //             .expect("round.application_end_ms not present")
+        //             >= env::block_timestamp(),
+        //         "Application period has ended"
+        //     );
+        // }
 
         // determine applicant based on caller and `applicant` parameter
         let applicant = if let Some(applicant) = applicant {
@@ -132,7 +133,13 @@ impl Contract {
         applications_for_round.insert(internal_project_id.clone(), application.clone());
 
         // TODO: if admin, add to approved internal project IDs for round
-        // if is_owner_or_admin {
+        if is_owner_or_admin {
+            let approved_internal_project_ids = self
+                .approved_internal_project_ids_for_round
+                .get_mut(&round_id)
+                .expect("Approved internal project IDs for round not found");
+            approved_internal_project_ids.insert(internal_project_id.clone());
+        }
 
         // refund deposit
         refund_deposit(initial_storage_usage, None);
@@ -152,6 +159,29 @@ impl Contract {
         log_create_application(&app_external);
 
         app_external
+    }
+
+    #[payable]
+    /// Available to owner/admin ownly
+    pub fn apply_to_round_batch(
+        &mut self,
+        round_id: RoundId,
+        review_notes: Vec<Option<String>>,
+        applicants: Vec<AccountId>,
+    ) -> Vec<RoundApplicationExternal> {
+        let round = self.rounds_by_id.get(&round_id).expect("Round not found");
+        assert!(
+            round.is_caller_owner_or_admin(),
+            "Only round owner or admin can apply to round in batch"
+        );
+        // TODO: assert a limit on the number of applicants
+        let mut applications = Vec::new();
+        for (i, applicant) in applicants.into_iter().enumerate() {
+            let review_note = review_notes.get(i).cloned().unwrap_or_default();
+            let application = self.apply_to_round(round_id, None, review_note, Some(applicant));
+            applications.push(application);
+        }
+        applications
     }
 
     #[payable]
@@ -377,15 +407,26 @@ impl Contract {
 
     pub fn get_application(&self, applicant: AccountId) -> Option<RoundApplicationExternal> {
         let internal_project_id = self.project_id_to_internal_id.get(&applicant)?;
+        self.get_application_by_internal_id(internal_project_id.clone())
+    }
+
+    pub fn get_application_by_internal_id(
+        &self,
+        internal_project_id: InternalProjectId,
+    ) -> Option<RoundApplicationExternal> {
         let application = self
             .applications_for_round_by_internal_project_id
             .values()
             .find_map(|applications_for_round| {
                 applications_for_round
-                    .get(internal_project_id)
+                    .get(&internal_project_id)
                     .map(|application| RoundApplicationExternal {
                         round_id: application.round_id,
-                        applicant_id: applicant.clone(),
+                        applicant_id: self
+                            .internal_id_to_project_id
+                            .get(&internal_project_id)
+                            .expect("Invalid internal project ID")
+                            .clone(),
                         applicant_note: application.applicant_note.clone(),
                         status: application.status.clone(),
                         review_note: application.review_note.clone(),

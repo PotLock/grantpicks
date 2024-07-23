@@ -17,7 +17,7 @@ import {
 	IGetRoundsResponse,
 	Network,
 } from '@/types/on-chain'
-import { getRoundApplications } from '@/services/on-chain/round-factory'
+import { getRoundApplications } from '@/services/on-chain/round'
 import InfiniteScroll from 'react-infinite-scroll-component'
 import IconLoading from '../../svgs/IconLoading'
 import moment from 'moment'

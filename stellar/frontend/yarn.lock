@@ -5515,13 +5515,6 @@ round-client@./round-client:
     "@stellar/stellar-sdk" "12.0.0-rc.3"
     buffer "6.0.3"
 
-round-factory-client@./round-factory-client:
-  version "0.0.0"
-  dependencies:
-    "@stellar/freighter-api" "2.0.0"
-    "@stellar/stellar-sdk" "12.0.0-rc.3"
-    buffer "6.0.3"
-
 run-parallel@^1.1.9:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/run-parallel/-/run-parallel-1.2.0.tgz#66d1368da7bdf921eb9d95bd1a9229e7f21a43ee"

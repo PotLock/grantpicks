@@ -18,7 +18,7 @@ import moment from 'moment'
 import { formatStroopToXlm, prettyTruncate } from '@/utils/helper'
 import CMDWallet from '@/lib/wallet'
 import Contracts from '@/lib/contracts'
-import { getRoundAdmins } from '@/services/on-chain/round-factory'
+import { getRoundAdmins } from '@/services/on-chain/round'
 import useSWR from 'swr'
 import IconLoading from '../../svgs/IconLoading'
 

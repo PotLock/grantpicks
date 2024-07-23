@@ -11,15 +11,9 @@ import IconAdd from '@/app/components/svgs/IconAdd'
 import IconNear from '@/app/components/svgs/IconNear'
 import IconRemove from '@/app/components/svgs/IconRemove'
 import IconUnfoldMore from '@/app/components/svgs/IconUnfoldMore'
-import { getPriceCrypto } from '@/services/common'
 import { CreateRoundData } from '@/types/form'
 import React, { useEffect, useState } from 'react'
-import {
-	useForm,
-	useFieldArray,
-	Controller,
-	SubmitHandler,
-} from 'react-hook-form'
+import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import Switch from 'react-switch'
 import DatePicker from 'react-datepicker'
 import IconCalendar from '@/app/components/svgs/IconCalendar'
@@ -28,34 +22,25 @@ import IconClose from '@/app/components/svgs/IconClose'
 import AddAdminsModal from '@/app/components/pages/create-round/AddAdminsModal'
 import clsx from 'clsx'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
-import { skip } from 'node:test'
-import {
-	getProjects,
-	IGetProjectsResponse,
-} from '@/services/on-chain/project-registry'
+import { getRoundApplications, getRoundInfo } from '@/services/on-chain/round'
+import { useParams } from 'next/navigation'
 import CMDWallet from '@/lib/wallet'
-import { useWallet } from '@/app/providers/WalletProvider'
 import Contracts from '@/lib/contracts'
-import { Network } from '@/types/on-chain'
-import useSWRInfinite from 'swr/infinite'
+import { IGetRoundApplicationsResponse, Network } from '@/types/on-chain'
+import { useWallet } from '@/app/providers/WalletProvider'
+import { formatStroopToXlm } from '@/utils/helper'
 import { LIMIT_SIZE } from '@/constants/query'
-import {
-	createRound,
-	CreateRoundDetail,
-	CreateRoundParams,
-} from '@/services/on-chain/round'
-import { parseToStroop } from '@/utils/helper'
-import { useModalContext } from '@/app/providers/ModalProvider'
+import { IGetProjectsResponse } from '@/services/on-chain/project-registry'
 
-const CreateRoundPage = () => {
+const EditRoundPage = () => {
+	const params = useParams<{ roundId: string }>()
 	const [showContactType, setShowContactType] = useState<boolean>(false)
-	const { nearPrice, openPageLoading, dismissPageLoading } = useGlobalContext()
-	const { stellarPubKey } = useWallet()
-	const { setSuccessCreateRoundModalProps } = useModalContext()
+	const { nearPrice } = useGlobalContext()
 	const [amountUsd, setAmountUsd] = useState<string>('0.00')
 	const [expectAmountUsd, setExpectAmountUsd] = useState<string>('0.00')
 	const [showAddProjectsModal, setShowAddProjectsModal] =
 		useState<boolean>(false)
+	const { stellarPubKey } = useWallet()
 	const [showAddAdminsModal, setShowAddAdminsModal] = useState<boolean>(false)
 	const {
 		control,
@@ -68,11 +53,11 @@ const CreateRoundPage = () => {
 	} = useForm<CreateRoundData>({
 		defaultValues: {
 			vote_per_person: 0,
-			apply_duration_start: null,
-			apply_duration_end: null,
+			apply_duration_start: new Date(),
+			apply_duration_end: new Date(),
 			max_participants: 0,
-			voting_duration_start: null,
-			voting_duration_end: null,
+			voting_duration_start: new Date(),
+			voting_duration_end: new Date(),
 		},
 	})
 	const [selectedProjects, setSelectedProjects] = useState<
@@ -88,9 +73,8 @@ const CreateRoundPage = () => {
 		name: 'projects',
 	})
 
-	const onCreateRound: SubmitHandler<CreateRoundData> = async (data) => {
+	const onFetchRoundInfo = async () => {
 		try {
-			openPageLoading()
 			let cmdWallet = new CMDWallet({
 				stellarPubKey: stellarPubKey,
 			})
@@ -98,48 +82,45 @@ const CreateRoundPage = () => {
 				process.env.NETWORK_ENV as Network,
 				cmdWallet,
 			)
-			const createRoundParams: CreateRoundParams = {
-				owner: stellarPubKey,
-				round_detail: {
-					name: data.title,
-					description: data.description,
-					application_start_ms: BigInt(
-						data.apply_duration_start?.getTime() as number,
-					),
-					application_end_ms: BigInt(
-						data.apply_duration_end?.getTime() as number,
-					),
-					contacts: [
-						{
-							name: data.contact_type,
-							value: data.contact_address,
-						},
-					],
-					expected_amount: parseToStroop(BigInt(data.expected_amount)),
-					max_participants: data.max_participants,
-					num_picks_per_voter: data.vote_per_person,
-					use_whitelist: data.open_funding,
-					video_url: '',
-					voting_start_ms: BigInt(
-						data.voting_duration_start?.getTime() as number,
-					),
-					voting_end_ms: BigInt(data.voting_duration_end?.getTime() as number),
-					admins: data.admins.map((admin) => admin.admin_id),
-				},
-			}
-			const res = await createRound(stellarPubKey, createRoundParams, contracts)
-			if (res) {
-				setSuccessCreateRoundModalProps((prev) => ({
-					...prev,
-					isOpen: true,
-					createRoundRes: res,
-				}))
-				dismissPageLoading()
+			const resRoundInfo = await getRoundInfo(
+				{ round_id: BigInt(params.roundId) },
+				contracts,
+			)
+			// let resRoundApps: IGetRoundApplicationsResponse[] = []
+			// let currData: IGetRoundApplicationsResponse[]
+			// do{
+			//   currData = []
+			//   const currRes = await getRoundApplications(
+			//     { round_id: BigInt(params.roundId), skip: 0, limit: LIMIT_SIZE },
+			//     contracts,
+			//   )
+			//   resRoundApps = [...resRoundApps, ...currRes]
+			//   currData = currRes
+			// }while(currData.length >= LIMIT_SIZE)
+			if (resRoundInfo) {
+				setValue('title', resRoundInfo?.name)
+				setValue('description', resRoundInfo?.description)
+				setValue('vote_per_person', resRoundInfo?.num_picks_per_voter)
+				setValue('vote_per_person', resRoundInfo?.num_picks_per_voter)
+				setValue('contact_type', resRoundInfo?.contacts[0].name)
+				setValue('contact_address', resRoundInfo?.contacts[0].value)
+				setValue('amount', formatStroopToXlm(resRoundInfo?.expected_amount))
+				setValue('amount', formatStroopToXlm(resRoundInfo?.expected_amount))
+				setValue('open_funding', true)
+				if (resRoundInfo.max_participants > 0) {
+					setValue('allow_application', true)
+					setValue('max_participants', resRoundInfo?.max_participants)
+					setValue('apply_duration_start', new Date())
+				}
 			}
 		} catch (error: any) {
-			dismissPageLoading()
+			console.log('error', error)
 		}
 	}
+
+	useEffect(() => {
+		onFetchRoundInfo()
+	}, [])
 
 	return (
 		<CreateRoundLayout>
@@ -465,7 +446,7 @@ const CreateRoundPage = () => {
 														showIcon
 														selectsRange={true}
 														icon={
-															<div className="flex items-center mt-2 pr-2">
+															<div className="flex items-center mt-2">
 																<IconCalendar
 																	size={20}
 																	className="fill-grantpicks-black-400"
@@ -473,13 +454,9 @@ const CreateRoundPage = () => {
 															</div>
 														}
 														calendarIconClassName="flex items-center"
-														startDate={field.value as Date}
-														endDate={watch().apply_duration_end as Date}
-														placeholderText="Apply Duration"
-														isClearable={true}
+														// selected={new Date(field.value)}
 														onChange={(date) => {
-															field.onChange(date[0])
-															setValue('apply_duration_end', date[1])
+															field.onChange(date)
 														}}
 														className="border border-grantpicks-black-200 rounded-xl w-full h-12"
 														wrapperClassName="w-full mb-1"
@@ -488,7 +465,7 @@ const CreateRoundPage = () => {
 											/>
 											{errors.apply_duration_start?.type === 'required' ? (
 												<p className="text-red-500 text-xs mt-1 ml-2">
-													start and end of apply duration is required
+													Start and end apply duration is required
 												</p>
 											) : undefined}
 										</div>
@@ -500,7 +477,7 @@ const CreateRoundPage = () => {
 								<div className="flex items-center mb-4">
 									<Checkbox
 										label="Video Required"
-										checked={watch().video_required}
+										checked={watch().open_funding}
 										onChange={(e) =>
 											setValue('video_required', e.target.checked)
 										}
@@ -528,13 +505,9 @@ const CreateRoundPage = () => {
 													</div>
 												}
 												calendarIconClassName="flex items-center"
-												startDate={field.value as Date}
-												endDate={watch().voting_duration_end as Date}
-												placeholderText="Voting Duration"
-												isClearable={true}
+												// selected={new Date(field.value)}
 												onChange={(date) => {
-													field.onChange(date[0])
-													setValue('voting_duration_end', date[1])
+													field.onChange(date)
 												}}
 												className="border border-grantpicks-black-200 rounded-xl w-full h-12"
 												wrapperClassName="w-full mb-1"
@@ -663,7 +636,7 @@ const CreateRoundPage = () => {
 						color="black-950"
 						className="!py-3"
 						isFullWidth
-						onClick={handleSubmit(onCreateRound)}
+						onClick={() => {}}
 					>
 						Create Round
 					</Button>
@@ -673,4 +646,4 @@ const CreateRoundPage = () => {
 	)
 }
 
-export default CreateRoundPage
+export default EditRoundPage

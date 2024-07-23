@@ -1,3 +1,4 @@
+import { IGetProjectsResponse } from '@/services/on-chain/project-registry'
 import { ChangeEvent, HTMLAttributes } from 'react'
 
 export interface InputProps {
@@ -70,10 +71,12 @@ export type CreateRoundData = {
 	open_funding: boolean
 	allow_application: boolean
 	max_participants: number
-	apply_duration: Date
+	apply_duration_start: Date | null
+	apply_duration_end: Date | null
 	video_required: boolean
-	voting_duration: Date
-	projects: IProjectCreateRound[]
+	voting_duration_start: Date | null
+	voting_duration_end: Date | null
+	projects: IGetProjectsResponse[]
 	admins: IAdminCreateRound[]
 }
 

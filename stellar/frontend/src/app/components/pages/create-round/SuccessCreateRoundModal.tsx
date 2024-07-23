@@ -5,8 +5,18 @@ import IconClock from '../../svgs/IconClock'
 import Button from '../../commons/Button'
 import IconEye from '../../svgs/IconEye'
 import IconCheck from '../../svgs/IconCheck'
+import { IGetRoundsResponse } from '@/types/on-chain'
+import moment from 'moment'
 
-const SuccessCreateRoundModal = ({ isOpen, onClose }: BaseModalProps) => {
+interface SuccessCreateRoundModalProps extends BaseModalProps {
+	createRoundRes?: IGetRoundsResponse
+}
+
+const SuccessCreateRoundModal = ({
+	isOpen,
+	onClose,
+	createRoundRes,
+}: SuccessCreateRoundModalProps) => {
 	return (
 		<Modal isOpen={isOpen} onClose={onClose}>
 			<div className="w-11/12 md:w-[60vw] lg:w-[45vw] mx-auto bg-white rounded-xl shadow-md p-4 md:p-6">
@@ -27,12 +37,19 @@ const SuccessCreateRoundModal = ({ isOpen, onClose }: BaseModalProps) => {
 				</div>
 				<div className="p-6 border border-black/10 flex flex-col items-center my-8">
 					<p className="text-[25px] font-semibold text-grantpicks-black-950 mb-4">
-						Web3 Education & Skill Development
+						{createRoundRes?.name}
 					</p>
 					<div className="flex items-center space-x-2 mb-4">
 						<IconClock size={18} className="fill-grantpicks-black-600" />
 						<p className="text-sm font-normal text-grantpicks-black-600">
-							Starting 20/5/2024 and Ending 1/6/2024
+							Starting{' '}
+							{moment(
+								Number(createRoundRes?.application_start_ms) as number,
+							).format('l')}{' '}
+							and Ending{' '}
+							{moment(
+								Number(createRoundRes?.application_end_ms) as number,
+							).format('l')}
 						</p>
 					</div>
 					<Button

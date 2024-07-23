@@ -2,12 +2,21 @@
 
 import React, { useContext, useState } from 'react'
 import { ModalContext } from '../contexts/ModalContext'
-import { IModalContextProps } from '@/types/context'
+import {
+	IModalContextProps,
+	ISuccessCreateRoundModalProps,
+} from '@/types/context'
 import SuccessFundRoundModal from '../components/pages/application/SuccessFundRoundModal'
 import ApplyProjectModal from '../components/pages/application/create-apply-project/ApplyProjectModal'
 import CreateProjectFormMainModal from '../components/pages/application/create-apply-project/create-project-form/CreateProjectFormMainModal'
+import SuccessCreateRoundModal from '../components/pages/create-round/SuccessCreateRoundModal'
 
 const ModalProvider = ({ children }: { children: React.ReactNode }) => {
+	const [successCreateRoundProps, setSuccessCreateRoundProps] =
+		useState<ISuccessCreateRoundModalProps>({
+			isOpen: false,
+			createRoundRes: undefined,
+		})
 	const [successFundRoundProps, setSuccessFundRoundProps] =
 		useState<IModalContextProps>({
 			isOpen: false,
@@ -26,12 +35,23 @@ const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 		<ModalContext.Provider
 			value={{
 				setSuccessFundRoundModalProps: setSuccessFundRoundProps,
+				setSuccessCreateRoundModalProps: setSuccessCreateRoundProps,
 				successFundRoundModalProps: successFundRoundProps,
 				setApplyProjectInitProps,
 				setCreateProjectFormMainProps,
 			}}
 		>
 			{children}
+			<SuccessCreateRoundModal
+				isOpen={successCreateRoundProps.isOpen}
+				createRoundRes={successCreateRoundProps.createRoundRes}
+				onClose={() =>
+					setSuccessCreateRoundProps((prev) => ({
+						...prev,
+						isOpen: false,
+					}))
+				}
+			/>
 			<SuccessFundRoundModal
 				isOpen={successFundRoundProps.isOpen}
 				onClose={() =>

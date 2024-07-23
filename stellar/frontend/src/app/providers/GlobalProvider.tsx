@@ -3,15 +3,27 @@
 import { getPriceCrypto } from '@/services/common'
 import { IGlobalContext } from '@/types/context'
 import React, { createContext, useContext, useEffect, useState } from 'react'
+import PageLoading from '../components/commons/PageLoading'
 
 const GlobalContext = createContext<IGlobalContext>({
 	stellarPrice: 0,
 	nearPrice: 0,
+	dismissPageLoading: () => {},
+	openPageLoading: () => {},
 })
 
 const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
 	const [stellarPrice, setStellarPrice] = useState<number>(0.0)
 	const [nearPrice, setNearPrice] = useState<number>(0.0)
+	const [pageLoading, setPageLoading] = useState<boolean>(false)
+
+	const dismissPageLoading = () => {
+		setPageLoading(false)
+	}
+
+	const openPageLoading = () => {
+		setPageLoading(true)
+	}
 
 	useEffect(() => {
 		const getPriceStellarToUsd = async () => {
@@ -30,9 +42,12 @@ const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
 			value={{
 				stellarPrice,
 				nearPrice,
+				dismissPageLoading,
+				openPageLoading,
 			}}
 		>
 			{children}
+			<PageLoading isOpen={pageLoading} />
 		</GlobalContext.Provider>
 	)
 }

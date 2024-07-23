@@ -249,6 +249,13 @@ impl Contract {
         results
     }
 
+    pub fn can_vote(&self, round_id: RoundId, voter: AccountId) -> bool {
+        self.rounds_by_id
+            .get(&round_id)
+            .expect("Round not found")
+            .can_vote(&voter)
+    }
+
     // pub(crate) fn increment_vote_count_for_project(
     //     &self,
     //     round_id: RoundId,

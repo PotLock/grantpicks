@@ -80,15 +80,23 @@ impl RoundDetailInternal {
         );
     }
 
+    pub fn is_application_live(&self) -> bool {
+        self.allow_applications
+            && self.application_start_ms.unwrap_or(0) <= env::block_timestamp_ms()
+            && self.application_end_ms.unwrap_or(0) >= env::block_timestamp_ms()
+    }
+
+    pub fn assert_application_live(&self) {
+        assert!(self.is_application_live(), "Application is not live");
+    }
+
+    pub fn is_voting_live(&self) -> bool {
+        self.voting_start_ms <= env::block_timestamp_ms()
+            && self.voting_end_ms >= env::block_timestamp_ms()
+    }
+
     pub fn assert_voting_live(&self) {
-        assert!(
-            self.voting_start_ms <= env::block_timestamp_ms(),
-            "Voting has not started yet"
-        );
-        assert!(
-            self.voting_end_ms >= env::block_timestamp_ms(),
-            "Voting has ended"
-        );
+        assert!(self.is_voting_live(), "Voting is not live");
     }
 
     pub fn assert_voting_ended(&self) {
@@ -113,6 +121,20 @@ impl RoundDetailInternal {
             !self.blacklisted_voters.contains(&caller),
             "Caller is blacklisted"
         );
+    }
+
+    pub fn can_vote(&self, voter: &AccountId) -> bool {
+        if !self.is_voting_live() {
+            return false;
+        }
+        if self.use_whitelist {
+            if let Some(whitelist) = &self.whitelisted_voters {
+                if !whitelist.contains(&voter) {
+                    return false;
+                }
+            }
+        }
+        !self.blacklisted_voters.contains(&voter)
     }
 }
 
@@ -697,6 +719,13 @@ impl Contract {
             .expect("Round not found")
             .clone()
             .to_external()
+    }
+
+    pub fn is_voting_live(&self, round_id: RoundId) -> bool {
+        self.rounds_by_id
+            .get(&round_id)
+            .expect("Round not found")
+            .is_voting_live()
     }
 
     // pub fn add_projects_to_round(&mut self, round_id: RoundId, projects: Vec<AccountId>) -> &Round {

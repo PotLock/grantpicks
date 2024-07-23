@@ -92,18 +92,23 @@ const ApplicationItem = ({
 				<div className="bg-grantpicks-black-200 rounded-full w-6 h-6" />
 				<p>
 					<span className="text-base font-bold text-grantpicks-black-950 mr-1">
-						{doc.applicant}
+						{doc.applicant_id}
 					</span>
 					{/* <span className="text-base font-normal text-grantpicks-black-600">
 						@magicbuild.near
 					</span> */}
 				</p>
 			</div>
+			<div className=" px-3 md:px-4 py-2">
+				<p className="text-base font-normal text-grantpicks-black-600">
+					{doc.applicant_note}
+				</p>
+			</div>
 			{doc.review_note && (
 				<div className="px-3 md:px-4 pt-2 pb-4">
 					<div className="border border-grantpicks-black-200 rounded-xl p-3 bg-white">
 						<p className="text-sm font-semibold text-grantpicks-black-950">
-							{doc.applicant}
+							Reviewer
 						</p>
 						<p className="text-sm font-normal text-grantpicks-black-600">
 							{doc.review_note || ''}

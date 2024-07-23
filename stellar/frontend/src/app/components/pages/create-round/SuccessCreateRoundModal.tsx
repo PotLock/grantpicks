@@ -7,6 +7,7 @@ import IconEye from '../../svgs/IconEye'
 import IconCheck from '../../svgs/IconCheck'
 import { IGetRoundsResponse } from '@/types/on-chain'
 import moment from 'moment'
+import { useRouter } from 'next/navigation'
 
 interface SuccessCreateRoundModalProps extends BaseModalProps {
 	createRoundRes?: IGetRoundsResponse
@@ -17,6 +18,7 @@ const SuccessCreateRoundModal = ({
 	onClose,
 	createRoundRes,
 }: SuccessCreateRoundModalProps) => {
+	const router = useRouter()
 	return (
 		<Modal isOpen={isOpen} onClose={onClose}>
 			<div className="w-11/12 md:w-[60vw] lg:w-[45vw] mx-auto bg-white rounded-xl shadow-md p-4 md:p-6">
@@ -56,7 +58,7 @@ const SuccessCreateRoundModal = ({
 						color="black"
 						className="!rounded-full"
 						isFullWidth
-						onClick={() => {}}
+						onClick={() => router.push(`/application`)}
 					>
 						<div className="flex items-center space-x-2">
 							<IconEye size={18} className="fill-grantpicks-black-400" />
@@ -68,7 +70,7 @@ const SuccessCreateRoundModal = ({
 					<p className="text-xs font-normal text-grantpicks-black-600 mb-2">
 						Transaction ID
 					</p>
-					<div className="py-2 px-3 bg-grantpicks-black-50 flex items-center justify-center">
+					<div className="py-2 px-3 bg-grantpicks-black-50 flex items-center justify-center rouxl">
 						<p className="text-sm font-semibold text-grantpicks-black-950">
 							0x063834efe2...
 						</p>

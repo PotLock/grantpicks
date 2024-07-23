@@ -18,7 +18,16 @@ export const formatStroopToXlm = (amount: bigint) => {
 	return res
 }
 
-export const parseToStroop = (amount: bigint) => {
-	const res = BigInt(amount as bigint) * BigInt(10 ** 7)
+export const parseToStroop = (amount: string) => {
+	let toIntXlm = 0
+	let len_of_fraction = 0
+	if (amount.split('.').length > 1) {
+		const amount_fraction = amount.split('.').slice(1)
+		len_of_fraction = amount_fraction[0].length
+		toIntXlm = Number(amount) * 10 ** len_of_fraction
+	} else {
+		toIntXlm = Number(amount)
+	}
+	const res = BigInt(toIntXlm) * BigInt(10 ** (7 - len_of_fraction))
 	return res
 }

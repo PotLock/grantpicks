@@ -4,6 +4,7 @@ import {
 	IGetRoundsResponse,
 } from '@/types/on-chain'
 import { u128, u32, u64 } from '@stellar/stellar-sdk/contract'
+import { Contact } from 'round-client'
 
 interface GetRoundsParams {
 	skip: number
@@ -29,25 +30,22 @@ export interface CreateRoundContact {
 	value: string
 }
 
-export interface CreateRoundDetail {
+export interface CreateRoundParams {
 	admins: string[]
+	allow_applications: boolean
 	application_end_ms: u64
 	application_start_ms: u64
-	contacts: CreateRoundContact[]
+	contacts: Contact[]
 	description: string
 	expected_amount: u128
+	is_video_required: boolean
 	max_participants: u32
 	name: string
 	num_picks_per_voter: u32
+	owner: string
 	use_whitelist: boolean
-	video_url: string
 	voting_end_ms: u64
 	voting_start_ms: u64
-}
-
-export interface CreateRoundParams {
-	owner: string
-	round_detail: CreateRoundDetail
 }
 
 export const getRounds: (
@@ -90,7 +88,7 @@ export const getRoundApplications: (
 	let skip = params.skip ? params.skip : 0
 	let limit = params.limit ? params.limit : 10
 
-	let rounds = await contract.round_contract.get_all_applications({
+	let rounds = await contract.round_contract.get_applications_for_round({
 		round_id: BigInt(params.round_id),
 		skip: BigInt(skip),
 		limit: BigInt(limit),
@@ -112,17 +110,17 @@ export const getRoundInfo: (
 }
 
 export const createRound: (
-	owner: string,
+	caller: string,
 	params: CreateRoundParams,
 	contract: Contracts,
 ) => Promise<IGetRoundsResponse> = async (
-	owner: string,
+	caller: string,
 	params: CreateRoundParams,
 	contract: Contracts,
 ) => {
 	let round = await contract.round_contract.create_round({
-		owner: params.owner,
-		round_detail: params.round_detail,
+		caller,
+		round_detail: params,
 	})
 	return round.result
 }

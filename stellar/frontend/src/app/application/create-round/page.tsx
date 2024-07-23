@@ -37,19 +37,17 @@ import CMDWallet from '@/lib/wallet'
 import { useWallet } from '@/app/providers/WalletProvider'
 import Contracts from '@/lib/contracts'
 import { Network } from '@/types/on-chain'
-import useSWRInfinite from 'swr/infinite'
-import { LIMIT_SIZE } from '@/constants/query'
-import {
-	createRound,
-	CreateRoundDetail,
-	CreateRoundParams,
-} from '@/services/on-chain/round'
+import { createRound, CreateRoundParams } from '@/services/on-chain/round'
 import { parseToStroop } from '@/utils/helper'
 import { useModalContext } from '@/app/providers/ModalProvider'
+import toast from 'react-hot-toast'
+import { toastOptions } from '@/constants/style'
+import IconStellar from '@/app/components/svgs/IconStellar'
 
 const CreateRoundPage = () => {
 	const [showContactType, setShowContactType] = useState<boolean>(false)
-	const { nearPrice, openPageLoading, dismissPageLoading } = useGlobalContext()
+	const { nearPrice, stellarPrice, openPageLoading, dismissPageLoading } =
+		useGlobalContext()
 	const { stellarPubKey } = useWallet()
 	const { setSuccessCreateRoundModalProps } = useModalContext()
 	const [amountUsd, setAmountUsd] = useState<string>('0.00')
@@ -79,14 +77,6 @@ const CreateRoundPage = () => {
 		IGetProjectsResponse[]
 	>([])
 	const [selectedAdmins, setSelectedAdmins] = useState<string[]>([])
-	const { fields: fieldAdmins, append: appendAdmins } = useFieldArray({
-		control,
-		name: 'admins',
-	})
-	const { fields: fieldProjects, append: appendProjects } = useFieldArray({
-		control,
-		name: 'projects',
-	})
 
 	const onCreateRound: SubmitHandler<CreateRoundData> = async (data) => {
 		try {
@@ -100,32 +90,34 @@ const CreateRoundPage = () => {
 			)
 			const createRoundParams: CreateRoundParams = {
 				owner: stellarPubKey,
-				round_detail: {
-					name: data.title,
-					description: data.description,
-					application_start_ms: BigInt(
-						data.apply_duration_start?.getTime() as number,
-					),
-					application_end_ms: BigInt(
-						data.apply_duration_end?.getTime() as number,
-					),
-					contacts: [
-						{
-							name: data.contact_type,
-							value: data.contact_address,
-						},
-					],
-					expected_amount: parseToStroop(BigInt(data.expected_amount)),
-					max_participants: data.max_participants,
-					num_picks_per_voter: data.vote_per_person,
-					use_whitelist: data.open_funding,
-					video_url: '',
-					voting_start_ms: BigInt(
-						data.voting_duration_start?.getTime() as number,
-					),
-					voting_end_ms: BigInt(data.voting_duration_end?.getTime() as number),
-					admins: data.admins.map((admin) => admin.admin_id),
-				},
+				name: data.title,
+				description: data.description,
+				application_start_ms: BigInt(
+					data.apply_duration_start?.getTime() as number,
+				),
+				application_end_ms: BigInt(
+					data.apply_duration_end?.getTime() as number,
+				),
+				contacts: [
+					{
+						name: data.contact_type,
+						value: data.contact_address,
+					},
+				],
+				expected_amount: parseToStroop(data.expected_amount),
+				max_participants: data.max_participants,
+				num_picks_per_voter: data.vote_per_person,
+				use_whitelist: data.open_funding,
+				is_video_required: data.video_required,
+				allow_applications: data.allow_application,
+				voting_start_ms: BigInt(
+					data.voting_duration_start?.getTime() as number,
+				),
+				voting_end_ms: BigInt(data.voting_duration_end?.getTime() as number),
+				admins:
+					data.admins?.length > 0
+						? data.admins.map((admin) => admin.admin_id)
+						: [],
 			}
 			const res = await createRound(stellarPubKey, createRoundParams, contracts)
 			if (res) {
@@ -137,6 +129,10 @@ const CreateRoundPage = () => {
 				dismissPageLoading()
 			}
 		} catch (error: any) {
+			console.log('error', error?.message)
+			toast.error(error?.message || 'Something went wrong', {
+				style: toastOptions.error.style,
+			})
 			dismissPageLoading()
 		}
 	}
@@ -310,12 +306,15 @@ const CreateRoundPage = () => {
 									placeholder="Enter amount..."
 									onChange={async (e) => {
 										const calculation =
-											parseFloat(e.target.value || '0') * nearPrice
+											parseFloat(e.target.value || '0') * stellarPrice
 										setAmountUsd(`${calculation.toFixed(3)}`)
 										setValue('amount', e.target.value)
 									}}
 									preffixIcon={
-										<IconNear size={24} className="fill-grantpicks-black-400" />
+										<IconStellar
+											size={24}
+											className="fill-grantpicks-black-400"
+										/>
 									}
 									textAlign="left"
 									suffixIcon={
@@ -338,12 +337,15 @@ const CreateRoundPage = () => {
 									{...register('expected_amount', {
 										onChange: async (e) => {
 											const calculation =
-												parseFloat(e.target.value || '0') * nearPrice
+												parseFloat(e.target.value || '0') * stellarPrice
 											setExpectAmountUsd(`${calculation.toFixed(3)}`)
 										},
 									})}
 									preffixIcon={
-										<IconNear size={24} className="fill-grantpicks-black-400" />
+										<IconStellar
+											size={24}
+											className="fill-grantpicks-black-400"
+										/>
 									}
 									textAlign="left"
 									suffixIcon={

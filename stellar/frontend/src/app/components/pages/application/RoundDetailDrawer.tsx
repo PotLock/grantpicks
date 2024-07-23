@@ -26,6 +26,7 @@ interface RoundDetailDrawerProps extends IDrawerProps {
 	doc: IGetRoundsResponse
 	onOpenFundRound: () => void
 	onApplyRound: () => void
+	onVote: () => void
 }
 
 const RoundDetailDrawer = ({
@@ -34,6 +35,7 @@ const RoundDetailDrawer = ({
 	doc,
 	onOpenFundRound,
 	onApplyRound,
+	onVote,
 }: RoundDetailDrawerProps) => {
 	const { selectedRoundType } = useRoundStore()
 	const { connectedWallet, stellarPubKey } = useWallet()
@@ -250,28 +252,45 @@ const RoundDetailDrawer = ({
 					</div>
 				</div>
 
-				<div className="px-6 pt-4 pb-6 flex items-center space-x-4">
-					<Button
-						color="black-950"
-						onClick={() => {
-							onApplyRound()
-							onClose()
-						}}
-						className="!py-3 flex-1"
-					>
-						Apply
-					</Button>
-					<Button
-						color="alpha-50"
-						onClick={() => {
-							onOpenFundRound()
-							onClose()
-						}}
-						className="!py-3 flex-1"
-					>
-						Fund Round
-					</Button>
-				</div>
+				{selectedRoundType === 'upcoming' && (
+					<div className="px-6 pt-4 pb-6 flex items-center space-x-4">
+						<Button
+							color="black-950"
+							onClick={() => {
+								onApplyRound()
+								onClose()
+							}}
+							className="!py-3 flex-1"
+						>
+							Apply
+						</Button>
+						<Button
+							color="alpha-50"
+							onClick={() => {
+								onOpenFundRound()
+								onClose()
+							}}
+							className="!py-3 flex-1"
+						>
+							Fund Round
+						</Button>
+					</div>
+				)}
+				{selectedRoundType === 'on-going' && (
+					<div className="px-6 flex items-center">
+						<Button
+							color="black-950"
+							isFullWidth
+							onClick={() => {
+								onVote()
+								onClose()
+							}}
+							className="!py-3 flex-1"
+						>
+							Vote
+						</Button>
+					</div>
+				)}
 			</div>
 		</Drawer>
 	)

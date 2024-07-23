@@ -34,7 +34,8 @@ const ApplicationRoundsItem = ({ doc }: { doc: IGetRoundsResponse }) => {
 	const [showDetailDrawer, setShowDetailDrawer] = useState<boolean>(false)
 	const [showAppsDrawer, setShowAppsDrawer] = useState<boolean>(false)
 	const [showFundRoundModal, setShowFundRoundModal] = useState<boolean>(false)
-	const { setApplyProjectInitProps } = useModalContext()
+	const { setApplyProjectInitProps, setVoteConfirmationProps } =
+		useModalContext()
 	const { connectedWallet } = useWallet()
 
 	return (
@@ -82,6 +83,7 @@ const ApplicationRoundsItem = ({ doc }: { doc: IGetRoundsResponse }) => {
 							/>
 							<MoreVertMenu
 								isOpen={showMoreVert}
+								data={doc}
 								onClose={() => setShowMoreVert(false)}
 								onViewDetails={() => {
 									setShowMoreVert(false)
@@ -160,6 +162,11 @@ const ApplicationRoundsItem = ({ doc }: { doc: IGetRoundsResponse }) => {
 				<Button
 					onClick={() => {
 						if (selectedRoundType === 'on-going') {
+							setVoteConfirmationProps((prev) => ({
+								...prev,
+								isOpen: true,
+								doc: doc,
+							}))
 						} else if (selectedRoundType === 'upcoming') {
 							setApplyProjectInitProps((prev) => ({
 								...prev,
@@ -183,7 +190,19 @@ const ApplicationRoundsItem = ({ doc }: { doc: IGetRoundsResponse }) => {
 				isOpen={showDetailDrawer}
 				onClose={() => setShowDetailDrawer(false)}
 				onOpenFundRound={() => setShowFundRoundModal(true)}
-				onApplyRound={() => setShowFundRoundModal(true)}
+				onApplyRound={() => {
+					setApplyProjectInitProps((prev) => ({
+						...prev,
+						isOpen: true,
+					}))
+				}}
+				onVote={() => {
+					setVoteConfirmationProps((prev) => ({
+						...prev,
+						isOpen: true,
+						doc: doc,
+					}))
+				}}
 				doc={doc}
 			/>
 			<ApplicationsDrawer

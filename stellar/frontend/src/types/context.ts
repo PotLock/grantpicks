@@ -9,6 +9,7 @@ import {
 } from '@near-wallet-selector/core/src/lib/wallet'
 import { WalletSelectorModal } from '@near-wallet-selector/modal-ui'
 import { Dispatch, SetStateAction } from 'react'
+import { IGetRoundsResponse } from './on-chain'
 
 export interface IWalletContext {
 	connectedWallet: 'near' | 'stellar' | null
@@ -30,10 +31,17 @@ export interface IModalContextProps {
 	isOpen: boolean
 }
 
+export interface IVoteConfirmationModalContextProps extends IModalContextProps {
+	doc?: IGetRoundsResponse
+}
+
 export interface IModalContext {
 	successFundRoundModalProps: IModalContextProps
 	setSuccessFundRoundModalProps: Dispatch<SetStateAction<IModalContextProps>>
 	setApplyProjectInitProps: Dispatch<SetStateAction<IModalContextProps>>
+	setVoteConfirmationProps: Dispatch<
+		SetStateAction<IVoteConfirmationModalContextProps>
+	>
 	setCreateProjectFormMainProps: Dispatch<SetStateAction<IModalContextProps>>
 }
 

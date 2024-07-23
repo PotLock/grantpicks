@@ -2,10 +2,14 @@
 
 import React, { useContext, useState } from 'react'
 import { ModalContext } from '../contexts/ModalContext'
-import { IModalContextProps } from '@/types/context'
+import {
+	IModalContextProps,
+	IVoteConfirmationModalContextProps,
+} from '@/types/context'
 import SuccessFundRoundModal from '../components/pages/application/SuccessFundRoundModal'
 import ApplyProjectModal from '../components/pages/application/create-apply-project/ApplyProjectModal'
 import CreateProjectFormMainModal from '../components/pages/application/create-apply-project/create-project-form/CreateProjectFormMainModal'
+import VoteConfirmationModal from '../components/pages/application/VoteConfirmationModal'
 
 const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 	const [successFundRoundProps, setSuccessFundRoundProps] =
@@ -16,7 +20,11 @@ const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 		useState<IModalContextProps>({
 			isOpen: false,
 		})
-
+	const [voteConfirmationProps, setVoteConfirmationProps] =
+		useState<IVoteConfirmationModalContextProps>({
+			isOpen: false,
+			doc: undefined,
+		})
 	const [createProjectFormMainProps, setCreateProjectFormMainProps] =
 		useState<IModalContextProps>({
 			isOpen: false,
@@ -28,6 +36,7 @@ const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 				setSuccessFundRoundModalProps: setSuccessFundRoundProps,
 				successFundRoundModalProps: successFundRoundProps,
 				setApplyProjectInitProps,
+				setVoteConfirmationProps,
 				setCreateProjectFormMainProps,
 			}}
 		>
@@ -45,6 +54,16 @@ const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 				isOpen={applyProjectInitProps.isOpen}
 				onClose={() =>
 					setApplyProjectInitProps((prev) => ({
+						...prev,
+						isOpen: false,
+					}))
+				}
+			/>
+			<VoteConfirmationModal
+				isOpen={voteConfirmationProps.isOpen}
+				doc={voteConfirmationProps.doc}
+				onClose={() =>
+					setVoteConfirmationProps((prev) => ({
 						...prev,
 						isOpen: false,
 					}))

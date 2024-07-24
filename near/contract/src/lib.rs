@@ -3,14 +3,15 @@ use near_sdk::json_types::U128;
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::store::{LookupMap, LookupSet, UnorderedMap, UnorderedSet};
 use near_sdk::{
-    env, log, near_bindgen, require, serde_json::json, AccountId, BorshStorageKey, NearToken,
-    PanicOnDefault, Promise,
+    env, log, near_bindgen, require, serde_json::json, AccountId, BorshStorageKey, Gas, NearToken,
+    PanicOnDefault, Promise, PromiseError,
 };
 use std::collections::HashMap;
 
 pub mod applications;
 pub mod constants;
 pub mod events;
+pub mod payouts;
 pub mod rounds;
 pub mod utils;
 pub mod validation;
@@ -18,6 +19,7 @@ pub mod votes;
 pub use crate::applications::*;
 pub use crate::constants::*;
 pub use crate::events::*;
+pub use crate::payouts::*;
 pub use crate::rounds::*;
 pub use crate::utils::*;
 pub use crate::validation::*;
@@ -29,15 +31,6 @@ pub type TimestampMs = u64;
 pub type RoundId = u64;
 pub type InternalProjectId = u32; // internal project ID, to save on storage
 
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
-#[borsh(crate = "near_sdk::borsh")]
-#[serde(crate = "near_sdk::serde")]
-pub struct Payout {
-    amount: String,
-    paid_at_ms: TimestampMs,
-    error: Option<String>,
-}
-
 #[derive(BorshSerialize, BorshStorageKey)]
 #[borsh(crate = "near_sdk::borsh")]
 pub enum StorageKey {
@@ -45,15 +38,34 @@ pub enum StorageKey {
     ProjectIdToInternalProjectId,
     InternalProjectIdToProjectId,
     ApplicationsForRoundByInternalProjectId,
-    ApplicationsForRoundByInternalProjectIdInner { round_id: RoundId },
+    ApplicationsForRoundByInternalProjectIdInner {
+        round_id: RoundId,
+    },
     ApprovedInternalProjectIdsForRound,
-    ApprovedInternalProjectIdsForRoundInner { round_id: RoundId },
+    ApprovedInternalProjectIdsForRoundInner {
+        round_id: RoundId,
+    },
     VotesByRoundId,
-    VotesByRoundIdInner { round_id: RoundId },
+    VotesByRoundIdInner {
+        round_id: RoundId,
+    },
     VotingCountPerProjectByRoundId,
-    VotingCountPerProjectByRoundIdInner { round_id: RoundId },
-    PayoutsByRoundId,
-    PayoutsByRoundIdInner { round_id: RoundId },
+    VotingCountPerProjectByRoundIdInner {
+        round_id: RoundId,
+    },
+    PayoutsById,
+    PayoutIdsByRoundId,
+    PayoutIdsByRoundIdInner {
+        round_id: RoundId,
+    },
+    PayoutIdsByInternalProjectId,
+    PayoutIdsByInternalProjectIdInner {
+        internal_project_id: InternalProjectId,
+    },
+    PayoutsChallengesForRoundByChallengerId,
+    PayoutsChallengesForRoundByChallengerIdInner {
+        round_id: RoundId,
+    },
 }
 
 #[near_bindgen]
@@ -71,7 +83,13 @@ pub struct Contract {
     votes_by_round_id: UnorderedMap<RoundId, UnorderedMap<AccountId, VotingResult>>,
     voting_count_per_project_by_round_id:
         UnorderedMap<RoundId, UnorderedMap<InternalProjectId, u32>>,
-    payouts_by_round_id: UnorderedMap<RoundId, UnorderedMap<InternalProjectId, Payout>>,
+    // payouts
+    next_payout_id: PayoutId,
+    payouts_by_id: UnorderedMap<PayoutId, Payout>,
+    payout_ids_by_round_id: UnorderedMap<RoundId, UnorderedSet<PayoutId>>,
+    payout_ids_by_internal_project_id: LookupMap<InternalProjectId, UnorderedSet<PayoutId>>,
+    payouts_challenges_for_round_by_challenger_id:
+        UnorderedMap<RoundId, UnorderedMap<AccountId, PayoutsChallenge>>, // TODO: consider changing this to index by challenge ID instead of account ID? or not necessary
     default_page_size: u64, // TODO: make this configurable by owner/admin
 }
 
@@ -97,7 +115,15 @@ impl Contract {
             voting_count_per_project_by_round_id: UnorderedMap::new(
                 StorageKey::VotingCountPerProjectByRoundId,
             ),
-            payouts_by_round_id: UnorderedMap::new(StorageKey::PayoutsByRoundId),
+            next_payout_id: 1,
+            payouts_by_id: UnorderedMap::new(StorageKey::PayoutsById),
+            payout_ids_by_round_id: UnorderedMap::new(StorageKey::PayoutIdsByRoundId),
+            payout_ids_by_internal_project_id: LookupMap::new(
+                StorageKey::PayoutIdsByInternalProjectId,
+            ),
+            payouts_challenges_for_round_by_challenger_id: UnorderedMap::new(
+                StorageKey::PayoutsChallengesForRoundByChallengerId,
+            ),
             default_page_size: DEFAULT_PAGE_SIZE, // TODO: make this configurable by owner/admin
         }
     }

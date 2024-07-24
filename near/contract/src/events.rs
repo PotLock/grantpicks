@@ -169,3 +169,24 @@ pub(crate) fn log_vote(vote: &VotingResult) {
         .as_ref(),
     );
 }
+
+/// set payouts
+pub(crate) fn log_set_payouts(payouts: &Vec<PayoutExternal>) {
+    env::log_str(
+        format!(
+            "{}{}",
+            EVENT_JSON_PREFIX,
+            json!({
+                "standard": "potlock",
+                "version": "1.0.0",
+                "event": "set_payouts",
+                "data": [
+                    {
+                        "payouts": payouts,
+                    }
+                ]
+            })
+        )
+        .as_ref(),
+    );
+}

@@ -1,3 +1,5 @@
+use near_sdk::near;
+
 use crate::*;
 
 pub(crate) fn refund_deposit(initial_storage_usage: u64, refund_to: Option<AccountId>) {
@@ -75,4 +77,22 @@ pub(crate) fn get_random_number(shift_amount: u32) -> u64 {
     let mut arr: [u8; 8] = Default::default();
     arr.copy_from_slice(&new_seed[..8]);
     u64::from_le_bytes(arr)
+}
+
+#[near_bindgen]
+impl Contract {
+    pub(crate) fn assert_all_payouts_challenges_resolved(&self, round_id: RoundId) {
+        let payouts_clallenges_for_round = self
+            .payouts_challenges_for_round_by_challenger_id
+            .get(&round_id);
+        if let Some(payouts_challenges_for_round) = payouts_clallenges_for_round {
+            for (challenger_id, payouts_challenge) in payouts_challenges_for_round.iter() {
+                assert!(
+                    payouts_challenge.resolved,
+                    "Payouts challenge from challenger {} is not resolved",
+                    challenger_id
+                );
+            }
+        }
+    }
 }

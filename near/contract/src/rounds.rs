@@ -18,6 +18,11 @@ pub struct CreateRoundParams {
     pub use_whitelist: Option<bool>,
     pub num_picks_per_voter: u32,
     pub max_participants: Option<u32>,
+    // TODO: implement owner/admin methods to change cooldown config
+    pub use_cooldown: bool,
+    pub cooldown_period_ms: Option<u64>, // defaults to DEFAULT_COOLDOWN_PERIOD_MS if not provided
+    pub use_compliance: bool,
+    pub compliance_period_ms: Option<u64>, // defaults to DEFAULT_COMPLIANCE_PERIOD_MS if not provided
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
@@ -42,6 +47,13 @@ pub struct RoundDetailInternal {
     pub vault_balance: u128,
     pub num_picks_per_voter: u32,
     pub max_participants: u32,
+    pub use_cooldown: bool,
+    pub cooldown_period_ms: u64,
+    pub cooldown_end_ms: Option<TimestampMs>,
+    pub use_compliance: bool,
+    pub compliance_period_ms: u64,
+    pub compliance_end_ms: Option<TimestampMs>,
+    pub all_paid_out: bool,
 }
 
 impl RoundDetailInternal {
@@ -65,6 +77,13 @@ impl RoundDetailInternal {
             vault_balance: U128(self.vault_balance),
             num_picks_per_voter: self.num_picks_per_voter,
             max_participants: self.max_participants,
+            use_cooldown: self.use_cooldown,
+            cooldown_period_ms: self.cooldown_period_ms,
+            cooldown_end_ms: self.cooldown_end_ms,
+            use_compliance: self.use_compliance,
+            compliance_period_ms: self.compliance_period_ms,
+            compliance_end_ms: self.compliance_end_ms,
+            all_paid_out: self.all_paid_out,
         }
     }
 
@@ -136,6 +155,20 @@ impl RoundDetailInternal {
         }
         !self.blacklisted_voters.contains(&voter)
     }
+
+    pub fn assert_cooldown_period_in_process(&self) {
+        assert!(
+            self.cooldown_end_ms.unwrap_or(0) > env::block_timestamp_ms(),
+            "Cooldown period is not in process"
+        );
+    }
+
+    pub fn assert_cooldown_period_complete(&self) {
+        assert!(
+            self.cooldown_end_ms.unwrap_or(0) < env::block_timestamp_ms(),
+            "Cooldown period has not ended yet"
+        );
+    }
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
@@ -160,6 +193,13 @@ pub struct RoundDetailExternal {
     pub vault_balance: U128,   // String for JSON purposes. NB: on Stellar this is an int (u128)
     pub num_picks_per_voter: u32,
     pub max_participants: u32,
+    pub use_cooldown: bool,
+    pub cooldown_period_ms: u64,
+    pub cooldown_end_ms: Option<TimestampMs>,
+    pub use_compliance: bool,
+    pub compliance_period_ms: u64,
+    pub compliance_end_ms: Option<TimestampMs>,
+    pub all_paid_out: bool,
 }
 
 impl RoundDetailExternal {
@@ -183,6 +223,13 @@ impl RoundDetailExternal {
             vault_balance: self.vault_balance.0,
             num_picks_per_voter: self.num_picks_per_voter,
             max_participants: self.max_participants,
+            use_cooldown: self.use_cooldown,
+            cooldown_period_ms: self.cooldown_period_ms,
+            cooldown_end_ms: self.cooldown_end_ms,
+            use_compliance: self.use_compliance,
+            compliance_period_ms: self.compliance_period_ms,
+            compliance_end_ms: self.compliance_end_ms,
+            all_paid_out: self.all_paid_out,
         }
     }
 }
@@ -220,6 +267,17 @@ impl Contract {
             vault_balance: 0,
             num_picks_per_voter: round_detail.num_picks_per_voter,
             max_participants: round_detail.max_participants.unwrap_or(0),
+            use_cooldown: round_detail.use_cooldown,
+            cooldown_period_ms: round_detail
+                .cooldown_period_ms
+                .unwrap_or(DEFAULT_COOLDOWN_PERIOD_MS),
+            cooldown_end_ms: None,
+            use_compliance: round_detail.use_compliance,
+            compliance_period_ms: round_detail
+                .compliance_period_ms
+                .unwrap_or(DEFAULT_COMPLIANCE_PERIOD_MS),
+            compliance_end_ms: None,
+            all_paid_out: false,
         };
         validate_round_detail(&round);
         self.rounds_by_id.insert(id, round.clone());
@@ -245,6 +303,18 @@ impl Contract {
             id,
             UnorderedMap::new(StorageKey::VotingCountPerProjectByRoundIdInner { round_id: id }),
         );
+        // add new mapping for payout records
+        self.payout_ids_by_round_id.insert(
+            id,
+            UnorderedSet::new(StorageKey::PayoutIdsByRoundIdInner { round_id: id }),
+        );
+        // add new mapping for payout challenges
+        self.payouts_challenges_for_round_by_challenger_id.insert(
+            id,
+            UnorderedMap::new(StorageKey::PayoutsChallengesForRoundByChallengerIdInner {
+                round_id: id,
+            }),
+        );
         // clean-up
         refund_deposit(initial_storage_usage, None);
         let round_external = round.to_external();
@@ -264,6 +334,13 @@ impl Contract {
             .rounds_by_id
             .get_mut(&round_id)
             .expect("Round not found");
+
+        // Verify voting hasn't started
+        // TODO: implement more granular checks for what can be updated at what point, e.g. voting_end_ms can be updated after voting has started, etc
+        assert!(
+            round.voting_start_ms > env::block_timestamp_ms(),
+            "Voting has already started"
+        );
 
         // Verify caller is owner or admin
         round.assert_caller_is_owner_or_admin();
@@ -292,6 +369,13 @@ impl Contract {
             vault_balance: round_detail.vault_balance.0,
             num_picks_per_voter: round_detail.num_picks_per_voter,
             max_participants: round_detail.max_participants,
+            use_cooldown: round_detail.use_cooldown,
+            cooldown_period_ms: round_detail.cooldown_period_ms,
+            cooldown_end_ms: round.cooldown_end_ms, // NB: this field is not updatable
+            use_compliance: round_detail.use_compliance,
+            compliance_period_ms: round_detail.compliance_period_ms,
+            compliance_end_ms: round.compliance_end_ms, // NB: this field is not updatable
+            all_paid_out: round.all_paid_out,           // NB: this field is not updatable
         };
 
         self.rounds_by_id
@@ -347,6 +431,9 @@ impl Contract {
             .remove(&round_id);
         self.votes_by_round_id.remove(&round_id);
         self.voting_count_per_project_by_round_id.remove(&round_id);
+        self.payout_ids_by_round_id.remove(&round_id);
+        self.payouts_challenges_for_round_by_challenger_id
+            .remove(&round_id);
 
         // clean-up
         refund_deposit(initial_storage_usage, None);
@@ -488,6 +575,62 @@ impl Contract {
         round.assert_caller_is_owner_or_admin();
 
         round.voting_end_ms = env::block_timestamp_ms();
+        validate_round_detail(&round);
+        self.rounds_by_id.insert(round_id, round.clone());
+        refund_deposit(initial_storage_usage, None);
+        let round_external = round.to_external();
+        log_update_round(&round_external);
+        round_external
+    }
+
+    #[payable]
+    pub fn set_cooldown_config(
+        &mut self,
+        round_id: RoundId,
+        use_cooldown: bool,
+        cooldown_period_ms: Option<u64>,
+    ) -> RoundDetailExternal {
+        let initial_storage_usage = env::storage_usage();
+        let mut round = self
+            .rounds_by_id
+            .get(&round_id)
+            .expect("Round not found")
+            .clone();
+
+        // Verify caller is owner or admin
+        round.assert_caller_is_owner_or_admin();
+        // TODO: add validation for when cooldown config can be updated, e.g. only before voting starts
+
+        round.use_cooldown = use_cooldown;
+        round.cooldown_period_ms = cooldown_period_ms.unwrap_or(round.cooldown_period_ms);
+        validate_round_detail(&round);
+        self.rounds_by_id.insert(round_id, round.clone());
+        refund_deposit(initial_storage_usage, None);
+        let round_external = round.to_external();
+        log_update_round(&round_external);
+        round_external
+    }
+
+    #[payable]
+    pub fn set_compliance_config(
+        &mut self,
+        round_id: RoundId,
+        use_compliance: bool,
+        compliance_period_ms: Option<u64>,
+    ) -> RoundDetailExternal {
+        let initial_storage_usage = env::storage_usage();
+        let mut round = self
+            .rounds_by_id
+            .get(&round_id)
+            .expect("Round not found")
+            .clone();
+
+        // Verify caller is owner or admin
+        round.assert_caller_is_owner_or_admin();
+        // TODO: add validation for when cooldown config can be updated, e.g. only before voting starts
+
+        round.use_compliance = use_compliance;
+        round.compliance_period_ms = compliance_period_ms.unwrap_or(round.compliance_period_ms);
         validate_round_detail(&round);
         self.rounds_by_id.insert(round_id, round.clone());
         refund_deposit(initial_storage_usage, None);

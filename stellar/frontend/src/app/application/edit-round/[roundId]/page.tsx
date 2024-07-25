@@ -11,7 +11,7 @@ import IconAdd from '@/app/components/svgs/IconAdd'
 import IconNear from '@/app/components/svgs/IconNear'
 import IconRemove from '@/app/components/svgs/IconRemove'
 import IconUnfoldMore from '@/app/components/svgs/IconUnfoldMore'
-import { CreateRoundData } from '@/types/form'
+import { CreateRoundData, IAdminCreateRound } from '@/types/form'
 import React, { useEffect, useState } from 'react'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import Switch from 'react-switch'
@@ -22,7 +22,11 @@ import IconClose from '@/app/components/svgs/IconClose'
 import AddAdminsModal from '@/app/components/pages/create-round/AddAdminsModal'
 import clsx from 'clsx'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
-import { getRoundApplications, getRoundInfo } from '@/services/on-chain/round'
+import {
+	getRoundAdmins,
+	getRoundApplications,
+	getRoundInfo,
+} from '@/services/on-chain/round'
 import { useParams } from 'next/navigation'
 import CMDWallet from '@/lib/wallet'
 import Contracts from '@/lib/contracts'
@@ -31,11 +35,12 @@ import { useWallet } from '@/app/providers/WalletProvider'
 import { formatStroopToXlm } from '@/utils/helper'
 import { LIMIT_SIZE } from '@/constants/query'
 import { IGetProjectsResponse } from '@/services/on-chain/project-registry'
+import IconStellar from '@/app/components/svgs/IconStellar'
 
 const EditRoundPage = () => {
 	const params = useParams<{ roundId: string }>()
 	const [showContactType, setShowContactType] = useState<boolean>(false)
-	const { nearPrice } = useGlobalContext()
+	const { stellarPrice } = useGlobalContext()
 	const [amountUsd, setAmountUsd] = useState<string>('0.00')
 	const [expectAmountUsd, setExpectAmountUsd] = useState<string>('0.00')
 	const [showAddProjectsModal, setShowAddProjectsModal] =
@@ -60,6 +65,7 @@ const EditRoundPage = () => {
 			voting_duration_end: new Date(),
 		},
 	})
+	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const [selectedProjects, setSelectedProjects] = useState<
 		IGetProjectsResponse[]
 	>([])
@@ -73,53 +79,122 @@ const EditRoundPage = () => {
 		name: 'projects',
 	})
 
+	const onFetchAdmins = async () => {
+		let cmdWallet = new CMDWallet({
+			stellarPubKey: stellarPubKey,
+		})
+		const contracts = new Contracts(
+			process.env.NETWORK_ENV as Network,
+			cmdWallet,
+		)
+		const res = await getRoundAdmins(
+			{ round_id: BigInt(params.roundId) },
+			contracts,
+		)
+		return res
+	}
+
 	const onFetchRoundInfo = async () => {
-		try {
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
-			const resRoundInfo = await getRoundInfo(
-				{ round_id: BigInt(params.roundId) },
+		let cmdWallet = new CMDWallet({
+			stellarPubKey: stellarPubKey,
+		})
+		const contracts = new Contracts(
+			process.env.NETWORK_ENV as Network,
+			cmdWallet,
+		)
+		const resRoundInfo = await getRoundInfo(
+			{ round_id: BigInt(params.roundId) },
+			contracts,
+		)
+		return resRoundInfo
+	}
+
+	const onFetchRoundApplications = async () => {
+		let cmdWallet = new CMDWallet({
+			stellarPubKey: stellarPubKey,
+		})
+		const contracts = new Contracts(
+			process.env.NETWORK_ENV as Network,
+			cmdWallet,
+		)
+		let resRoundApps: IGetRoundApplicationsResponse[] = []
+		let currData: IGetRoundApplicationsResponse[]
+		do {
+			currData = []
+			const currRes = await getRoundApplications(
+				{ round_id: BigInt(params.roundId), skip: 0, limit: LIMIT_SIZE },
 				contracts,
 			)
-			// let resRoundApps: IGetRoundApplicationsResponse[] = []
-			// let currData: IGetRoundApplicationsResponse[]
-			// do{
-			//   currData = []
-			//   const currRes = await getRoundApplications(
-			//     { round_id: BigInt(params.roundId), skip: 0, limit: LIMIT_SIZE },
-			//     contracts,
-			//   )
-			//   resRoundApps = [...resRoundApps, ...currRes]
-			//   currData = currRes
-			// }while(currData.length >= LIMIT_SIZE)
+			resRoundApps = [...resRoundApps, ...currRes]
+			currData = currRes
+		} while (currData.length >= LIMIT_SIZE)
+		return resRoundApps
+	}
+
+	const onFetchDefaultValue = async () => {
+		try {
+			openPageLoading()
+			const resRoundInfo = await onFetchRoundInfo()
+			const resRoundAdmins = await onFetchAdmins()
 			if (resRoundInfo) {
 				setValue('title', resRoundInfo?.name)
 				setValue('description', resRoundInfo?.description)
 				setValue('vote_per_person', resRoundInfo?.num_picks_per_voter)
 				setValue('vote_per_person', resRoundInfo?.num_picks_per_voter)
-				setValue('contact_type', resRoundInfo?.contacts[0].name)
-				setValue('contact_address', resRoundInfo?.contacts[0].value)
+				if (resRoundInfo.contacts.length > 0) {
+					setValue('contact_type', resRoundInfo?.contacts[0].name)
+					setValue('contact_address', resRoundInfo?.contacts[0].value)
+				}
 				setValue('amount', formatStroopToXlm(resRoundInfo?.expected_amount))
-				setValue('amount', formatStroopToXlm(resRoundInfo?.expected_amount))
+				setValue(
+					'expected_amount',
+					formatStroopToXlm(resRoundInfo?.expected_amount),
+				)
+				const calculation =
+					parseFloat(formatStroopToXlm(resRoundInfo?.expected_amount) || '0') *
+					stellarPrice
+				setExpectAmountUsd(`${calculation.toFixed(3)}`)
 				setValue('open_funding', true)
-				if (resRoundInfo.max_participants > 0) {
+				if (resRoundInfo.allow_applications) {
 					setValue('allow_application', true)
 					setValue('max_participants', resRoundInfo?.max_participants)
-					setValue('apply_duration_start', new Date())
+					setValue(
+						'apply_duration_start',
+						new Date(Number(resRoundInfo.application_start_ms)),
+					)
+					setValue(
+						'apply_duration_end',
+						new Date(Number(resRoundInfo.application_end_ms)),
+					)
+					setValue(
+						'voting_duration_start',
+						new Date(Number(resRoundInfo.voting_start_ms)),
+					)
+					setValue(
+						'voting_duration_end',
+						new Date(Number(resRoundInfo.voting_end_ms)),
+					)
+					setValue('video_required', resRoundInfo?.is_video_required)
 				}
+				// if(resRoundApps.length > 0){
+				// 	setValue(`projects`, resRoundApps)
+				// }
+				if (resRoundAdmins.length > 0) {
+					setValue(
+						'admins',
+						resRoundAdmins.map((admin) => ({ admin_id: admin })),
+					)
+				}
+				dismissPageLoading()
 			}
 		} catch (error: any) {
+			dismissPageLoading()
 			console.log('error', error)
 		}
 	}
 
 	useEffect(() => {
-		onFetchRoundInfo()
+		onFetchDefaultValue()
 	}, [])
 
 	return (
@@ -128,7 +203,7 @@ const EditRoundPage = () => {
 			<div className="w-[90%] md:w-[70%] lg:w-[50%] mx-auto">
 				<div className="pt-28 md:pt-32 lg:pt-36 pb-16 text-grantpicks-black-950">
 					<p className="text-[50px] font-black text-center uppercase mb-8 md:mb-12">
-						Create new Round
+						Edit Round
 					</p>
 					<div className="p-5 rounded-2xl shadow-md bg-white space-y-6 mb-4 lg:mb-6">
 						<InputText
@@ -291,12 +366,15 @@ const EditRoundPage = () => {
 									placeholder="Enter amount..."
 									onChange={async (e) => {
 										const calculation =
-											parseFloat(e.target.value || '0') * nearPrice
+											parseFloat(e.target.value || '0') * stellarPrice
 										setAmountUsd(`${calculation.toFixed(3)}`)
 										setValue('amount', e.target.value)
 									}}
 									preffixIcon={
-										<IconNear size={24} className="fill-grantpicks-black-400" />
+										<IconStellar
+											size={24}
+											className="fill-grantpicks-black-400"
+										/>
 									}
 									textAlign="left"
 									suffixIcon={
@@ -319,12 +397,15 @@ const EditRoundPage = () => {
 									{...register('expected_amount', {
 										onChange: async (e) => {
 											const calculation =
-												parseFloat(e.target.value || '0') * nearPrice
+												parseFloat(e.target.value || '0') * stellarPrice
 											setExpectAmountUsd(`${calculation.toFixed(3)}`)
 										},
 									})}
 									preffixIcon={
-										<IconNear size={24} className="fill-grantpicks-black-400" />
+										<IconStellar
+											size={24}
+											className="fill-grantpicks-black-400"
+										/>
 									}
 									textAlign="left"
 									suffixIcon={
@@ -454,9 +535,13 @@ const EditRoundPage = () => {
 															</div>
 														}
 														calendarIconClassName="flex items-center"
-														// selected={new Date(field.value)}
+														startDate={field.value as Date}
+														endDate={watch().apply_duration_end as Date}
+														placeholderText="Apply Duration"
+														isClearable={true}
 														onChange={(date) => {
-															field.onChange(date)
+															field.onChange(date[0])
+															setValue('apply_duration_end', date[1])
 														}}
 														className="border border-grantpicks-black-200 rounded-xl w-full h-12"
 														wrapperClassName="w-full mb-1"
@@ -505,9 +590,13 @@ const EditRoundPage = () => {
 													</div>
 												}
 												calendarIconClassName="flex items-center"
-												// selected={new Date(field.value)}
+												startDate={field.value as Date}
+												endDate={watch().voting_duration_end as Date}
+												placeholderText="Voting Duration"
+												isClearable={true}
 												onChange={(date) => {
-													field.onChange(date)
+													field.onChange(date[0])
+													setValue('voting_duration_end', date[1])
 												}}
 												className="border border-grantpicks-black-200 rounded-xl w-full h-12"
 												wrapperClassName="w-full mb-1"

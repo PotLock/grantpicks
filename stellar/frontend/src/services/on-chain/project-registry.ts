@@ -1,5 +1,6 @@
 import Contracts from '@/lib/contracts'
 import { u128, u64 } from '@stellar/stellar-sdk/contract'
+import { Project } from 'project-registry-client'
 
 interface GetProjectsParams {
 	skip: number
@@ -32,22 +33,7 @@ export interface ProjectTeamMember {
 	value: string
 }
 
-export interface IGetProjectsResponse {
-	admins: string[]
-	contacts: ProjectContact[]
-	contracts: ProjectContract[]
-	id: u128
-	image_url: string
-	name: string
-	overview: string
-	owner: string
-	payout_address: string
-	repositories: ProjectRepository[]
-	status: ProjectStatus
-	submited_ms: u64
-	team_members: ProjectTeamMember[]
-	updated_ms?: u64
-}
+export interface IGetProjectsResponse extends Project {}
 
 export const getProjects: (
 	params: GetProjectsParams,

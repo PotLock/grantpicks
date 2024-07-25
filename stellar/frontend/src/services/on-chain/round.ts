@@ -3,7 +3,12 @@ import {
 	IGetRoundApplicationsResponse,
 	IGetRoundsResponse,
 } from '@/types/on-chain'
-import { u128, u32, u64 } from '@stellar/stellar-sdk/contract'
+import {
+	AssembledTransaction,
+	u128,
+	u32,
+	u64,
+} from '@stellar/stellar-sdk/contract'
 import { Contact } from 'round-client'
 
 interface GetRoundsParams {
@@ -18,7 +23,7 @@ interface GetRoundApplicationsParams {
 }
 
 interface GetRoundAdmins {
-	round_id: bigint
+	round_id: u128
 }
 
 interface GetRoundInfoParams {
@@ -46,6 +51,12 @@ export interface CreateRoundParams {
 	use_whitelist: boolean
 	voting_end_ms: u64
 	voting_start_ms: u64
+}
+
+export interface DepositFundRoundParams {
+	round_id: u128
+	actor: string
+	amount: u128
 }
 
 export const getRounds: (
@@ -123,4 +134,19 @@ export const createRound: (
 		round_detail: params,
 	})
 	return round.result
+}
+
+export const depositFundRound: (
+	params: DepositFundRoundParams,
+	contract: Contracts,
+) => Promise<AssembledTransaction<null>> = async (
+	params: DepositFundRoundParams,
+	contract: Contracts,
+) => {
+	let res = await contract.round_contract.deposit({
+		round_id: params.round_id,
+		actor: params.actor,
+		amount: params.amount,
+	})
+	return res
 }

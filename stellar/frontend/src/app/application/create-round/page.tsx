@@ -29,10 +29,7 @@ import AddAdminsModal from '@/app/components/pages/create-round/AddAdminsModal'
 import clsx from 'clsx'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import { skip } from 'node:test'
-import {
-	getProjects,
-	IGetProjectsResponse,
-} from '@/services/on-chain/project-registry'
+import { IGetProjectsResponse } from '@/services/on-chain/project-registry'
 import CMDWallet from '@/lib/wallet'
 import { useWallet } from '@/app/providers/WalletProvider'
 import Contracts from '@/lib/contracts'

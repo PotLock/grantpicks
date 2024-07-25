@@ -28,7 +28,13 @@ import moment from 'moment'
 import { formatStroopToXlm } from '@/utils/helper'
 import IconStellar from '../../svgs/IconStellar'
 
-const ApplicationRoundsItem = ({ doc }: { doc: IGetRoundsResponse }) => {
+const ApplicationRoundsItem = ({
+	doc,
+	mutateRounds,
+}: {
+	doc: IGetRoundsResponse
+	mutateRounds: any
+}) => {
 	const { selectedRoundType } = useRoundStore()
 	const [showMoreVert, setShowMoreVert] = useState<boolean>(false)
 	const [showDetailDrawer, setShowDetailDrawer] = useState<boolean>(false)
@@ -82,6 +88,7 @@ const ApplicationRoundsItem = ({ doc }: { doc: IGetRoundsResponse }) => {
 							/>
 							<MoreVertMenu
 								isOpen={showMoreVert}
+								doc={doc}
 								onClose={() => setShowMoreVert(false)}
 								onViewDetails={() => {
 									setShowMoreVert(false)
@@ -193,6 +200,8 @@ const ApplicationRoundsItem = ({ doc }: { doc: IGetRoundsResponse }) => {
 			/>
 			<FundRoundModal
 				isOpen={showFundRoundModal}
+				doc={doc}
+				mutateRounds={mutateRounds}
 				onClose={() => setShowFundRoundModal(false)}
 			/>
 		</div>
@@ -232,13 +241,10 @@ const ApplicationRounds = () => {
 			limit: LIMIT_SIZE,
 		}
 	}
-	const { data, size, setSize, isValidating, isLoading } = useSWRInfinite(
-		getKey,
-		async (key) => await onFetchRounds(key),
-		{
+	const { data, size, setSize, isValidating, isLoading, mutate } =
+		useSWRInfinite(getKey, async (key) => await onFetchRounds(key), {
 			revalidateFirstPage: false,
-		},
-	)
+		})
 	const rounds = data ? ([] as IGetRoundsResponse[]).concat(...data) : []
 	const hasMore = data ? data[data.length - 1].length >= LIMIT_SIZE : false
 
@@ -334,7 +340,11 @@ const ApplicationRounds = () => {
 				>
 					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
 						{roundsData?.map((doc, idx) => (
-							<ApplicationRoundsItem key={idx} doc={doc} />
+							<ApplicationRoundsItem
+								key={idx}
+								doc={doc}
+								mutateRounds={mutate}
+							/>
 						))}
 					</div>
 				</InfiniteScroll>

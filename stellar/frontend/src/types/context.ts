@@ -31,17 +31,24 @@ export interface IModalContextProps {
 	isOpen: boolean
 }
 
-export interface ISuccessCreateRoundModalProps {
-	isOpen: boolean
+export interface ISuccessCreateRoundModalProps extends IModalContextProps {
 	createRoundRes: IGetRoundsResponse | undefined
 }
 
+export interface ISuccessFundRoundModalProps extends IModalContextProps {
+	doc: IGetRoundsResponse | undefined
+	txHash?: string
+	amount: string
+}
+
 export interface IModalContext {
-	successFundRoundModalProps: IModalContextProps
+	successFundRoundModalProps: ISuccessFundRoundModalProps
 	setSuccessCreateRoundModalProps: Dispatch<
 		SetStateAction<ISuccessCreateRoundModalProps>
 	>
-	setSuccessFundRoundModalProps: Dispatch<SetStateAction<IModalContextProps>>
+	setSuccessFundRoundModalProps: Dispatch<
+		SetStateAction<ISuccessFundRoundModalProps>
+	>
 	setApplyProjectInitProps: Dispatch<SetStateAction<IModalContextProps>>
 	setCreateProjectFormMainProps: Dispatch<SetStateAction<IModalContextProps>>
 }

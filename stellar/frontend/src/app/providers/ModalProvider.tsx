@@ -5,6 +5,7 @@ import { ModalContext } from '../contexts/ModalContext'
 import {
 	IModalContextProps,
 	ISuccessCreateRoundModalProps,
+	ISuccessFundRoundModalProps,
 } from '@/types/context'
 import SuccessFundRoundModal from '../components/pages/application/SuccessFundRoundModal'
 import ApplyProjectModal from '../components/pages/application/create-apply-project/ApplyProjectModal'
@@ -18,8 +19,11 @@ const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 			createRoundRes: undefined,
 		})
 	const [successFundRoundProps, setSuccessFundRoundProps] =
-		useState<IModalContextProps>({
+		useState<ISuccessFundRoundModalProps>({
 			isOpen: false,
+			doc: undefined,
+			txHash: undefined,
+			amount: '',
 		})
 	const [applyProjectInitProps, setApplyProjectInitProps] =
 		useState<IModalContextProps>({
@@ -54,6 +58,9 @@ const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 			/>
 			<SuccessFundRoundModal
 				isOpen={successFundRoundProps.isOpen}
+				amount={successFundRoundProps.amount}
+				doc={successFundRoundProps.doc}
+				txHash={successFundRoundProps.txHash}
 				onClose={() =>
 					setSuccessFundRoundProps((prev) => ({
 						...prev,

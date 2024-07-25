@@ -6,6 +6,9 @@ export const ModalContext = createContext<IModalContext>({
 	setSuccessCreateRoundModalProps: () => {},
 	successFundRoundModalProps: {
 		isOpen: false,
+		doc: undefined,
+		txHash: undefined,
+		amount: '',
 	},
 	setApplyProjectInitProps: () => {},
 	setCreateProjectFormMainProps: () => {},

@@ -2,6 +2,13 @@ use near_sdk::near;
 
 use crate::*;
 
+pub fn calculate_required_storage_deposit(initial_storage_usage: u64) -> u128 {
+    let storage_used = env::storage_usage() - initial_storage_usage;
+    log!("Storage used: {} bytes", storage_used);
+    let required_cost = env::storage_byte_cost().as_yoctonear() * storage_used as u128;
+    required_cost
+}
+
 pub(crate) fn refund_deposit(initial_storage_usage: u64, refund_to: Option<AccountId>) {
     let refund_to = refund_to.unwrap_or_else(env::predecessor_account_id);
     let attached_deposit = env::attached_deposit();

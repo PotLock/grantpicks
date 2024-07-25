@@ -23,6 +23,8 @@ pub struct CreateRoundParams {
     pub cooldown_period_ms: Option<u64>, // defaults to DEFAULT_COOLDOWN_PERIOD_MS if not provided
     pub use_compliance: bool,
     pub compliance_period_ms: Option<u64>, // defaults to DEFAULT_COMPLIANCE_PERIOD_MS if not provided
+    pub allow_remaining_funds_redistribution: bool,
+    pub remaining_funds_redistribution_recipient: Option<AccountId>,
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
@@ -44,7 +46,17 @@ pub struct RoundDetailInternal {
     pub whitelisted_voters: Option<Vec<AccountId>>, // todo: if these will grow large, consider storing on top-level contract instead
     pub use_whitelist: bool,
     pub expected_amount: u128,
-    pub vault_balance: u128,
+    pub current_vault_balance: u128,
+    pub vault_total_deposits: u128,
+    // TODO: consider adding records for vault deposits, but this can also be handled via indexer
+    /// Indicates whether matching pool can be redistributed to remaining_funds_redistribution_recipient after compliance period ends. Must be specified at deployment, and CANNOT be changed afterwards.
+    pub allow_remaining_funds_redistribution: bool,
+    /// Recipient of matching pool redistribution (if enabled). CANNOT be changed after public round has started.
+    pub remaining_funds_redistribution_recipient: Option<AccountId>,
+    /// Timestamp when redistribution happened
+    pub remaining_funds_redistributed_at_ms: Option<TimestampMs>,
+    /// Memo for the redistribution transaction
+    pub remaining_funds_redistribution_memo: Option<String>,
     pub num_picks_per_voter: u32,
     pub max_participants: u32,
     pub use_cooldown: bool,
@@ -53,7 +65,7 @@ pub struct RoundDetailInternal {
     pub use_compliance: bool,
     pub compliance_period_ms: u64,
     pub compliance_end_ms: Option<TimestampMs>,
-    pub all_paid_out: bool,
+    pub round_complete: bool,
 }
 
 impl RoundDetailInternal {
@@ -74,7 +86,12 @@ impl RoundDetailInternal {
             whitelisted_voters: self.whitelisted_voters,
             use_whitelist: self.use_whitelist,
             expected_amount: U128(self.expected_amount),
-            vault_balance: U128(self.vault_balance),
+            current_vault_balance: U128(self.current_vault_balance),
+            vault_total_deposits: U128(self.vault_total_deposits),
+            allow_remaining_funds_redistribution: self.allow_remaining_funds_redistribution,
+            remaining_funds_redistribution_recipient: self.remaining_funds_redistribution_recipient,
+            remaining_funds_redistributed_at_ms: self.remaining_funds_redistributed_at_ms,
+            remaining_funds_redistribution_memo: self.remaining_funds_redistribution_memo,
             num_picks_per_voter: self.num_picks_per_voter,
             max_participants: self.max_participants,
             use_cooldown: self.use_cooldown,
@@ -83,8 +100,53 @@ impl RoundDetailInternal {
             use_compliance: self.use_compliance,
             compliance_period_ms: self.compliance_period_ms,
             compliance_end_ms: self.compliance_end_ms,
-            all_paid_out: self.all_paid_out,
+            round_complete: self.round_complete,
         }
+    }
+
+    pub fn validate(self) {
+        if self.allow_applications {
+            if let Some(application_start_ms) = self.application_start_ms {
+                // must be less than application end time
+                assert!(
+                    application_start_ms
+                        < self.application_end_ms.expect(
+                            "Application end time must be provided if allow_applications is true"
+                        ),
+                    "Application start time must be less than application end time"
+                );
+            } else {
+                panic!("Application start time must be provided if allow_applications is true");
+            }
+            if let Some(application_end_ms) = self.application_end_ms {
+                assert!(
+                    self.voting_start_ms >= application_end_ms,
+                    "Round start time must be greater than or equal round application end time"
+                );
+                // don't need to verify it is greater than application start time, as that is already done
+            } else {
+                panic!("Application end time must be provided if allow_applications is true");
+            }
+        } else {
+            // if applications are not allowed, then application start and end times should not be provided
+            assert!(
+                self.application_start_ms.is_none(),
+                "Application start time must not be provided if allow_applications is false"
+            );
+            assert!(
+                self.application_end_ms.is_none(),
+                "Application end time must not be provided if allow_applications is false"
+            );
+        }
+        assert!(
+            self.voting_start_ms < self.voting_end_ms,
+            "Round start time must be less than round end time"
+        );
+
+        assert!(
+            self.expected_amount > 0,
+            "Expected Amount must be greater than 0"
+        );
     }
 
     pub fn is_caller_owner_or_admin(&self) -> bool {
@@ -107,6 +169,13 @@ impl RoundDetailInternal {
 
     pub fn assert_application_live(&self) {
         assert!(self.is_application_live(), "Application is not live");
+    }
+
+    pub fn assert_voting_not_started(&self) {
+        assert!(
+            self.voting_start_ms > env::block_timestamp_ms(),
+            "Voting has already started"
+        );
     }
 
     pub fn is_voting_live(&self) -> bool {
@@ -158,7 +227,7 @@ impl RoundDetailInternal {
 
     pub fn assert_cooldown_period_in_process(&self) {
         assert!(
-            self.cooldown_end_ms.unwrap_or(0) > env::block_timestamp_ms(),
+            self.use_cooldown && self.cooldown_end_ms.unwrap_or(0) > env::block_timestamp_ms(),
             "Cooldown period is not in process"
         );
     }
@@ -169,6 +238,40 @@ impl RoundDetailInternal {
             "Cooldown period has not ended yet"
         );
     }
+
+    pub fn assert_compliance_period_complete(&self) {
+        assert!(
+            self.compliance_end_ms.unwrap_or(0) < env::block_timestamp_ms(),
+            "Compliance period has not ended yet"
+        );
+    }
+
+    // verify that the compliance period has passed
+    // // verify that the cooldown period has passed
+    // self.assert_cooldown_period_complete();
+    // // verify that any challenges have been resolved
+    // self.assert_all_payouts_challenges_resolved();
+    // // verify that compliance period has passed
+    // self.assert_compliance_period_complete();
+    // // verify that redistribution is allowed
+    // if !self.allow_remaining_funds_redistribution {
+    //     panic!("Redistribution of matching pool is not allowed");
+    // }
+    // // verify that there is a redistribution recipient set
+    // if self.remaining_funds_redistribution_recipient.is_none() {
+    //     panic!("No redistribution recipient set");
+    // }
+    // let redistribution_recipient = self.remaining_funds_redistribution_recipient.get().unwrap();
+    // // update matching pool balance (this will be reverted in callback on failure)
+    // let amount = self.matching_pool_balance;
+    // self.matching_pool_balance = 0;
+    // // send matching pool balance to redistribution recipient
+    // Promise::new(redistribution_recipient.clone())
+    //     .transfer(amount)
+    //     .then(
+    //         Self::ext(env::current_account_id())
+    //             .redistribute_matching_pool_callback(amount, redistribution_recipient.clone()),
+    //     );
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
@@ -190,7 +293,12 @@ pub struct RoundDetailExternal {
     pub whitelisted_voters: Option<Vec<AccountId>>, // todo: if these will grow large, consider storing on top-level contract instead
     pub use_whitelist: bool,
     pub expected_amount: U128, // String for JSON purposes. NB: on Stellar this is an int (u128)
-    pub vault_balance: U128,   // String for JSON purposes. NB: on Stellar this is an int (u128)
+    pub current_vault_balance: U128, // String for JSON purposes. NB: on Stellar this is an int (u128)
+    pub vault_total_deposits: U128,  // String for JSON purposes.
+    pub allow_remaining_funds_redistribution: bool,
+    pub remaining_funds_redistribution_recipient: Option<AccountId>,
+    pub remaining_funds_redistributed_at_ms: Option<TimestampMs>,
+    pub remaining_funds_redistribution_memo: Option<String>,
     pub num_picks_per_voter: u32,
     pub max_participants: u32,
     pub use_cooldown: bool,
@@ -199,7 +307,7 @@ pub struct RoundDetailExternal {
     pub use_compliance: bool,
     pub compliance_period_ms: u64,
     pub compliance_end_ms: Option<TimestampMs>,
-    pub all_paid_out: bool,
+    pub round_complete: bool,
 }
 
 impl RoundDetailExternal {
@@ -220,7 +328,12 @@ impl RoundDetailExternal {
             whitelisted_voters: self.whitelisted_voters,
             use_whitelist: self.use_whitelist,
             expected_amount: self.expected_amount.0,
-            vault_balance: self.vault_balance.0,
+            current_vault_balance: self.current_vault_balance.0,
+            vault_total_deposits: self.vault_total_deposits.0,
+            allow_remaining_funds_redistribution: self.allow_remaining_funds_redistribution,
+            remaining_funds_redistribution_recipient: self.remaining_funds_redistribution_recipient,
+            remaining_funds_redistributed_at_ms: self.remaining_funds_redistributed_at_ms,
+            remaining_funds_redistribution_memo: self.remaining_funds_redistribution_memo,
             num_picks_per_voter: self.num_picks_per_voter,
             max_participants: self.max_participants,
             use_cooldown: self.use_cooldown,
@@ -229,7 +342,7 @@ impl RoundDetailExternal {
             use_compliance: self.use_compliance,
             compliance_period_ms: self.compliance_period_ms,
             compliance_end_ms: self.compliance_end_ms,
-            all_paid_out: self.all_paid_out,
+            round_complete: self.round_complete,
         }
     }
 }
@@ -264,7 +377,8 @@ impl Contract {
             whitelisted_voters: None,
             use_whitelist: round_detail.use_whitelist.unwrap_or(false),
             expected_amount: round_detail.expected_amount.0,
-            vault_balance: 0,
+            current_vault_balance: 0,
+            vault_total_deposits: 0,
             num_picks_per_voter: round_detail.num_picks_per_voter,
             max_participants: round_detail.max_participants.unwrap_or(0),
             use_cooldown: round_detail.use_cooldown,
@@ -277,7 +391,12 @@ impl Contract {
                 .compliance_period_ms
                 .unwrap_or(DEFAULT_COMPLIANCE_PERIOD_MS),
             compliance_end_ms: None,
-            all_paid_out: false,
+            allow_remaining_funds_redistribution: round_detail.allow_remaining_funds_redistribution,
+            remaining_funds_redistribution_recipient: round_detail
+                .remaining_funds_redistribution_recipient,
+            remaining_funds_redistributed_at_ms: None,
+            remaining_funds_redistribution_memo: None,
+            round_complete: false,
         };
         validate_round_detail(&round);
         self.rounds_by_id.insert(id, round.clone());
@@ -328,6 +447,7 @@ impl Contract {
         round_id: RoundId,
         mut round_detail: RoundDetailExternal,
     ) -> RoundDetailExternal {
+        // TODO: this needs to be reviewed and extensive validation added for what can be updated and when
         let initial_storage_usage = env::storage_usage();
         let caller = env::predecessor_account_id();
         let round = self
@@ -366,7 +486,8 @@ impl Contract {
             whitelisted_voters: round_detail.whitelisted_voters,
             use_whitelist: round_detail.use_whitelist,
             expected_amount: round_detail.expected_amount.0,
-            vault_balance: round_detail.vault_balance.0,
+            current_vault_balance: round.current_vault_balance, // NB: this field is not updatable
+            vault_total_deposits: round.vault_total_deposits,   // NB: this field is not updatable
             num_picks_per_voter: round_detail.num_picks_per_voter,
             max_participants: round_detail.max_participants,
             use_cooldown: round_detail.use_cooldown,
@@ -375,7 +496,12 @@ impl Contract {
             use_compliance: round_detail.use_compliance,
             compliance_period_ms: round_detail.compliance_period_ms,
             compliance_end_ms: round.compliance_end_ms, // NB: this field is not updatable
-            all_paid_out: round.all_paid_out,           // NB: this field is not updatable
+            allow_remaining_funds_redistribution: round_detail.allow_remaining_funds_redistribution,
+            remaining_funds_redistribution_recipient: round_detail
+                .remaining_funds_redistribution_recipient,
+            remaining_funds_redistributed_at_ms: round.remaining_funds_redistributed_at_ms, // NB: this field is not updatable
+            remaining_funds_redistribution_memo: round.remaining_funds_redistribution_memo.clone(), // NB: this field is not updatable
+            round_complete: round.round_complete, // NB: this field is not updatable
         };
 
         self.rounds_by_id
@@ -403,7 +529,10 @@ impl Contract {
         }
 
         // Verify no balance
-        assert_eq!(round.vault_balance, 0, "Round must have no balance");
+        assert_eq!(
+            round.vault_total_deposits, 0,
+            "Round must have no vault deposits"
+        );
 
         // Verify no applications
         let applications_for_round = self
@@ -640,6 +769,39 @@ impl Contract {
     }
 
     #[payable]
+    pub fn set_redistribution_config(
+        &mut self,
+        round_id: RoundId,
+        allow_remaining_funds_redistribution: bool,
+        remaining_funds_redistribution_recipient: Option<AccountId>,
+    ) -> RoundDetailExternal {
+        let initial_storage_usage = env::storage_usage();
+        let mut round = self
+            .rounds_by_id
+            .get(&round_id)
+            .expect("Round not found")
+            .clone();
+        // Verify caller is owner or admin
+        round.assert_caller_is_owner_or_admin();
+        // Verify voting hasn't started
+        round.assert_voting_not_started();
+        // if redistribution is allowed, recipient must be provided
+        if allow_remaining_funds_redistribution == true {
+            assert!(
+                remaining_funds_redistribution_recipient.is_some(),
+                "Redistribution recipient must be provided"
+            );
+        }
+        round.allow_remaining_funds_redistribution = allow_remaining_funds_redistribution;
+        round.remaining_funds_redistribution_recipient = remaining_funds_redistribution_recipient;
+        self.rounds_by_id.insert(round_id, round.clone());
+        refund_deposit(initial_storage_usage, None);
+        let round_external = round.to_external();
+        log_update_round(&round_external);
+        round_external
+    }
+
+    #[payable]
     pub fn add_admins(&mut self, round_id: RoundId, admins: Vec<AccountId>) -> RoundDetailExternal {
         let initial_storage_usage = env::storage_usage();
         let caller = env::predecessor_account_id();
@@ -758,9 +920,11 @@ impl Contract {
             .clone();
         let caller = env::predecessor_account_id();
         let attached_deposit = env::attached_deposit();
-        let vault_balance = round.vault_balance + attached_deposit.as_yoctonear();
+        let current_vault_balance = round.current_vault_balance + attached_deposit.as_yoctonear();
+        let vault_total_deposits = round.vault_total_deposits + attached_deposit.as_yoctonear();
         let round = RoundDetailInternal {
-            vault_balance,
+            current_vault_balance,
+            vault_total_deposits,
             ..round
         };
         self.rounds_by_id.insert(round_id, round.clone());
@@ -826,6 +990,27 @@ impl Contract {
             .filter(|voter| !voters.contains(voter))
             .cloned()
             .collect();
+
+        self.rounds_by_id.insert(round_id, round.clone());
+        refund_deposit(initial_storage_usage, None);
+        let round_external = round.to_external();
+        log_update_round(&round_external);
+        round_external
+    }
+
+    #[payable]
+    pub fn set_round_complete(&mut self, round_id: RoundId) -> RoundDetailExternal {
+        let initial_storage_usage = env::storage_usage();
+        let mut round = self
+            .rounds_by_id
+            .get(&round_id)
+            .expect("Round not found")
+            .clone();
+
+        // Verify caller is owner or admin
+        round.assert_caller_is_owner_or_admin();
+
+        round.round_complete = true;
 
         self.rounds_by_id.insert(round_id, round.clone());
         refund_deposit(initial_storage_usage, None);

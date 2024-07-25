@@ -3,7 +3,7 @@
 use loam_sdk::soroban_sdk::token::{StellarAssetClient, TokenClient};
 use loam_sdk::soroban_sdk::{self, contracttype, Map, Vec};
 
-use crate::data_type::{ApplicationStatus, CreateRoundParams, Pair, PickedPair};
+use crate::data_type::{ApplicationStatus, CreateRoundParams, Pair, PickedPair, UpdateRoundParams};
 use crate::soroban_sdk::{testutils::Address as _, Address, Env, String};
 use crate::utils::get_ledger_second_as_millis;
 use crate::{internal::RoundContract, internal::RoundContractClient};
@@ -887,4 +887,182 @@ fn test_application_period() {
         round_info.application_end_ms.unwrap(),
         new_application_end_ms
     );
+}
+
+#[test]
+fn test_update_round(){
+    let env = Env::default();
+    env.mock_all_auths();
+    let admin = Address::generate(&env);
+    let round = deploy_contract(&env, &admin);
+    let token_contract = create_token(&env, &admin).0;
+    let project_contract = deploy_registry_contract(&env, &admin);
+    let mut admins: Vec<Address> = Vec::new(&env);
+    admins.push_back(admin.clone());
+
+    let round_detail = &CreateRoundParams {
+        description: String::from_str(&env, "description"),
+        name: String::from_str(&env, "name"),
+        is_video_required: false,
+        contacts: Vec::new(&env),
+        voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
+        voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
+        application_start_ms: Some(get_ledger_second_as_millis(&env)),
+        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
+        expected_amount: 5,
+        admins: admins.clone(),
+        use_whitelist: Some(false),
+        num_picks_per_voter: Some(2),
+        max_participants: Some(10),
+        allow_applications: true,
+        owner: admin.clone(),
+    };
+
+    round.initialize(&admin, &token_contract.address, &project_contract.address);
+
+    let created_round = round.create_round(&admin, &round_detail);
+    let new_round_detail = UpdateRoundParams{
+        name: String::from_str(&env, "new_name"),
+        description: String::from_str(&env, "new_description"),
+        is_video_required: false,
+        contacts: Vec::new(&env),
+        voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
+        voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
+        application_start_ms: Some(get_ledger_second_as_millis(&env)),
+        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
+        expected_amount: 1000000,
+        use_whitelist: Some(false),
+        num_picks_per_voter: Some(2),
+        max_participants: Some(100),
+        allow_applications: true,
+    };
+
+    let updated_round = round.update_round(&admin, &created_round.id, &new_round_detail);
+    assert!(created_round.name != updated_round.name);
+    assert!(created_round.description != updated_round.description);
+    assert!(created_round.max_participants != updated_round.max_participants);
+    assert!(created_round.expected_amount != updated_round.expected_amount);
+}
+
+
+#[test]
+fn test_change_allow_applications(){
+    let env = Env::default();
+    env.mock_all_auths();
+    let admin = Address::generate(&env);
+    let round = deploy_contract(&env, &admin);
+    let token_contract = create_token(&env, &admin).0;
+    let project_contract = deploy_registry_contract(&env, &admin);
+    let mut admins: Vec<Address> = Vec::new(&env);
+    admins.push_back(admin.clone());
+
+    let round_detail = &CreateRoundParams {
+        description: String::from_str(&env, "description"),
+        name: String::from_str(&env, "name"),
+        is_video_required: false,
+        contacts: Vec::new(&env),
+        voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
+        voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
+        application_start_ms: Some(get_ledger_second_as_millis(&env)),
+        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
+        expected_amount: 5,
+        admins: admins.clone(),
+        use_whitelist: Some(false),
+        num_picks_per_voter: Some(2),
+        max_participants: Some(10),
+        allow_applications: true,
+        owner: admin.clone(),
+    };
+
+    round.initialize(&admin, &token_contract.address, &project_contract.address);
+
+    let created_round = round.create_round(&admin, &round_detail);
+    let new_allow_applications = false;
+    round.change_allow_applications(&created_round.id, &admin, &new_allow_applications, &None, &None);
+
+    let round_info = round.get_round(&created_round.id);
+    assert_eq!(round_info.allow_applications, new_allow_applications);
+}
+
+#[test]
+fn test_unapply_from_round(){
+    let env = Env::default();
+    env.mock_all_auths();
+    let admin = Address::generate(&env);
+    let round = deploy_contract(&env, &admin);
+    let (token_contract, token_admin) = create_token(&env, &admin);
+    let project_contract = deploy_registry_contract(&env, &admin);
+    let projects = generate_fake_project(&env, &project_contract, 10);
+    let mut admins: Vec<Address> = Vec::new(&env);
+    admins.push_back(admin.clone());
+
+    let round_detail = &CreateRoundParams{
+        name: String::from_str(&env, "name"),
+        description: String::from_str(&env, "description"),
+        is_video_required: false,
+        contacts: Vec::new(&env),
+        voting_start_ms: get_ledger_second_as_millis(&env)+10000,
+        voting_end_ms: get_ledger_second_as_millis(&env) + 300000,
+        application_start_ms: Some(get_ledger_second_as_millis(&env)),
+        application_end_ms: Some(get_ledger_second_as_millis(&env)),
+        expected_amount: 10 * 10u128.pow(7),
+        admins: admins.clone(),
+        use_whitelist: Some(false),
+        num_picks_per_voter: Some(2),
+        max_participants: Some(10),
+        allow_applications: true,
+        owner: admin.clone(),
+    };
+
+    round.initialize(&admin, &token_contract.address, &project_contract.address);
+
+    let created_round = round.create_round(&admin, &round_detail);
+    let new_application = round.apply_to_round(&created_round.id, &projects.get(0).unwrap().owner, &None, &None, &None);
+    let check_applications = round.get_applications_for_round(&created_round.id, &None, &None);
+    assert!(new_application.applicant_id == check_applications.get(0).unwrap().applicant_id);
+    round.unapply_from_round(&created_round.id, &projects.get(0).unwrap().owner, &None);
+    let post_check_applications = round.get_applications_for_round(&created_round.id, &None, &None);
+    assert!(post_check_applications.is_empty());
+}
+
+#[test]
+fn test_apply_to_round_batch(){
+    let env = Env::default();
+    env.mock_all_auths();
+    let admin = Address::generate(&env);
+    let round = deploy_contract(&env, &admin);
+    let (token_contract, token_admin) = create_token(&env, &admin);
+    let project_contract = deploy_registry_contract(&env, &admin);
+    let projects = generate_fake_project(&env, &project_contract, 5);
+    let mut admins: Vec<Address> = Vec::new(&env);
+    admins.push_back(admin.clone());
+
+    let round_detail = &CreateRoundParams{
+        name: String::from_str(&env, "name"),
+        description: String::from_str(&env, "description"),
+        is_video_required: false,
+        contacts: Vec::new(&env),
+        voting_start_ms: get_ledger_second_as_millis(&env)+10000,
+        voting_end_ms: get_ledger_second_as_millis(&env) + 300000,
+        application_start_ms: Some(get_ledger_second_as_millis(&env)),
+        application_end_ms: Some(get_ledger_second_as_millis(&env)),
+        expected_amount: 10 * 10u128.pow(7),
+        admins: admins.clone(),
+        use_whitelist: Some(false),
+        num_picks_per_voter: Some(2),
+        max_participants: Some(10),
+        allow_applications: true,
+        owner: admin.clone(),
+    };
+
+    round.initialize(&admin, &token_contract.address, &project_contract.address);
+
+    let created_round = round.create_round(&admin, &round_detail);
+    let mut applicants: Vec<Address> = Vec::new(&env);
+    for i in 0..5{
+        applicants.push_back(projects.get(i).unwrap().owner);
+    }
+    let new_applications = round.apply_to_round_batch(&admin,&created_round.id, & Vec::new(&env), &applicants);
+    let check_applications = round.get_applications_for_round(&created_round.id, &None, &None);
+    assert_eq!(new_applications.len(), check_applications.len());
 }

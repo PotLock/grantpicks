@@ -103,4 +103,11 @@ pub trait IsRound {
     ) -> RoundDetailExternal;
     fn update_round(env: &Env, caller: Address, round_id: u128, round_detail: UpdateRoundParams)->RoundDetailExternal;
     // fn delete_round(env: &Env, round_id: u128) -> RoundDetailExternal;
+    fn apply_to_round_batch(
+      env: &Env,
+      caller: Address,
+      round_id: u128,
+      review_notes: Vec<Option<String>>,
+      applicants: Vec<Address>,
+  ) -> Vec<RoundApplicationExternal>;
 }

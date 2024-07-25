@@ -911,22 +911,30 @@ impl IsRound for RoundContract {
     ) -> RoundDetailExternal {
         caller.require_auth();
 
-        assert!(
-            start_ms.unwrap() < end_ms.unwrap(),
-            "Round application start time must be less than round application end time"
-        );
+        if start_ms.is_some() && end_ms.is_none() {
+            panic!("Round application end time must be specified");
+        }
+
+        if start_ms.is_some() && end_ms.is_some() {
+            assert!(
+                start_ms.unwrap() < end_ms.unwrap(),
+                "Round application start time must be less than round application end time"
+            );
+        }
 
         let mut round = read_round_info(env, round_id);
 
         validate_owner_or_admin(env, &caller, &round);
 
-        if !allow_applications {
+        if allow_applications == false {
             round.application_start_ms = None;
             round.application_end_ms = None;
         } else {
             round.application_start_ms = start_ms;
             round.application_end_ms = end_ms;
         }
+
+        round.allow_applications = allow_applications;
 
         write_round_info(env, round_id, &round);
         extend_instance(env);
@@ -970,4 +978,73 @@ impl IsRound for RoundContract {
     //   clear_round_storage(env, round_id);
     //   round.to_external()
     // }
+
+    fn apply_to_round_batch(
+      env: &Env,
+      caller: Address,
+      round_id: u128,
+      review_notes: Vec<Option<String>>,
+      applicants: Vec<Address>,
+  ) -> Vec<RoundApplicationExternal>{
+    caller.require_auth();
+
+    let round = read_round_info(env, round_id);
+    let current_ms = get_ledger_second_as_millis(env);
+
+    validate_owner_or_admin(env, &caller, &round);
+    validate_voting_not_started(env, &round);
+
+    let project_contract = read_project_contract(env);
+    let project_client = ProjectRegistryClient::new(env, &project_contract);
+    let mut applications: Vec<RoundApplicationExternal> = Vec::new(env);
+
+    let mut index = 0;
+    applicants.iter().for_each(|applicant| {
+        let project = project_client.get_project_from_applicant(&applicant);
+        assert!(
+            project.is_some(),
+            "Project not found. Please register project first using project registry"
+        );
+
+        let uwrap_project = project.unwrap();
+
+        if round.is_video_required {
+            assert!(
+                !uwrap_project.video_url.is_empty(),
+                "Video is Required. Please Update Your Profile"
+            );
+        }
+
+        let existing_application = get_application_by_applicant(env, round_id, &applicant);
+
+        assert!(existing_application.is_none(), "Application already exists");
+
+        let mut review_note_internal = String::from_str(env, "");
+        let applicant_note_internal = String::from_str(env, "");
+
+        if review_notes.get(index).is_some() {
+            review_note_internal = review_notes.get(index).unwrap().unwrap();
+        }
+
+        let application = RoundApplicationInternal {
+            project_id: uwrap_project.id,
+            applicant_id: applicant.clone(),
+            status: ApplicationStatus::Pending,
+            submited_ms: current_ms,
+            review_note: review_note_internal,
+            applicant_note: applicant_note_internal,
+            updated_ms: None,
+        };
+
+        add_application(env, round_id, &application);
+        extend_instance(env);
+        extend_round(env, round_id);
+        log_project_application(env, application.to_external());
+
+        applications.push_back(application.to_external());
+        index += 1;
+    });
+
+    applications
+  }
 }

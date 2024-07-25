@@ -166,7 +166,16 @@ pub struct Contact {
 
 #[contracttype]
 #[derive(Clone, Eq, PartialEq, Debug)]
-pub struct Payout {
+pub struct PayoutInternal {
+    pub project_id: u128,
+    pub address: Address,
+    pub amount: i128,
+    pub paid_at_ms: u64,
+}
+
+#[contracttype]
+#[derive(Clone, Eq, PartialEq, Debug)]
+pub struct PayoutExternal {
     pub project_id: u128,
     pub address: Address,
     pub amount: i128,
@@ -211,6 +220,17 @@ impl RoundApplicationInternal {
             status: self.status.clone(),
             submited_ms: self.submited_ms,
             updated_ms: self.updated_ms,
+        }
+    }
+}
+
+impl PayoutInternal {
+    pub fn to_external(&self) -> PayoutExternal {
+        PayoutExternal {
+            project_id: self.project_id,
+            address: self.address.clone(),
+            amount: self.amount,
+            paid_at_ms: self.paid_at_ms,
         }
     }
 }

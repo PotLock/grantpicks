@@ -460,7 +460,7 @@ fn test_voting() {
     );
 
     let voter = Address::generate(&env);
-    let pair_to_vote = round.get_pair_to_vote(&created_round.id);
+    let pair_to_vote = round.get_pairs_to_vote(&created_round.id);
     let mut picks: Vec<PickedPair> = Vec::new(&env);
     picks.push_back(PickedPair {
         pair_id: pair_to_vote.get(0).unwrap().pair_id,
@@ -580,7 +580,7 @@ fn test_voting_deposit_and_payout() {
     let voter2 = Address::generate(&env);
     let cindy = Address::generate(&env);
 
-    let voter_pairs = round.get_pair_to_vote(&created_round.id);
+    let voter_pairs = round.get_pairs_to_vote(&created_round.id);
     assert!(!voter_pairs.is_empty());
 
     let mut picks: Vec<PickedPair> = Vec::new(&env);
@@ -602,7 +602,7 @@ fn test_voting_deposit_and_payout() {
 
     round.vote(&created_round.id, &voter, &picks);
 
-    let voter_pairs2 = round.get_pair_to_vote(&created_round.id);
+    let voter_pairs2 = round.get_pairs_to_vote(&created_round.id);
     assert!(!voter_pairs2.is_empty());
 
     let mut picks2: Vec<PickedPair> = Vec::new(&env);
@@ -626,10 +626,13 @@ fn test_voting_deposit_and_payout() {
     let project_id = voter_pairs2.get(0).unwrap().projects.get(0).unwrap();
     let project = project_contract.get_project_by_id(&project_id).unwrap();
     let payout_balance = token_contract.balance(&project.payout_address);
-    round.trigger_payouts(&created_round.id, &admin);
+    round.admin_process_payouts(&created_round.id, &admin);
     let new_payout_balance = token_contract.balance(&project.payout_address);
 
     assert!(new_payout_balance > payout_balance);
+
+    let payouts = round.get_payouts(&created_round.id, &None, &None);
+    assert_eq!(payouts.is_empty(), false);
 }
 
 /**
@@ -683,7 +686,7 @@ fn test_get_all_pairs() {
     }
     round.add_approved_project(&created_round.id, &admin, &project_ids);
 
-    let pairs = round.get_pairs(&created_round.id, &admin);
+    let pairs = round.get_all_pairs_for_round(&created_round.id);
     assert_eq!(pairs.len(), posibilities as u32);
 
     let mut correctness_test: Map<u128, u32> = Map::new(&env);

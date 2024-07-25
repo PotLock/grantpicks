@@ -14,7 +14,7 @@ use crate::{
     calculation::calculate_voting_results,
     core::IsRound,
     data_type::{
-        ApplicationStatus, CreateRoundParams, Pair, Payout, PickResult, PickedPair, ProjectVotingResult, RoundApplicationExternal, RoundApplicationInternal, RoundDetailExternal, RoundDetailInternal, UpdateRoundParams, VotingResult
+        ApplicationStatus, CreateRoundParams, Pair, PayoutExternal, PayoutInternal, PickResult, PickedPair, ProjectVotingResult, RoundApplicationExternal, RoundApplicationInternal, RoundDetailExternal, RoundDetailInternal, UpdateRoundParams, VotingResult
     },
     events::{
         log_create_round, log_deposit, log_payout, log_project_application,
@@ -26,7 +26,7 @@ use crate::{
     factory::RoundFactory,
     owner_writer::{read_factory_owner, write_factory_owner},
     pair::{get_all_pairs, get_all_rounds, get_pair_by_index, get_random_pairs},
-    payout_writer::{has_paid, write_payouts},
+    payout_writer::{has_paid, read_payouts, write_payouts},
     project_registry_writer::{read_project_contract, write_project_contract},
     round_writer::{increment_round_number, is_initialized, read_round_info, write_round_info},
     storage::{clear_round_storage, extend_instance, extend_round},
@@ -453,7 +453,7 @@ impl IsRound for RoundContract {
         log_vote(env, round.id, voting_result);
     }
 
-    fn get_pair_to_vote(env: &Env, round_id: u128) -> Vec<Pair> {
+    fn get_pairs_to_vote(env: &Env, round_id: u128) -> Vec<Pair> {
         let round = read_round_info(env, round_id);
         let pairs = get_random_pairs(env, round_id, round.num_picks_per_voter.into());
         extend_instance(env);
@@ -501,12 +501,12 @@ impl IsRound for RoundContract {
         results
     }
 
-    fn trigger_payouts(env: &Env, round_id: u128, admin: Address) {
-        admin.require_auth();
+    fn admin_process_payouts(env: &Env, round_id: u128, caller: Address) {
+        caller.require_auth();
 
         let round = read_round_info(env, round_id);
 
-        validate_owner_or_admin(env, &admin, &round);
+        validate_owner_or_admin(env, &caller, &round);
         validate_can_payout(env, &round);
         validate_vault_fund(&round);
 
@@ -518,7 +518,7 @@ impl IsRound for RoundContract {
 
         let mut updated_round = round.clone();
 
-        let mut payouts: Map<u128, Payout> = Map::new(env);
+        let mut payouts: Map<u128, PayoutInternal> = Map::new(env);
         results.iter().for_each(|result| {
             if result.allocation > 0 {
                 let payout_amount = (round.vault_balance * result.allocation) / 10000;
@@ -542,7 +542,7 @@ impl IsRound for RoundContract {
                     payout_amount,
                 );
 
-                let payout = Payout {
+                let payout = PayoutInternal {
                     project_id: detail_project.id,
                     amount: payout_amount_i128,
                     address: detail_project.payout_address,
@@ -768,13 +768,7 @@ impl IsRound for RoundContract {
     }
 
     // get_pairs is test only & protected and check correctness of pairs generated. use get_pair_to_vote for users
-    fn get_pairs(env: &Env, round_id: u128, admin: Address) -> Vec<Pair> {
-        admin.require_auth();
-
-        let round = read_round_info(env, round_id);
-
-        validate_owner_or_admin(env, &admin, &round);
-
+    fn get_all_pairs_for_round(env: &Env, round_id: u128) -> Vec<Pair> {
         let pairs = get_all_pairs(env, round_id);
         extend_instance(env);
         extend_round(env, round_id);
@@ -1046,5 +1040,29 @@ impl IsRound for RoundContract {
     });
 
     applications
+  }
+
+  fn get_payouts( env: &Env,round_id: u128, from_index: Option<u64>, limit: Option<u64>) -> Vec<PayoutExternal>{
+    let limit_internal:usize = limit.unwrap_or(10) as usize;
+    let from_index_internal:usize = from_index.unwrap_or(0) as usize;
+    let payouts = read_payouts(env, round_id);
+    extend_instance(env);
+    extend_round(env, round_id);
+
+    let mut payouts_external: Vec<PayoutExternal> = Vec::new(env);
+
+    payouts.keys().iter().skip(from_index_internal).take(limit_internal).for_each(|key| {
+        let payout = payouts.get(key).unwrap();
+        let payout_external = PayoutExternal {
+            project_id: payout.project_id,
+            amount: payout.amount,
+            address: payout.address,
+            paid_at_ms: payout.paid_at_ms,
+        };
+
+        payouts_external.push_back(payout_external);
+    });
+    
+    payouts_external
   }
 }

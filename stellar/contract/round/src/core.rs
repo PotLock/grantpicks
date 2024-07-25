@@ -1,7 +1,7 @@
 use loam_sdk::soroban_sdk::{Address, BytesN, Env, String, Vec};
 
 use crate::data_type::{
-    ApplicationStatus, Pair, PickedPair, ProjectVotingResult, RoundApplicationExternal, RoundDetailExternal, UpdateRoundParams, VotingResult
+    ApplicationStatus, Pair, PayoutExternal, PickedPair, ProjectVotingResult, RoundApplicationExternal, RoundDetailExternal, UpdateRoundParams, VotingResult
 };
 
 pub trait IsRound {
@@ -41,14 +41,14 @@ pub trait IsRound {
         status: ApplicationStatus,
         note: Option<String>,
     ) -> RoundApplicationExternal;
-    fn deposit(env: &Env, round_id: u128, actor: Address, amount: u128);
+    fn deposit(env: &Env, round_id: u128, caller: Address, amount: u128);
     fn vote(env: &Env, round_id: u128, voter: Address, picks: Vec<PickedPair>);
-    fn flag_voter(env: &Env, round_id: u128, admin: Address, voter: Address);
-    fn unflag_voter(env: &Env, round_id: u128, admin: Address, voter: Address);
-    fn add_approved_project(env: &Env, round_id: u128, admin: Address, project_ids: Vec<u128>);
-    fn remove_approved_project(env: &Env, around_id: u128, dmin: Address, project_ids: Vec<u128>);
+    fn flag_voter(env: &Env, round_id: u128, caller: Address, voter: Address);
+    fn unflag_voter(env: &Env, round_id: u128, caller: Address, voter: Address);
+    fn add_approved_project(env: &Env, round_id: u128, caller: Address, project_ids: Vec<u128>);
+    fn remove_approved_project(env: &Env, around_id: u128, caller: Address, project_ids: Vec<u128>);
     fn get_results_for_round(env: &Env, round_id: u128) -> Vec<ProjectVotingResult>;
-    fn trigger_payouts(env: &Env, round_id: u128, admin: Address);
+    fn admin_process_payouts(env: &Env, round_id: u128, caller: Address);
     fn get_all_voters(
         env: &Env,
         round_id: u128,
@@ -73,12 +73,12 @@ pub trait IsRound {
     fn is_payout_done(env: &Env, round_id: u128) -> bool;
     fn user_has_vote(env: &Env, round_id: u128, voter: Address) -> bool;
     fn total_funding(env: &Env, round_id: u128) -> u128;
-    fn get_pair_to_vote(env: &Env, round_id: u128) -> Vec<Pair>;
+    fn get_pairs_to_vote(env: &Env, round_id: u128) -> Vec<Pair>;
     fn add_white_list(env: &Env, round_id: u128, admin: Address, address: Address);
     fn remove_from_white_list(env: &Env, round_id: u128, admin: Address, address: Address);
     fn whitelist_status(env: &Env, round_id: u128, address: Address) -> bool;
     fn blacklist_status(env: &Env, round_id: u128, address: Address) -> bool;
-    fn get_pairs(env: &Env, round_id: u128, admin: Address) -> Vec<Pair>;
+    fn get_all_pairs_for_round(env: &Env, round_id: u128) -> Vec<Pair>;
     fn get_pair_by_index(env: &Env, round_id: u128, index: u32) -> Pair;
     fn admins(env: &Env, round_id: u128) -> Vec<Address>;
     fn unapply_from_round(
@@ -110,4 +110,5 @@ pub trait IsRound {
       review_notes: Vec<Option<String>>,
       applicants: Vec<Address>,
   ) -> Vec<RoundApplicationExternal>;
+  fn get_payouts( env: &Env,round_id: u128, from_index: Option<u64>, limit: Option<u64>) -> Vec<PayoutExternal>;
 }

@@ -1,7 +1,7 @@
 #![cfg(test)]
 
 use loam_sdk::soroban_sdk::token::{StellarAssetClient, TokenClient};
-use loam_sdk::soroban_sdk::{Map, Vec};
+use loam_sdk::soroban_sdk::{self, contracttype, Map, Vec};
 
 use crate::data_type::{ApplicationStatus, CreateRoundParams, Pair, PickedPair};
 use crate::soroban_sdk::{testutils::Address as _, Address, Env, String};
@@ -9,6 +9,12 @@ use crate::utils::get_ledger_second_as_millis;
 use crate::{internal::RoundContract, internal::RoundContractClient};
 
 loam_sdk::import_contract!(project_registry);
+
+#[contracttype]
+pub struct FakeProject{
+  owner: Address,
+  project: project_registry::Project
+}
 
 fn deploy_contract<'a>(env: &Env, _admin: &Address) -> RoundContractClient<'a> {
     let contract = RoundContractClient::new(env, &env.register_contract(None, RoundContract {}));
@@ -29,10 +35,9 @@ fn deploy_registry_contract<'a>(env: &Env, admin: &Address) -> project_registry:
 
 fn generate_fake_project(
     env: &Env,
-    owner: &Address,
     project_contract: &project_registry::Client,
     total: u64,
-) {
+)->Vec<FakeProject> {
     let admin = Address::generate(&env);
     let mut project_contracts: Vec<project_registry::ProjectContract> = Vec::new(&env);
     let mut project_contacts: Vec<project_registry::ProjectContact> = Vec::new(&env);
@@ -71,9 +76,12 @@ fn generate_fake_project(
 
     project_admins.push_back(admin.clone());
 
+    let mut results : Vec<FakeProject> = Vec::new(env);
     for _i in 0..total {
+        let owner = Address::generate(env);
         let project_params = &project_registry::ProjectParams {
-            image_url: String::from_str(&env, "video_url"),
+            image_url: String::from_str(&env, "image_url"),
+            video_url: String::from_str(&env, "video_url"),
             name: String::from_str(&env, "name"),
             overview: String::from_str(&env, "overview"),
             payout_address: owner.clone(),
@@ -85,8 +93,14 @@ fn generate_fake_project(
             fundings: funding_histories.clone(),
         };
 
-        project_contract.apply(&owner, project_params);
+        let project = project_contract.apply(&owner, project_params);
+        results.push_back(FakeProject{
+          owner,
+          project
+        })
     }
+
+    results
 }
 
 fn create_token<'a>(env: &Env, admin: &Address) -> (TokenClient<'a>, StellarAssetClient<'a>) {
@@ -106,7 +120,6 @@ fn test_round_create() {
     let round = deploy_contract(&env, &admin);
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
-    generate_fake_project(&env, &admin, &project_contract, 15);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -132,7 +145,7 @@ fn test_round_create() {
 
     let created_round = round.create_round(&admin, &round_detail);
 
-    let round_info = round.round_info(&created_round.id);
+    let round_info = round.get_round(&created_round.id);
     let admins = round.admins(&created_round.id);
     assert_eq!(round_info.expected_amount, 5);
     assert_eq!(admins, admins);
@@ -155,54 +168,7 @@ fn test_apply_applications() {
     let round = deploy_contract(&env, &admin);
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
-    generate_fake_project(&env, &admin, &project_contract, 15);
-    let mut admins: Vec<Address> = Vec::new(&env);
-    admins.push_back(admin.clone());
-
-    let round_detail = &CreateRoundParams {
-        description: String::from_str(&env, "description"),
-        name: String::from_str(&env, "name"),
-        is_video_required: false,
-        contacts: Vec::new(&env),
-        voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
-        voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
-        application_start_ms: Some(get_ledger_second_as_millis(&env)),
-        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
-        expected_amount: 5,
-        admins: admins.clone(),
-        use_whitelist: Some(false),
-        num_picks_per_voter: Some(2),
-        max_participants: Some(10),
-        allow_applications: true,
-        owner: admin,
-    };
-
-    round.initialize(&admin, &token_contract.address, &project_contract.address);
-
-    let created_round = round.create_round(&admin, &round_detail);
-
-    let project_id = 1;
-    let applicant = Address::generate(&env);
-    let application_id = round.apply_project(&created_round.id, &project_id, &applicant);
-
-    let application = round
-        .get_all_applications(&created_round.id, &None, &None)
-        .get(0)
-        .unwrap();
-    assert_eq!(application.project_id, project_id);
-    assert_eq!(application.applicant_id, applicant);
-    assert_eq!(application.status, ApplicationStatus::Pending);
-}
-
-#[test]
-fn test_review_application() {
-    let env = Env::default();
-    env.mock_all_auths();
-    let admin = Address::generate(&env);
-    let round = deploy_contract(&env, &admin);
-    let token_contract = create_token(&env, &admin).0;
-    let project_contract = deploy_registry_contract(&env, &admin);
-    generate_fake_project(&env, &admin, &project_contract, 15);
+    let projects = generate_fake_project(&env, &project_contract, 10);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -227,21 +193,64 @@ fn test_review_application() {
     round.initialize(&admin, &token_contract.address, &project_contract.address);
 
     let created_round = round.create_round(&admin, &round_detail);
-    let project_id = 1;
-    let applicant = Address::generate(&env);
-    let application_id = round.apply_project(&created_round.id, &project_id, &applicant);
+
+    round.apply_to_round(&created_round.id, &projects.get(0).unwrap().owner, &None, &None, &None);
+
+    let application = round
+        .get_applications_for_round(&created_round.id, &None, &None)
+        .get(0)
+        .unwrap();
+    assert_eq!(application.project_id, projects.get(0).unwrap().project.id);
+    assert_eq!(application.applicant_id, projects.get(0).unwrap().owner);
+    assert_eq!(application.status, ApplicationStatus::Pending);
+}
+
+#[test]
+fn test_review_application() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let admin = Address::generate(&env);
+    let round = deploy_contract(&env, &admin);
+    let token_contract = create_token(&env, &admin).0;
+    let project_contract = deploy_registry_contract(&env, &admin);
+    let projects = generate_fake_project(&env, &project_contract, 15);
+    let mut admins: Vec<Address> = Vec::new(&env);
+    admins.push_back(admin.clone());
+
+    let round_detail = &CreateRoundParams {
+        description: String::from_str(&env, "description"),
+        name: String::from_str(&env, "name"),
+        is_video_required: false,
+        contacts: Vec::new(&env),
+        voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
+        voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
+        application_start_ms: Some(get_ledger_second_as_millis(&env)),
+        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
+        expected_amount: 5,
+        admins: admins.clone(),
+        use_whitelist: Some(false),
+        num_picks_per_voter: Some(2),
+        max_participants: Some(10),
+        allow_applications: true,
+        owner: admin.clone(),
+    };
+
+    round.initialize(&admin, &token_contract.address, &project_contract.address);
+
+    let created_round = round.create_round(&admin, &round_detail);
+    round.apply_to_round(&created_round.id, &projects.get(0).unwrap().owner, &None, &None, &None);
 
     let review_note = String::from_str(&env, "review_note");
     round.review_application(
         &created_round.id,
         &admin,
-        &application_id,
+        &projects.get(0).unwrap().owner,
         &ApplicationStatus::Approved,
         &Some(review_note.clone()),
     );
 
     let application = round
-        .get_all_applications(&created_round.id, &None, &None)
+        .get_applications_for_round(&created_round.id, &None, &None)
         .get(0)
         .unwrap();
     assert_eq!(application.status, ApplicationStatus::Approved);
@@ -257,7 +266,7 @@ fn test_whitelist_applicant() {
     let round = deploy_contract(&env, &admin);
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
-    generate_fake_project(&env, &admin, &project_contract, 15);
+    let projects = generate_fake_project(&env, &project_contract, 15);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -272,7 +281,7 @@ fn test_whitelist_applicant() {
         application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
         expected_amount: 5,
         admins: admins.clone(),
-        use_whitelist: Some(false),
+        use_whitelist: Some(true),
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -282,9 +291,7 @@ fn test_whitelist_applicant() {
     round.initialize(&admin, &token_contract.address, &project_contract.address);
 
     let created_round = round.create_round(&admin, &round_detail);
-    let project_id = 1;
-    let applicant = Address::generate(&env);
-    round.apply_project(&created_round.id, &project_id, &applicant);
+    round.apply_to_round(&created_round.id, &projects.get(0).unwrap().owner, &None, &None, &None);
 }
 
 #[test]
@@ -296,7 +303,7 @@ fn test_whitelist_voters() {
     let round = deploy_contract(&env, &admin);
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
-    generate_fake_project(&env, &admin, &project_contract, 15);
+    let projects = generate_fake_project(&env, &project_contract, 15);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -326,12 +333,12 @@ fn test_whitelist_voters() {
 
     round.add_white_list(&created_round.id, &admin, &applicant);
 
-    let application_id = round.apply_project(&created_round.id, &project_id, &applicant);
+    round.apply_to_round(&created_round.id, &projects.get(0).unwrap().owner, &None, &None, &None);
 
     round.review_application(
         &created_round.id,
         &admin,
-        &application_id,
+        &projects.get(0).unwrap().owner,
         &ApplicationStatus::Approved,
         &None,
     );
@@ -354,7 +361,7 @@ fn test_blacklist() {
     let round = deploy_contract(&env, &admin);
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
-    generate_fake_project(&env, &admin, &project_contract, 15);
+    let projects = generate_fake_project(&env, &project_contract, 15);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -379,10 +386,8 @@ fn test_blacklist() {
     round.initialize(&admin, &token_contract.address, &project_contract.address);
 
     let created_round = round.create_round(&admin, &round_detail);
-    let project_id = 1;
-    let applicant = Address::generate(&env);
-    round.flag_voter(&created_round.id, &admin, &applicant);
-    round.apply_project(&created_round.id, &project_id, &applicant);
+    round.flag_voter(&created_round.id, &admin, &projects.get(0).unwrap().owner);
+    round.apply_to_round(&created_round.id, &projects.get(0).unwrap().owner, &None, &None, &None);
     // round.apply_project(&project_id, &applicant);
 }
 
@@ -394,7 +399,7 @@ fn test_voting() {
     let round = deploy_contract(&env, &admin);
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
-    generate_fake_project(&env, &admin, &project_contract, 15);
+    let projects = generate_fake_project(&env, &project_contract, 10);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -419,42 +424,37 @@ fn test_voting() {
     round.initialize(&admin, &token_contract.address, &project_contract.address);
 
     let created_round = round.create_round(&admin, &round_detail);
-    let project_id = 1;
-    let project_id2 = 2;
-    let project_id3 = 3;
-    let project_id4 = 4;
-    let applicant = Address::generate(&env);
 
-    let application_id = round.apply_project(&created_round.id, &project_id, &applicant);
-    let application_id2 = round.apply_project(&created_round.id, &project_id2, &applicant);
-    let application_id3 = round.apply_project(&created_round.id, &project_id3, &applicant);
-    let application_id4 = round.apply_project(&created_round.id, &project_id4, &applicant);
+    round.apply_to_round(&created_round.id, &projects.get(0).unwrap().owner, &None, &None, &None);
+    round.apply_to_round(&created_round.id, &projects.get(1).unwrap().owner, &None, &None, &None);
+    round.apply_to_round(&created_round.id, &projects.get(2).unwrap().owner, &None, &None, &None);
+    round.apply_to_round(&created_round.id, &projects.get(3).unwrap().owner, &None, &None, &None);
 
     round.review_application(
         &created_round.id,
         &admin,
-        &application_id,
+        &projects.get(0).unwrap().owner,
         &ApplicationStatus::Approved,
         &None,
     );
     round.review_application(
         &created_round.id,
         &admin,
-        &application_id2,
+        &projects.get(1).unwrap().owner,
         &ApplicationStatus::Approved,
         &None,
     );
     round.review_application(
         &created_round.id,
         &admin,
-        &application_id3,
+        &projects.get(2).unwrap().owner,
         &ApplicationStatus::Approved,
         &None,
     );
     round.review_application(
         &created_round.id,
         &admin,
-        &application_id4,
+        &&projects.get(3).unwrap().owner,
         &ApplicationStatus::Approved,
         &None,
     );
@@ -474,7 +474,7 @@ fn test_voting() {
 
     round.vote(&created_round.id, &voter, &picks);
 
-    let results = round.calculate_results(&created_round.id);
+    let results = round.get_results_for_round(&created_round.id);
 
     assert_eq!(results.len(), 4);
 
@@ -497,7 +497,6 @@ fn test_add_remove_admin() {
     let round = deploy_contract(&env, &admin);
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
-    generate_fake_project(&env, &admin, &project_contract, 15);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -523,16 +522,16 @@ fn test_add_remove_admin() {
 
     let created_round = round.create_round(&admin, &round_detail);
     let new_admin = Address::generate(&env);
-    round.add_admin(&created_round.id, &admin, &new_admin);
+    round.add_admin(&created_round.id, &new_admin);
 
     let mut admins = round.admins(&created_round.id);
     assert_eq!(admins.len(), 2);
 
-    round.remove_admin(&created_round.id, &admin, &new_admin);
+    round.remove_admin(&created_round.id, &new_admin);
 
     admins = round.admins(&created_round.id);
 
-    let round_info = round.round_info(&created_round.id);
+    round.get_round(&created_round.id);
     assert_eq!(admins.len(), 1);
 }
 
@@ -544,7 +543,7 @@ fn test_voting_deposit_and_payout() {
     let round = deploy_contract(&env, &admin);
     let (token_contract, token_admin) = create_token(&env, &admin);
     let project_contract = deploy_registry_contract(&env, &admin);
-    generate_fake_project(&env, &admin, &project_contract, 15);
+    generate_fake_project(&env, &project_contract, 10);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -619,16 +618,18 @@ fn test_voting_deposit_and_payout() {
 
     round.vote(&created_round.id, &voter2, &picks2);
 
-    let results = round.calculate_results(&created_round.id);
+    let results = round.get_results_for_round(&created_round.id);
     assert_eq!(results.len(), 10);
 
-    round.complete_vote(&created_round.id, &admin);
+    round.close_voting_period(&created_round.id, &admin);
 
-    let admin_balance = token_contract.balance(&admin);
+    let project_id = voter_pairs2.get(0).unwrap().projects.get(0).unwrap();
+    let project = project_contract.get_project_by_id(&project_id).unwrap();
+    let payout_balance = token_contract.balance(&project.payout_address);
     round.trigger_payouts(&created_round.id, &admin);
-    let new_admin_balance = token_contract.balance(&admin);
+    let new_payout_balance = token_contract.balance(&project.payout_address);
 
-    assert!(new_admin_balance > admin_balance);
+    assert!(new_payout_balance > payout_balance);
 }
 
 /**
@@ -646,7 +647,7 @@ fn test_get_all_pairs() {
     let round = deploy_contract(&env, &admin);
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
-    generate_fake_project(&env, &admin, &project_contract, 10);
+    generate_fake_project(&env, &project_contract, 10);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -725,7 +726,6 @@ fn test_change_number_of_votes() {
     let round = deploy_contract(&env, &admin);
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
-    generate_fake_project(&env, &admin, &project_contract, 15);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -753,7 +753,7 @@ fn test_change_number_of_votes() {
     let new_num_picks_per_voter = 3;
     round.change_number_of_votes(&created_round.id, &admin, &new_num_picks_per_voter);
 
-    let round_info = round.round_info(&created_round.id);
+    let round_info = round.get_round(&created_round.id);
     assert_eq!(round_info.num_picks_per_voter, new_num_picks_per_voter);
 }
 
@@ -765,7 +765,6 @@ fn test_change_amount() {
     let round = deploy_contract(&env, &admin);
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
-    generate_fake_project(&env, &admin, &project_contract, 15);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -793,7 +792,7 @@ fn test_change_amount() {
     let new_amount = 10;
     round.change_amount(&created_round.id, &admin, &new_amount);
 
-    let round_info = round.round_info(&created_round.id);
+    let round_info = round.get_round(&created_round.id);
     assert_eq!(round_info.expected_amount, new_amount);
 }
 
@@ -805,7 +804,6 @@ fn test_change_voting_period() {
     let round = deploy_contract(&env, &admin);
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
-    generate_fake_project(&env, &admin, &project_contract, 15);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -834,7 +832,7 @@ fn test_change_voting_period() {
     let new_end_ms = get_ledger_second_as_millis(&env) + 2000;
     round.change_voting_period(&created_round.id, &admin, &new_start_ms, &new_end_ms);
 
-    let round_info = round.round_info(&created_round.id);
+    let round_info = round.get_round(&created_round.id);
     assert_eq!(round_info.voting_start_ms, new_start_ms);
     assert_eq!(round_info.voting_end_ms, new_end_ms);
 }
@@ -847,7 +845,6 @@ fn test_application_period() {
     let round = deploy_contract(&env, &admin);
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
-    generate_fake_project(&env, &admin, &project_contract, 15);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -881,7 +878,7 @@ fn test_application_period() {
         &new_application_end_ms,
     );
 
-    let round_info = round.round_info(&created_round.id);
+    let round_info = round.get_round(&created_round.id);
     assert_eq!(
         round_info.application_start_ms.unwrap(),
         new_application_start_ms

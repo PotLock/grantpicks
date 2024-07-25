@@ -18,6 +18,7 @@ pub fn extend_round(env: &Env, round_id: u128) {
     extend_persistent(env, &ContractKey::Votes(round_id));
     extend_persistent(env, &ContractKey::VotingState(round_id));
     extend_persistent(env, &ContractKey::Admin(round_id));
+    extend_persistent(env, &ContractKey::Payouts(round_id));
     extend_persistent(env, &ContractKey::ProjectApplicants(round_id));
     extend_persistent(env, &ContractKey::WhitelistAndBlacklist(round_id));
 }
@@ -32,6 +33,22 @@ pub fn extend_persistent(env: &Env, key: &ContractKey) {
     }
 }
 
+pub fn delete_persistent(env: &Env, key: &ContractKey){
+  if env.storage().persistent().has(key) {
+    env.storage().persistent().remove(key);
+  }
+}
+
 pub fn has_storage(env: &Env, key: &ContractKey) -> bool {
     env.storage().persistent().has(key)
+}
+
+pub fn clear_round_storage(env: &Env, round_id: u128){
+  delete_persistent(env, &&ContractKey::RoundInfo(round_id));
+  delete_persistent(env, &ContractKey::Votes(round_id));
+  delete_persistent(env, &ContractKey::VotingState(round_id));
+  delete_persistent(env, &ContractKey::Admin(round_id));
+  delete_persistent(env, &ContractKey::Payouts(round_id));
+  delete_persistent(env, &ContractKey::ProjectApplicants(round_id));
+  delete_persistent(env, &ContractKey::WhitelistAndBlacklist(round_id));
 }

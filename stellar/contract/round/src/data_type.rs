@@ -76,6 +76,25 @@ pub struct CreateRoundParams {
     pub is_video_required: bool,
 }
 
+
+#[contracttype]
+#[derive(Clone, Eq, PartialEq, Debug)]
+pub struct UpdateRoundParams {
+    pub name: String,
+    pub description: String,
+    pub contacts: Vec<Contact>,
+    pub voting_start_ms: u64,
+    pub voting_end_ms: u64,
+    pub application_start_ms: Option<u64>,
+    pub application_end_ms: Option<u64>,
+    pub expected_amount: u128,
+    pub use_whitelist: Option<bool>,
+    pub num_picks_per_voter: Option<u32>,
+    pub max_participants: Option<u32>,
+    pub allow_applications: bool,
+    pub is_video_required: bool,
+}
+
 //Note: use String for Option<String>. soroban SDK not allow Option<soroban_sdk::String>
 #[contracttype]
 #[derive(Clone, Eq, PartialEq, Debug)]

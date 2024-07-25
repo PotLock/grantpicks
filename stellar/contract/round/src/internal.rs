@@ -14,9 +14,7 @@ use crate::{
     calculation::calculate_voting_results,
     core::IsRound,
     data_type::{
-        ApplicationStatus, CreateRoundParams, Pair, Payout, PickResult, PickedPair,
-        ProjectVotingResult, RoundApplicationExternal, RoundApplicationInternal,
-        RoundDetailExternal, RoundDetailInternal, VotingResult,
+        ApplicationStatus, CreateRoundParams, Pair, Payout, PickResult, PickedPair, ProjectVotingResult, RoundApplicationExternal, RoundApplicationInternal, RoundDetailExternal, RoundDetailInternal, UpdateRoundParams, VotingResult
     },
     events::{
         log_create_round, log_deposit, log_payout, log_project_application,
@@ -26,22 +24,16 @@ use crate::{
     },
     external::ProjectRegistryClient,
     factory::RoundFactory,
-    owner_writer::write_factory_owner,
+    owner_writer::{read_factory_owner, write_factory_owner},
     pair::{get_all_pairs, get_all_rounds, get_pair_by_index, get_random_pairs},
     payout_writer::{has_paid, write_payouts},
     project_registry_writer::{read_project_contract, write_project_contract},
     round_writer::{increment_round_number, is_initialized, read_round_info, write_round_info},
-    storage::{extend_instance, extend_round},
+    storage::{clear_round_storage, extend_instance, extend_round},
     token_writer::{read_token_address, write_token_address},
     utils::{count_total_available_pairs, get_ledger_second_as_millis},
     validation::{
-        validate_application_period, validate_approved_projects, validate_blacklist,
-        validate_blacklist_already, validate_can_payout, validate_contract_owner,
-        validate_has_voted, validate_max_participant, validate_max_participants,
-        validate_not_blacklist, validate_number_of_votes, validate_owner, validate_owner_or_admin,
-        validate_pick_per_votes, validate_project_to_approve, validate_review_notes,
-        validate_round_detail, validate_specify_applicant, validate_vault_fund,
-        validate_voting_not_started, validate_voting_period, validate_whitelist,
+        validate_application_period, validate_approved_projects, validate_blacklist, validate_blacklist_already, validate_can_payout, validate_contract_owner, validate_has_voted, validate_max_participant, validate_max_participants, validate_not_blacklist, validate_number_of_votes, validate_owner_or_admin, validate_pick_per_votes, validate_project_to_approve, validate_review_notes, validate_round_detail, validate_round_detail_update, validate_specify_applicant, validate_vault_fund, validate_voting_not_started, validate_voting_period, validate_whitelist
     },
     voter_writer::{
         add_to_black_list, add_to_white_list, is_black_listed, is_white_listed,
@@ -119,20 +111,21 @@ impl RoundFactory for RoundContract {
         results
     }
 
-    fn upgrade(env: &Env, owner: Address, new_wasm_hash: BytesN<32>) {
-        owner.require_auth();
+    fn upgrade(env: &Env, new_wasm_hash: BytesN<32>) {
+        let owner = read_factory_owner(env);
 
-        validate_contract_owner(env, &owner);
+        owner.require_auth();
 
         env.deployer().update_current_contract_wasm(new_wasm_hash);
 
         extend_instance(env);
     }
 
-    fn transfer_ownership(env: &Env, owner: Address, new_owner: Address) {
+    fn transfer_ownership(env: &Env, new_owner: Address) {
+        let owner = read_factory_owner(env);
+
         owner.require_auth();
 
-        validate_contract_owner(env, &owner);
         write_factory_owner(env, &new_owner);
 
         extend_instance(env);
@@ -144,11 +137,11 @@ impl IsRound for RoundContract {
     fn change_voting_period(
         env: &Env,
         round_id: u128,
-        admin: Address,
+        caller: Address,
         round_start_ms: u64,
         round_end_ms: u64,
     ) {
-        admin.require_auth();
+        caller.require_auth();
 
         assert!(
             round_start_ms < round_end_ms,
@@ -157,7 +150,7 @@ impl IsRound for RoundContract {
 
         let mut round = read_round_info(env, round_id);
 
-        validate_owner_or_admin(env, &admin, &round);
+        validate_owner_or_admin(env, &caller, &round);
 
         round.voting_start_ms = round_start_ms;
         round.voting_end_ms = round_end_ms;
@@ -171,11 +164,11 @@ impl IsRound for RoundContract {
     fn change_application_period(
         env: &Env,
         round_id: u128,
-        admin: Address,
+        caller: Address,
         round_application_start_ms: u64,
         round_application_end_ms: u64,
     ) {
-        admin.require_auth();
+      caller.require_auth();
 
         assert!(
             round_application_start_ms < round_application_end_ms,
@@ -184,7 +177,7 @@ impl IsRound for RoundContract {
 
         let mut round = read_round_info(env, round_id);
 
-        validate_owner_or_admin(env, &admin, &round);
+        validate_owner_or_admin(env, &caller, &round);
 
         round.application_start_ms = Some(round_application_start_ms);
         round.application_end_ms = Some(round_application_end_ms);
@@ -195,12 +188,12 @@ impl IsRound for RoundContract {
         log_update_round(env, round.to_external());
     }
 
-    fn change_amount(env: &Env, round_id: u128, admin: Address, amount: u128) {
-        admin.require_auth();
+    fn change_amount(env: &Env, round_id: u128, caller: Address, amount: u128) {
+        caller.require_auth();
 
         let mut round = read_round_info(env, round_id);
 
-        validate_owner_or_admin(env, &admin, &round);
+        validate_owner_or_admin(env, &caller, &round);
 
         round.expected_amount = amount;
 
@@ -209,18 +202,20 @@ impl IsRound for RoundContract {
         extend_round(env, round_id);
     }
 
-    fn complete_vote(env: &Env, round_id: u128, admin: Address) {
-        admin.require_auth();
+    fn close_voting_period(env: &Env, round_id: u128, caller: Address)->RoundDetailExternal {
+        caller.require_auth();
 
         let mut round = read_round_info(env, round_id);
 
-        validate_owner_or_admin(env, &admin, &round);
+        validate_owner_or_admin(env, &caller, &round);
 
-        round.voting_end_ms = env.ledger().timestamp() * 1000;
+        round.voting_end_ms = get_ledger_second_as_millis(env);
 
         write_round_info(env, round_id, &round);
         extend_instance(env);
         extend_round(env, round_id);
+
+        round.to_external()
     }
 
     fn add_admin(env: &Env, round_id: u128, round_admin: Address) {
@@ -259,7 +254,7 @@ impl IsRound for RoundContract {
         caller.require_auth();
 
         let round = read_round_info(env, round_id);
-        let current_ms = env.ledger().timestamp() * 1000;
+        let current_ms = get_ledger_second_as_millis(env);
         let is_owner_or_admin = round.is_caller_owner_or_admin(env, &caller);
 
         if is_owner_or_admin {
@@ -408,7 +403,7 @@ impl IsRound for RoundContract {
         voter.require_auth();
 
         let round = read_round_info(env, round_id);
-        let current_ms = env.ledger().timestamp() * 1000;
+        let current_ms = get_ledger_second_as_millis(env);
 
         validate_voting_period(env, &round);
         validate_number_of_votes(round.num_picks_per_voter, picks.len());
@@ -498,7 +493,7 @@ impl IsRound for RoundContract {
         log_update_user_flag(env, round.id, voter, false);
     }
 
-    fn calculate_results(env: &Env, round_id: u128) -> Vec<ProjectVotingResult> {
+    fn get_results_for_round(env: &Env, round_id: u128) -> Vec<ProjectVotingResult> {
         let results = calculate_voting_results(env, round_id);
         extend_instance(env);
         extend_round(env, round_id);
@@ -579,7 +574,7 @@ impl IsRound for RoundContract {
 
     fn can_vote(env: &Env, round_id: u128, voter: Address) -> bool {
         let round = read_round_info(env, round_id);
-        let current_ms = env.ledger().timestamp() * 1000;
+        let current_ms = get_ledger_second_as_millis(env);
         extend_instance(env);
         extend_round(env, round_id);
 
@@ -600,7 +595,7 @@ impl IsRound for RoundContract {
         false
     }
 
-    fn round_info(env: &Env, round_id: u128) -> RoundDetailExternal {
+    fn get_round(env: &Env, round_id: u128) -> RoundDetailExternal {
         let round = read_round_info(env, round_id);
         extend_instance(env);
         extend_round(env, round_id);
@@ -610,7 +605,7 @@ impl IsRound for RoundContract {
 
     fn is_voting_live(env: &Env, round_id: u128) -> bool {
         let round = read_round_info(env, round_id);
-        let current_ms = env.ledger().timestamp() * 1000;
+        let current_ms = get_ledger_second_as_millis(env);
         extend_instance(env);
 
         round.voting_start_ms <= current_ms && current_ms <= round.voting_end_ms
@@ -618,7 +613,7 @@ impl IsRound for RoundContract {
 
     fn is_application_live(env: &Env, round_id: u128) -> bool {
         let round = read_round_info(env, round_id);
-        let current_ms = env.ledger().timestamp() * 1000;
+        let current_ms = get_ledger_second_as_millis(env);
         extend_instance(env);
         extend_round(env, round_id);
 
@@ -940,4 +935,39 @@ impl IsRound for RoundContract {
 
         round.to_external()
     }
+
+    fn update_round(env: &Env, caller: Address, round_id: u128, round_detail: UpdateRoundParams)->RoundDetailExternal{
+      caller.require_auth();
+
+      let mut round = read_round_info(env, round_id);
+
+      validate_owner_or_admin(env, &caller, &round);
+      validate_round_detail_update(&round_detail);
+
+      round.allow_applications = round_detail.allow_applications;
+      round.application_end_ms = round_detail.application_end_ms;
+      round.application_start_ms = round_detail.application_start_ms;
+      round.contacts = round_detail.contacts;
+      round.expected_amount = round_detail.expected_amount;
+      round.description = round_detail.description;
+      round.max_participants = round_detail.max_participants.unwrap_or(10);
+      round.name = round_detail.name;
+
+      write_round_info(env, round_id, &round);
+      extend_instance(env);
+      log_create_round(env, round.to_external());
+
+      round.to_external()
+    }
+
+    //TODO: need to check this method cause unable to upload to testnet
+    // fn delete_round(env: &Env, round_id: u128) -> RoundDetailExternal{
+    //   let round = read_round_info(env, round_id);
+    //   round.owner.require_auth();
+
+    //   assert_eq!(round.vault_balance, 0, "Round must have no balance");
+
+    //   clear_round_storage(env, round_id);
+    //   round.to_external()
+    // }
 }

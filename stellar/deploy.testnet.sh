@@ -1,4 +1,6 @@
-loam build
+loam build --package lists
+loam build --package project-registry
+loam build --package round
 my_address=($(soroban keys address alice))
 native_token=CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC
 lists_contract_id=($(soroban contract deploy --wasm target/loam/lists.wasm --source alice --network testnet))

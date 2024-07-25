@@ -10,7 +10,7 @@ crate-type = ["cdylib"]
 loam-sdk = { workspace = true, features = ["soroban-sdk-alloc"] }
 soroban-token-sdk = { workspace = true }
 
-[dev_dependencies]
+[dev-dependencies]
 loam-sdk = { workspace = true, features = ["soroban-sdk-testutils", "soroban-sdk-alloc"] }
 
 [features]

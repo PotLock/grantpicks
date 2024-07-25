@@ -19,12 +19,12 @@ pub fn increment_project_num(env: &Env) -> u128 {
     next_num
 }
 
-pub fn read_projects(env: &Env) -> Vec<Project> {
+pub fn read_projects(env: &Env) -> Map<u128, Project> {
     let key = ContractKey::Projects;
     env.storage()
         .persistent()
         .get(&key)
-        .unwrap_or(Vec::new(env))
+        .unwrap_or(Map::new(env))
 }
 
 pub fn get_project(env: &Env, project_id: u128) -> Option<Project> {
@@ -35,14 +35,9 @@ pub fn get_project(env: &Env, project_id: u128) -> Option<Project> {
     }
 
     let projects = read_projects(env);
-    let skip: usize = (project_id - 1) as usize;
-    projects
-        .iter()
-        .skip(skip)
-        .take(1)
-        .find(|project| project.id == project_id)
-        .clone()
-}
+
+    projects.get(project_id)
+  }
 
 pub fn find_projects(env: &Env, skip: Option<u64>, limit: Option<u64>) -> Vec<Project> {
     let projects = read_projects(env);
@@ -52,8 +47,8 @@ pub fn find_projects(env: &Env, skip: Option<u64>, limit: Option<u64>) -> Vec<Pr
 
     let mut found_projects: Vec<Project> = Vec::new(env);
 
-    projects.iter().skip(skip).take(limit).for_each(|project| {
-        found_projects.push_back(project.clone());
+    projects.keys().iter().skip(skip).take(limit).for_each(|project_id| {
+        found_projects.push_back(projects.get(project_id).unwrap());
     });
 
     found_projects
@@ -61,7 +56,7 @@ pub fn find_projects(env: &Env, skip: Option<u64>, limit: Option<u64>) -> Vec<Pr
 
 pub fn add_project(env: &Env, project: Project) {
     let mut projects = read_projects(env);
-    projects.push_back(project);
+    projects.set(project.id, project);
     let key = ContractKey::Projects;
     env.storage().persistent().set(&key, &projects);
 }
@@ -69,13 +64,7 @@ pub fn add_project(env: &Env, project: Project) {
 pub fn update_project(env: &Env, project: Project) {
     let mut projects = read_projects(env);
     let project_id = project.id;
-    let index: u32 = projects
-        .iter()
-        .position(|x| x.id == project_id)
-        .unwrap()
-        .try_into()
-        .unwrap();
-    projects.insert(index, project);
+    projects.set(project_id, project);
     let key = ContractKey::Projects;
     env.storage().persistent().set(&key, &projects);
 }

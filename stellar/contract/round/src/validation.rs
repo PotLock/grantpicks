@@ -1,7 +1,7 @@
 use crate::{
     admin_writer::is_admin,
     approval_writer::{is_project_approved, read_approved_projects},
-    data_type::{CreateRoundParams, RoundDetailInternal},
+    data_type::{CreateRoundParams, RoundDetailInternal, UpdateRoundParams},
     external::ProjectRegistryClient,
     owner_writer::read_factory_owner,
     project_registry_writer::read_project_contract,
@@ -38,21 +38,42 @@ pub fn validate_round_detail(round_detail: &CreateRoundParams) {
     );
 }
 
+pub fn validate_round_detail_update(round_detail: &UpdateRoundParams) {
+  assert!(
+      round_detail.voting_start_ms < round_detail.voting_end_ms,
+      "Round start time must be less than round end time"
+  );
+
+  assert!(
+      round_detail.application_start_ms.unwrap() <= round_detail.application_end_ms.unwrap(),
+      "Round application start time must be less than equal round application end time"
+  );
+
+  assert!(
+      round_detail.voting_start_ms >= round_detail.application_end_ms.unwrap(),
+      "Round start time must be greater than or equal round application end time"
+  );
+
+  assert!(
+      round_detail.expected_amount > 0,
+      "Expected Amount must be greater than 0"
+  );
+
+  assert!(
+      round_detail.contacts.len() <= 10,
+      "Contact must be less than 10"
+  );
+}
+
 pub fn validate_owner_or_admin(env: &Env, admin: &Address, round: &RoundDetailInternal) {
     if round.owner != admin.clone() {
         assert!(
             is_admin(env, round.id, admin),
-            "Only round owner or round admin can change voting period"
+            "Only round owner or round admin can performe this action"
         );
     }
 }
 
-pub fn validate_owner(owner: &Address, round: &RoundDetailInternal) {
-    assert!(
-        round.owner == owner.clone(),
-        "Only round owner can change round detail"
-    );
-}
 
 pub fn validate_can_payout(env: &Env, round: &RoundDetailInternal) {
     let current_time = get_ledger_second_as_millis(env);

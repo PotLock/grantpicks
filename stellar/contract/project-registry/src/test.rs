@@ -80,6 +80,9 @@ fn test_apply() {
 
     assert_eq!(project.owner, bob);
     assert_eq!(project.payout_address, bob);
+
+    let result = contract.get_project_from_applicant(&bob);
+    assert_eq!(result.is_some(), true);
 }
 
 #[test]
@@ -613,8 +616,8 @@ fn test_update_project() {
         &alice,
         &project.id,
         &crate::data_type::UpdateProjectParams {
-            image_url: String::from_str(&env, "image url"),
-            video_url: String::from_str(&env, "video url"),
+            image_url: String::from_str(&env, "image url 2"),
+            video_url: String::from_str(&env, "video url 2"),
             name: String::from_str(&env, "name 2"),
             overview: String::from_str(&env, "overview 2"),
             payout_address: bob.clone(),

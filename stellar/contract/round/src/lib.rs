@@ -24,6 +24,6 @@ mod validation;
 mod voter_writer;
 mod voting_writer;
 
-// mod test;
+mod test;
 
 pub use crate::internal::RoundContract;

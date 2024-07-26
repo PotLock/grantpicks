@@ -1,7 +1,7 @@
 use crate::*;
 
 /// create round
-pub(crate) fn log_create_round(round_detail: &RoundDetailExternal) {
+pub(crate) fn log_round_created(round_detail: &RoundDetailExternal) {
     env::log_str(
         format!(
             "{}{}",
@@ -9,7 +9,7 @@ pub(crate) fn log_create_round(round_detail: &RoundDetailExternal) {
             json!({
                 "standard": "potlock",
                 "version": "1.0.0",
-                "event": "c_round",
+                "event": "create_round",
                 "data": [
                     {
                         "round_detail": round_detail,
@@ -22,7 +22,7 @@ pub(crate) fn log_create_round(round_detail: &RoundDetailExternal) {
 }
 
 /// update round
-pub(crate) fn log_update_round(round_detail: &RoundDetailExternal) {
+pub(crate) fn log_round_updated(round_detail: &RoundDetailExternal) {
     env::log_str(
         format!(
             "{}{}",
@@ -30,7 +30,7 @@ pub(crate) fn log_update_round(round_detail: &RoundDetailExternal) {
             json!({
                 "standard": "potlock",
                 "version": "1.0.0",
-                "event": "u_round",
+                "event": "round_updated",
                 "data": [
                     {
                         "round_detail": round_detail,
@@ -43,7 +43,7 @@ pub(crate) fn log_update_round(round_detail: &RoundDetailExternal) {
 }
 
 /// delete round
-pub(crate) fn log_delete_round(round_detail: &RoundDetailExternal) {
+pub(crate) fn log_round_deleted(round_detail: &RoundDetailExternal) {
     env::log_str(
         format!(
             "{}{}",
@@ -51,7 +51,7 @@ pub(crate) fn log_delete_round(round_detail: &RoundDetailExternal) {
             json!({
                 "standard": "potlock",
                 "version": "1.0.0",
-                "event": "d_round",
+                "event": "round_deleted",
                 "data": [
                     {
                         "round_detail": round_detail,
@@ -85,7 +85,7 @@ pub(crate) fn log_deposit(deposit: &DepositExternal) {
 }
 
 /// create application
-pub(crate) fn log_create_application(application: &RoundApplicationExternal) {
+pub(crate) fn log_application_created(application: &RoundApplicationExternal) {
     env::log_str(
         format!(
             "{}{}",
@@ -93,7 +93,7 @@ pub(crate) fn log_create_application(application: &RoundApplicationExternal) {
             json!({
                 "standard": "potlock",
                 "version": "1.0.0",
-                "event": "c_app",
+                "event": "application_created",
                 "data": [
                     {
                         "application": application,
@@ -106,7 +106,7 @@ pub(crate) fn log_create_application(application: &RoundApplicationExternal) {
 }
 
 /// update application
-pub(crate) fn log_update_application(application: &RoundApplicationExternal) {
+pub(crate) fn log_application_updated(application: &RoundApplicationExternal) {
     env::log_str(
         format!(
             "{}{}",
@@ -114,7 +114,7 @@ pub(crate) fn log_update_application(application: &RoundApplicationExternal) {
             json!({
                 "standard": "potlock",
                 "version": "1.0.0",
-                "event": "u_app",
+                "event": "application_updated",
                 "data": [
                     {
                         "application": application,
@@ -127,7 +127,7 @@ pub(crate) fn log_update_application(application: &RoundApplicationExternal) {
 }
 
 /// delete application
-pub(crate) fn log_delete_application(application: &RoundApplicationExternal) {
+pub(crate) fn log_application_deleted(application: &RoundApplicationExternal) {
     env::log_str(
         format!(
             "{}{}",
@@ -135,7 +135,7 @@ pub(crate) fn log_delete_application(application: &RoundApplicationExternal) {
             json!({
                 "standard": "potlock",
                 "version": "1.0.0",
-                "event": "d_app",
+                "event": "application_deleted",
                 "data": [
                     {
                         "application": application,
@@ -169,7 +169,7 @@ pub(crate) fn log_vote(vote: &VotingResult) {
 }
 
 /// set payouts
-pub(crate) fn log_set_payouts(payouts: &Vec<PayoutExternal>) {
+pub(crate) fn log_payouts_set(round_id: &RoundId, payouts: &Vec<PayoutExternal>) {
     env::log_str(
         format!(
             "{}{}",
@@ -177,10 +177,123 @@ pub(crate) fn log_set_payouts(payouts: &Vec<PayoutExternal>) {
             json!({
                 "standard": "potlock",
                 "version": "1.0.0",
-                "event": "set_payouts",
+                "event": "payouts_set",
                 "data": [
                     {
+                        "round_id": round_id,
                         "payouts": payouts,
+                    }
+                ]
+            })
+        )
+        .as_ref(),
+    );
+}
+
+pub(crate) fn log_payout_processed(payout: &PayoutExternal) {
+    env::log_str(
+        format!(
+            "{}{}",
+            EVENT_JSON_PREFIX,
+            json!({
+                "standard": "potlock",
+                "version": "1.0.0",
+                "event": "payout_processed",
+                "data": [
+                    {
+                        "payout": payout,
+                    }
+                ]
+            })
+        )
+        .as_ref(),
+    );
+}
+
+pub(crate) fn log_payouts_challenge(challenge: &PayoutsChallengeExternal) {
+    env::log_str(
+        format!(
+            "{}{}",
+            EVENT_JSON_PREFIX,
+            json!({
+                "standard": "potlock",
+                "version": "1.0.0",
+                "event": "payouts_challenged",
+                "data": [
+                    {
+                        "challenge": challenge,
+                    }
+                ]
+            })
+        )
+        .as_ref(),
+    );
+}
+
+pub(crate) fn log_payouts_challenge_removed(challenge: &PayoutsChallengeExternal) {
+    env::log_str(
+        format!(
+            "{}{}",
+            EVENT_JSON_PREFIX,
+            json!({
+                "standard": "potlock",
+                "version": "1.0.0",
+                "event": "payouts_challenge_removed",
+                "data": [
+                    {
+                        "challenge": challenge,
+                    }
+                ]
+            })
+        )
+        .as_ref(),
+    );
+}
+
+pub(crate) fn log_payouts_challenge_updated(challenge: &PayoutsChallengeExternal) {
+    env::log_str(
+        format!(
+            "{}{}",
+            EVENT_JSON_PREFIX,
+            json!({
+                "standard": "potlock",
+                "version": "1.0.0",
+                "event": "payouts_challenge_updated",
+                "data": [
+                    {
+                        "challenge": challenge,
+                    }
+                ]
+            })
+        )
+        .as_ref(),
+    );
+}
+
+pub(crate) fn log_vault_redistributed(
+    round_id: &RoundId,
+    redistribution_recipient: &AccountId,
+    amount: &U128,
+    memo: &Option<String>,
+    redistributed_at: &TimestampMs,
+    redistributed_by: &AccountId,
+) {
+    env::log_str(
+        format!(
+            "{}{}",
+            EVENT_JSON_PREFIX,
+            json!({
+                "standard": "potlock",
+                "version": "1.0.0",
+                "event": "vault_redistributed",
+                "data": [
+                    {
+                        "round_id": round_id,
+                        "redistribution_recipient": redistribution_recipient,
+                        "amount": amount,
+                        "memo": memo,
+                        "redistributed_at": redistributed_at,
+                        "redistributed_by": redistributed_by,
                     }
                 ]
             })

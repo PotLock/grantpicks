@@ -241,7 +241,7 @@ impl Contract {
             round.current_vault_balance
         );
         refund_deposit(initial_storage_usage, None);
-        log_set_payouts(&external_payouts);
+        log_payouts_set(&round_id, &external_payouts);
         external_payouts
     }
 
@@ -343,6 +343,7 @@ impl Contract {
                 "Successfully paid out amount {:#?} to project {}",
                 payout.amount, payout.recipient_id
             ));
+            log_payout_processed(&payout.to_external());
         }
     }
 
@@ -462,7 +463,7 @@ impl Contract {
     }
 
     #[payable]
-    pub fn redistribute_vault(&mut self, round_id: RoundId) {
+    pub fn redistribute_vault(&mut self, round_id: RoundId, memo: Option<String>) {
         let mut round = self
             .rounds_by_id
             .get(&round_id)
@@ -494,9 +495,11 @@ impl Contract {
                 .transfer(NearToken::from_yoctonear(amount))
                 .then(
                     Self::ext(env::current_account_id()).redistribute_vault_callback(
+                        env::predecessor_account_id(),
                         round_id,
                         amount,
                         redistribution_recipient.clone(),
+                        memo,
                     ),
                 );
         } else {
@@ -508,16 +511,17 @@ impl Contract {
     #[private]
     pub fn redistribute_vault_callback(
         &mut self,
+        caller: AccountId,
         round_id: RoundId,
         amount: u128,
         redistribution_recipient: AccountId,
+        memo: Option<String>,
         #[callback_result] call_result: Result<(), PromiseError>,
     ) -> RoundDetailExternal {
-        let mut round = self
+        let round = self
             .rounds_by_id
-            .get(&round_id)
-            .expect("Round does not exist")
-            .clone();
+            .get_mut(&round_id)
+            .expect("Round does not exist");
         if call_result.is_err() {
             log!(format!(
                 "Error redistributing vault ({:#?} to recipient {}). Reverting vault balance...",
@@ -525,7 +529,6 @@ impl Contract {
             ));
             // revert vault balance
             round.current_vault_balance += amount;
-            self.rounds_by_id.insert(round_id, round.clone());
         } else {
             log!(format!(
                 "Successfully redistributed matching pool ({:#?} to recipient {})",
@@ -533,11 +536,21 @@ impl Contract {
             ));
             // set remaining_funds_redistributed_at_ms to now
             round.remaining_funds_redistributed_at_ms = Some(env::block_timestamp_ms());
+            round.remaining_funds_redistributed_by = Some(caller.clone());
+            // round.remaining_funds_redistribution_memos = None;
             // set round_complete to true
             round.round_complete = true;
-            self.rounds_by_id.insert(round_id, round.clone());
+            // log event
+            log_vault_redistributed(
+                &round_id,
+                &redistribution_recipient,
+                &U128(amount),
+                &memo,
+                &env::block_timestamp_ms(),
+                &caller,
+            )
         }
-        round.to_external()
+        round.clone().to_external()
     }
 
     // VIEW / GETTER METHODS

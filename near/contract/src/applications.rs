@@ -170,7 +170,7 @@ impl Contract {
         };
 
         // emit event
-        log_create_application(&app_external);
+        log_application_created(&app_external);
 
         app_external
     }
@@ -256,7 +256,7 @@ impl Contract {
                 submited_ms: application.submited_ms,
                 updated_ms: application.updated_ms,
             };
-            log_delete_application(&app_external);
+            log_application_deleted(&app_external);
             app_external
         } else {
             panic!("Application does not exist for this project in this round");
@@ -313,7 +313,7 @@ impl Contract {
             submited_ms: application.submited_ms,
             updated_ms: application.updated_ms,
         };
-        log_update_application(&app_external);
+        log_application_updated(&app_external);
         app_external
     }
 
@@ -384,7 +384,7 @@ impl Contract {
             submited_ms: application.submited_ms,
             updated_ms: application.updated_ms,
         };
-        log_update_application(&app_external);
+        log_application_updated(&app_external);
         app_external
     }
 

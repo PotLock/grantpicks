@@ -57,6 +57,7 @@ pub struct RoundDetailInternal {
     pub remaining_funds_redistribution_recipient: Option<AccountId>,
     pub remaining_funds_redistributed_at_ms: Option<TimestampMs>,
     pub remaining_funds_redistribution_memo: Option<String>,
+    pub remaining_funds_redistributed_by: Option<AccountId>,
     pub num_picks_per_voter: u32,
     pub max_participants: u32,
     pub use_cooldown: bool,
@@ -94,6 +95,7 @@ impl RoundDetailInternal {
             remaining_funds_redistribution_recipient: self.remaining_funds_redistribution_recipient,
             remaining_funds_redistributed_at_ms: self.remaining_funds_redistributed_at_ms,
             remaining_funds_redistribution_memo: self.remaining_funds_redistribution_memo,
+            remaining_funds_redistributed_by: self.remaining_funds_redistributed_by,
             num_picks_per_voter: self.num_picks_per_voter,
             max_participants: self.max_participants,
             use_cooldown: self.use_cooldown,
@@ -778,6 +780,7 @@ pub struct RoundDetailExternal {
     pub remaining_funds_redistribution_recipient: Option<AccountId>,
     pub remaining_funds_redistributed_at_ms: Option<TimestampMs>,
     pub remaining_funds_redistribution_memo: Option<String>,
+    pub remaining_funds_redistributed_by: Option<AccountId>,
     pub num_picks_per_voter: u32,
     pub max_participants: u32,
     pub use_cooldown: bool,
@@ -815,6 +818,7 @@ impl RoundDetailExternal {
             remaining_funds_redistribution_recipient: self.remaining_funds_redistribution_recipient,
             remaining_funds_redistributed_at_ms: self.remaining_funds_redistributed_at_ms,
             remaining_funds_redistribution_memo: self.remaining_funds_redistribution_memo,
+            remaining_funds_redistributed_by: self.remaining_funds_redistributed_by,
             num_picks_per_voter: self.num_picks_per_voter,
             max_participants: self.max_participants,
             use_cooldown: self.use_cooldown,
@@ -880,6 +884,7 @@ impl Contract {
                 .remaining_funds_redistribution_recipient,
             remaining_funds_redistributed_at_ms: None,
             remaining_funds_redistribution_memo: None,
+            remaining_funds_redistributed_by: None,
             round_complete: false,
         };
 
@@ -940,7 +945,7 @@ impl Contract {
         // clean-up
         refund_deposit(initial_storage_usage, None);
         let round_external = round.to_external();
-        log_create_round(&round_external);
+        log_round_created(&round_external);
         round_external.clone()
     }
 
@@ -1015,7 +1020,7 @@ impl Contract {
         // clean-up
         refund_deposit(initial_storage_usage, None);
         let round_external = round.clone().to_external();
-        log_update_round(&round_external);
+        log_round_updated(&round_external);
         round_external.clone()
     }
 
@@ -1075,7 +1080,7 @@ impl Contract {
         // clean-up
         refund_deposit(initial_storage_usage, None);
         let round_external = round.to_external();
-        log_delete_round(&round_external);
+        log_round_deleted(&round_external);
         round_external
     }
 
@@ -1092,7 +1097,7 @@ impl Contract {
 
         refund_deposit(initial_storage_usage, None);
         let round_external = round.clone().to_external();
-        log_update_round(&round_external);
+        log_round_updated(&round_external);
         round_external
     }
 
@@ -1112,7 +1117,7 @@ impl Contract {
 
         refund_deposit(initial_storage_usage, None);
         let round_external = round.clone().to_external();
-        log_update_round(&round_external);
+        log_round_updated(&round_external);
         round_external
     }
 
@@ -1132,7 +1137,7 @@ impl Contract {
 
         refund_deposit(initial_storage_usage, None);
         let round_external = round.clone().to_external();
-        log_update_round(&round_external);
+        log_round_updated(&round_external);
         round_external
     }
 
@@ -1153,7 +1158,7 @@ impl Contract {
 
         refund_deposit(initial_storage_usage, None);
         let round_external = round.clone().to_external();
-        log_update_round(&round_external);
+        log_round_updated(&round_external);
         round_external
     }
 
@@ -1181,7 +1186,7 @@ impl Contract {
 
         refund_deposit(initial_storage_usage, None);
         let round_external = round.clone().to_external();
-        log_update_round(&round_external);
+        log_round_updated(&round_external);
         round_external
     }
 
@@ -1201,7 +1206,7 @@ impl Contract {
 
         refund_deposit(initial_storage_usage, None);
         let round_external = round.clone().to_external();
-        log_update_round(&round_external);
+        log_round_updated(&round_external);
         round_external
     }
 
@@ -1222,7 +1227,7 @@ impl Contract {
 
         refund_deposit(initial_storage_usage, None);
         let round_external = round.clone().to_external();
-        log_update_round(&round_external);
+        log_round_updated(&round_external);
         round_external
     }
 
@@ -1243,7 +1248,7 @@ impl Contract {
 
         refund_deposit(initial_storage_usage, None);
         let round_external = round.clone().to_external();
-        log_update_round(&round_external);
+        log_round_updated(&round_external);
         round_external
     }
 
@@ -1269,7 +1274,7 @@ impl Contract {
 
         refund_deposit(initial_storage_usage, None);
         let round_external = round.clone().to_external();
-        log_update_round(&round_external);
+        log_round_updated(&round_external);
         round_external
     }
 
@@ -1293,7 +1298,7 @@ impl Contract {
 
         refund_deposit(initial_storage_usage, None);
         let round_external = round.clone().to_external();
-        log_update_round(&round_external);
+        log_round_updated(&round_external);
         round_external
     }
 
@@ -1319,7 +1324,7 @@ impl Contract {
 
         refund_deposit(initial_storage_usage, None);
         let round_external = round.clone().to_external();
-        log_update_round(&round_external);
+        log_round_updated(&round_external);
         round_external
     }
 
@@ -1350,7 +1355,7 @@ impl Contract {
 
         refund_deposit(initial_storage_usage, None);
         let round_external = round.clone().to_external();
-        log_update_round(&round_external);
+        log_round_updated(&round_external);
         round_external
     }
 
@@ -1366,7 +1371,7 @@ impl Contract {
 
         refund_deposit(initial_storage_usage, None);
         let round_external = round.clone().to_external();
-        log_update_round(&round_external);
+        log_round_updated(&round_external);
         round_external
     }
 
@@ -1388,7 +1393,7 @@ impl Contract {
 
         refund_deposit(initial_storage_usage, None);
         let round_external = round.clone().to_external();
-        log_update_round(&round_external);
+        log_round_updated(&round_external);
         round_external
     }
 
@@ -1417,7 +1422,7 @@ impl Contract {
         self.rounds_by_id.insert(round_id, round.clone());
         refund_deposit(initial_storage_usage, None);
         let round_external = round.to_external();
-        log_update_round(&round_external);
+        log_round_updated(&round_external);
         round_external
     }
 
@@ -1447,7 +1452,7 @@ impl Contract {
         self.rounds_by_id.insert(round_id, round.clone());
         refund_deposit(initial_storage_usage, None);
         let round_external = round.to_external();
-        log_update_round(&round_external);
+        log_round_updated(&round_external);
         round_external
     }
 
@@ -1468,7 +1473,7 @@ impl Contract {
         self.rounds_by_id.insert(round_id, round.clone());
         refund_deposit(initial_storage_usage, None);
         let round_external = round.to_external();
-        log_update_round(&round_external);
+        log_round_updated(&round_external);
         round_external
     }
 

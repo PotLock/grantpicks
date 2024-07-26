@@ -64,7 +64,7 @@ pub(crate) fn log_delete_round(round_detail: &RoundDetailExternal) {
 }
 
 /// Deposit to round (vault)
-pub(crate) fn log_deposit(round: &RoundDetailExternal, attached_deposit: U128, caller: &AccountId) {
+pub(crate) fn log_deposit(deposit: &DepositExternal) {
     env::log_str(
         format!(
             "{}{}",
@@ -75,9 +75,7 @@ pub(crate) fn log_deposit(round: &RoundDetailExternal, attached_deposit: U128, c
                 "event": "deposit",
                 "data": [
                     {
-                        "round": round,
-                        "attached_deposit": attached_deposit,
-                        "caller": caller,
+                        "deposit": deposit,
                     }
                 ]
             })

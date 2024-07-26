@@ -932,6 +932,11 @@ impl Contract {
                 round_id: id,
             }),
         );
+        // add new mapping for deposits
+        self.deposit_ids_for_round.insert(
+            id,
+            UnorderedSet::new(StorageKey::DepositIdsForRoundInner { round_id: id }),
+        );
         // clean-up
         refund_deposit(initial_storage_usage, None);
         let round_external = round.to_external();
@@ -1065,6 +1070,7 @@ impl Contract {
         self.payout_ids_by_round_id.remove(&round_id);
         self.payouts_challenges_for_round_by_challenger_id
             .remove(&round_id);
+        self.deposit_ids_for_round.remove(&round_id);
 
         // clean-up
         refund_deposit(initial_storage_usage, None);
@@ -1384,35 +1390,6 @@ impl Contract {
         let round_external = round.clone().to_external();
         log_update_round(&round_external);
         round_external
-    }
-
-    #[payable]
-    pub fn deposit_to_round(&mut self, round_id: RoundId) -> RoundDetailExternal {
-        let initial_storage_usage = env::storage_usage();
-        let round = self
-            .rounds_by_id
-            .get(&round_id)
-            .expect("Round not found")
-            .clone();
-        let caller = env::predecessor_account_id();
-        let attached_deposit = env::attached_deposit();
-        let current_vault_balance = round.current_vault_balance + attached_deposit.as_yoctonear();
-        let vault_total_deposits = round.vault_total_deposits + attached_deposit.as_yoctonear();
-        let round = RoundDetailInternal {
-            current_vault_balance,
-            vault_total_deposits,
-            ..round
-        };
-        self.rounds_by_id.insert(round_id, round.clone());
-        refund_deposit(initial_storage_usage, None);
-        let round_external = round.to_external();
-        log_deposit(
-            &round_external,
-            U128(attached_deposit.as_yoctonear()),
-            &caller,
-        );
-        round_external
-        // TODO: determine whether deposit record should be saved on-chain (not currently done, only event is logged)
     }
 
     #[payable]

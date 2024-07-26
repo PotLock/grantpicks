@@ -10,6 +10,7 @@ use std::collections::HashMap;
 
 pub mod applications;
 pub mod constants;
+pub mod deposits;
 pub mod events;
 pub mod payouts;
 pub mod rounds;
@@ -17,6 +18,7 @@ pub mod utils;
 pub mod votes;
 pub use crate::applications::*;
 pub use crate::constants::*;
+pub use crate::deposits::*;
 pub use crate::events::*;
 pub use crate::payouts::*;
 pub use crate::rounds::*;
@@ -51,6 +53,11 @@ pub enum StorageKey {
     VotingCountPerProjectByRoundIdInner {
         round_id: RoundId,
     },
+    DepositsById,
+    DepositIdsForRound,
+    DepositIdsForRoundInner {
+        round_id: RoundId,
+    },
     PayoutsById,
     PayoutIdsByRoundId,
     PayoutIdsByRoundIdInner {
@@ -81,6 +88,9 @@ pub struct Contract {
     votes_by_round_id: UnorderedMap<RoundId, UnorderedMap<AccountId, VotingResult>>,
     voting_count_per_project_by_round_id:
         UnorderedMap<RoundId, UnorderedMap<InternalProjectId, u32>>,
+    deposits_by_id: UnorderedMap<DepositId, Deposit>,
+    next_deposit_id: DepositId,
+    deposit_ids_for_round: UnorderedMap<RoundId, UnorderedSet<DepositId>>,
     // payouts
     next_payout_id: PayoutId,
     payouts_by_id: UnorderedMap<PayoutId, Payout>,
@@ -113,6 +123,9 @@ impl Contract {
             voting_count_per_project_by_round_id: UnorderedMap::new(
                 StorageKey::VotingCountPerProjectByRoundId,
             ),
+            deposits_by_id: UnorderedMap::new(StorageKey::DepositsById),
+            next_deposit_id: 1,
+            deposit_ids_for_round: UnorderedMap::new(StorageKey::DepositIdsForRound),
             next_payout_id: 1,
             payouts_by_id: UnorderedMap::new(StorageKey::PayoutsById),
             payout_ids_by_round_id: UnorderedMap::new(StorageKey::PayoutIdsByRoundId),

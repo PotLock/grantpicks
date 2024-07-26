@@ -14,11 +14,11 @@ pub struct CreateRoundParams {
     pub allow_applications: bool,
     pub application_start_ms: Option<u64>, // must be present if allow_applications is true
     pub application_end_ms: Option<u64>,   // must be present if allow_applications is true
-    pub expected_amount: U128,             // NB: on Stellar this is an int (u128)
+    pub application_requires_video: bool,
+    pub expected_amount: U128, // NB: on Stellar this is an int (u128)
     pub use_whitelist: Option<bool>,
     pub num_picks_per_voter: u32,
     pub max_participants: Option<u32>,
-    // TODO: implement owner/admin methods to change cooldown config
     pub use_cooldown: bool,
     pub cooldown_period_ms: Option<u64>, // defaults to DEFAULT_COOLDOWN_PERIOD_MS if not provided
     pub use_compliance: bool,
@@ -40,6 +40,7 @@ pub struct RoundDetailInternal {
     pub allow_applications: bool,
     pub application_start_ms: Option<TimestampMs>, // must be present if allow_applications is true
     pub application_end_ms: Option<TimestampMs>,   // must be present if allow_applications is true
+    pub application_requires_video: bool,
     pub voting_start_ms: TimestampMs,
     pub voting_end_ms: TimestampMs,
     pub blacklisted_voters: Vec<AccountId>, // todo: if these will grow large, consider storing on top-level contract instead
@@ -63,6 +64,7 @@ pub struct RoundDetailInternal {
     pub cooldown_period_ms: u64,
     pub cooldown_end_ms: Option<TimestampMs>,
     pub use_compliance: bool,
+    // TODO: add compliance_requirement
     pub compliance_period_ms: u64,
     pub compliance_end_ms: Option<TimestampMs>,
     pub round_complete: bool,
@@ -80,6 +82,7 @@ impl RoundDetailInternal {
             allow_applications: self.allow_applications,
             application_start_ms: self.application_start_ms,
             application_end_ms: self.application_end_ms,
+            application_requires_video: self.application_requires_video,
             voting_start_ms: self.voting_start_ms,
             voting_end_ms: self.voting_end_ms,
             blacklisted_voters: self.blacklisted_voters,
@@ -104,49 +107,478 @@ impl RoundDetailInternal {
         }
     }
 
-    pub fn validate(self) {
-        if self.allow_applications {
-            if let Some(application_start_ms) = self.application_start_ms {
-                // must be less than application end time
-                assert!(
-                    application_start_ms
-                        < self.application_end_ms.expect(
-                            "Application end time must be provided if allow_applications is true"
-                        ),
-                    "Application start time must be less than application end time"
-                );
-            } else {
-                panic!("Application start time must be provided if allow_applications is true");
-            }
-            if let Some(application_end_ms) = self.application_end_ms {
-                assert!(
-                    self.voting_start_ms >= application_end_ms,
-                    "Round start time must be greater than or equal round application end time"
-                );
-                // don't need to verify it is greater than application start time, as that is already done
-            } else {
-                panic!("Application end time must be provided if allow_applications is true");
-            }
-        } else {
-            // if applications are not allowed, then application start and end times should not be provided
-            assert!(
-                self.application_start_ms.is_none(),
-                "Application start time must not be provided if allow_applications is false"
-            );
-            assert!(
-                self.application_end_ms.is_none(),
-                "Application end time must not be provided if allow_applications is false"
-            );
+    //  VALIDATION NOTES FROM SHOT 7/25/24:
+
+    //     1. when can voting start date be changed?
+    //     2. when can voting end date be changed?
+    //     3. when can application start date be changed?
+    //     4. when can application end date be changed?
+    //     5. when can expected amount be changed?
+    //     6. when can name, description & contacts be changed?
+    //     7. when can num picks per voter be changed?
+    //     8. when can max participants be changed?
+    //     9. when can optional cooldown config (whether or not to use a cooldown period and allow payouts challenges) be changed?
+    //     10. when can optional compliance config (whether or not to use a compliance period) be changed?
+    //     11. when can optional remaining funds redistribution config be changed?
+
+    //     -----
+
+    //     1&2) before the voting date starts
+    //     3) before the application starts
+    //     4) application end date can be extended as long as it doesnt overlap with voting and the application period isnt over
+    //     5) expected amount can be changed any time  except when round is live
+    //     6) name and description can be changed any time
+    //     7) number of votes can be changed until voting starts
+    //     8) max partipants as people applied, until application ends - allow for adding more just in case alot of influx during application
+    //     9) cooldown period cannot be changed or can be changed if no money is on it (for non escrow based this always apply) up until voting is started -- lmk about pushback on this or over complexification
+    //     10. i think maybe whenver cuz say compliance mechanism breaks or need to change
+    //     11. optional remaining funds redistribution -- keep as potlock pot contracts - i forgot but when voting starts
+
+    pub fn validate_name(&self, name: Option<String>) -> String {
+        let mut validated_name = self.name.clone();
+        if let Some(name) = name {
+            validated_name = name;
         }
-        assert!(
-            self.voting_start_ms < self.voting_end_ms,
-            "Round start time must be less than round end time"
+        validated_name
+    }
+
+    pub fn update_name(&mut self, name: Option<String>) {
+        if !self.is_caller_owner_or_admin() {
+            panic!("Only owner or admin can update name");
+        }
+        self.name = self.validate_name(name);
+    }
+
+    pub fn validate_description(&self, description: Option<String>) -> String {
+        let mut validated_description = self.description.clone();
+        if let Some(description) = description {
+            validated_description = description;
+        }
+        validated_description
+    }
+
+    pub fn update_description(&mut self, description: Option<String>) {
+        if !self.is_caller_owner_or_admin() {
+            panic!("Only owner or admin can update description");
+        }
+        self.description = self.validate_description(description);
+    }
+
+    pub fn validate_contacts(&self, contacts: Option<Vec<Contact>>) -> Vec<Contact> {
+        let mut validated_contacts = self.contacts.clone();
+        if let Some(contacts) = contacts {
+            validated_contacts = contacts;
+        }
+        validated_contacts
+    }
+
+    pub fn update_contacts(&mut self, contacts: Option<Vec<Contact>>) {
+        if !self.is_caller_owner_or_admin() {
+            panic!("Only owner or admin can update contacts");
+        }
+        self.contacts = self.validate_contacts(contacts);
+    }
+
+    pub fn validate_admins(&self, admins: Option<Vec<AccountId>>) -> Vec<AccountId> {
+        let mut validated_admins = self.admins.clone();
+        if let Some(admins) = admins {
+            validated_admins = admins;
+        }
+        validated_admins
+    }
+
+    pub fn update_admins(&mut self, admins: Option<Vec<AccountId>>) {
+        if !self.is_caller_owner() {
+            panic!("Only owner can update admins");
+        }
+        self.admins = self.validate_admins(admins);
+    }
+
+    pub fn validate_blacklisted_voters(
+        &self,
+        blacklisted_voters: Option<Vec<AccountId>>,
+    ) -> Vec<AccountId> {
+        let mut validated_blacklisted_voters = self.blacklisted_voters.clone();
+        if let Some(blacklisted_voters) = blacklisted_voters {
+            validated_blacklisted_voters = blacklisted_voters;
+        }
+        validated_blacklisted_voters
+    }
+
+    pub fn update_blacklisted_voters(&mut self, blacklisted_voters: Option<Vec<AccountId>>) {
+        if !self.is_caller_owner_or_admin() {
+            panic!("Only owner or admin can update blacklisted voters");
+        }
+        self.blacklisted_voters = self.validate_blacklisted_voters(blacklisted_voters);
+    }
+
+    pub fn validate_use_whitelist(&self, use_whitelist: Option<bool>) -> bool {
+        let mut validated_use_whitelist = self.use_whitelist;
+        if let Some(use_whitelist) = use_whitelist {
+            validated_use_whitelist = use_whitelist;
+        }
+        validated_use_whitelist
+    }
+
+    pub fn update_use_whitelist(&mut self, use_whitelist: Option<bool>) {
+        if !self.is_caller_owner_or_admin() {
+            panic!("Only owner or admin can update use whitelist");
+        }
+        self.use_whitelist = self.validate_use_whitelist(use_whitelist);
+    }
+
+    pub fn validate_whitelisted_voters(
+        &self,
+        whitelisted_voters: Option<Vec<AccountId>>,
+    ) -> Option<Vec<AccountId>> {
+        let mut validated_whitelisted_voters = self.whitelisted_voters.clone();
+        if let Some(whitelisted_voters) = whitelisted_voters {
+            validated_whitelisted_voters = Some(whitelisted_voters);
+        }
+        validated_whitelisted_voters
+    }
+
+    pub fn update_whitelisted_voters(&mut self, whitelisted_voters: Option<Vec<AccountId>>) {
+        if !self.is_caller_owner_or_admin() {
+            panic!("Only owner or admin can update whitelisted voters");
+        }
+        self.whitelisted_voters = self.validate_whitelisted_voters(whitelisted_voters);
+    }
+
+    pub fn validate_expected_amount(&self, expected_amount: Option<U128>) -> u128 {
+        let mut validated_expected_amount = self.expected_amount;
+        if let Some(expected_amount) = expected_amount {
+            if self.is_voting_live() {
+                panic!("Expected amount cannot be changed when round is live");
+            }
+            validated_expected_amount = expected_amount.0;
+        }
+        validated_expected_amount
+    }
+
+    pub fn update_expected_amount(&mut self, expected_amount: Option<U128>) {
+        if !self.is_caller_owner_or_admin() {
+            panic!("Only owner or admin can update expected amount");
+        }
+        self.expected_amount = self.validate_expected_amount(expected_amount);
+    }
+
+    pub fn validate_num_picks_per_voter(&self, num_picks_per_voter: Option<u32>) -> u32 {
+        let mut validated_num_picks_per_voter = self.num_picks_per_voter;
+        if let Some(num_picks_per_voter) = num_picks_per_voter {
+            if self.voting_start_ms > env::block_timestamp_ms() {
+                validated_num_picks_per_voter = num_picks_per_voter;
+            } else {
+                panic!("Number of picks per voter can only be changed before voting period starts");
+            }
+        }
+        validated_num_picks_per_voter
+    }
+
+    pub fn validate_max_participants(&self, max_participants: Option<u32>) -> u32 {
+        let mut validated_max_participants = self.max_participants;
+        if let Some(max_participants) = max_participants {
+            if self.application_end_ms.unwrap_or(u64::MAX) > env::block_timestamp_ms() {
+                validated_max_participants = max_participants;
+            } else {
+                panic!("Max participants can only be changed before application period ends");
+            }
+        }
+        validated_max_participants
+    }
+
+    pub fn update_max_participants(&mut self, max_participants: Option<u32>) {
+        if !self.is_caller_owner_or_admin() {
+            panic!("Only owner or admin can update max participants");
+        }
+        self.max_participants = self.validate_max_participants(max_participants);
+    }
+
+    pub fn update_num_picks_per_voter(&mut self, num_picks_per_voter: Option<u32>) {
+        if !self.is_caller_owner_or_admin() {
+            panic!("Only owner or admin can update number of picks per voter");
+        }
+        self.num_picks_per_voter = self.validate_num_picks_per_voter(num_picks_per_voter);
+    }
+
+    pub fn update_compliance_config(
+        &mut self,
+        use_compliance: Option<bool>,
+        compliance_period_ms: Option<u64>,
+    ) {
+        if !self.is_caller_owner_or_admin() {
+            panic!("Only owner or admin can update compliance config");
+        }
+        self.use_compliance = use_compliance.unwrap_or(self.use_compliance);
+        self.compliance_period_ms = compliance_period_ms.unwrap_or(self.compliance_period_ms);
+    }
+
+    pub fn validate_cooldown_config(
+        &self,
+        use_cooldown: Option<bool>,
+        cooldown_period_ms: Option<u64>,
+    ) -> (bool, u64) {
+        let mut validated_use_cooldown = self.use_cooldown;
+        let mut validated_cooldown_period_ms = self.cooldown_period_ms;
+
+        if let Some(use_cooldown) = use_cooldown {
+            if self.vault_total_deposits == 0 {
+                if self.voting_start_ms > env::block_timestamp_ms() {
+                    validated_use_cooldown = use_cooldown;
+                } else {
+                    panic!("Cooldown period can only be changed before voting period starts");
+                }
+            } else {
+                panic!("Cooldown period cannot be changed if there are funds in the vault");
+            }
+        }
+
+        if let Some(cooldown_period_ms) = cooldown_period_ms {
+            if self.vault_total_deposits == 0 {
+                if self.voting_start_ms > env::block_timestamp_ms() {
+                    validated_cooldown_period_ms = cooldown_period_ms;
+                } else {
+                    panic!("Cooldown period can only be changed before voting period starts");
+                }
+            } else {
+                panic!("Cooldown period cannot be changed if there are funds in the vault");
+            }
+        }
+
+        (validated_use_cooldown, validated_cooldown_period_ms)
+    }
+
+    pub fn update_cooldown_config(
+        &mut self,
+        use_cooldown: Option<bool>,
+        cooldown_period_ms: Option<u64>,
+    ) {
+        if !self.is_caller_owner_or_admin() {
+            panic!("Only owner or admin can update cooldown config");
+        }
+        let (validated_use_cooldown, validated_cooldown_period_ms) =
+            self.validate_cooldown_config(use_cooldown, cooldown_period_ms);
+        self.use_cooldown = validated_use_cooldown;
+        self.cooldown_period_ms = validated_cooldown_period_ms;
+    }
+
+    pub fn validate_remaining_funds_redistribution_config(
+        &self,
+        allow_remaining_funds_redistribution: Option<bool>,
+        remaining_funds_redistribution_recipient: Option<AccountId>,
+    ) -> (bool, Option<AccountId>) {
+        let mut validated_allow_remaining_funds_redistribution =
+            self.allow_remaining_funds_redistribution;
+        let mut validated_remaining_funds_redistribution_recipient =
+            self.remaining_funds_redistribution_recipient.clone();
+
+        if let Some(allow_remaining_funds_redistribution) = allow_remaining_funds_redistribution {
+            if self.voting_start_ms > env::block_timestamp_ms() {
+                if !allow_remaining_funds_redistribution {
+                    validated_allow_remaining_funds_redistribution =
+                        allow_remaining_funds_redistribution;
+                    validated_remaining_funds_redistribution_recipient = None;
+                } else {
+                    if remaining_funds_redistribution_recipient.is_none() {
+                        panic!("Recipient must be provided if remaining funds redistribution is enabled");
+                    }
+                    validated_allow_remaining_funds_redistribution =
+                        allow_remaining_funds_redistribution;
+                    validated_remaining_funds_redistribution_recipient =
+                        remaining_funds_redistribution_recipient.clone();
+                }
+            } else {
+                panic!("Remaining funds redistribution can only be changed before voting period starts");
+            }
+        }
+
+        if let Some(remaining_funds_redistribution_recipient) =
+            remaining_funds_redistribution_recipient
+        {
+            if self.allow_remaining_funds_redistribution {
+                if self.voting_start_ms > env::block_timestamp_ms() {
+                    validated_remaining_funds_redistribution_recipient =
+                        Some(remaining_funds_redistribution_recipient);
+                } else {
+                    panic!("Remaining funds redistribution recipient can only be changed before voting period starts");
+                }
+            } else {
+                panic!("Remaining funds redistribution recipient can only be changed if remaining funds redistribution is enabled");
+            }
+        }
+
+        (
+            validated_allow_remaining_funds_redistribution,
+            validated_remaining_funds_redistribution_recipient,
+        )
+    }
+
+    pub fn update_remaining_funds_redistribution_config(
+        &mut self,
+        allow_remaining_funds_redistribution: Option<bool>,
+        remaining_funds_redistribution_recipient: Option<AccountId>,
+    ) {
+        if !self.is_caller_owner_or_admin() {
+            panic!("Only owner or admin can update remaining funds redistribution config");
+        }
+        let (
+            validated_allow_remaining_funds_redistribution,
+            validated_remaining_funds_redistribution_recipient,
+        ) = self.validate_remaining_funds_redistribution_config(
+            allow_remaining_funds_redistribution,
+            remaining_funds_redistribution_recipient,
         );
 
-        assert!(
-            self.expected_amount > 0,
-            "Expected Amount must be greater than 0"
+        self.allow_remaining_funds_redistribution = validated_allow_remaining_funds_redistribution;
+        self.remaining_funds_redistribution_recipient =
+            validated_remaining_funds_redistribution_recipient;
+    }
+
+    pub fn validate_voting_config(
+        &self,
+        voting_start_ms: Option<TimestampMs>,
+        voting_end_ms: Option<TimestampMs>,
+    ) -> (TimestampMs, TimestampMs) {
+        let mut validated_voting_start_ms = self.voting_start_ms;
+        let mut validated_voting_end_ms = self.voting_end_ms;
+
+        if let Some(voting_start_ms) = voting_start_ms {
+            if voting_start_ms < env::block_timestamp_ms() {
+                panic!("Voting start date must be in the future");
+            } else if env::block_timestamp_ms() > self.voting_start_ms {
+                panic!("Voting start date can only be changed before voting period starts");
+            }
+            validated_voting_start_ms = voting_start_ms;
+        }
+
+        if let Some(voting_end_ms) = voting_end_ms {
+            if voting_end_ms < env::block_timestamp_ms() {
+                panic!("Voting end date must be in the future");
+            } else if env::block_timestamp_ms() > self.voting_end_ms {
+                panic!("Voting end date can only be changed before voting period ends");
+            }
+            validated_voting_end_ms = voting_end_ms;
+        }
+        if validated_voting_start_ms >= validated_voting_end_ms {
+            panic!("Voting start date must be before voting end date");
+        }
+
+        (validated_voting_start_ms, validated_voting_end_ms)
+    }
+
+    pub fn update_voting_config(
+        &mut self,
+        voting_start_ms: Option<u64>,
+        voting_end_ms: Option<u64>,
+    ) {
+        if !self.is_caller_owner_or_admin() {
+            panic!("Only owner or admin can update voting config");
+        }
+        let (validated_voting_start_ms, validated_voting_end_ms) =
+            self.validate_voting_config(voting_start_ms, voting_end_ms);
+
+        self.voting_start_ms = validated_voting_start_ms;
+        self.voting_end_ms = validated_voting_end_ms;
+    }
+
+    pub fn validate_application_config(
+        &self,
+        allow_applications: Option<bool>,
+        application_start_ms: Option<TimestampMs>,
+        application_end_ms: Option<TimestampMs>,
+        application_requires_video: Option<bool>,
+    ) -> (bool, Option<TimestampMs>, Option<TimestampMs>, bool) {
+        let mut validated_allow_applications = self.allow_applications;
+        let mut validated_application_start_ms = self.application_start_ms;
+        let mut validated_application_end_ms = self.application_end_ms;
+        let mut validated_application_requires_video = self.application_requires_video;
+
+        // allow_applications can be changed before voting period starts
+        if let Some(allow_applications) = allow_applications {
+            if self.voting_start_ms > env::block_timestamp_ms() {
+                if !allow_applications {
+                    validated_allow_applications = allow_applications;
+                    validated_application_start_ms = None;
+                    validated_application_end_ms = None;
+                } else {
+                    if application_start_ms.is_none() || application_end_ms.is_none() {
+                        panic!("Application start and end dates must be provided if allow applications is true");
+                    }
+                    validated_allow_applications = allow_applications;
+                    validated_application_start_ms = application_start_ms;
+                    validated_application_end_ms = application_end_ms;
+                }
+            } else {
+                panic!("Allow applications can only be changed before voting period starts");
+            }
+        }
+
+        // application start date can be extended as long as it doesn't overlap with voting
+        if let Some(start_ms) = application_start_ms {
+            if self.voting_start_ms > start_ms {
+                validated_application_start_ms = Some(start_ms);
+            } else {
+                panic!("Application start date must be before voting start date");
+            }
+        }
+
+        // application end date can be extended as long as it doesn't overlap with voting and the application period isn't over
+        if let Some(end_ms) = application_end_ms {
+            if let Some(current_end_ms) = self.application_end_ms {
+                if env::block_timestamp_ms() > current_end_ms {
+                    panic!("Application end date has passed");
+                }
+            }
+            validated_application_end_ms = Some(end_ms);
+        }
+
+        if let Some(application_requires_video) = application_requires_video {
+            validated_application_requires_video = application_requires_video;
+        }
+
+        (
+            validated_allow_applications,
+            validated_application_start_ms,
+            validated_application_end_ms,
+            validated_application_requires_video,
+        )
+    }
+
+    pub fn update_application_config(
+        &mut self,
+        allow_applications: Option<bool>,
+        application_start_ms: Option<u64>,
+        application_end_ms: Option<u64>,
+        application_requires_video: Option<bool>,
+    ) {
+        if !self.is_caller_owner_or_admin() {
+            panic!("Only owner or admin can update application config");
+        }
+        let (
+            validated_allow_applications,
+            validated_application_start_ms,
+            validated_application_end_ms,
+            validated_application_requires_video,
+        ) = self.validate_application_config(
+            allow_applications,
+            application_start_ms,
+            application_end_ms,
+            application_requires_video,
         );
+
+        self.allow_applications = validated_allow_applications;
+        if let Some(start_ms) = validated_application_start_ms {
+            self.application_start_ms = Some(start_ms);
+        }
+        if let Some(end_ms) = validated_application_end_ms {
+            self.application_end_ms = Some(end_ms);
+        }
+        self.application_requires_video = validated_application_requires_video;
+    }
+
+    pub fn is_caller_owner(&self) -> bool {
+        let caller = env::predecessor_account_id();
+        self.owner == *caller
     }
 
     pub fn is_caller_owner_or_admin(&self) -> bool {
@@ -245,33 +677,6 @@ impl RoundDetailInternal {
             "Compliance period has not ended yet"
         );
     }
-
-    // verify that the compliance period has passed
-    // // verify that the cooldown period has passed
-    // self.assert_cooldown_period_complete();
-    // // verify that any challenges have been resolved
-    // self.assert_all_payouts_challenges_resolved();
-    // // verify that compliance period has passed
-    // self.assert_compliance_period_complete();
-    // // verify that redistribution is allowed
-    // if !self.allow_remaining_funds_redistribution {
-    //     panic!("Redistribution of matching pool is not allowed");
-    // }
-    // // verify that there is a redistribution recipient set
-    // if self.remaining_funds_redistribution_recipient.is_none() {
-    //     panic!("No redistribution recipient set");
-    // }
-    // let redistribution_recipient = self.remaining_funds_redistribution_recipient.get().unwrap();
-    // // update matching pool balance (this will be reverted in callback on failure)
-    // let amount = self.matching_pool_balance;
-    // self.matching_pool_balance = 0;
-    // // send matching pool balance to redistribution recipient
-    // Promise::new(redistribution_recipient.clone())
-    //     .transfer(amount)
-    //     .then(
-    //         Self::ext(env::current_account_id())
-    //             .redistribute_matching_pool_callback(amount, redistribution_recipient.clone()),
-    //     );
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
@@ -287,6 +692,7 @@ pub struct RoundDetailExternal {
     pub allow_applications: bool,
     pub application_start_ms: Option<TimestampMs>, // must be present if allow_applications is true
     pub application_end_ms: Option<TimestampMs>,   // must be present if allow_applications is true
+    pub application_requires_video: bool,
     pub voting_start_ms: TimestampMs,
     pub voting_end_ms: TimestampMs,
     pub blacklisted_voters: Vec<AccountId>, // todo: if these will grow large, consider storing on top-level contract instead
@@ -322,6 +728,7 @@ impl RoundDetailExternal {
             allow_applications: self.allow_applications,
             application_start_ms: self.application_start_ms,
             application_end_ms: self.application_end_ms,
+            application_requires_video: self.application_requires_video,
             voting_start_ms: self.voting_start_ms,
             voting_end_ms: self.voting_end_ms,
             blacklisted_voters: self.blacklisted_voters,
@@ -371,6 +778,7 @@ impl Contract {
             allow_applications: round_detail.allow_applications,
             application_start_ms: round_detail.application_start_ms,
             application_end_ms: round_detail.application_end_ms,
+            application_requires_video: round_detail.application_requires_video,
             voting_start_ms: round_detail.voting_start_ms,
             voting_end_ms: round_detail.voting_end_ms,
             blacklisted_voters: vec![],
@@ -398,7 +806,21 @@ impl Contract {
             remaining_funds_redistribution_memo: None,
             round_complete: false,
         };
-        validate_round_detail(&round);
+
+        // validation
+        round.validate_application_config(
+            Some(round.allow_applications),
+            round.application_start_ms,
+            round.application_end_ms,
+            Some(round.application_requires_video),
+        );
+        round.validate_voting_config(Some(round.voting_start_ms), Some(round.voting_end_ms));
+        round.validate_cooldown_config(Some(round.use_cooldown), Some(round.cooldown_period_ms));
+        round.validate_remaining_funds_redistribution_config(
+            Some(round.allow_remaining_funds_redistribution),
+            round.remaining_funds_redistribution_recipient.clone(),
+        );
+
         self.rounds_by_id.insert(id, round.clone());
         self.next_round_id += 1;
         self.applications_for_round_by_internal_project_id.insert(
@@ -444,70 +866,69 @@ impl Contract {
     #[payable]
     pub fn update_round(
         &mut self,
+        // don't allow changing owner via this method
         round_id: RoundId,
-        mut round_detail: RoundDetailExternal,
+        admins: Option<Vec<AccountId>>,
+        name: Option<String>,
+        description: Option<String>,
+        contacts: Option<Vec<Contact>>,
+        allow_applications: Option<bool>,
+        application_start_ms: Option<TimestampMs>,
+        application_end_ms: Option<TimestampMs>,
+        application_requires_video: Option<bool>,
+        voting_start_ms: Option<TimestampMs>,
+        voting_end_ms: Option<TimestampMs>,
+        blacklisted_voters: Option<Vec<AccountId>>,
+        whitelisted_voters: Option<Vec<AccountId>>,
+        use_whitelist: Option<bool>,
+        expected_amount: Option<U128>,
+        allow_remaining_funds_redistribution: Option<bool>,
+        remaining_funds_redistribution_recipient: Option<AccountId>,
+        num_picks_per_voter: Option<u32>,
+        max_participants: Option<u32>,
+        use_cooldown: Option<bool>,
+        cooldown_period_ms: Option<u64>,
+        use_compliance: Option<bool>,
+        compliance_period_ms: Option<u64>,
+        // don't allow changing round_complete via this method
     ) -> RoundDetailExternal {
         // TODO: this needs to be reviewed and extensive validation added for what can be updated and when
         let initial_storage_usage = env::storage_usage();
-        let caller = env::predecessor_account_id();
         let round = self
             .rounds_by_id
             .get_mut(&round_id)
             .expect("Round not found");
 
-        // Verify voting hasn't started
-        // TODO: implement more granular checks for what can be updated at what point, e.g. voting_end_ms can be updated after voting has started, etc
-        assert!(
-            round.voting_start_ms > env::block_timestamp_ms(),
-            "Voting has already started"
-        );
-
-        // Verify caller is owner or admin
+        // Verify caller is owner or admin (not strictly necessary here since individual update methods also do this)
         round.assert_caller_is_owner_or_admin();
 
-        // If not owner, set admins to existing
-        if round.owner != caller {
-            round_detail.admins = round.admins.clone();
-        }
+        round.update_admins(admins);
+        round.update_name(name);
+        round.update_description(description);
+        round.update_contacts(contacts);
+        round.update_application_config(
+            allow_applications,
+            application_start_ms,
+            application_end_ms,
+            application_requires_video,
+        );
+        round.update_voting_config(voting_start_ms, voting_end_ms);
+        round.update_blacklisted_voters(blacklisted_voters);
+        round.update_whitelisted_voters(whitelisted_voters);
+        round.update_use_whitelist(use_whitelist);
+        round.update_expected_amount(expected_amount);
+        round.update_remaining_funds_redistribution_config(
+            allow_remaining_funds_redistribution,
+            remaining_funds_redistribution_recipient,
+        );
+        round.update_num_picks_per_voter(num_picks_per_voter);
+        round.update_max_participants(max_participants);
+        round.update_cooldown_config(use_cooldown, cooldown_period_ms);
+        round.update_compliance_config(use_compliance, compliance_period_ms);
 
-        let round_detail_internal = RoundDetailInternal {
-            id: round_detail.id,
-            owner: round_detail.owner,
-            admins: round_detail.admins,
-            name: round_detail.name,
-            description: round_detail.description,
-            contacts: round_detail.contacts,
-            allow_applications: round_detail.allow_applications,
-            application_start_ms: round_detail.application_start_ms,
-            application_end_ms: round_detail.application_end_ms,
-            voting_start_ms: round_detail.voting_start_ms,
-            voting_end_ms: round_detail.voting_end_ms,
-            blacklisted_voters: round_detail.blacklisted_voters,
-            whitelisted_voters: round_detail.whitelisted_voters,
-            use_whitelist: round_detail.use_whitelist,
-            expected_amount: round_detail.expected_amount.0,
-            current_vault_balance: round.current_vault_balance, // NB: this field is not updatable
-            vault_total_deposits: round.vault_total_deposits,   // NB: this field is not updatable
-            num_picks_per_voter: round_detail.num_picks_per_voter,
-            max_participants: round_detail.max_participants,
-            use_cooldown: round_detail.use_cooldown,
-            cooldown_period_ms: round_detail.cooldown_period_ms,
-            cooldown_end_ms: round.cooldown_end_ms, // NB: this field is not updatable
-            use_compliance: round_detail.use_compliance,
-            compliance_period_ms: round_detail.compliance_period_ms,
-            compliance_end_ms: round.compliance_end_ms, // NB: this field is not updatable
-            allow_remaining_funds_redistribution: round_detail.allow_remaining_funds_redistribution,
-            remaining_funds_redistribution_recipient: round_detail
-                .remaining_funds_redistribution_recipient,
-            remaining_funds_redistributed_at_ms: round.remaining_funds_redistributed_at_ms, // NB: this field is not updatable
-            remaining_funds_redistribution_memo: round.remaining_funds_redistribution_memo.clone(), // NB: this field is not updatable
-            round_complete: round.round_complete, // NB: this field is not updatable
-        };
-
-        self.rounds_by_id
-            .insert(round_id, round_detail_internal.clone());
+        // clean-up
         refund_deposit(initial_storage_usage, None);
-        let round_external = round_detail_internal.to_external();
+        let round_external = round.clone().to_external();
         log_update_round(&round_external);
         round_external.clone()
     }
@@ -572,120 +993,127 @@ impl Contract {
     }
 
     #[payable]
-    pub fn change_voting_period(
+    pub fn set_name(&mut self, round_id: RoundId, name: String) -> RoundDetailExternal {
+        let initial_storage_usage = env::storage_usage();
+        let round = self
+            .rounds_by_id
+            .get_mut(&round_id)
+            .expect("Round not found");
+
+        // Verify caller is owner or admin
+        round.update_name(Some(name));
+
+        refund_deposit(initial_storage_usage, None);
+        let round_external = round.clone().to_external();
+        log_update_round(&round_external);
+        round_external
+    }
+
+    #[payable]
+    pub fn set_description(
+        &mut self,
+        round_id: RoundId,
+        description: String,
+    ) -> RoundDetailExternal {
+        let initial_storage_usage = env::storage_usage();
+        let round = self
+            .rounds_by_id
+            .get_mut(&round_id)
+            .expect("Round not found");
+
+        round.update_description(Some(description));
+
+        refund_deposit(initial_storage_usage, None);
+        let round_external = round.clone().to_external();
+        log_update_round(&round_external);
+        round_external
+    }
+
+    #[payable]
+    pub fn set_contacts(
+        &mut self,
+        round_id: RoundId,
+        contacts: Vec<Contact>,
+    ) -> RoundDetailExternal {
+        let initial_storage_usage = env::storage_usage();
+        let round = self
+            .rounds_by_id
+            .get_mut(&round_id)
+            .expect("Round not found");
+
+        round.update_contacts(Some(contacts));
+
+        refund_deposit(initial_storage_usage, None);
+        let round_external = round.clone().to_external();
+        log_update_round(&round_external);
+        round_external
+    }
+
+    #[payable]
+    pub fn set_voting_period(
         &mut self,
         round_id: RoundId,
         start_ms: TimestampMs,
         end_ms: TimestampMs,
     ) -> RoundDetailExternal {
         let initial_storage_usage = env::storage_usage();
-        let caller = env::predecessor_account_id();
-        let mut round = self
+        let round = self
             .rounds_by_id
-            .get(&round_id)
-            .expect("Round not found")
-            .clone();
+            .get_mut(&round_id)
+            .expect("Round not found");
 
-        // Verify caller is owner or admin
-        round.assert_caller_is_owner_or_admin();
+        round.update_voting_config(Some(start_ms), Some(end_ms));
 
-        round.voting_start_ms = start_ms;
-        round.voting_end_ms = end_ms;
-        validate_round_detail(&round);
-        self.rounds_by_id.insert(round_id, round.clone());
         refund_deposit(initial_storage_usage, None);
-        let round_external = round.to_external();
+        let round_external = round.clone().to_external();
         log_update_round(&round_external);
         round_external
     }
 
     #[payable]
-    pub fn change_allow_applications(
+    pub fn set_applications_config(
         &mut self,
         round_id: RoundId,
-        allow_applications: bool,
-        start_ms: Option<TimestampMs>,
-        end_ms: Option<TimestampMs>,
+        allow_applications: Option<bool>,
+        application_start_ms: Option<TimestampMs>,
+        application_end_ms: Option<TimestampMs>,
+        application_requires_video: Option<bool>,
     ) -> RoundDetailExternal {
         let initial_storage_usage = env::storage_usage();
-        let caller = env::predecessor_account_id();
-        let mut round = self
+        let round = self
             .rounds_by_id
-            .get(&round_id)
-            .expect("Round not found")
-            .clone();
+            .get_mut(&round_id)
+            .expect("Round not found");
 
-        // Verify caller is owner or admin
-        round.assert_caller_is_owner_or_admin();
+        round.update_application_config(
+            allow_applications,
+            application_start_ms,
+            application_end_ms,
+            application_requires_video,
+        );
 
-        round.allow_applications = allow_applications;
-        // if applications are not allowed, then application start and end times should be removed...
-        if !allow_applications {
-            round.application_start_ms = None;
-            round.application_end_ms = None;
-        } else {
-            // ...and vice versa, they should be provided (validate_round_detail will verify this)
-            round.application_start_ms = start_ms;
-            round.application_end_ms = end_ms;
-        }
-        validate_round_detail(&round);
-        self.rounds_by_id.insert(round_id, round.clone());
         refund_deposit(initial_storage_usage, None);
-        let round_external = round.to_external();
+        let round_external = round.clone().to_external();
         log_update_round(&round_external);
         round_external
     }
 
     #[payable]
-    pub fn change_application_period(
-        &mut self,
-        round_id: RoundId,
-        start_ms: TimestampMs,
-        end_ms: TimestampMs,
-    ) -> RoundDetailExternal {
-        let initial_storage_usage = env::storage_usage();
-        let caller = env::predecessor_account_id();
-        let mut round = self
-            .rounds_by_id
-            .get(&round_id)
-            .expect("Round not found")
-            .clone();
-
-        // Verify caller is owner or admin
-        round.assert_caller_is_owner_or_admin();
-
-        round.application_start_ms = Some(start_ms);
-        round.application_end_ms = Some(end_ms);
-        validate_round_detail(&round);
-        self.rounds_by_id.insert(round_id, round.clone());
-        refund_deposit(initial_storage_usage, None);
-        let round_external = round.to_external();
-        log_update_round(&round_external);
-        round_external
-    }
-
-    #[payable]
-    pub fn change_expected_amount(
+    pub fn set_expected_amount(
         &mut self,
         round_id: RoundId,
         expected_amount: U128,
     ) -> RoundDetailExternal {
         let initial_storage_usage = env::storage_usage();
-        let caller = env::predecessor_account_id();
-        let mut round = self
+        let round = self
             .rounds_by_id
-            .get(&round_id)
-            .expect("Round not found")
-            .clone();
+            .get_mut(&round_id)
+            .expect("Round not found");
 
-        // Verify caller is owner or admin
-        round.assert_caller_is_owner_or_admin();
+        round.update_expected_amount(Some(expected_amount));
 
-        round.expected_amount = expected_amount.0;
-        validate_round_detail(&round);
-        self.rounds_by_id.insert(round_id, round.clone());
         refund_deposit(initial_storage_usage, None);
-        let round_external = round.to_external();
+        let round_external = round.clone().to_external();
         log_update_round(&round_external);
         round_external
     }
@@ -693,21 +1121,20 @@ impl Contract {
     #[payable]
     pub fn close_voting_period(&mut self, round_id: RoundId) -> RoundDetailExternal {
         let initial_storage_usage = env::storage_usage();
-        let caller = env::predecessor_account_id();
-        let mut round = self
+        let round = self
             .rounds_by_id
-            .get(&round_id)
-            .expect("Round not found")
-            .clone();
+            .get_mut(&round_id)
+            .expect("Round not found");
 
         // Verify caller is owner or admin
         round.assert_caller_is_owner_or_admin();
+        // Voting must be live
+        assert!(round.is_voting_live(), "Voting period is not live");
 
         round.voting_end_ms = env::block_timestamp_ms();
-        validate_round_detail(&round);
-        self.rounds_by_id.insert(round_id, round.clone());
+
         refund_deposit(initial_storage_usage, None);
-        let round_external = round.to_external();
+        let round_external = round.clone().to_external();
         log_update_round(&round_external);
         round_external
     }
@@ -720,22 +1147,15 @@ impl Contract {
         cooldown_period_ms: Option<u64>,
     ) -> RoundDetailExternal {
         let initial_storage_usage = env::storage_usage();
-        let mut round = self
+        let round = self
             .rounds_by_id
-            .get(&round_id)
-            .expect("Round not found")
-            .clone();
+            .get_mut(&round_id)
+            .expect("Round not found");
 
-        // Verify caller is owner or admin
-        round.assert_caller_is_owner_or_admin();
-        // TODO: add validation for when cooldown config can be updated, e.g. only before voting starts
+        round.update_cooldown_config(Some(use_cooldown), cooldown_period_ms);
 
-        round.use_cooldown = use_cooldown;
-        round.cooldown_period_ms = cooldown_period_ms.unwrap_or(round.cooldown_period_ms);
-        validate_round_detail(&round);
-        self.rounds_by_id.insert(round_id, round.clone());
         refund_deposit(initial_storage_usage, None);
-        let round_external = round.to_external();
+        let round_external = round.clone().to_external();
         log_update_round(&round_external);
         round_external
     }
@@ -748,22 +1168,15 @@ impl Contract {
         compliance_period_ms: Option<u64>,
     ) -> RoundDetailExternal {
         let initial_storage_usage = env::storage_usage();
-        let mut round = self
+        let round = self
             .rounds_by_id
-            .get(&round_id)
-            .expect("Round not found")
-            .clone();
+            .get_mut(&round_id)
+            .expect("Round not found");
 
-        // Verify caller is owner or admin
-        round.assert_caller_is_owner_or_admin();
-        // TODO: add validation for when cooldown config can be updated, e.g. only before voting starts
+        round.update_compliance_config(Some(use_compliance), compliance_period_ms);
 
-        round.use_compliance = use_compliance;
-        round.compliance_period_ms = compliance_period_ms.unwrap_or(round.compliance_period_ms);
-        validate_round_detail(&round);
-        self.rounds_by_id.insert(round_id, round.clone());
         refund_deposit(initial_storage_usage, None);
-        let round_external = round.to_external();
+        let round_external = round.clone().to_external();
         log_update_round(&round_external);
         round_external
     }
@@ -776,27 +1189,18 @@ impl Contract {
         remaining_funds_redistribution_recipient: Option<AccountId>,
     ) -> RoundDetailExternal {
         let initial_storage_usage = env::storage_usage();
-        let mut round = self
+        let round = self
             .rounds_by_id
-            .get(&round_id)
-            .expect("Round not found")
-            .clone();
-        // Verify caller is owner or admin
-        round.assert_caller_is_owner_or_admin();
-        // Verify voting hasn't started
-        round.assert_voting_not_started();
-        // if redistribution is allowed, recipient must be provided
-        if allow_remaining_funds_redistribution == true {
-            assert!(
-                remaining_funds_redistribution_recipient.is_some(),
-                "Redistribution recipient must be provided"
-            );
-        }
-        round.allow_remaining_funds_redistribution = allow_remaining_funds_redistribution;
-        round.remaining_funds_redistribution_recipient = remaining_funds_redistribution_recipient;
-        self.rounds_by_id.insert(round_id, round.clone());
+            .get_mut(&round_id)
+            .expect("Round not found");
+
+        round.update_remaining_funds_redistribution_config(
+            Some(allow_remaining_funds_redistribution),
+            remaining_funds_redistribution_recipient,
+        );
+
         refund_deposit(initial_storage_usage, None);
-        let round_external = round.to_external();
+        let round_external = round.clone().to_external();
         log_update_round(&round_external);
         round_external
     }
@@ -805,11 +1209,10 @@ impl Contract {
     pub fn add_admins(&mut self, round_id: RoundId, admins: Vec<AccountId>) -> RoundDetailExternal {
         let initial_storage_usage = env::storage_usage();
         let caller = env::predecessor_account_id();
-        let mut round = self
+        let round = self
             .rounds_by_id
-            .get(&round_id)
-            .expect("Round not found")
-            .clone();
+            .get_mut(&round_id)
+            .expect("Round not found");
 
         // Verify caller is owner
         if round.owner != caller {
@@ -822,9 +1225,8 @@ impl Contract {
             }
         }
 
-        self.rounds_by_id.insert(round_id, round.clone());
         refund_deposit(initial_storage_usage, None);
-        let round_external = round.to_external();
+        let round_external = round.clone().to_external();
         log_update_round(&round_external);
         round_external
     }
@@ -837,11 +1239,10 @@ impl Contract {
     ) -> RoundDetailExternal {
         let initial_storage_usage = env::storage_usage();
         let caller = env::predecessor_account_id();
-        let mut round = self
+        let round = self
             .rounds_by_id
-            .get(&round_id)
-            .expect("Round not found")
-            .clone();
+            .get_mut(&round_id)
+            .expect("Round not found");
 
         // Verify caller is owner
         if round.owner != caller {
@@ -855,9 +1256,8 @@ impl Contract {
             .cloned()
             .collect();
 
-        self.rounds_by_id.insert(round_id, round.clone());
         refund_deposit(initial_storage_usage, None);
-        let round_external = round.to_external();
+        let round_external = round.clone().to_external();
         log_update_round(&round_external);
         round_external
     }
@@ -865,23 +1265,15 @@ impl Contract {
     #[payable]
     pub fn set_admins(&mut self, round_id: RoundId, admins: Vec<AccountId>) -> RoundDetailExternal {
         let initial_storage_usage = env::storage_usage();
-        let caller = env::predecessor_account_id();
-        let mut round = self
+        let round = self
             .rounds_by_id
-            .get(&round_id)
-            .expect("Round not found")
-            .clone();
+            .get_mut(&round_id)
+            .expect("Round not found");
 
-        // Verify caller is owner
-        if round.owner != caller {
-            panic!("Only owner can set admins");
-        }
+        round.update_admins(Some(admins));
 
-        round.admins = admins;
-
-        self.rounds_by_id.insert(round_id, round.clone());
         refund_deposit(initial_storage_usage, None);
-        let round_external = round.to_external();
+        let round_external = round.clone().to_external();
         log_update_round(&round_external);
         round_external
     }
@@ -890,11 +1282,10 @@ impl Contract {
     pub fn clear_admins(&mut self, round_id: RoundId) -> RoundDetailExternal {
         let initial_storage_usage = env::storage_usage();
         let caller = env::predecessor_account_id();
-        let mut round = self
+        let round = self
             .rounds_by_id
-            .get(&round_id)
-            .expect("Round not found")
-            .clone();
+            .get_mut(&round_id)
+            .expect("Round not found");
 
         // Verify caller is owner
         if round.owner != caller {
@@ -903,9 +1294,8 @@ impl Contract {
 
         round.admins = vec![];
 
-        self.rounds_by_id.insert(round_id, round.clone());
         refund_deposit(initial_storage_usage, None);
-        let round_external = round.to_external();
+        let round_external = round.clone().to_external();
         log_update_round(&round_external);
         round_external
     }

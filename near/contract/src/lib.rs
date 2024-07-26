@@ -14,7 +14,6 @@ pub mod events;
 pub mod payouts;
 pub mod rounds;
 pub mod utils;
-pub mod validation;
 pub mod votes;
 pub use crate::applications::*;
 pub use crate::constants::*;
@@ -22,7 +21,6 @@ pub use crate::events::*;
 pub use crate::payouts::*;
 pub use crate::rounds::*;
 pub use crate::utils::*;
-pub use crate::validation::*;
 pub use crate::votes::*;
 
 pub const EVENT_JSON_PREFIX: &str = "EVENT_JSON:";

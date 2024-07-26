@@ -7,6 +7,7 @@ pub enum ApplicationStatus {
     Pending,
     Approved,
     Rejected,
+    // TODO: add Blacklisted
 }
 
 /// Stored in contract state
@@ -14,9 +15,11 @@ pub enum ApplicationStatus {
 #[borsh(crate = "near_sdk::borsh")]
 #[serde(crate = "near_sdk::serde")]
 pub struct RoundApplication {
+    // TODO: double check if video is included
     pub round_id: RoundId,
     pub internal_project_id: InternalProjectId, // uses internal ID to save on storage
     pub applicant_note: Option<String>,
+    pub video_url: Option<String>,
     pub status: ApplicationStatus,
     pub review_note: Option<String>,
     pub submited_ms: u64,
@@ -31,6 +34,7 @@ pub struct RoundApplicationExternal {
     pub round_id: RoundId,
     pub applicant_id: AccountId,
     pub applicant_note: Option<String>,
+    pub video_url: Option<String>,
     pub status: ApplicationStatus,
     pub review_note: Option<String>,
     pub submited_ms: u64,
@@ -44,6 +48,7 @@ impl Contract {
         &mut self,
         round_id: RoundId,
         note: Option<String>,
+        video_url: Option<String>,
         review_note: Option<String>,
         applicant: Option<AccountId>, // only allowed to be provided by round owner/admin, otherwise it is ignored
     ) -> RoundApplicationExternal {
@@ -91,6 +96,14 @@ impl Contract {
             env::predecessor_account_id()
         };
 
+        // if caller isn't owner/admin and round requires video, verify that video is provided
+        if !is_owner_or_admin && round.application_requires_video {
+            assert!(
+                video_url.is_some(),
+                "Video is required for this round, but was not provided"
+            );
+        }
+
         // get internal project/applicant ID, or assign a new one
         let internal_project_id = self
             .project_id_to_internal_id
@@ -119,6 +132,7 @@ impl Contract {
             round_id,
             internal_project_id: internal_project_id.clone(),
             applicant_note: note,
+            video_url,
             status: if is_owner_or_admin {
                 ApplicationStatus::Approved
             } else {
@@ -149,6 +163,7 @@ impl Contract {
             round_id: application.round_id,
             applicant_id: applicant.clone(),
             applicant_note: application.applicant_note,
+            video_url: application.video_url,
             status: application.status,
             review_note: application.review_note,
             submited_ms: application.submited_ms,
@@ -178,7 +193,8 @@ impl Contract {
         let mut applications = Vec::new();
         for (i, applicant) in applicants.into_iter().enumerate() {
             let review_note = review_notes.get(i).cloned().unwrap_or_default();
-            let application = self.apply_to_round(round_id, None, review_note, Some(applicant));
+            let application =
+                self.apply_to_round(round_id, None, None, review_note, Some(applicant));
             applications.push(application);
         }
         applications
@@ -235,6 +251,7 @@ impl Contract {
                 round_id: application.round_id,
                 applicant_id: applicant.clone(),
                 applicant_note: application.applicant_note,
+                video_url: application.video_url,
                 status: application.status,
                 review_note: application.review_note,
                 submited_ms: application.submited_ms,
@@ -291,6 +308,7 @@ impl Contract {
             round_id: application.round_id,
             applicant_id: applicant.clone(),
             applicant_note: application.applicant_note.clone(),
+            video_url: application.video_url.clone(),
             status: application.status.clone(),
             review_note: application.review_note.clone(),
             submited_ms: application.submited_ms,
@@ -358,6 +376,7 @@ impl Contract {
             round_id: application.round_id,
             applicant_id: applicant.clone(),
             applicant_note: application.applicant_note.clone(),
+            video_url: application.video_url.clone(),
             status: application.status.clone(),
             review_note: application.review_note.clone(),
             submited_ms: application.submited_ms,
@@ -397,6 +416,7 @@ impl Contract {
                     .expect("Invalid internal project ID")
                     .clone(),
                 applicant_note: application.applicant_note.clone(),
+                video_url: application.video_url.clone(),
                 status: application.status.clone(),
                 review_note: application.review_note.clone(),
                 submited_ms: application.submited_ms,
@@ -428,6 +448,7 @@ impl Contract {
                             .expect("Invalid internal project ID")
                             .clone(),
                         applicant_note: application.applicant_note.clone(),
+                        video_url: application.video_url.clone(),
                         status: application.status.clone(),
                         review_note: application.review_note.clone(),
                         submited_ms: application.submited_ms,

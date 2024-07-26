@@ -22,6 +22,7 @@ pub struct CreateRoundParams {
     pub use_cooldown: bool,
     pub cooldown_period_ms: Option<u64>, // defaults to DEFAULT_COOLDOWN_PERIOD_MS if not provided
     pub use_compliance: bool,
+    pub compliance_requirement_description: Option<String>, // must be provided if use_compliance is true
     pub compliance_period_ms: Option<u64>, // defaults to DEFAULT_COMPLIANCE_PERIOD_MS if not provided
     pub allow_remaining_funds_redistribution: bool,
     pub remaining_funds_redistribution_recipient: Option<AccountId>,
@@ -49,14 +50,12 @@ pub struct RoundDetailInternal {
     pub expected_amount: u128,
     pub current_vault_balance: u128,
     pub vault_total_deposits: u128,
-    // TODO: consider adding records for vault deposits, but this can also be handled via indexer
+    // TODO: add records for vault deposits (store on top-level contract)
     /// Indicates whether matching pool can be redistributed to remaining_funds_redistribution_recipient after compliance period ends. Must be specified at deployment, and CANNOT be changed afterwards.
     pub allow_remaining_funds_redistribution: bool,
     /// Recipient of matching pool redistribution (if enabled). CANNOT be changed after public round has started.
     pub remaining_funds_redistribution_recipient: Option<AccountId>,
-    /// Timestamp when redistribution happened
     pub remaining_funds_redistributed_at_ms: Option<TimestampMs>,
-    /// Memo for the redistribution transaction
     pub remaining_funds_redistribution_memo: Option<String>,
     pub num_picks_per_voter: u32,
     pub max_participants: u32,
@@ -64,7 +63,7 @@ pub struct RoundDetailInternal {
     pub cooldown_period_ms: u64,
     pub cooldown_end_ms: Option<TimestampMs>,
     pub use_compliance: bool,
-    // TODO: add compliance_requirement
+    pub compliance_requirement_description: Option<String>, // can be changed until compliance period ends
     pub compliance_period_ms: u64,
     pub compliance_end_ms: Option<TimestampMs>,
     pub round_complete: bool,
@@ -101,6 +100,7 @@ impl RoundDetailInternal {
             cooldown_period_ms: self.cooldown_period_ms,
             cooldown_end_ms: self.cooldown_end_ms,
             use_compliance: self.use_compliance,
+            compliance_requirement_description: self.compliance_requirement_description,
             compliance_period_ms: self.compliance_period_ms,
             compliance_end_ms: self.compliance_end_ms,
             round_complete: self.round_complete,
@@ -301,16 +301,89 @@ impl RoundDetailInternal {
         self.num_picks_per_voter = self.validate_num_picks_per_voter(num_picks_per_voter);
     }
 
+    pub fn validate_compliance_config(
+        &mut self,
+        use_compliance: Option<bool>,
+        compliance_requirement_description: Option<String>,
+        compliance_period_ms: Option<u64>,
+    ) -> (bool, Option<String>, u64) {
+        let mut validated_use_compliance = self.use_compliance;
+        let mut validated_compliance_requirement_description =
+            self.compliance_requirement_description.clone();
+        let mut validated_compliance_period_ms = self.compliance_period_ms;
+
+        if let Some(use_compliance) = use_compliance {
+            if self.vault_total_deposits == 0 {
+                if self.voting_start_ms > env::block_timestamp_ms() {
+                    validated_use_compliance = use_compliance;
+                    // if compliance is required, a description must be provided
+                    if use_compliance {
+                        if compliance_requirement_description.is_none() {
+                            panic!("Compliance requirement description must be provided if compliance is required");
+                        }
+                    }
+                } else {
+                    panic!("Compliance period can only be changed before voting period starts");
+                }
+            } else {
+                panic!("Compliance period cannot be changed if there are funds in the vault");
+            }
+        }
+
+        if let Some(compliance_requirement_description) = compliance_requirement_description {
+            if self.compliance_end_ms.unwrap_or(u64::MAX) > env::block_timestamp_ms() {
+                validated_compliance_requirement_description =
+                    Some(compliance_requirement_description);
+            } else {
+                panic!("Compliance requirement description cannot be changed after compliance period ends");
+            }
+        }
+
+        if let Some(compliance_period_ms) = compliance_period_ms {
+            if self.vault_total_deposits == 0 {
+                if self.voting_start_ms > env::block_timestamp_ms() {
+                    validated_compliance_period_ms = compliance_period_ms;
+                } else {
+                    panic!("Compliance period can only be changed before voting period starts");
+                }
+            } else {
+                panic!("Compliance period cannot be changed if there are funds in the vault");
+            }
+        }
+
+        (
+            validated_use_compliance,
+            validated_compliance_requirement_description,
+            validated_compliance_period_ms,
+        )
+    }
+
     pub fn update_compliance_config(
         &mut self,
         use_compliance: Option<bool>,
+        compliance_requirement_description: Option<String>,
         compliance_period_ms: Option<u64>,
     ) {
         if !self.is_caller_owner_or_admin() {
             panic!("Only owner or admin can update compliance config");
         }
-        self.use_compliance = use_compliance.unwrap_or(self.use_compliance);
-        self.compliance_period_ms = compliance_period_ms.unwrap_or(self.compliance_period_ms);
+        let (
+            validated_use_compliance,
+            validated_compliance_requirement_description,
+            validated_compliance_period_ms,
+        ) = self.validate_compliance_config(
+            use_compliance,
+            compliance_requirement_description,
+            compliance_period_ms,
+        );
+
+        self.use_compliance = validated_use_compliance;
+        self.compliance_requirement_description = validated_compliance_requirement_description;
+        self.compliance_period_ms = validated_compliance_period_ms;
+
+        if !self.use_compliance {
+            self.compliance_end_ms = None;
+        }
     }
 
     pub fn validate_cooldown_config(
@@ -711,6 +784,7 @@ pub struct RoundDetailExternal {
     pub cooldown_period_ms: u64,
     pub cooldown_end_ms: Option<TimestampMs>,
     pub use_compliance: bool,
+    pub compliance_requirement_description: Option<String>,
     pub compliance_period_ms: u64,
     pub compliance_end_ms: Option<TimestampMs>,
     pub round_complete: bool,
@@ -747,6 +821,7 @@ impl RoundDetailExternal {
             cooldown_period_ms: self.cooldown_period_ms,
             cooldown_end_ms: self.cooldown_end_ms,
             use_compliance: self.use_compliance,
+            compliance_requirement_description: self.compliance_requirement_description,
             compliance_period_ms: self.compliance_period_ms,
             compliance_end_ms: self.compliance_end_ms,
             round_complete: self.round_complete,
@@ -795,6 +870,7 @@ impl Contract {
                 .unwrap_or(DEFAULT_COOLDOWN_PERIOD_MS),
             cooldown_end_ms: None,
             use_compliance: round_detail.use_compliance,
+            compliance_requirement_description: round_detail.compliance_requirement_description,
             compliance_period_ms: round_detail
                 .compliance_period_ms
                 .unwrap_or(DEFAULT_COMPLIANCE_PERIOD_MS),
@@ -889,6 +965,7 @@ impl Contract {
         use_cooldown: Option<bool>,
         cooldown_period_ms: Option<u64>,
         use_compliance: Option<bool>,
+        compliance_requirement_description: Option<String>,
         compliance_period_ms: Option<u64>,
         // don't allow changing round_complete via this method
     ) -> RoundDetailExternal {
@@ -924,7 +1001,11 @@ impl Contract {
         round.update_num_picks_per_voter(num_picks_per_voter);
         round.update_max_participants(max_participants);
         round.update_cooldown_config(use_cooldown, cooldown_period_ms);
-        round.update_compliance_config(use_compliance, compliance_period_ms);
+        round.update_compliance_config(
+            use_compliance,
+            compliance_requirement_description,
+            compliance_period_ms,
+        );
 
         // clean-up
         refund_deposit(initial_storage_usage, None);
@@ -1165,6 +1246,7 @@ impl Contract {
         &mut self,
         round_id: RoundId,
         use_compliance: bool,
+        compliance_requirement_description: Option<String>,
         compliance_period_ms: Option<u64>,
     ) -> RoundDetailExternal {
         let initial_storage_usage = env::storage_usage();
@@ -1173,7 +1255,11 @@ impl Contract {
             .get_mut(&round_id)
             .expect("Round not found");
 
-        round.update_compliance_config(Some(use_compliance), compliance_period_ms);
+        round.update_compliance_config(
+            Some(use_compliance),
+            compliance_requirement_description,
+            compliance_period_ms,
+        );
 
         refund_deposit(initial_storage_usage, None);
         let round_external = round.clone().to_external();

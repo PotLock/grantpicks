@@ -7,7 +7,7 @@ pub enum ApplicationStatus {
     Pending,
     Approved,
     Rejected,
-    // TODO: add Blacklisted
+    Blacklisted,
 }
 
 /// Stored in contract state
@@ -15,7 +15,6 @@ pub enum ApplicationStatus {
 #[borsh(crate = "near_sdk::borsh")]
 #[serde(crate = "near_sdk::serde")]
 pub struct RoundApplication {
-    // TODO: double check if video is included
     pub round_id: RoundId,
     pub internal_project_id: InternalProjectId, // uses internal ID to save on storage
     pub applicant_note: Option<String>,
@@ -58,7 +57,7 @@ impl Contract {
         let is_owner_or_admin = round.is_caller_owner_or_admin();
 
         // if owner or admin, verify that voting hasn't started
-        // TODO: ADD BACK IN AFTER TESTING
+        // ! TODO: ADD BACK IN AFTER TESTING!!!
         // if is_owner_or_admin {
         //     assert!(
         //         env::block_timestamp_ms() < round.voting_start_ms,
@@ -344,24 +343,27 @@ impl Contract {
         let application = applications_for_round
             .get_mut(internal_project_id)
             .expect("Application not found");
-        // validate voting period has not started
-        assert!(
-            env::block_timestamp_ms() < round.voting_start_ms,
-            "Voting has already started"
-        );
-        // if Approving (and status is changing), check round.max_participants
+        // validate voting period has not started (unless blacklisting)
+        if status != ApplicationStatus::Blacklisted {
+            assert!(
+                env::block_timestamp_ms() < round.voting_start_ms,
+                "Voting has already started"
+            );
+        }
+        // check if status is changing
         if status != application.status {
             let approved_applicants = self
                 .approved_internal_project_ids_for_round
                 .get_mut(&round_id)
                 .expect("Approved internal project IDs for round not found");
             if status == ApplicationStatus::Approved {
+                // if going from non-approved to Approved, check round.max_participants & make sure there is room
                 let num_participants = approved_applicants.len();
                 assert!(
                     num_participants < round.max_participants,
                     "Round is already full"
                 );
-                // if approved, add to approved internal project IDs for round
+                // add to approved internal project IDs for round
                 approved_applicants.insert(internal_project_id.clone());
             } else {
                 // if no longer approved, remove from approved internal project IDs for round

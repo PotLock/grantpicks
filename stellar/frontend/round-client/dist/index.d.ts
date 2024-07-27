@@ -1,14 +1,14 @@
 /// <reference types="node" resolution-mode="require"/>
 import { Buffer } from "buffer";
 import { AssembledTransaction, Client as ContractClient, ClientOptions as ContractClientOptions } from '@stellar/stellar-sdk/contract';
-import type { u32, u64, u128, Option } from '@stellar/stellar-sdk/contract';
+import type { u32, u64, u128, i128, Option } from '@stellar/stellar-sdk/contract';
 export * from '@stellar/stellar-sdk';
 export * as contract from '@stellar/stellar-sdk/contract';
 export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CDU4HQHX4QBUBCALG4OAS3NI2D2ENLKACLYKVS6RMUWKUD4YFLUYLUWK";
+        readonly contractId: "CCTAQ33VD7HBEFE7G6LCA3D4VDWFH2HIQ2XWJFP7G65JT3POF76U7RXF";
     };
 };
 export type ApplicationStatus = {
@@ -21,42 +21,86 @@ export type ApplicationStatus = {
     tag: "Rejected";
     values: void;
 };
-export interface RoundDetail {
-    application_end_ms: u64;
-    application_start_ms: u64;
+export interface RoundDetailInternal {
+    allow_applications: boolean;
+    application_end_ms: Option<u64>;
+    application_start_ms: Option<u64>;
     contacts: Array<Contact>;
     description: string;
     expected_amount: u128;
     id: u128;
-    is_completed: boolean;
+    is_video_required: boolean;
     max_participants: u32;
     name: string;
     num_picks_per_voter: u32;
     owner: string;
     use_whitelist: boolean;
     vault_balance: u128;
-    video_url: string;
+    voting_end_ms: u64;
+    voting_start_ms: u64;
+}
+export interface RoundDetailExternal {
+    allow_applications: boolean;
+    application_end_ms: Option<u64>;
+    application_start_ms: Option<u64>;
+    contacts: Array<Contact>;
+    description: string;
+    expected_amount: u128;
+    id: u128;
+    is_video_required: boolean;
+    max_participants: u32;
+    name: string;
+    num_picks_per_voter: u32;
+    owner: string;
+    use_whitelist: boolean;
+    vault_balance: u128;
     voting_end_ms: u64;
     voting_start_ms: u64;
 }
 export interface CreateRoundParams {
     admins: Array<string>;
-    application_end_ms: u64;
-    application_start_ms: u64;
+    allow_applications: boolean;
+    application_end_ms: Option<u64>;
+    application_start_ms: Option<u64>;
     contacts: Array<Contact>;
     description: string;
     expected_amount: u128;
+    is_video_required: boolean;
+    max_participants: Option<u32>;
+    name: string;
+    num_picks_per_voter: Option<u32>;
+    owner: string;
+    use_whitelist: Option<boolean>;
+    voting_end_ms: u64;
+    voting_start_ms: u64;
+}
+export interface UpdateRoundParams {
+    allow_applications: boolean;
+    application_end_ms: Option<u64>;
+    application_start_ms: Option<u64>;
+    contacts: Array<Contact>;
+    description: string;
+    expected_amount: u128;
+    is_video_required: boolean;
     max_participants: Option<u32>;
     name: string;
     num_picks_per_voter: Option<u32>;
     use_whitelist: Option<boolean>;
-    video_url: string;
     voting_end_ms: u64;
     voting_start_ms: u64;
 }
-export interface ProjectApplication {
-    applicant: string;
-    application_id: u128;
+export interface RoundApplicationInternal {
+    applicant_id: string;
+    applicant_note: string;
+    project_id: u128;
+    review_note: string;
+    status: ApplicationStatus;
+    submited_ms: u64;
+    updated_ms: Option<u64>;
+}
+export interface RoundApplicationExternal {
+    applicant_id: string;
+    applicant_note: string;
     project_id: u128;
     review_note: string;
     status: ApplicationStatus;
@@ -89,6 +133,12 @@ export interface Contact {
     name: string;
     value: string;
 }
+export interface Payout {
+    address: string;
+    amount: i128;
+    paid_at_ms: u64;
+    project_id: u128;
+}
 export type ProjectStatus = {
     tag: "New";
     values: void;
@@ -117,29 +167,7 @@ export interface Project {
     submited_ms: u64;
     team_members: Array<ProjectTeamMember>;
     updated_ms: Option<u64>;
-}
-export interface ProjectParams {
-    admins: Array<string>;
-    contacts: Array<ProjectContact>;
-    contracts: Array<ProjectContract>;
-    fundings: Array<ProjectFundingHistory>;
-    image_url: string;
-    name: string;
-    overview: string;
-    payout_address: string;
-    repositories: Array<ProjectRepository>;
-    team_members: Array<ProjectTeamMember>;
-}
-export interface UpdateProjectParams {
-    contacts: Array<ProjectContact>;
-    contracts: Array<ProjectContract>;
-    fundings: Array<ProjectFundingHistory>;
-    image_url: string;
-    name: string;
-    overview: string;
-    payout_address: string;
-    repositories: Array<ProjectRepository>;
-    team_members: Array<ProjectTeamMember>;
+    video_url: string;
 }
 export interface ProjectContact {
     name: string;
@@ -189,7 +217,7 @@ export type ContractKey = {
     tag: "ApprovedProjects";
     values: readonly [u128];
 } | {
-    tag: "ApplicationNumber";
+    tag: "Payouts";
     values: readonly [u128];
 } | {
     tag: "VotingState";
@@ -230,8 +258,8 @@ export interface Client {
     /**
      * Construct and simulate a create_round transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    create_round: ({ owner, round_detail }: {
-        owner: string;
+    create_round: ({ caller, round_detail }: {
+        caller: string;
         round_detail: CreateRoundParams;
     }, options?: {
         /**
@@ -246,7 +274,7 @@ export interface Client {
          * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
          */
         simulate?: boolean;
-    }) => Promise<AssembledTransaction<RoundDetail>>;
+    }) => Promise<AssembledTransaction<RoundDetailExternal>>;
     /**
      * Construct and simulate a get_rounds transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
@@ -266,12 +294,11 @@ export interface Client {
          * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
          */
         simulate?: boolean;
-    }) => Promise<AssembledTransaction<Array<RoundDetail>>>;
+    }) => Promise<AssembledTransaction<Array<RoundDetailExternal>>>;
     /**
      * Construct and simulate a upgrade transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    upgrade: ({ owner, new_wasm_hash }: {
-        owner: string;
+    upgrade: ({ new_wasm_hash }: {
         new_wasm_hash: Buffer;
     }, options?: {
         /**
@@ -290,8 +317,7 @@ export interface Client {
     /**
      * Construct and simulate a transfer_ownership transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    transfer_ownership: ({ owner, new_owner }: {
-        owner: string;
+    transfer_ownership: ({ new_owner }: {
         new_owner: string;
     }, options?: {
         /**
@@ -310,9 +336,9 @@ export interface Client {
     /**
      * Construct and simulate a change_voting_period transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    change_voting_period: ({ round_id, admin, round_start_ms, round_end_ms }: {
+    change_voting_period: ({ round_id, caller, round_start_ms, round_end_ms }: {
         round_id: u128;
-        admin: string;
+        caller: string;
         round_start_ms: u64;
         round_end_ms: u64;
     }, options?: {
@@ -332,9 +358,9 @@ export interface Client {
     /**
      * Construct and simulate a change_application_period transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    change_application_period: ({ round_id, admin, round_application_start_ms, round_application_end_ms }: {
+    change_application_period: ({ round_id, caller, round_application_start_ms, round_application_end_ms }: {
         round_id: u128;
-        admin: string;
+        caller: string;
         round_application_start_ms: u64;
         round_application_end_ms: u64;
     }, options?: {
@@ -354,9 +380,9 @@ export interface Client {
     /**
      * Construct and simulate a change_amount transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    change_amount: ({ round_id, admin, amount }: {
+    change_amount: ({ round_id, caller, amount }: {
         round_id: u128;
-        admin: string;
+        caller: string;
         amount: u128;
     }, options?: {
         /**
@@ -373,11 +399,11 @@ export interface Client {
         simulate?: boolean;
     }) => Promise<AssembledTransaction<null>>;
     /**
-     * Construct and simulate a complete_vote transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     * Construct and simulate a close_voting_period transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    complete_vote: ({ round_id, admin }: {
+    close_voting_period: ({ round_id, caller }: {
         round_id: u128;
-        admin: string;
+        caller: string;
     }, options?: {
         /**
          * The fee to pay for the transaction. Default: BASE_FEE
@@ -391,13 +417,12 @@ export interface Client {
          * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
          */
         simulate?: boolean;
-    }) => Promise<AssembledTransaction<null>>;
+    }) => Promise<AssembledTransaction<RoundDetailExternal>>;
     /**
      * Construct and simulate a add_admin transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    add_admin: ({ round_id, admin, round_admin }: {
+    add_admin: ({ round_id, round_admin }: {
         round_id: u128;
-        admin: string;
         round_admin: string;
     }, options?: {
         /**
@@ -416,9 +441,8 @@ export interface Client {
     /**
      * Construct and simulate a remove_admin transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    remove_admin: ({ round_id, admin, round_admin }: {
+    remove_admin: ({ round_id, round_admin }: {
         round_id: u128;
-        admin: string;
         round_admin: string;
     }, options?: {
         /**
@@ -435,12 +459,14 @@ export interface Client {
         simulate?: boolean;
     }) => Promise<AssembledTransaction<null>>;
     /**
-     * Construct and simulate a apply_project transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     * Construct and simulate a apply_to_round transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    apply_project: ({ round_id, project_id, applicant }: {
+    apply_to_round: ({ round_id, caller, applicant, note, review_note }: {
         round_id: u128;
-        project_id: u128;
-        applicant: string;
+        caller: string;
+        applicant: Option<string>;
+        note: Option<string>;
+        review_note: Option<string>;
     }, options?: {
         /**
          * The fee to pay for the transaction. Default: BASE_FEE
@@ -454,14 +480,14 @@ export interface Client {
          * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
          */
         simulate?: boolean;
-    }) => Promise<AssembledTransaction<u128>>;
+    }) => Promise<AssembledTransaction<RoundApplicationExternal>>;
     /**
      * Construct and simulate a review_application transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    review_application: ({ round_id, admin, application_id, status, note }: {
+    review_application: ({ round_id, caller, applicant, status, note }: {
         round_id: u128;
-        admin: string;
-        application_id: u128;
+        caller: string;
+        applicant: string;
         status: ApplicationStatus;
         note: Option<string>;
     }, options?: {
@@ -477,7 +503,7 @@ export interface Client {
          * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
          */
         simulate?: boolean;
-    }) => Promise<AssembledTransaction<null>>;
+    }) => Promise<AssembledTransaction<RoundApplicationExternal>>;
     /**
      * Construct and simulate a deposit transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
@@ -582,9 +608,9 @@ export interface Client {
         simulate?: boolean;
     }) => Promise<AssembledTransaction<null>>;
     /**
-     * Construct and simulate a calculate_results transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     * Construct and simulate a get_results_for_round transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    calculate_results: ({ round_id }: {
+    get_results_for_round: ({ round_id }: {
         round_id: u128;
     }, options?: {
         /**
@@ -662,9 +688,9 @@ export interface Client {
         simulate?: boolean;
     }) => Promise<AssembledTransaction<boolean>>;
     /**
-     * Construct and simulate a round_info transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     * Construct and simulate a get_round transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    round_info: ({ round_id }: {
+    get_round: ({ round_id }: {
         round_id: u128;
     }, options?: {
         /**
@@ -679,7 +705,7 @@ export interface Client {
          * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
          */
         simulate?: boolean;
-    }) => Promise<AssembledTransaction<RoundDetail>>;
+    }) => Promise<AssembledTransaction<RoundDetailExternal>>;
     /**
      * Construct and simulate a is_voting_live transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
@@ -719,9 +745,9 @@ export interface Client {
         simulate?: boolean;
     }) => Promise<AssembledTransaction<boolean>>;
     /**
-     * Construct and simulate a get_all_applications transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     * Construct and simulate a get_applications_for_round transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    get_all_applications: ({ round_id, skip, limit }: {
+    get_applications_for_round: ({ round_id, skip, limit }: {
         round_id: u128;
         skip: Option<u64>;
         limit: Option<u64>;
@@ -738,7 +764,27 @@ export interface Client {
          * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
          */
         simulate?: boolean;
-    }) => Promise<AssembledTransaction<Array<ProjectApplication>>>;
+    }) => Promise<AssembledTransaction<Array<RoundApplicationExternal>>>;
+    /**
+     * Construct and simulate a get_application transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     */
+    get_application: ({ round_id, applicant }: {
+        round_id: u128;
+        applicant: string;
+    }, options?: {
+        /**
+         * The fee to pay for the transaction. Default: BASE_FEE
+         */
+        fee?: number;
+        /**
+         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+         */
+        timeoutInSeconds?: number;
+        /**
+         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+         */
+        simulate?: boolean;
+    }) => Promise<AssembledTransaction<Option<RoundApplicationExternal>>>;
     /**
      * Construct and simulate a is_payout_done transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
@@ -985,9 +1031,8 @@ export interface Client {
     /**
      * Construct and simulate a transfer_round_ownership transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    transfer_round_ownership: ({ round_id, owner, new_owner }: {
+    transfer_round_ownership: ({ round_id, new_owner }: {
         round_id: u128;
-        owner: string;
         new_owner: string;
     }, options?: {
         /**
@@ -1022,37 +1067,124 @@ export interface Client {
          */
         simulate?: boolean;
     }) => Promise<AssembledTransaction<Array<string>>>;
+    /**
+     * Construct and simulate a unapply_from_round transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     */
+    unapply_from_round: ({ round_id, caller, applicant }: {
+        round_id: u128;
+        caller: string;
+        applicant: Option<string>;
+    }, options?: {
+        /**
+         * The fee to pay for the transaction. Default: BASE_FEE
+         */
+        fee?: number;
+        /**
+         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+         */
+        timeoutInSeconds?: number;
+        /**
+         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+         */
+        simulate?: boolean;
+    }) => Promise<AssembledTransaction<RoundApplicationExternal>>;
+    /**
+     * Construct and simulate a update_applicant_note transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     */
+    update_applicant_note: ({ round_id, caller, note }: {
+        round_id: u128;
+        caller: string;
+        note: string;
+    }, options?: {
+        /**
+         * The fee to pay for the transaction. Default: BASE_FEE
+         */
+        fee?: number;
+        /**
+         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+         */
+        timeoutInSeconds?: number;
+        /**
+         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+         */
+        simulate?: boolean;
+    }) => Promise<AssembledTransaction<RoundApplicationExternal>>;
+    /**
+     * Construct and simulate a change_allow_applications transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     */
+    change_allow_applications: ({ round_id, caller, allow_applications, start_ms, end_ms }: {
+        round_id: u128;
+        caller: string;
+        allow_applications: boolean;
+        start_ms: Option<u64>;
+        end_ms: Option<u64>;
+    }, options?: {
+        /**
+         * The fee to pay for the transaction. Default: BASE_FEE
+         */
+        fee?: number;
+        /**
+         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+         */
+        timeoutInSeconds?: number;
+        /**
+         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+         */
+        simulate?: boolean;
+    }) => Promise<AssembledTransaction<RoundDetailExternal>>;
+    /**
+     * Construct and simulate a update_round transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     */
+    update_round: ({ caller, round_id, round_detail }: {
+        caller: string;
+        round_id: u128;
+        round_detail: UpdateRoundParams;
+    }, options?: {
+        /**
+         * The fee to pay for the transaction. Default: BASE_FEE
+         */
+        fee?: number;
+        /**
+         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+         */
+        timeoutInSeconds?: number;
+        /**
+         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+         */
+        simulate?: boolean;
+    }) => Promise<AssembledTransaction<RoundDetailExternal>>;
 }
 export declare class Client extends ContractClient {
     readonly options: ContractClientOptions;
     constructor(options: ContractClientOptions);
     readonly fromJSON: {
         initialize: (json: string) => AssembledTransaction<null>;
-        create_round: (json: string) => AssembledTransaction<RoundDetail>;
-        get_rounds: (json: string) => AssembledTransaction<RoundDetail[]>;
+        create_round: (json: string) => AssembledTransaction<RoundDetailExternal>;
+        get_rounds: (json: string) => AssembledTransaction<RoundDetailExternal[]>;
         upgrade: (json: string) => AssembledTransaction<null>;
         transfer_ownership: (json: string) => AssembledTransaction<null>;
         change_voting_period: (json: string) => AssembledTransaction<null>;
         change_application_period: (json: string) => AssembledTransaction<null>;
         change_amount: (json: string) => AssembledTransaction<null>;
-        complete_vote: (json: string) => AssembledTransaction<null>;
+        close_voting_period: (json: string) => AssembledTransaction<RoundDetailExternal>;
         add_admin: (json: string) => AssembledTransaction<null>;
         remove_admin: (json: string) => AssembledTransaction<null>;
-        apply_project: (json: string) => AssembledTransaction<bigint>;
-        review_application: (json: string) => AssembledTransaction<null>;
+        apply_to_round: (json: string) => AssembledTransaction<RoundApplicationExternal>;
+        review_application: (json: string) => AssembledTransaction<RoundApplicationExternal>;
         deposit: (json: string) => AssembledTransaction<null>;
         vote: (json: string) => AssembledTransaction<null>;
         get_pair_to_vote: (json: string) => AssembledTransaction<Pair[]>;
         flag_voter: (json: string) => AssembledTransaction<null>;
         unflag_voter: (json: string) => AssembledTransaction<null>;
-        calculate_results: (json: string) => AssembledTransaction<ProjectVotingResult[]>;
+        get_results_for_round: (json: string) => AssembledTransaction<ProjectVotingResult[]>;
         trigger_payouts: (json: string) => AssembledTransaction<null>;
         get_all_voters: (json: string) => AssembledTransaction<VotingResult[]>;
         can_vote: (json: string) => AssembledTransaction<boolean>;
-        round_info: (json: string) => AssembledTransaction<RoundDetail>;
+        get_round: (json: string) => AssembledTransaction<RoundDetailExternal>;
         is_voting_live: (json: string) => AssembledTransaction<boolean>;
         is_application_live: (json: string) => AssembledTransaction<boolean>;
-        get_all_applications: (json: string) => AssembledTransaction<ProjectApplication[]>;
+        get_applications_for_round: (json: string) => AssembledTransaction<RoundApplicationExternal[]>;
+        get_application: (json: string) => AssembledTransaction<Option<RoundApplicationExternal>>;
         is_payout_done: (json: string) => AssembledTransaction<boolean>;
         user_has_vote: (json: string) => AssembledTransaction<boolean>;
         total_funding: (json: string) => AssembledTransaction<bigint>;
@@ -1067,5 +1199,9 @@ export declare class Client extends ContractClient {
         change_number_of_votes: (json: string) => AssembledTransaction<null>;
         transfer_round_ownership: (json: string) => AssembledTransaction<null>;
         admins: (json: string) => AssembledTransaction<string[]>;
+        unapply_from_round: (json: string) => AssembledTransaction<RoundApplicationExternal>;
+        update_applicant_note: (json: string) => AssembledTransaction<RoundApplicationExternal>;
+        change_allow_applications: (json: string) => AssembledTransaction<RoundDetailExternal>;
+        update_round: (json: string) => AssembledTransaction<RoundDetailExternal>;
     };
 }

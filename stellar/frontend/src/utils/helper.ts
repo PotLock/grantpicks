@@ -1,3 +1,12 @@
+import { envVarConfigs } from '@/configs/env-var'
+import {
+	HORIZON_RPC_URL,
+	RPC_EXPLORER,
+	SOROBAN_RPC_URL,
+} from '@/constants/on-chain'
+import { ENetworkEnv, Networks, SubmitTxProps } from '@/types/on-chain'
+import { Horizon, SorobanRpc, TransactionBuilder } from 'round-client'
+
 export const prettyTruncate = (str = '', len = 8, type?: string) => {
 	if (str && str.length > len) {
 		if (type === 'address') {
@@ -16,4 +25,80 @@ export const prettyTruncate = (str = '', len = 8, type?: string) => {
 export const formatStroopToXlm = (amount: bigint) => {
 	const res = (BigInt(amount as bigint) / BigInt(10 ** 7)).toString()
 	return res
+}
+
+export const parseToStroop = (amount: string) => {
+	let toIntXlm = 0
+	let len_of_fraction = 0
+	if (amount.split('.').length > 1) {
+		const amount_fraction = amount.split('.').slice(1)
+		len_of_fraction = amount_fraction[0].length
+		toIntXlm = Number(amount) * 10 ** len_of_fraction
+	} else {
+		toIntXlm = Number(amount)
+	}
+	const res = BigInt(toIntXlm) * BigInt(10 ** (7 - len_of_fraction))
+	return res
+}
+
+export const getSorobanServer = () => {
+	return new SorobanRpc.Server(
+		getSorobanConfig(envVarConfigs.NETWORK_ENV as string)?.rpc_url as string,
+		{
+			allowHttp: getSorobanConfig(
+				envVarConfigs.NETWORK_ENV as string,
+			)?.rpc_url.startsWith('http://'),
+		},
+	)
+}
+
+export const getHorizonServer = () => {
+	return new Horizon.Server(
+		getHorizonConfig(envVarConfigs.NETWORK_ENV as string)?.rpc_url as string,
+		{
+			allowHttp: getHorizonConfig(
+				envVarConfigs.NETWORK_ENV as string,
+			)?.rpc_url.startsWith('http://'),
+		},
+	)
+}
+
+export const getHorizonConfig = (env: string) => {
+	switch (env) {
+		case ENetworkEnv.TESTNET:
+			return {
+				network: ENetworkEnv.TESTNET,
+				rpc_url: HORIZON_RPC_URL.TESTNET,
+				network_passphrase: Networks.TESTNET,
+				explorer: RPC_EXPLORER.TESTNET,
+			}
+	}
+}
+
+export const getSorobanConfig = (env: string) => {
+	switch (env) {
+		case ENetworkEnv.TESTNET:
+			return {
+				network: ENetworkEnv.TESTNET,
+				rpc_url: SOROBAN_RPC_URL.TESTNET,
+				network_passphrase: Networks.TESTNET,
+				explorer: RPC_EXPLORER.TESTNET,
+			}
+	}
+}
+
+export const submitTx = async ({
+	signedXDR,
+	networkPassphrase,
+	server,
+}: SubmitTxProps) => {
+	if (server instanceof SorobanRpc.Server) {
+		const tx = TransactionBuilder.fromXDR(signedXDR, networkPassphrase)
+		const sendResponse = await server.sendTransaction(tx)
+		return sendResponse.hash
+	} else if (server instanceof Horizon.Server) {
+		const tx = TransactionBuilder.fromXDR(signedXDR, networkPassphrase)
+		const sendResponse = await server.submitTransaction(tx)
+		return sendResponse.hash
+	}
 }

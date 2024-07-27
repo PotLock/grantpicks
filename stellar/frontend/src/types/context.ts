@@ -9,6 +9,7 @@ import {
 } from '@near-wallet-selector/core/src/lib/wallet'
 import { WalletSelectorModal } from '@near-wallet-selector/modal-ui'
 import { Dispatch, SetStateAction } from 'react'
+import { IGetRoundsResponse } from './on-chain'
 
 export interface IWalletContext {
 	connectedWallet: 'near' | 'stellar' | null
@@ -30,9 +31,33 @@ export interface IModalContextProps {
 	isOpen: boolean
 }
 
+export interface ISuccessCreateRoundModalProps extends IModalContextProps {
+	createRoundRes: IGetRoundsResponse | undefined
+	txHash?: string
+}
+
+export interface ISuccessUpdateRoundModalProps extends IModalContextProps {
+	updateRoundRes: IGetRoundsResponse | undefined
+	txHash?: string
+}
+
+export interface ISuccessFundRoundModalProps extends IModalContextProps {
+	doc: IGetRoundsResponse | undefined
+	txHash?: string
+	amount: string
+}
+
 export interface IModalContext {
-	successFundRoundModalProps: IModalContextProps
-	setSuccessFundRoundModalProps: Dispatch<SetStateAction<IModalContextProps>>
+	successFundRoundModalProps: ISuccessFundRoundModalProps
+	setSuccessCreateRoundModalProps: Dispatch<
+		SetStateAction<ISuccessCreateRoundModalProps>
+	>
+	setSuccessUpdateRoundModalProps: Dispatch<
+		SetStateAction<ISuccessUpdateRoundModalProps>
+	>
+	setSuccessFundRoundModalProps: Dispatch<
+		SetStateAction<ISuccessFundRoundModalProps>
+	>
 	setApplyProjectInitProps: Dispatch<SetStateAction<IModalContextProps>>
 	setCreateProjectFormMainProps: Dispatch<SetStateAction<IModalContextProps>>
 }
@@ -78,4 +103,6 @@ export interface ICreateProjectFormContext {
 export interface IGlobalContext {
 	stellarPrice: number
 	nearPrice: number
+	dismissPageLoading: () => void
+	openPageLoading: () => void
 }

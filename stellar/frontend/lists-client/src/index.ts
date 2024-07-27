@@ -33,7 +33,7 @@ if (typeof window !== 'undefined') {
 export const networks = {
   testnet: {
     networkPassphrase: "Test SDF Network ; September 2015",
-    contractId: "CD5XBFIY7FPGM44WPL6G3MKICI253CUQI3HLJ2FFAP5RF6LVPSP3H7P6",
+    contractId: "CCLTG3DDF6EZIMXGSMRJCLEOQHYBHJTJTLPSRUW42DZXQQGQDUI4MZ2O",
   }
 } as const
 
@@ -106,7 +106,7 @@ export interface RegistrationInput {
 export type ContractKey = {tag: "ContractOwner", values: void} | {tag: "ListsNumber", values: void} | {tag: "Lists", values: void} | {tag: "ListAdmins", values: void} | {tag: "OwnedList", values: void} | {tag: "RegistrantList", values: void} | {tag: "RegistrationsNumber", values: void} | {tag: "Registrations", values: void} | {tag: "ListRegistration", values: void} | {tag: "RegistrationsIDs", values: void} | {tag: "Upvotes", values: void} | {tag: "UserUpvotes", values: void};
 
 export const Errors = {
-  
+
 }
 
 export interface Client {
@@ -610,6 +610,26 @@ export interface Client {
     simulate?: boolean;
   }) => Promise<AssembledTransaction<null>>
 
+  /**
+   * Construct and simulate a admins transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+   */
+  admins: ({list_id}: {list_id: u128}, options?: {
+    /**
+     * The fee to pay for the transaction. Default: BASE_FEE
+     */
+    fee?: number;
+
+    /**
+     * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+     */
+    timeoutInSeconds?: number;
+
+    /**
+     * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+     */
+    simulate?: boolean;
+  }) => Promise<AssembledTransaction<Array<string>>>
+
 }
 export class Client extends ContractClient {
   constructor(public readonly options: ContractClientOptions) {
@@ -645,6 +665,7 @@ export class Client extends ContractClient {
         "AAAAAAAAAAAAAAANaXNfcmVnaXN0ZXJlZAAAAAAAAAMAAAAAAAAAB2xpc3RfaWQAAAAD6AAAAAoAAAAAAAAADXJlZ2lzdHJhbnRfaWQAAAAAAAATAAAAAAAAAA9yZXF1aXJlZF9zdGF0dXMAAAAD6AAAB9AAAAASUmVnaXN0cmF0aW9uU3RhdHVzAAAAAAABAAAAAQ==",
         "AAAAAAAAAAAAAAAFb3duZXIAAAAAAAAAAAAAAQAAABM=",
         "AAAAAAAAAAAAAAAHdXBncmFkZQAAAAACAAAAAAAAAAVvd25lcgAAAAAAABMAAAAAAAAACXdhc21faGFzaAAAAAAAA+4AAAAgAAAAAA==",
+        "AAAAAAAAAAAAAAAGYWRtaW5zAAAAAAABAAAAAAAAAAdsaXN0X2lkAAAAAAoAAAABAAAD6gAAABM=",
         "AAAAAgAAAAAAAAAAAAAAC0NvbnRyYWN0S2V5AAAAAAwAAAAAAAAAAAAAAA1Db250cmFjdE93bmVyAAAAAAAAAAAAAAAAAAALTGlzdHNOdW1iZXIAAAAAAAAAAAAAAAAFTGlzdHMAAAAAAAAAAAAAAAAAAApMaXN0QWRtaW5zAAAAAAAAAAAAAAAAAAlPd25lZExpc3QAAAAAAAAAAAAAAAAAAA5SZWdpc3RyYW50TGlzdAAAAAAAAAAAAAAAAAATUmVnaXN0cmF0aW9uc051bWJlcgAAAAAAAAAAAAAAAA1SZWdpc3RyYXRpb25zAAAAAAAAAAAAAAAAAAAQTGlzdFJlZ2lzdHJhdGlvbgAAAAAAAAAAAAAAEFJlZ2lzdHJhdGlvbnNJRHMAAAAAAAAAAAAAAAdVcHZvdGVzAAAAAAAAAAAAAAAAC1VzZXJVcHZvdGVzAA==" ]),
       options
     )
@@ -674,6 +695,7 @@ export class Client extends ContractClient {
         get_registrations_for_registrant: this.txFromJSON<Array<RegistrationExternal>>,
         is_registered: this.txFromJSON<boolean>,
         owner: this.txFromJSON<string>,
-        upgrade: this.txFromJSON<null>
+        upgrade: this.txFromJSON<null>,
+        admins: this.txFromJSON<Array<string>>
   }
 }

@@ -34,18 +34,25 @@ import CMDWallet from '@/lib/wallet'
 import { useWallet } from '@/app/providers/WalletProvider'
 import Contracts from '@/lib/contracts'
 import { Network } from '@/types/on-chain'
-import { createRound, CreateRoundParams } from '@/services/on-chain/round'
-import { parseToStroop } from '@/utils/helper'
+import {
+	addProjectsRound,
+	createRound,
+	CreateRoundParams,
+} from '@/services/on-chain/round'
+import { parseToStroop, prettyTruncate } from '@/utils/helper'
 import { useModalContext } from '@/app/providers/ModalProvider'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
 import IconStellar from '@/app/components/svgs/IconStellar'
+import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
+import { useRouter } from 'next/navigation'
 
 const CreateRoundPage = () => {
+	const router = useRouter()
 	const [showContactType, setShowContactType] = useState<boolean>(false)
 	const { nearPrice, stellarPrice, openPageLoading, dismissPageLoading } =
 		useGlobalContext()
-	const { stellarPubKey } = useWallet()
+	const { stellarPubKey, stellarKit } = useWallet()
 	const { setSuccessCreateRoundModalProps } = useModalContext()
 	const [amountUsd, setAmountUsd] = useState<string>('0.00')
 	const [expectAmountUsd, setExpectAmountUsd] = useState<string>('0.00')
@@ -57,8 +64,8 @@ const CreateRoundPage = () => {
 		register,
 		handleSubmit,
 		setValue,
+		reset,
 		watch,
-		getValues,
 		formState: { errors },
 	} = useForm<CreateRoundData>({
 		defaultValues: {
@@ -70,10 +77,45 @@ const CreateRoundPage = () => {
 			voting_duration_end: null,
 		},
 	})
+	const { append: appendProject, remove: removeProject } = useFieldArray({
+		control,
+		name: 'projects',
+	})
+	const { append: appendAdmin, remove: removeAdmin } = useFieldArray({
+		control,
+		name: 'admins',
+	})
 	const [selectedProjects, setSelectedProjects] = useState<
 		IGetProjectsResponse[]
 	>([])
 	const [selectedAdmins, setSelectedAdmins] = useState<string[]>([])
+
+	const onAddApprovedProjects = async (roundId: bigint) => {
+		try {
+			let cmdWallet = new CMDWallet({
+				stellarPubKey: stellarPubKey,
+			})
+			const contracts = new Contracts(
+				process.env.NETWORK_ENV as Network,
+				cmdWallet,
+			)
+			const txAddProject = await addProjectsRound(
+				BigInt(roundId),
+				stellarPubKey,
+				watch().projects.map((p) => p.id),
+				contracts,
+			)
+			const txHash = await contracts.signAndSendTx(
+				stellarKit as StellarWalletsKit,
+				txAddProject,
+				stellarPubKey,
+			)
+			return txHash
+		} catch (error: any) {
+			dismissPageLoading()
+			console.log('error', error)
+		}
+	}
 
 	const onCreateRound: SubmitHandler<CreateRoundData> = async (data) => {
 		try {
@@ -116,14 +158,32 @@ const CreateRoundPage = () => {
 						? data.admins.map((admin) => admin.admin_id)
 						: [],
 			}
-			const res = await createRound(stellarPubKey, createRoundParams, contracts)
-			if (res) {
+			const txCreateRound = await createRound(
+				stellarPubKey,
+				createRoundParams,
+				contracts,
+			)
+			const txHashCreateRound = await contracts.signAndSendTx(
+				stellarKit as StellarWalletsKit,
+				txCreateRound,
+				stellarPubKey,
+			)
+			if (txHashCreateRound) {
+				let txHashAddProjects
+				if (selectedProjects.length > 0) {
+					txHashAddProjects = await onAddApprovedProjects(
+						txCreateRound.result.id,
+					)
+				}
 				setSuccessCreateRoundModalProps((prev) => ({
 					...prev,
 					isOpen: true,
-					createRoundRes: res,
+					createRoundRes: txCreateRound.result,
+					txHash: txHashCreateRound,
 				}))
+				reset()
 				dismissPageLoading()
+				router.push(`/application`)
 			}
 		} catch (error: any) {
 			console.log('error', error?.message)
@@ -280,6 +340,7 @@ const CreateRoundPage = () => {
 								<div className="flex-1">
 									<InputText
 										required
+										placeholder="Your username..."
 										{...register('contact_address', { required: true })}
 									/>
 								</div>
@@ -591,6 +652,7 @@ const CreateRoundPage = () => {
 											let temp = [...selectedProjects]
 											temp.splice(index, 1)
 											setSelectedProjects(temp)
+											removeProject(index)
 										}}
 									/>
 								</div>
@@ -601,6 +663,8 @@ const CreateRoundPage = () => {
 							onClose={() => setShowAddProjectsModal(false)}
 							selectedProjects={selectedProjects}
 							setSelectedProjects={setSelectedProjects}
+							append={appendProject}
+							remove={removeProject}
 						/>
 					</div>
 
@@ -635,7 +699,7 @@ const CreateRoundPage = () => {
 									<div className="flex items-center space-x-2">
 										<div className="bg-grantpicks-black-400 rounded-full w-6 h-6" />
 										<p className="text-sm font-semibold text-grantpicks-black-950">
-											Label
+											{prettyTruncate(selected, 10, 'address')}
 										</p>
 									</div>
 									<IconClose
@@ -645,6 +709,7 @@ const CreateRoundPage = () => {
 											let temp = [...selectedAdmins]
 											temp.splice(index, 1)
 											setSelectedAdmins(temp)
+											removeAdmin(index)
 										}}
 									/>
 								</div>
@@ -653,8 +718,10 @@ const CreateRoundPage = () => {
 						<AddAdminsModal
 							isOpen={showAddAdminsModal}
 							onClose={() => setShowAddAdminsModal(false)}
-							selectedProjects={selectedAdmins}
-							setSelectedProjects={setSelectedAdmins}
+							selectedAdmins={selectedAdmins}
+							setSelectedAdmins={setSelectedAdmins}
+							append={appendAdmin}
+							remove={removeAdmin}
 						/>
 					</div>
 

@@ -33,6 +33,12 @@ export interface IModalContextProps {
 
 export interface ISuccessCreateRoundModalProps extends IModalContextProps {
 	createRoundRes: IGetRoundsResponse | undefined
+	txHash?: string
+}
+
+export interface ISuccessUpdateRoundModalProps extends IModalContextProps {
+	updateRoundRes: IGetRoundsResponse | undefined
+	txHash?: string
 }
 
 export interface ISuccessFundRoundModalProps extends IModalContextProps {
@@ -45,6 +51,9 @@ export interface IModalContext {
 	successFundRoundModalProps: ISuccessFundRoundModalProps
 	setSuccessCreateRoundModalProps: Dispatch<
 		SetStateAction<ISuccessCreateRoundModalProps>
+	>
+	setSuccessUpdateRoundModalProps: Dispatch<
+		SetStateAction<ISuccessUpdateRoundModalProps>
 	>
 	setSuccessFundRoundModalProps: Dispatch<
 		SetStateAction<ISuccessFundRoundModalProps>

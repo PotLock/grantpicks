@@ -9,7 +9,7 @@ import {
 	u32,
 	u64,
 } from '@stellar/stellar-sdk/contract'
-import { Contact } from 'round-client'
+import { Contact, RoundDetailExternal } from 'round-client'
 
 interface GetRoundsParams {
 	skip: number
@@ -48,6 +48,22 @@ export interface CreateRoundParams {
 	name: string
 	num_picks_per_voter: u32
 	owner: string
+	use_whitelist: boolean
+	voting_end_ms: u64
+	voting_start_ms: u64
+}
+
+export interface UpdateRoundParams {
+	allow_applications: boolean
+	application_end_ms: u64
+	application_start_ms: u64
+	contacts: Contact[]
+	description: string
+	expected_amount: u128
+	is_video_required: boolean
+	max_participants: u32
+	name: string
+	num_picks_per_voter: u32
 	use_whitelist: boolean
 	voting_end_ms: u64
 	voting_start_ms: u64
@@ -114,7 +130,7 @@ export const getRoundInfo: (
 	params: GetRoundInfoParams,
 	contract: Contracts,
 ) => {
-	let round = await contract.round_contract.round_info({
+	let round = await contract.round_contract.get_round({
 		round_id: params.round_id,
 	})
 	return round.result
@@ -124,7 +140,7 @@ export const createRound: (
 	caller: string,
 	params: CreateRoundParams,
 	contract: Contracts,
-) => Promise<IGetRoundsResponse> = async (
+) => Promise<AssembledTransaction<RoundDetailExternal>> = async (
 	caller: string,
 	params: CreateRoundParams,
 	contract: Contracts,
@@ -133,7 +149,61 @@ export const createRound: (
 		caller,
 		round_detail: params,
 	})
-	return round.result
+	return round
+}
+
+export const editRound: (
+	caller: string,
+	round_id: bigint,
+	params: UpdateRoundParams,
+	contract: Contracts,
+) => Promise<AssembledTransaction<RoundDetailExternal>> = async (
+	caller: string,
+	round_id: bigint,
+	params: UpdateRoundParams,
+	contract: Contracts,
+) => {
+	let round = await contract.round_contract.update_round({
+		caller,
+		round_id,
+		round_detail: params,
+	})
+	return round
+}
+
+export const addAdminRound: (
+	round_id: bigint,
+	round_admin: string,
+	contract: Contracts,
+) => Promise<AssembledTransaction<null>> = async (
+	round_id: bigint,
+	round_admin: string,
+	contract: Contracts,
+) => {
+	let round = await contract.round_contract.add_admin({
+		round_id,
+		round_admin,
+	})
+	return round
+}
+
+export const addProjectsRound: (
+	round_id: u128,
+	admin: string,
+	projects_ids: u128[],
+	contract: Contracts,
+) => Promise<AssembledTransaction<null>> = async (
+	round_id: u128,
+	admin: string,
+	project_ids: u128[],
+	contract: Contracts,
+) => {
+	let round = await contract.round_contract.add_approved_project({
+		round_id,
+		admin,
+		project_ids,
+	})
+	return round
 }
 
 export const depositFundRound: (

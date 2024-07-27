@@ -19,10 +19,14 @@ import { LIMIT_SIZE } from '@/constants/query'
 import useSWRInfinite from 'swr/infinite'
 import InfiniteScroll from 'react-infinite-scroll-component'
 import IconLoading from '../../svgs/IconLoading'
+import { UseFieldArrayAppend, UseFieldArrayRemove } from 'react-hook-form'
+import { CreateRoundData } from '@/types/form'
 
 interface AddProjectsModalProps extends BaseModalProps {
 	selectedProjects: IGetProjectsResponse[]
 	setSelectedProjects: Dispatch<SetStateAction<IGetProjectsResponse[]>>
+	append: UseFieldArrayAppend<CreateRoundData, 'projects'>
+	remove: UseFieldArrayRemove
 }
 
 const AddProjectsModal = ({
@@ -30,6 +34,8 @@ const AddProjectsModal = ({
 	onClose,
 	selectedProjects,
 	setSelectedProjects,
+	append,
+	remove,
 }: AddProjectsModalProps) => {
 	const { stellarPubKey, connectedWallet } = useWallet()
 	const [tempSelectedProjects, setTempSelectedProjects] = useState<

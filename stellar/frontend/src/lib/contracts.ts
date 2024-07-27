@@ -80,7 +80,7 @@ class Contracts {
 
 	async signAndSendTx(
 		kit: StellarWalletsKit,
-		tx: AssembledTransaction<null> | undefined,
+		tx: AssembledTransaction<null | any> | undefined,
 		publicKey: string,
 	) {
 		let signedXdr

@@ -11,9 +11,18 @@ import IconAdd from '@/app/components/svgs/IconAdd'
 import IconNear from '@/app/components/svgs/IconNear'
 import IconRemove from '@/app/components/svgs/IconRemove'
 import IconUnfoldMore from '@/app/components/svgs/IconUnfoldMore'
-import { CreateRoundData, IAdminCreateRound } from '@/types/form'
+import {
+	CreateRoundData,
+	IAdminCreateRound,
+	UpdateRoundData,
+} from '@/types/form'
 import React, { useEffect, useState } from 'react'
-import { useForm, useFieldArray, Controller } from 'react-hook-form'
+import {
+	useForm,
+	useFieldArray,
+	Controller,
+	SubmitHandler,
+} from 'react-hook-form'
 import Switch from 'react-switch'
 import DatePicker from 'react-datepicker'
 import IconCalendar from '@/app/components/svgs/IconCalendar'
@@ -23,29 +32,46 @@ import AddAdminsModal from '@/app/components/pages/create-round/AddAdminsModal'
 import clsx from 'clsx'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import {
+	addAdminRound,
+	addProjectsRound,
+	editRound,
 	getRoundAdmins,
 	getRoundApplications,
 	getRoundInfo,
+	UpdateRoundParams,
 } from '@/services/on-chain/round'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import CMDWallet from '@/lib/wallet'
 import Contracts from '@/lib/contracts'
 import { IGetRoundApplicationsResponse, Network } from '@/types/on-chain'
 import { useWallet } from '@/app/providers/WalletProvider'
-import { formatStroopToXlm } from '@/utils/helper'
+import {
+	formatStroopToXlm,
+	parseToStroop,
+	prettyTruncate,
+} from '@/utils/helper'
 import { LIMIT_SIZE } from '@/constants/query'
-import { IGetProjectsResponse } from '@/services/on-chain/project-registry'
+import {
+	getProject,
+	IGetProjectsResponse,
+} from '@/services/on-chain/project-registry'
 import IconStellar from '@/app/components/svgs/IconStellar'
+import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
+import toast from 'react-hot-toast'
+import { toastOptions } from '@/constants/style'
+import { useModalContext } from '@/app/providers/ModalProvider'
 
 const EditRoundPage = () => {
+	const router = useRouter()
 	const params = useParams<{ roundId: string }>()
+	const { setSuccessUpdateRoundModalProps } = useModalContext()
 	const [showContactType, setShowContactType] = useState<boolean>(false)
 	const { stellarPrice } = useGlobalContext()
 	const [amountUsd, setAmountUsd] = useState<string>('0.00')
 	const [expectAmountUsd, setExpectAmountUsd] = useState<string>('0.00')
 	const [showAddProjectsModal, setShowAddProjectsModal] =
 		useState<boolean>(false)
-	const { stellarPubKey } = useWallet()
+	const { stellarPubKey, stellarKit } = useWallet()
 	const [showAddAdminsModal, setShowAddAdminsModal] = useState<boolean>(false)
 	const {
 		control,
@@ -53,9 +79,9 @@ const EditRoundPage = () => {
 		handleSubmit,
 		setValue,
 		watch,
-		getValues,
+		reset,
 		formState: { errors },
-	} = useForm<CreateRoundData>({
+	} = useForm<UpdateRoundData>({
 		defaultValues: {
 			vote_per_person: 0,
 			apply_duration_start: new Date(),
@@ -70,13 +96,13 @@ const EditRoundPage = () => {
 		IGetProjectsResponse[]
 	>([])
 	const [selectedAdmins, setSelectedAdmins] = useState<string[]>([])
-	const { fields: fieldAdmins, append: appendAdmins } = useFieldArray({
-		control,
-		name: 'admins',
-	})
-	const { fields: fieldProjects, append: appendProjects } = useFieldArray({
+	const { append: appendProject, remove: removeProject } = useFieldArray({
 		control,
 		name: 'projects',
+	})
+	const { append: appendAdmin, remove: removeAdmin } = useFieldArray({
+		control,
+		name: 'admins',
 	})
 
 	const onFetchAdmins = async () => {
@@ -131,11 +157,39 @@ const EditRoundPage = () => {
 		return resRoundApps
 	}
 
+	const onFetchProjectsByApplication = async (
+		roundApps: IGetRoundApplicationsResponse[],
+	) => {
+		let cmdWallet = new CMDWallet({
+			stellarPubKey: stellarPubKey,
+		})
+		const contracts = new Contracts(
+			process.env.NETWORK_ENV as Network,
+			cmdWallet,
+		)
+		console.log('project id from round apps', roundApps)
+		let resProjects: IGetProjectsResponse[] = []
+		roundApps.forEach(async (app, index) => {
+			const currRes = await getProject(
+				{ project_id: BigInt(app.project_id) },
+				contracts,
+			)
+			resProjects = [...resProjects, currRes as IGetProjectsResponse]
+		})
+		return resProjects
+	}
+
 	const onFetchDefaultValue = async () => {
 		try {
 			openPageLoading()
 			const resRoundInfo = await onFetchRoundInfo()
+			console.log('res round info', resRoundInfo)
 			const resRoundAdmins = await onFetchAdmins()
+			console.log('res round admins', resRoundAdmins)
+			// const resRoundApps = await onFetchRoundApplications()
+			// console.log('res round apps', resRoundApps)
+			// const resProjects = await onFetchProjectsByApplication(resRoundApps)
+			// console.log('res round projects', resProjects)
 			if (resRoundInfo) {
 				setValue('title', resRoundInfo?.name)
 				setValue('description', resRoundInfo?.description)
@@ -176,10 +230,11 @@ const EditRoundPage = () => {
 					)
 					setValue('video_required', resRoundInfo?.is_video_required)
 				}
-				// if(resRoundApps.length > 0){
-				// 	setValue(`projects`, resRoundApps)
+				// if (resProjects.length > 0) {
+				// 	setValue(`projects`, resProjects)
 				// }
 				if (resRoundAdmins.length > 0) {
+					setSelectedAdmins(resRoundAdmins.map((admin) => admin))
 					setValue(
 						'admins',
 						resRoundAdmins.map((admin) => ({ admin_id: admin })),
@@ -190,6 +245,139 @@ const EditRoundPage = () => {
 		} catch (error: any) {
 			dismissPageLoading()
 			console.log('error', error)
+		}
+	}
+
+	const onAddApprovedProjects = async (roundId: bigint) => {
+		try {
+			let cmdWallet = new CMDWallet({
+				stellarPubKey: stellarPubKey,
+			})
+			const contracts = new Contracts(
+				process.env.NETWORK_ENV as Network,
+				cmdWallet,
+			)
+			const txAddProject = await addProjectsRound(
+				BigInt(roundId),
+				stellarPubKey,
+				watch().projects.map((p) => p.id),
+				contracts,
+			)
+			const txHash = await contracts.signAndSendTx(
+				stellarKit as StellarWalletsKit,
+				txAddProject,
+				stellarPubKey,
+			)
+			return txHash
+		} catch (error: any) {
+			dismissPageLoading()
+			console.log('error', error)
+		}
+	}
+
+	// const onAddAdmins = async () => {
+	// 	try {
+	// 		let cmdWallet = new CMDWallet({
+	// 			stellarPubKey: stellarPubKey,
+	// 		})
+	// 		const contracts = new Contracts(
+	// 			process.env.NETWORK_ENV as Network,
+	// 			cmdWallet,
+	// 		)
+	// 		// const txAddProject = await addAdminRound(
+	// 		// 	BigInt(params.roundId),
+	// 		// 	watch().admins.map((p) => p.admin_id),
+	// 		// 	contracts,
+	// 		// )
+	// 		// const txHash = await contracts.signAndSendTx(
+	// 		// 	stellarKit as StellarWalletsKit,
+	// 		// 	txAddProject,
+	// 		// 	stellarPubKey,
+	// 		// )
+	// 		// return txHash
+	// 	} catch (error: any) {
+	// 		dismissPageLoading()
+	// 		console.log('error', error)
+	// 	}
+	// }
+
+	const onEditRound: SubmitHandler<CreateRoundData> = async (data) => {
+		try {
+			openPageLoading()
+			let cmdWallet = new CMDWallet({
+				stellarPubKey: stellarPubKey,
+			})
+			const contracts = new Contracts(
+				process.env.NETWORK_ENV as Network,
+				cmdWallet,
+			)
+			const udpateRoundParams: UpdateRoundParams = {
+				name: data.title,
+				description: data.description,
+				application_start_ms: BigInt(
+					data.apply_duration_start?.getTime() as number,
+				),
+				application_end_ms: BigInt(
+					data.apply_duration_end?.getTime() as number,
+				),
+				contacts: [
+					{
+						name: data.contact_type,
+						value: data.contact_address,
+					},
+				],
+				expected_amount: parseToStroop(data.expected_amount),
+				max_participants: data.max_participants,
+				num_picks_per_voter: data.vote_per_person,
+				use_whitelist: data.open_funding,
+				is_video_required: data.video_required,
+				allow_applications: data.allow_application,
+				voting_start_ms: BigInt(
+					data.voting_duration_start?.getTime() as number,
+				),
+				voting_end_ms: BigInt(data.voting_duration_end?.getTime() as number),
+			}
+			console.log('update round params', udpateRoundParams)
+			const txUpdateRound = await editRound(
+				stellarPubKey,
+				BigInt(params.roundId),
+				udpateRoundParams,
+				contracts,
+			)
+			console.log('tx update round', txUpdateRound)
+			const txHashUpdateRound = await contracts.signAndSendTx(
+				stellarKit as StellarWalletsKit,
+				txUpdateRound,
+				stellarPubKey,
+			)
+			console.log('tx hash update round', txUpdateRound)
+			if (txHashUpdateRound) {
+				let txHashAddProjects
+				let txHashAddAdmins
+				if (selectedProjects.length > 0) {
+					txHashAddProjects = await onAddApprovedProjects(
+						txUpdateRound.result.id,
+					)
+				}
+				// if (selectedAdmins.length > 0) {
+				// 	txHashAddAdmins = await onAddAdmins()
+				// }
+				setSuccessUpdateRoundModalProps((prev) => ({
+					...prev,
+					isOpen: true,
+					updateRoundRes: txUpdateRound.result,
+					txHash: txHashUpdateRound,
+				}))
+				reset()
+				dismissPageLoading()
+				router.push(`/application`)
+			}
+		} catch (error: any) {
+			console.log('error', error?.message)
+			toast.error(error?.message || 'Something went wrong', {
+				style: toastOptions.error.style,
+			})
+			dismissPageLoading()
 		}
 	}
 
@@ -343,6 +531,7 @@ const EditRoundPage = () => {
 								<div className="flex-1">
 									<InputText
 										required
+										placeholder="Your username..."
 										{...register('contact_address', { required: true })}
 									/>
 								</div>
@@ -664,6 +853,8 @@ const EditRoundPage = () => {
 							onClose={() => setShowAddProjectsModal(false)}
 							selectedProjects={selectedProjects}
 							setSelectedProjects={setSelectedProjects}
+							append={appendProject}
+							remove={removeProject}
 						/>
 					</div>
 
@@ -698,7 +889,7 @@ const EditRoundPage = () => {
 									<div className="flex items-center space-x-2">
 										<div className="bg-grantpicks-black-400 rounded-full w-6 h-6" />
 										<p className="text-sm font-semibold text-grantpicks-black-950">
-											Label
+											{prettyTruncate(selected, 10, 'address')}
 										</p>
 									</div>
 									<IconClose
@@ -716,8 +907,10 @@ const EditRoundPage = () => {
 						<AddAdminsModal
 							isOpen={showAddAdminsModal}
 							onClose={() => setShowAddAdminsModal(false)}
-							selectedProjects={selectedAdmins}
-							setSelectedProjects={setSelectedAdmins}
+							selectedAdmins={selectedAdmins}
+							setSelectedAdmins={setSelectedAdmins}
+							append={appendAdmin}
+							remove={removeAdmin}
 						/>
 					</div>
 
@@ -725,9 +918,9 @@ const EditRoundPage = () => {
 						color="black-950"
 						className="!py-3"
 						isFullWidth
-						onClick={() => {}}
+						onClick={handleSubmit(onEditRound)}
 					>
-						Create Round
+						Edit Round
 					</Button>
 				</div>
 			</div>

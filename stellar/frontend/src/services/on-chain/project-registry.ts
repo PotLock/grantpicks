@@ -1,10 +1,14 @@
 import Contracts from '@/lib/contracts'
-import { u128, u64 } from '@stellar/stellar-sdk/contract'
+import { Option, u128, u64 } from '@stellar/stellar-sdk/contract'
 import { Project } from 'project-registry-client'
 
 interface GetProjectsParams {
 	skip: number
 	limit: number
+}
+
+interface GetProjectParams {
+	project_id: bigint
 }
 
 export interface ProjectContact {
@@ -50,4 +54,17 @@ export const getProjects: (
 		limit: BigInt(limit),
 	})
 	return rounds.result
+}
+
+export const getProject: (
+	params: GetProjectParams,
+	contract: Contracts,
+) => Promise<Option<IGetProjectsResponse>> = async (
+	params: GetProjectParams,
+	contract: Contracts,
+) => {
+	let round = await contract.project_contract.get_project_by_id({
+		project_id: params.project_id,
+	})
+	return round.result
 }

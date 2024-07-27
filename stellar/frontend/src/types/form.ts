@@ -80,6 +80,26 @@ export type CreateRoundData = {
 	admins: IAdminCreateRound[]
 }
 
+export type UpdateRoundData = {
+	title: string
+	description: string
+	vote_per_person: number
+	contact_type: string
+	contact_address: string
+	amount: string
+	expected_amount: string
+	open_funding: boolean
+	allow_application: boolean
+	max_participants: number
+	apply_duration_start: Date | null
+	apply_duration_end: Date | null
+	video_required: boolean
+	voting_duration_start: Date | null
+	voting_duration_end: Date | null
+	projects: IGetProjectsResponse[]
+	admins: IAdminCreateRound[]
+}
+
 export type CreateProjectStep1Data = {
 	title: string
 	project_id: string

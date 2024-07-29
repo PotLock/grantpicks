@@ -375,8 +375,10 @@ impl Contract {
         let challenger_id = env::predecessor_account_id();
         payouts_challenges_for_round.insert(challenger_id.clone(), challenge.clone());
         refund_deposit(initial_storage_usage, None);
-        // return challenge
-        challenge.to_external(challenger_id.clone(), round_id)
+
+        let challenge_external = challenge.to_external(challenger_id.clone(), round_id);
+        log_payouts_challenge_created(&challenge_external);
+        challenge_external
     }
 
     pub fn remove_payouts_challenge(&mut self, round_id: RoundId) {
@@ -393,6 +395,11 @@ impl Contract {
             .expect("No challenges for round");
         if let Some(challenge) = payouts_challenges_for_round.get(&env::predecessor_account_id()) {
             if !challenge.resolved {
+                // log before removing to avoid borrow checker issues
+                log_payouts_challenge_removed(
+                    &challenge.to_external(env::predecessor_account_id(), round_id),
+                );
+                // remove challenge
                 let initial_storage_usage = env::storage_usage();
                 payouts_challenges_for_round.remove(&env::predecessor_account_id());
                 refund_deposit(initial_storage_usage, None);
@@ -425,6 +432,9 @@ impl Contract {
                 payouts_challenge.admin_notes = Some(notes);
             }
             payouts_challenge.resolved = resolve_challenge.unwrap_or(payouts_challenge.resolved);
+            log_payouts_challenge_updated(
+                &payouts_challenge.to_external(challenger_id.clone(), round_id),
+            );
             refund_deposit(initial_storage_usage, None);
         }
     }
@@ -455,6 +465,15 @@ impl Contract {
 
         for challenger_id in to_remove {
             payouts_challenges_for_round.remove(&challenger_id);
+            log_payouts_challenge_removed(
+                &PayoutsChallenge {
+                    created_at: env::block_timestamp_ms(),
+                    reason: "".to_string(),
+                    admin_notes: None,
+                    resolved: true,
+                }
+                .to_external(challenger_id.clone(), round_id),
+            );
         }
 
         for (challenger_id, refund) in storage_refunds {

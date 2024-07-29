@@ -50,7 +50,6 @@ pub struct RoundDetailInternal {
     pub expected_amount: u128,
     pub current_vault_balance: u128,
     pub vault_total_deposits: u128,
-    // TODO: add records for vault deposits (store on top-level contract)
     /// Indicates whether matching pool can be redistributed to remaining_funds_redistribution_recipient after compliance period ends. Must be specified at deployment, and CANNOT be changed afterwards.
     pub allow_remaining_funds_redistribution: bool,
     /// Recipient of matching pool redistribution (if enabled). CANNOT be changed after public round has started.

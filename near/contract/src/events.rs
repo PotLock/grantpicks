@@ -210,7 +210,7 @@ pub(crate) fn log_payout_processed(payout: &PayoutExternal) {
     );
 }
 
-pub(crate) fn log_payouts_challenge(challenge: &PayoutsChallengeExternal) {
+pub(crate) fn log_payouts_challenge_created(challenge: &PayoutsChallengeExternal) {
     env::log_str(
         format!(
             "{}{}",
@@ -218,7 +218,7 @@ pub(crate) fn log_payouts_challenge(challenge: &PayoutsChallengeExternal) {
             json!({
                 "standard": "potlock",
                 "version": "1.0.0",
-                "event": "payouts_challenged",
+                "event": "payouts_challenge_created",
                 "data": [
                     {
                         "challenge": challenge,

@@ -26,6 +26,8 @@ pub struct CreateRoundParams {
     pub compliance_period_ms: Option<u64>, // defaults to DEFAULT_COMPLIANCE_PERIOD_MS if not provided
     pub allow_remaining_funds_redistribution: bool,
     pub remaining_funds_redistribution_recipient: Option<AccountId>,
+    pub use_referrals: bool,
+    pub referrer_fee_basis_points: Option<u16>,
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
@@ -57,6 +59,8 @@ pub struct RoundDetailInternal {
     pub remaining_funds_redistributed_at_ms: Option<TimestampMs>,
     pub remaining_funds_redistribution_memo: Option<String>,
     pub remaining_funds_redistributed_by: Option<AccountId>,
+    pub use_referrals: bool,
+    pub referrer_fee_basis_points: Option<u16>,
     pub num_picks_per_voter: u32,
     pub max_participants: u32,
     pub use_cooldown: bool,
@@ -90,6 +94,8 @@ impl RoundDetailInternal {
             expected_amount: U128(self.expected_amount),
             current_vault_balance: U128(self.current_vault_balance),
             vault_total_deposits: U128(self.vault_total_deposits),
+            use_referrals: self.use_referrals,
+            referrer_fee_basis_points: self.referrer_fee_basis_points,
             allow_remaining_funds_redistribution: self.allow_remaining_funds_redistribution,
             remaining_funds_redistribution_recipient: self.remaining_funds_redistribution_recipient,
             remaining_funds_redistributed_at_ms: self.remaining_funds_redistributed_at_ms,
@@ -105,6 +111,17 @@ impl RoundDetailInternal {
             compliance_period_ms: self.compliance_period_ms,
             compliance_end_ms: self.compliance_end_ms,
             round_complete: self.round_complete,
+        }
+    }
+
+    pub fn calculate_referrer_fee(&self, amount: u128) -> Option<u128> {
+        if let Some(referrer_fee_basis_points) = self.referrer_fee_basis_points {
+            let total_basis_points = 10_000u128;
+            let fee_amount = (referrer_fee_basis_points as u128).saturating_mul(amount);
+            // Round up
+            Some(fee_amount.div_ceil(total_basis_points))
+        } else {
+            None
         }
     }
 
@@ -138,6 +155,7 @@ impl RoundDetailInternal {
     pub fn validate_name(&self, name: Option<String>) -> String {
         let mut validated_name = self.name.clone();
         if let Some(name) = name {
+            // TODO: validate, e.g. check against max length
             validated_name = name;
         }
         validated_name
@@ -153,6 +171,7 @@ impl RoundDetailInternal {
     pub fn validate_description(&self, description: Option<String>) -> String {
         let mut validated_description = self.description.clone();
         if let Some(description) = description {
+            // TODO: validate, e.g. check against max length
             validated_description = description;
         }
         validated_description
@@ -168,6 +187,7 @@ impl RoundDetailInternal {
     pub fn validate_contacts(&self, contacts: Option<Vec<Contact>>) -> Vec<Contact> {
         let mut validated_contacts = self.contacts.clone();
         if let Some(contacts) = contacts {
+            // TODO: validate, e.g. check against max length
             validated_contacts = contacts;
         }
         validated_contacts
@@ -183,6 +203,7 @@ impl RoundDetailInternal {
     pub fn validate_admins(&self, admins: Option<Vec<AccountId>>) -> Vec<AccountId> {
         let mut validated_admins = self.admins.clone();
         if let Some(admins) = admins {
+            // TODO: validate, e.g. check against max length
             validated_admins = admins;
         }
         validated_admins
@@ -201,6 +222,7 @@ impl RoundDetailInternal {
     ) -> Vec<AccountId> {
         let mut validated_blacklisted_voters = self.blacklisted_voters.clone();
         if let Some(blacklisted_voters) = blacklisted_voters {
+            // TODO: validate, e.g. check against max length??
             validated_blacklisted_voters = blacklisted_voters;
         }
         validated_blacklisted_voters
@@ -234,6 +256,7 @@ impl RoundDetailInternal {
     ) -> Option<Vec<AccountId>> {
         let mut validated_whitelisted_voters = self.whitelisted_voters.clone();
         if let Some(whitelisted_voters) = whitelisted_voters {
+            // TODO: validate, e.g. check against max length??
             validated_whitelisted_voters = Some(whitelisted_voters);
         }
         validated_whitelisted_voters
@@ -262,6 +285,52 @@ impl RoundDetailInternal {
             panic!("Only owner or admin can update expected amount");
         }
         self.expected_amount = self.validate_expected_amount(expected_amount);
+    }
+
+    pub fn validate_referrals_config(
+        &self,
+        use_referrals: Option<bool>,
+        referrer_fee_basis_points: Option<u16>,
+    ) -> (bool, Option<u16>) {
+        let mut validated_use_referrals = self.use_referrals;
+        let mut validated_referrer_fee_basis_points = self.referrer_fee_basis_points;
+
+        if let Some(use_referrals) = use_referrals {
+            // if referrals are enabled, a referrer fee must be present
+            if use_referrals {
+                if referrer_fee_basis_points.is_none() {
+                    panic!("Referrer fee basis points must be present if referrals are enabled");
+                }
+            }
+            validated_use_referrals = use_referrals;
+        }
+
+        if let Some(referrer_fee_basis_points) = referrer_fee_basis_points {
+            // must be between 0 and 10,000
+            if referrer_fee_basis_points > MAX_REFERRER_FEE_BASIS_POINTS {
+                panic!(
+                    "Referrer fee basis points must be between 0 and {}",
+                    MAX_REFERRER_FEE_BASIS_POINTS
+                );
+            }
+            validated_referrer_fee_basis_points = Some(referrer_fee_basis_points.clone());
+        }
+
+        (validated_use_referrals, validated_referrer_fee_basis_points)
+    }
+
+    pub fn update_referrals_config(
+        &mut self,
+        use_referrals: Option<bool>,
+        referrer_fee_basis_points: Option<u16>,
+    ) {
+        if !self.is_caller_owner_or_admin() {
+            panic!("Only owner or admin can update referrals config");
+        }
+        let (validated_use_referrals, validated_referrer_fee_basis_points) =
+            self.validate_referrals_config(use_referrals, referrer_fee_basis_points);
+        self.use_referrals = validated_use_referrals;
+        self.referrer_fee_basis_points = validated_referrer_fee_basis_points;
     }
 
     pub fn validate_num_picks_per_voter(&self, num_picks_per_voter: Option<u32>) -> u32 {
@@ -775,6 +844,8 @@ pub struct RoundDetailExternal {
     pub expected_amount: U128, // String for JSON purposes. NB: on Stellar this is an int (u128)
     pub current_vault_balance: U128, // String for JSON purposes. NB: on Stellar this is an int (u128)
     pub vault_total_deposits: U128,  // String for JSON purposes.
+    pub use_referrals: bool,
+    pub referrer_fee_basis_points: Option<u16>,
     pub allow_remaining_funds_redistribution: bool,
     pub remaining_funds_redistribution_recipient: Option<AccountId>,
     pub remaining_funds_redistributed_at_ms: Option<TimestampMs>,
@@ -813,6 +884,8 @@ impl RoundDetailExternal {
             expected_amount: self.expected_amount.0,
             current_vault_balance: self.current_vault_balance.0,
             vault_total_deposits: self.vault_total_deposits.0,
+            use_referrals: self.use_referrals,
+            referrer_fee_basis_points: self.referrer_fee_basis_points,
             allow_remaining_funds_redistribution: self.allow_remaining_funds_redistribution,
             remaining_funds_redistribution_recipient: self.remaining_funds_redistribution_recipient,
             remaining_funds_redistributed_at_ms: self.remaining_funds_redistributed_at_ms,
@@ -865,6 +938,8 @@ impl Contract {
             expected_amount: round_detail.expected_amount.0,
             current_vault_balance: 0,
             vault_total_deposits: 0,
+            use_referrals: round_detail.use_referrals,
+            referrer_fee_basis_points: round_detail.referrer_fee_basis_points,
             num_picks_per_voter: round_detail.num_picks_per_voter,
             max_participants: round_detail.max_participants.unwrap_or(0),
             use_cooldown: round_detail.use_cooldown,
@@ -967,6 +1042,8 @@ impl Contract {
         whitelisted_voters: Option<Vec<AccountId>>,
         use_whitelist: Option<bool>,
         expected_amount: Option<U128>,
+        use_referrals: Option<bool>,
+        referrer_fee_basis_points: Option<u16>,
         allow_remaining_funds_redistribution: Option<bool>,
         remaining_funds_redistribution_recipient: Option<AccountId>,
         num_picks_per_voter: Option<u32>,
@@ -1007,6 +1084,7 @@ impl Contract {
             allow_remaining_funds_redistribution,
             remaining_funds_redistribution_recipient,
         );
+        round.update_referrals_config(use_referrals, referrer_fee_basis_points);
         round.update_num_picks_per_voter(num_picks_per_voter);
         round.update_max_participants(max_participants);
         round.update_cooldown_config(use_cooldown, cooldown_period_ms);

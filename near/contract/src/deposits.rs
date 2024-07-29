@@ -10,6 +10,7 @@ pub struct Deposit {
     pub depositor_id: AccountId,
     pub total_amount: u128,
     pub protocol_fee: u128,
+    pub referrer_fee: u128,
     pub net_amount: u128,
     pub deposited_at: TimestampMs,
     pub memo: Option<String>,
@@ -23,6 +24,7 @@ impl Deposit {
             depositor_id: self.depositor_id.clone(),
             total_amount: U128(self.total_amount),
             protocol_fee: U128(self.protocol_fee),
+            referrer_fee: U128(self.referrer_fee),
             net_amount: U128(self.net_amount),
             deposited_at: self.deposited_at,
             memo: self.memo.clone(),
@@ -39,6 +41,7 @@ pub struct DepositExternal {
     pub depositor_id: AccountId,
     pub total_amount: U128,
     pub protocol_fee: U128,
+    pub referrer_fee: U128,
     pub net_amount: U128,
     pub deposited_at: TimestampMs,
     pub memo: Option<String>,
@@ -47,7 +50,12 @@ pub struct DepositExternal {
 #[near_bindgen]
 impl Contract {
     #[payable]
-    pub fn deposit_to_round(&mut self, round_id: RoundId, memo: Option<String>) -> DepositExternal {
+    pub fn deposit_to_round(
+        &mut self,
+        round_id: RoundId,
+        memo: Option<String>,
+        referrer_id: Option<AccountId>,
+    ) -> DepositExternal {
         let initial_storage_usage = env::storage_usage();
         let mut round = self
             .rounds_by_id
@@ -63,11 +71,15 @@ impl Contract {
         let protocol_fee = self
             .calculate_protocol_fee(attached_deposit.as_yoctonear())
             .unwrap_or(0);
+        let referrer_fee = round
+            .calculate_referrer_fee(attached_deposit.as_yoctonear())
+            .unwrap_or(0);
         let mut deposit = Deposit {
             round_id,
             depositor_id: caller.clone(),
             total_amount: attached_deposit.as_yoctonear(),
             protocol_fee,
+            referrer_fee,
             net_amount: 0, // will be updated in a moment after storage has been calculated
             deposited_at: env::block_timestamp_ms(),
             memo,
@@ -81,9 +93,15 @@ impl Contract {
             .expect("Round not found");
         deposits_for_round.insert(deposit_id);
 
-        // calculate storage & deduct to get net_amount
+        // calculate storage & deduct this as well as fees to get net_amount
         let required_deposit = calculate_required_storage_deposit(initial_storage_usage);
-        let net_amount = attached_deposit.as_yoctonear() - required_deposit - protocol_fee;
+        let net_amount =
+            attached_deposit.as_yoctonear() - required_deposit - protocol_fee - referrer_fee;
+        // net amount must be > 0
+        assert!(
+            net_amount > 0,
+            "Deposit amount does not cover storage and fees"
+        );
         deposit.net_amount = net_amount;
 
         self.deposits_by_id.insert(deposit_id, deposit.clone());
@@ -107,6 +125,13 @@ impl Contract {
                     protocol_fee,
                     protocol_fee_recipient
                 );
+            }
+        }
+        // send referrer fee if > 0 & referrer is passed as method arg
+        if referrer_fee > 0 {
+            if let Some(referrer_id) = referrer_id {
+                Promise::new(referrer_id.clone()).transfer(NearToken::from_yoctonear(referrer_fee));
+                log!("Referrer fee {} sent to {}", referrer_fee, referrer_id);
             }
         }
         let deposit_external = deposit.to_external(deposit_id);

@@ -110,6 +110,9 @@ pub struct Contract {
     default_page_size: u64,
 }
 
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
+#[borsh(crate = "near_sdk::borsh")]
+#[serde(crate = "near_sdk::serde")]
 pub struct Config {
     pub owner: AccountId,
     pub protocol_fee_recipient: Option<AccountId>,
@@ -191,11 +194,12 @@ impl Contract {
             "Both protocol fee recipient and basis points must be set or unset"
         );
         self.protocol_fee_recipient = protocol_fee_recipient.clone();
-        // basis points should be between 0 and 10,000
+        // basis points should be within acceptable range
         if let Some(protocol_fee_basis_points) = protocol_fee_basis_points {
             assert!(
-                protocol_fee_basis_points <= 10_000,
-                "Protocol fee basis points must be between 0 and 10,000"
+                protocol_fee_basis_points <= MAX_PROTOCOL_FEE_BASIS_POINTS,
+                "Protocol fee basis points must be between 0 and {}",
+                MAX_PROTOCOL_FEE_BASIS_POINTS
             );
         }
         self.protocol_fee_basis_points = protocol_fee_basis_points;

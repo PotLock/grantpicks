@@ -9,6 +9,7 @@ pub struct Deposit {
     pub round_id: RoundId,
     pub depositor_id: AccountId,
     pub total_amount: u128,
+    pub protocol_fee: u128,
     pub net_amount: u128,
     pub deposited_at: TimestampMs,
     pub memo: Option<String>,
@@ -21,6 +22,7 @@ impl Deposit {
             round_id: self.round_id,
             depositor_id: self.depositor_id.clone(),
             total_amount: U128(self.total_amount),
+            protocol_fee: U128(self.protocol_fee),
             net_amount: U128(self.net_amount),
             deposited_at: self.deposited_at,
             memo: self.memo.clone(),
@@ -36,6 +38,7 @@ pub struct DepositExternal {
     pub round_id: RoundId,
     pub depositor_id: AccountId,
     pub total_amount: U128,
+    pub protocol_fee: U128,
     pub net_amount: U128,
     pub deposited_at: TimestampMs,
     pub memo: Option<String>,
@@ -56,10 +59,15 @@ impl Contract {
         // create Deposit record
         let deposit_id = self.next_deposit_id;
         self.next_deposit_id += 1;
+
+        let protocol_fee = self
+            .calculate_protocol_fee(attached_deposit.as_yoctonear())
+            .unwrap_or(0);
         let mut deposit = Deposit {
             round_id,
             depositor_id: caller.clone(),
             total_amount: attached_deposit.as_yoctonear(),
+            protocol_fee,
             net_amount: 0, // will be updated in a moment after storage has been calculated
             deposited_at: env::block_timestamp_ms(),
             memo,
@@ -75,7 +83,7 @@ impl Contract {
 
         // calculate storage & deduct to get net_amount
         let required_deposit = calculate_required_storage_deposit(initial_storage_usage);
-        let net_amount = attached_deposit.as_yoctonear() - required_deposit;
+        let net_amount = attached_deposit.as_yoctonear() - required_deposit - protocol_fee;
         deposit.net_amount = net_amount;
 
         self.deposits_by_id.insert(deposit_id, deposit.clone());
@@ -89,6 +97,18 @@ impl Contract {
 
         // clean-up
         refund_deposit(initial_storage_usage, None);
+        // send protocol fee if > 0 & recipient is set
+        if protocol_fee > 0 {
+            if let Some(protocol_fee_recipient) = self.protocol_fee_recipient.as_ref() {
+                Promise::new(protocol_fee_recipient.clone())
+                    .transfer(NearToken::from_yoctonear(protocol_fee));
+                log!(
+                    "Protocol fee {} sent to {}",
+                    protocol_fee,
+                    protocol_fee_recipient
+                );
+            }
+        }
         let deposit_external = deposit.to_external(deposit_id);
         log_deposit(&deposit_external);
         deposit_external

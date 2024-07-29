@@ -77,17 +77,22 @@ pub enum StorageKey {
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 #[borsh(crate = "near_sdk::borsh")]
 pub struct Contract {
+    // rounds
     rounds_by_id: UnorderedMap<RoundId, RoundDetailInternal>,
     next_round_id: RoundId,
+    // projects (utilizing internal ID integers to save on storage)
     project_id_to_internal_id: LookupMap<AccountId, InternalProjectId>,
     internal_id_to_project_id: UnorderedMap<InternalProjectId, AccountId>,
     next_internal_project_id: InternalProjectId,
+    // applications
     applications_for_round_by_internal_project_id:
         UnorderedMap<RoundId, UnorderedMap<InternalProjectId, RoundApplication>>,
     approved_internal_project_ids_for_round: UnorderedMap<RoundId, UnorderedSet<InternalProjectId>>,
+    // votes
     votes_by_round_id: UnorderedMap<RoundId, UnorderedMap<AccountId, VotingResult>>,
     voting_count_per_project_by_round_id:
         UnorderedMap<RoundId, UnorderedMap<InternalProjectId, u32>>,
+    // deposits
     deposits_by_id: UnorderedMap<DepositId, Deposit>,
     next_deposit_id: DepositId,
     deposit_ids_for_round: UnorderedMap<RoundId, UnorderedSet<DepositId>>,
@@ -98,13 +103,28 @@ pub struct Contract {
     payout_ids_by_internal_project_id: LookupMap<InternalProjectId, UnorderedSet<PayoutId>>,
     payouts_challenges_for_round_by_challenger_id:
         UnorderedMap<RoundId, UnorderedMap<AccountId, PayoutsChallenge>>, // TODO: consider changing this to index by challenge ID instead of account ID? or not necessary
-    default_page_size: u64, // TODO: make this configurable by owner/admin
+    // config // TODO: make these configurable by owner/admin
+    owner: AccountId,
+    protocol_fee_recipient: Option<AccountId>,
+    protocol_fee_basis_points: Option<u16>,
+    default_page_size: u64,
+}
+
+pub struct Config {
+    pub owner: AccountId,
+    pub protocol_fee_recipient: Option<AccountId>,
+    pub protocol_fee_basis_points: Option<u16>,
+    pub default_page_size: u64,
 }
 
 #[near_bindgen]
 impl Contract {
     #[init]
-    pub fn new() -> Self {
+    pub fn new(
+        owner: AccountId,
+        protocol_fee_recipient: Option<AccountId>,
+        protocol_fee_basis_points: Option<u16>,
+    ) -> Self {
         Self {
             rounds_by_id: UnorderedMap::new(StorageKey::RoundsById),
             next_round_id: 1,
@@ -133,7 +153,78 @@ impl Contract {
             payouts_challenges_for_round_by_challenger_id: UnorderedMap::new(
                 StorageKey::PayoutsChallengesForRoundByChallengerId,
             ),
-            default_page_size: DEFAULT_PAGE_SIZE, // TODO: make this configurable by owner/admin
+            owner,
+            protocol_fee_recipient,
+            protocol_fee_basis_points,
+            default_page_size: DEFAULT_PAGE_SIZE,
+        }
+    }
+
+    pub fn owner_set_default_page_size(&mut self, default_page_size: u64) {
+        self.assert_caller_is_owner();
+        assert!(
+            default_page_size > 0,
+            "Default page size must be greater than 0"
+        );
+        self.default_page_size = default_page_size;
+    }
+
+    pub(crate) fn assert_caller_is_owner(&self) {
+        assert_eq!(
+            env::predecessor_account_id(),
+            self.owner,
+            "Caller is not the owner"
+        );
+    }
+
+    #[payable]
+    pub fn owner_set_protocol_fee_config(
+        &mut self,
+        protocol_fee_recipient: Option<AccountId>,
+        protocol_fee_basis_points: Option<u16>,
+    ) {
+        self.assert_caller_is_owner();
+        let initial_storage_usage = env::storage_usage();
+        // both should be Some, or both should be None
+        assert!(
+            protocol_fee_recipient.is_some() == protocol_fee_basis_points.is_some(),
+            "Both protocol fee recipient and basis points must be set or unset"
+        );
+        self.protocol_fee_recipient = protocol_fee_recipient.clone();
+        // basis points should be between 0 and 10,000
+        if let Some(protocol_fee_basis_points) = protocol_fee_basis_points {
+            assert!(
+                protocol_fee_basis_points <= 10_000,
+                "Protocol fee basis points must be between 0 and 10,000"
+            );
+        }
+        self.protocol_fee_basis_points = protocol_fee_basis_points;
+        refund_deposit(initial_storage_usage, None);
+        log_protocol_fee_config_set(&protocol_fee_recipient, &protocol_fee_basis_points);
+    }
+
+    pub(crate) fn calculate_protocol_fee(&self, amount: u128) -> Option<u128> {
+        if let Some(protocol_fee_basis_points) = self.protocol_fee_basis_points {
+            // check for fee recipient
+            if self.protocol_fee_recipient.is_some() {
+                let total_basis_points = 10_000u128;
+                let fee_amount = (protocol_fee_basis_points as u128).saturating_mul(amount);
+                // Round up
+                Some(fee_amount.div_ceil(total_basis_points))
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+
+    pub fn get_config(&self) -> Config {
+        Config {
+            owner: self.owner.clone(),
+            protocol_fee_recipient: self.protocol_fee_recipient.clone(),
+            protocol_fee_basis_points: self.protocol_fee_basis_points,
+            default_page_size: self.default_page_size,
         }
     }
 }

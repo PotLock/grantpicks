@@ -1,10 +1,12 @@
 use crate::*;
 
+// NB: Pairs are not stored on the contract, they are generated on the fly
+
 #[derive(BorshDeserialize, BorshSerialize, PartialEq, Debug, Clone, Serialize, Deserialize)]
 #[borsh(crate = "near_sdk::borsh")]
 #[serde(crate = "near_sdk::serde")]
 pub struct Pair {
-    pub pair_id: u32,
+    pub id: u32,
     pub projects: Vec<AccountId>,
 }
 
@@ -201,7 +203,7 @@ impl Contract {
 
         // Return the pair with the specified index and the two projects
         Pair {
-            pair_id: index,
+            id: index,
             projects: vec![project_1.clone(), project_2.clone()],
         }
     }

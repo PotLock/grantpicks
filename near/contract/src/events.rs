@@ -301,3 +301,27 @@ pub(crate) fn log_vault_redistributed(
         .as_ref(),
     );
 }
+
+pub(crate) fn log_protocol_fee_config_set(
+    protocol_fee_recipient: &Option<AccountId>,
+    protocol_fee_basis_points: &Option<u16>,
+) {
+    env::log_str(
+        format!(
+            "{}{}",
+            EVENT_JSON_PREFIX,
+            json!({
+                "standard": "potlock",
+                "version": "1.0.0",
+                "event": "protocol_fee_config_set",
+                "data": [
+                    {
+                        "protocol_fee_recipient": protocol_fee_recipient,
+                        "protocol_fee_basis_points": protocol_fee_basis_points,
+                    }
+                ]
+            })
+        )
+        .as_ref(),
+    );
+}

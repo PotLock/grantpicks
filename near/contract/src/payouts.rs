@@ -406,6 +406,8 @@ impl Contract {
             } else {
                 panic!("Payout challenge already resolved; cannot be removed");
             }
+        } else {
+            panic!("No challenge found for this challenger");
         }
     }
 
@@ -436,6 +438,8 @@ impl Contract {
                 &payouts_challenge.to_external(challenger_id.clone(), round_id),
             );
             refund_deposit(initial_storage_usage, None);
+        } else {
+            panic!("No challenge found for this challenger");
         }
     }
 

@@ -14,6 +14,7 @@ pub mod deposits;
 pub mod events;
 pub mod payouts;
 pub mod rounds;
+pub mod source;
 pub mod utils;
 pub mod votes;
 pub use crate::applications::*;
@@ -22,13 +23,13 @@ pub use crate::deposits::*;
 pub use crate::events::*;
 pub use crate::payouts::*;
 pub use crate::rounds::*;
+pub use crate::source::*;
 pub use crate::utils::*;
 pub use crate::votes::*;
 
 pub const EVENT_JSON_PREFIX: &str = "EVENT_JSON:";
 
 pub type TimestampMs = u64;
-pub type RoundId = u64;
 pub type InternalProjectId = u32; // internal project ID, to save on storage
 
 #[derive(BorshSerialize, BorshStorageKey)]
@@ -108,6 +109,7 @@ pub struct Contract {
     protocol_fee_recipient: Option<AccountId>,
     protocol_fee_basis_points: Option<u16>,
     default_page_size: u64,
+    contract_source_metadata: ContractSourceMetadata,
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
@@ -127,6 +129,7 @@ impl Contract {
         owner: AccountId,
         protocol_fee_recipient: Option<AccountId>,
         protocol_fee_basis_points: Option<u16>,
+        contract_source_metadata: ContractSourceMetadata,
     ) -> Self {
         Self {
             rounds_by_id: UnorderedMap::new(StorageKey::RoundsById),
@@ -160,6 +163,7 @@ impl Contract {
             protocol_fee_recipient,
             protocol_fee_basis_points,
             default_page_size: DEFAULT_PAGE_SIZE,
+            contract_source_metadata,
         }
     }
 

@@ -1,5 +1,7 @@
 use crate::*;
 
+pub type RoundId = u64;
+
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
 #[borsh(crate = "near_sdk::borsh")]
 #[serde(crate = "near_sdk::serde")]
@@ -1026,7 +1028,7 @@ impl Contract {
     #[payable]
     pub fn update_round(
         &mut self,
-        // don't allow changing owner via this method
+        // NB: changing owner &/or round_complete via this method is not allowed
         round_id: RoundId,
         admins: Option<Vec<AccountId>>,
         name: Option<String>,
@@ -1053,9 +1055,7 @@ impl Contract {
         use_compliance: Option<bool>,
         compliance_requirement_description: Option<String>,
         compliance_period_ms: Option<u64>,
-        // don't allow changing round_complete via this method
     ) -> RoundDetailExternal {
-        // TODO: this needs to be reviewed and extensive validation added for what can be updated and when
         let initial_storage_usage = env::storage_usage();
         let round = self
             .rounds_by_id
@@ -1576,12 +1576,12 @@ impl Contract {
     }
 
     /// Retrieve a round by its ID
-    pub fn get_round(&self, round_id: RoundId) -> RoundDetailExternal {
-        self.rounds_by_id
-            .get(&round_id)
-            .expect("Round not found")
-            .clone()
-            .to_external()
+    pub fn get_round(&self, round_id: RoundId) -> Option<RoundDetailExternal> {
+        let round = self.rounds_by_id.get(&round_id);
+        match round {
+            Some(round) => Some(round.clone().to_external()),
+            None => None,
+        }
     }
 
     pub fn is_voting_live(&self, round_id: RoundId) -> bool {
@@ -1590,29 +1590,4 @@ impl Contract {
             .expect("Round not found")
             .is_voting_live()
     }
-
-    // pub fn add_projects_to_round(&mut self, round_id: RoundId, projects: Vec<AccountId>) -> &Round {
-    //     let caller = env::predecessor_account_id();
-    //     let round = self
-    //         .rounds_by_id
-    //         .get_mut(&round_id)
-    //         .expect("Round not found");
-
-    //     // Verify caller is owner or admin
-    //     if round.owner != caller && !round.admins.contains(&caller) {
-    //         panic!("Only owner or admin can add projects to round");
-    //     }
-
-    //     for project in projects {
-    //         let internal_id = self.next_internal_id;
-    //         self.project_id_to_internal_id
-    //             .insert(project.clone(), internal_id);
-    //         self.internal_id_to_project_id
-    //             .insert(internal_id, project.clone());
-    //         round.approved_applicants.insert(project);
-    //         self.next_internal_id += 1;
-    //     }
-
-    //     self.rounds_by_id.get(&round_id).unwrap()
-    // }
 }

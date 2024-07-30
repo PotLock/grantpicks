@@ -11,286 +11,267 @@ To facilitate pairwise voting & funding distribution on NEAR
 ```rs
 /// Contract state as stored on-chain
 pub struct Contract {
-    // PERMISSIONED ACCOUNTS
-    /// Owner of the contract
-    owner: AccountId,
-    /// Admins of the contract (Owner, which should in most cases be DAO, might want to delegate admin rights to other accounts)
-    admins: UnorderedSet<AccountId>,
-    /// Address (ID) of Pot manager ("chef"). This account is responsible for managing the Pot, e.g. reviewing applications, setting payouts, etc.
-    /// Optional because it may be set after deployment.
-    chef: LazyOption<AccountId>,
-
-    // POT CONFIG
-    /// User-facing name for this Pot
-    pot_name: String,
-    /// User-facing description for this Pot
-    pot_description: String,
-    /// Tags, e.g. to indicate type of pot
-    tags: Vec<String>,
-    /// Maximum number of projects that can be approved for the round. Considerations include gas limits for payouts, etc.
-    max_projects: u32,
-    /// Base currency for the round
-    /// * NB: currently only `"near"` is supported
-    base_currency: AccountId,
-    /// MS Timestamp when applications can be submitted from
-    application_start_ms: TimestampMs,
-    /// MS Timestamp when applications can be submitted until
-    application_end_ms: TimestampMs,
-    /// MS Timestamp when the public round starts
-    public_round_start_ms: TimestampMs,
-    /// MS Timestamp when the round ends
-    public_round_end_ms: TimestampMs,
-    /// Account ID that deployed this Pot contract (set at deployment, cannot be updated)
-    deployed_by: AccountId,
-    /// Contract ID + method name of registry provider that should be queried when projects apply to round. Method specified must receive "account_id" and return bool indicating registration status.
-    /// * Optional because not all Pots will require registration, and those that do might set after deployment.
-    registry_provider: LazyOption<ProviderId>,
-    /// Minimum amount that can be donated to the matching pool
-    min_matching_pool_donation_amount: u128,
-
-    // SYBIL RESISTANCE
-    /// Sybil contract address & method name that will be called to verify humanness. If `None`, no checks will be made.
-    sybil_wrapper_provider: LazyOption<ProviderId>,
-    /// Sybil checks (if using custom sybil config)
-    custom_sybil_checks: LazyOption<HashMap<ProviderId, SybilProviderWeight>>,
-    /// Minimum threshold score for Sybil checks (if using custom sybil config)
-    custom_min_threshold_score: LazyOption<u32>,
-
-    // FEES
-    /// Basis points (1/100 of a percent) that should be paid to an account that refers a matching pool donor (paid at the point when a matching pool donation comes in)
-    referral_fee_matching_pool_basis_points: u32,
-    /// Basis points (1/100 of a percent) that should be paid to an account that refers a public donor (paid at the point when a public donation comes in)
-    referral_fee_public_round_basis_points: u32,
-    /// Chef's fee for managing the round. Gets taken out of each donation as they come in and are paid out
-    chef_fee_basis_points: u32,
-
-    // FUNDS & BALANCES
-    /// Total matching pool donations
-    total_matching_pool_donations: u128,
-    /// Amount of matching funds available (not yet paid out)
-    matching_pool_balance: u128,
-    /// Total public donations
-    total_public_donations: u128,
-
-    // PAYOUTS
-    /// Length of cooldown period (in ms) after which payouts can be set by Chef
-    cooldown_period_ms: u64,
-    /// Cooldown period starts when Chef sets payouts
-    cooldown_end_ms: LazyOption<TimestampMs>,
-    /// Length of compliance period (in ms) after which projects forfeit payouts if they have not completed required steps to receive funds (e.g. KYC)
-    compliance_period_ms: LazyOption<u64>,
-    /// Compliance period starts when payouts are set by Chef
-    compliance_end_ms: LazyOption<TimestampMs>,
-    /// Indicates whether matching pool can be redistributed to remaining_funds_redistribution_recipient after compliance period ends. Must be specified at deployment, and CANNOT be changed afterwards.
-    allow_remaining_funds_redistribution: bool,
-    /// Recipient of matching pool redistribution (if enabled). CANNOT be changed after public round has started.
-    remaining_funds_redistribution_recipient: LazyOption<AccountId>,
-    /// Timestamp when redistribution happened
-    remaining_funds_redistributed_at_ms: LazyOption<TimestampMs>,
-    /// Indicates whether all projects been paid out (this would be considered the "end-of-lifecycle" for the Pot)
-    all_paid_out: bool,
-
-    // MAPPINGS
-    /// All application records
-    applications_by_id: UnorderedMap<ApplicationId, VersionedApplication>,
-    /// Approved application IDs
-    approved_application_ids: UnorderedSet<ApplicationId>,
-    /// All donation records
-    donations_by_id: UnorderedMap<DonationId, VersionedDonation>,
-    /// IDs of public round donations (made by donors who are not Patrons, during public round)
-    public_round_donation_ids: UnorderedSet<DonationId>,
-    /// IDs of matching pool donations (made by Patrons)
-    matching_pool_donation_ids: UnorderedSet<DonationId>,
-    /// IDs of donations made to a given project
-    donation_ids_by_project_id: LookupMap<ProjectId, UnorderedSet<DonationId>>,
-    /// IDs of donations made by a given donor (user)
-    donation_ids_by_donor_id: LookupMap<AccountId, UnorderedSet<DonationId>>,
+    // rounds
+    rounds_by_id: UnorderedMap<RoundId, RoundDetailInternal>,
+    next_round_id: RoundId,
+    // projects (utilizing internal ID integers to save on storage)
+    project_id_to_internal_id: LookupMap<AccountId, InternalProjectId>,
+    internal_id_to_project_id: UnorderedMap<InternalProjectId, AccountId>,
+    next_internal_project_id: InternalProjectId,
+    // applications
+    applications_for_round_by_internal_project_id:
+        UnorderedMap<RoundId, UnorderedMap<InternalProjectId, RoundApplication>>,
+    approved_internal_project_ids_for_round: UnorderedMap<RoundId, UnorderedSet<InternalProjectId>>,
+    // votes
+    votes_by_round_id: UnorderedMap<RoundId, UnorderedMap<AccountId, VotingResult>>,
+    voting_count_per_project_by_round_id:
+        UnorderedMap<RoundId, UnorderedMap<InternalProjectId, u32>>,
+    // deposits
+    deposits_by_id: UnorderedMap<DepositId, Deposit>,
+    next_deposit_id: DepositId,
+    deposit_ids_for_round: UnorderedMap<RoundId, UnorderedSet<DepositId>>,
     // payouts
-    payouts_by_id: UnorderedMap<PayoutId, VersionedPayout>, // can iterate over this to get all payouts
-    payout_ids_by_recipient_id: LookupMap<ProjectId, UnorderedSet<PayoutId>>,
-
-    // OTHER
-    /// contract ID + method name of protocol config provider that should be queried for protocol fee basis points and protocol fee recipient account.
-    /// Method specified must receive no requried args and return struct containing protocol_fee_basis_points and protocol_fee_recipient_account.
-    /// Set by deployer and cannot be changed by Pot owner/admins.
-    protocol_config_provider: LazyOption<ProviderId>,
-    /// Contract "source" metadata, as specified in NEP 0330 (https://github.com/near/NEPs/blob/master/neps/nep-0330.md), with addition of `commit_hash`
-    contract_source_metadata: LazyOption<VersionedContractSourceMetadata>,
+    next_payout_id: PayoutId,
+    payouts_by_id: UnorderedMap<PayoutId, Payout>,
+    payout_ids_by_round_id: UnorderedMap<RoundId, UnorderedSet<PayoutId>>,
+    payout_ids_by_internal_project_id: LookupMap<InternalProjectId, UnorderedSet<PayoutId>>,
+    payouts_challenges_for_round_by_challenger_id:
+        UnorderedMap<RoundId, UnorderedMap<AccountId, PayoutsChallenge>>, // TODO: consider changing this to index by challenge ID instead of account ID? or not necessary
+    // config // TODO: make these configurable by owner/admin
+    owner: AccountId,
+    protocol_fee_recipient: Option<AccountId>,
+    protocol_fee_basis_points: Option<u16>,
+    default_page_size: u64,
 }
 
 /// Ephemeral-only external struct (used in views)
-pub struct PotConfig {
+pub struct Config {
+    pub owner: AccountId,
+    pub protocol_fee_recipient: Option<AccountId>,
+    pub protocol_fee_basis_points: Option<u16>,
+    pub default_page_size: u64,
+}
+```
+
+### Rounds
+
+```rs
+pub type RoundId = u64; // auto-incrementing ID for Rounds
+
+pub struct CreateRoundParams {
     pub owner: AccountId,
     pub admins: Vec<AccountId>,
-    pub chef: Option<AccountId>,
-    pub pot_name: String,
-    pub pot_description: String,
-    pub tags: Vec<String>,
-    pub max_projects: u32,
-    pub base_currency: AccountId,
-    pub application_start_ms: TimestampMs,
-    pub application_end_ms: TimestampMs,
-    pub public_round_start_ms: TimestampMs,
-    pub public_round_end_ms: TimestampMs,
-    pub deployed_by: AccountId,
-    pub registry_provider: Option<ProviderId>,
-    pub min_matching_pool_donation_amount: U128,
-    pub sybil_wrapper_provider: Option<ProviderId>,
-    pub custom_sybil_checks: Option<HashMap<ProviderId, SybilProviderWeight>>,
-    pub custom_min_threshold_score: Option<u32>,
-    pub referral_fee_matching_pool_basis_points: u32,
-    pub referral_fee_public_round_basis_points: u32,
-    pub chef_fee_basis_points: u32,
-    pub matching_pool_balance: U128,
-    pub total_public_donations: U128,
-    pub public_donations_count: u32,
-    pub payouts: Vec<PayoutExternal>,
+    pub name: String,
+    pub description: String,
+    pub contacts: Vec<Contact>,
+    pub voting_start_ms: u64,
+    pub voting_end_ms: u64,
+    pub allow_applications: bool,
+    pub application_start_ms: Option<u64>, // must be present if allow_applications is true
+    pub application_end_ms: Option<u64>,   // must be present if allow_applications is true
+    pub application_requires_video: bool,
+    pub expected_amount: U128, // NB: on Stellar this is an int (u128)
+    pub use_whitelist: Option<bool>,
+    pub num_picks_per_voter: u32,
+    pub max_participants: Option<u32>,
+    pub use_cooldown: bool,
+    pub cooldown_period_ms: Option<u64>, // defaults to DEFAULT_COOLDOWN_PERIOD_MS if not provided
+    pub use_compliance: bool,
+    pub compliance_requirement_description: Option<String>, // must be provided if use_compliance is true
+    pub compliance_period_ms: Option<u64>, // defaults to DEFAULT_COMPLIANCE_PERIOD_MS if not provided
+    pub allow_remaining_funds_redistribution: bool,
+    pub remaining_funds_redistribution_recipient: Option<AccountId>,
+    pub use_referrals: bool,
+    pub referrer_fee_basis_points: Option<u16>,
+}
+
+pub struct RoundDetailInternal {
+    pub id: RoundId,
+    pub owner: AccountId,
+    pub admins: Vec<AccountId>,
+    pub name: String,
+    pub description: String,
+    pub contacts: Vec<Contact>,
+    pub allow_applications: bool,
+    pub application_start_ms: Option<TimestampMs>, // must be present if allow_applications is true
+    pub application_end_ms: Option<TimestampMs>,   // must be present if allow_applications is true
+    pub application_requires_video: bool,
+    pub voting_start_ms: TimestampMs,
+    pub voting_end_ms: TimestampMs,
+    pub blacklisted_voters: Vec<AccountId>, // todo: if these will grow large, consider storing on top-level contract instead
+    pub whitelisted_voters: Option<Vec<AccountId>>, // todo: if these will grow large, consider storing on top-level contract instead
+    pub use_whitelist: bool,
+    pub expected_amount: u128,
+    pub current_vault_balance: u128,
+    pub vault_total_deposits: u128,
+    /// Indicates whether matching pool can be redistributed to remaining_funds_redistribution_recipient after compliance period ends. Must be specified at deployment, and CANNOT be changed afterwards.
+    pub allow_remaining_funds_redistribution: bool,
+    /// Recipient of matching pool redistribution (if enabled). CANNOT be changed after public round has started.
+    pub remaining_funds_redistribution_recipient: Option<AccountId>,
+    pub remaining_funds_redistributed_at_ms: Option<TimestampMs>,
+    pub remaining_funds_redistribution_memo: Option<String>,
+    pub remaining_funds_redistributed_by: Option<AccountId>,
+    pub use_referrals: bool,
+    pub referrer_fee_basis_points: Option<u16>,
+    pub num_picks_per_voter: u32,
+    pub max_participants: u32,
+    pub use_cooldown: bool,
     pub cooldown_period_ms: u64,
     pub cooldown_end_ms: Option<TimestampMs>,
-    pub compliance_period_ms: Option<u64>,
+    pub use_compliance: bool,
+    pub compliance_requirement_description: Option<String>, // can be changed until compliance period ends
+    pub compliance_period_ms: u64,
     pub compliance_end_ms: Option<TimestampMs>,
+    pub round_complete: bool,
+}
+
+// Ephemeral/view-only struct that converts u128 to U128 for JSON compatibility
+pub struct RoundDetailExternal {
+    pub id: RoundId,
+    pub owner: AccountId,
+    pub admins: Vec<AccountId>,
+    pub name: String,
+    pub description: String,
+    pub contacts: Vec<Contact>,
+    pub allow_applications: bool,
+    pub application_start_ms: Option<TimestampMs>, // must be present if allow_applications is true
+    pub application_end_ms: Option<TimestampMs>,   // must be present if allow_applications is true
+    pub application_requires_video: bool,
+    pub voting_start_ms: TimestampMs,
+    pub voting_end_ms: TimestampMs,
+    pub blacklisted_voters: Vec<AccountId>, // todo: if these will grow large, consider storing on top-level contract instead
+    pub whitelisted_voters: Option<Vec<AccountId>>, // todo: if these will grow large, consider storing on top-level contract instead
+    pub use_whitelist: bool,
+    pub expected_amount: U128, // String for JSON purposes. NB: on Stellar this is an int (u128)
+    pub current_vault_balance: U128, // String for JSON purposes. NB: on Stellar this is an int (u128)
+    pub vault_total_deposits: U128,  // String for JSON purposes.
+    pub use_referrals: bool,
+    pub referrer_fee_basis_points: Option<u16>,
     pub allow_remaining_funds_redistribution: bool,
     pub remaining_funds_redistribution_recipient: Option<AccountId>,
     pub remaining_funds_redistributed_at_ms: Option<TimestampMs>,
-    pub all_paid_out: bool,
-    pub protocol_config_provider: Option<ProviderId>,
-}
-
-/// Ephemeral-only
-pub struct UpdatePotArgs {
-    pub owner: Option<AccountId>,
-    pub admins: Option<Vec<AccountId>>,
-    pub chef: Option<AccountId>,
-    pub pot_name: Option<String>,
-    pub pot_description: Option<String>,
-    pub tags: Option<Vec<String>>,
-    pub max_projects: Option<u32>,
-    pub application_start_ms: Option<TimestampMs>,
-    pub application_end_ms: Option<TimestampMs>,
-    pub public_round_start_ms: Option<TimestampMs>,
-    pub public_round_end_ms: Option<TimestampMs>,
-    pub compliance_period_ms: Option<TimestampMs>,
-    pub registry_provider: Option<ProviderId>,
-    pub min_matching_pool_donation_amount: Option<U128>,
-    pub sybil_wrapper_provider: Option<ProviderId>,
-    pub custom_sybil_checks: Option<Vec<CustomSybilCheck>>,
-    pub custom_min_threshold_score: Option<u32>,
-    pub referral_fee_matching_pool_basis_points: Option<u32>,
-    pub referral_fee_public_round_basis_points: Option<u32>,
-    pub chef_fee_basis_points: Option<u32>,
-}
-
-/// Result expected from protocol_config_provider when querying for protocol fee configuration
-pub struct ProtocolConfigProviderResult {
-    pub basis_points: u32,
-    pub account_id: AccountId,
+    pub remaining_funds_redistribution_memo: Option<String>,
+    pub remaining_funds_redistributed_by: Option<AccountId>,
+    pub num_picks_per_voter: u32,
+    pub max_participants: u32,
+    pub use_cooldown: bool,
+    pub cooldown_period_ms: u64,
+    pub cooldown_end_ms: Option<TimestampMs>,
+    pub use_compliance: bool,
+    pub compliance_requirement_description: Option<String>,
+    pub compliance_period_ms: u64,
+    pub compliance_end_ms: Option<TimestampMs>,
+    pub round_complete: bool,
 }
 ```
 
 ### Applications
 
 ```rs
-pub type ProjectId = AccountId;
-pub type ApplicationId = ProjectId; // Applications are indexed by ProjectId
+// NB: Applications are indexed by Internal Project ID (populated as `applicant_id` on RoundApplicationExternal)
 
-pub struct Application {
-    /// functions as unique identifier for application, since projects can only apply once per round
-    // Don't technically need this, since we use the project_id as the key in the applications_by_id mapping, but it's possible that we'll want to change that in the future, so keeping this for now
-    pub project_id: ProjectId,
-    /// Optional message to be included in application
-    pub message: Option<String>,
-    /// Status of the project application (Pending, Accepted, Rejected, InReview, Blacklisted)
+pub struct RoundApplication {
+    pub round_id: RoundId,
+    pub internal_project_id: InternalProjectId, // uses internal ID to save on storage
+    pub applicant_note: Option<String>,
+    pub video_url: Option<String>,
     pub status: ApplicationStatus,
-    /// Timestamp for when the application was submitted
-    pub submitted_at: TimestampMs,
-    /// Timestamp for when the application was last updated (e.g. status changed)
-    pub updated_at: Option<TimestampMs>,
-    /// Notes to be added by Chef when reviewing the application
-    pub review_notes: Option<String>,
+    pub review_note: Option<String>,
+    pub submited_ms: u64,
+    pub updated_ms: Option<u64>,
+}
+
+// Ephemeral/view-only, populates applicant_id
+pub struct RoundApplicationExternal {
+    pub round_id: RoundId,
+    pub applicant_id: AccountId,
+    pub applicant_note: Option<String>,
+    pub video_url: Option<String>,
+    pub status: ApplicationStatus,
+    pub review_note: Option<String>,
+    pub submited_ms: u64,
+    pub updated_ms: Option<u64>,
 }
 
 pub enum ApplicationStatus {
     Pending,
     Approved,
     Rejected,
-    InReview,
     Blacklisted,
 }
 ```
 
-### Donations
+### Deposits
 
 ```rs
-pub type DonationId = u64; // auto-incrementing ID for donations
+pub type DepositId = u64; // auto-incrementing ID for Deposits
 
-pub struct Donation {
-    /// ID of the donor
-    pub donor_id: AccountId,
-    /// Amount donated
+pub struct Deposit {
+    pub round_id: RoundId,
+    pub depositor_id: AccountId,
     pub total_amount: u128,
-    /// Amount after all fees/expenses (incl. storage)
-    pub net_amount: u128,
-    /// Optional message from the donor
-    pub message: Option<String>,
-    /// Timestamp when the donation was made
-    pub donated_at: TimestampMs,
-    /// ID of the project receiving the donation, if applicable (matching pool donations will contain `None`)
-    pub project_id: Option<ProjectId>,
-    /// Referrer ID
-    pub referrer_id: Option<AccountId>,
-    /// Referrer fee
-    pub referrer_fee: Option<u128>,
-    /// Protocol fee
     pub protocol_fee: u128,
-    /// Chef ID
-    pub chef_id: Option<AccountId>,
-    /// Chef fee
-    pub chef_fee: Option<u128>,
+    pub referrer_fee: u128,
+    pub net_amount: u128,
+    pub deposited_at: TimestampMs,
+    pub memo: Option<String>,
 }
 
-/// Ephemeral-only (used in views)
-pub struct DonationExternal {
-    /// ID of the donation
-    pub id: DonationId,
-    /// ID of the donor
-    pub donor_id: AccountId,
-    /// Amount donated
+// Ephemeral/view-only
+pub struct DepositExternal {
+    pub id: DepositId,
+    pub round_id: RoundId,
+    pub depositor_id: AccountId,
     pub total_amount: U128,
-    /// Amount after all fees/expenses (incl. storage)
-    pub net_amount: U128,
-    /// Optional message from the donor
-    pub message: Option<String>,
-    /// Timestamp when the donation was made
-    pub donated_at: TimestampMs,
-    /// ID of the project receiving the donation, if applicable (matching pool donations will contain `None`)
-    pub project_id: Option<ProjectId>,
-    /// Referrer ID
-    pub referrer_id: Option<AccountId>,
-    /// Referrer fee
-    pub referrer_fee: Option<U128>,
-    /// Protocol fee
     pub protocol_fee: U128,
-    /// Indicates whether this is matching pool donation
-    pub matching_pool: bool,
-    /// Chef ID
-    pub chef_id: Option<AccountId>,
-    /// Chef fee
-    pub chef_fee: Option<U128>,
+    pub referrer_fee: U128,
+    pub net_amount: U128,
+    pub deposited_at: TimestampMs,
+    pub memo: Option<String>,
+}
+```
+
+### Votes
+
+```rs
+pub type PairId = u32;
+
+// Ephemeral-only
+pub struct Pair {
+    pub id: PairId,
+    pub projects: Vec<AccountId>,
 }
 
-pub const DONATION_ID_DELIMITER: &str = ":";
+// Stored on-chain (within VotingResult)
+pub struct Pick {
+    pub pair_id: PairId,
+    pub voted_project: AccountId,
+}
 
+// Stored on-chain
+pub struct VotingResult {
+    pub voter: AccountId,
+    pub picks: Vec<Pick>,
+    pub voted_ms: u64,
+}
+
+// Ephemeral-only
+pub struct ProjectVotingResult {
+    pub project: AccountId,
+    pub voting_count: u32,
+}
 ```
 
 ### Payouts
 
 ```rs
-pub const PAYOUT_ID_DELIMITER: &str = ":";
-pub type PayoutId = String; // concatenation of application_id + PAYOUT_ID_DELIMITER + incrementing integer per-project
+pub type PayoutId = u32;
 
 pub struct Payout {
     /// Unique identifier for the payout
     pub id: PayoutId,
+    /// ID of the round for which the payout was made
+    pub round_id: RoundId,
     /// ID of the application receiving the payout
     pub recipient_id: AccountId,
     /// Amount to be paid out
@@ -305,6 +286,8 @@ pub struct Payout {
 pub struct PayoutExternal {
     /// Unique identifier for the payout
     pub id: PayoutId,
+    /// ID of the round for which the payout was made
+    pub round_id: RoundId,
     /// ID of the application receiving the payout
     pub recipient_id: AccountId,
     /// Amount to be paid out
@@ -318,7 +301,7 @@ pub struct PayoutExternal {
 /// Ephemeral-only; used for setting payouts
 pub struct PayoutInput {
     pub amount: U128,
-    pub recipient_id: ProjectId,
+    pub recipient_id: AccountId,
     pub memo: Option<String>,
 }
 
@@ -337,6 +320,8 @@ pub struct PayoutsChallenge {
 pub struct PayoutsChallengeExternal {
     /// Account that made the challenge
     pub challenger_id: AccountId,
+    /// Round ID for which the challenge was made
+    pub round_id: RoundId,
     /// Timestamp when the payout challenge was made
     pub created_at: TimestampMs,
     /// Reason for the challenge
@@ -347,80 +332,6 @@ pub struct PayoutsChallengeExternal {
     pub resolved: bool,
 }
 
-impl PayoutsChallenge {
-    pub fn to_external(&self, challenger_id: AccountId) -> PayoutsChallengeExternal {
-        PayoutsChallengeExternal {
-            challenger_id,
-            created_at: self.created_at,
-            reason: self.reason.clone(),
-            admin_notes: self.admin_notes.clone(),
-            resolved: self.resolved,
-        }
-    }
-}
-
-```
-
-### Providers
-
-A "Provider" is a contract address + method name combination that "provides" some information or service, such as a `RegistryProvider` (which provides information on whether an account is on a registry), a `SybilProvider` (which provides information on whether an account is considered "human"), or a `ProtocolConfigProvider` (which provides information on protocol fee and recipient account).
-
-```rs
-pub struct ProviderId(pub String);
-
-pub const PROVIDER_ID_DELIMITER: &str = ":"; // separates contract_id and method_name in ProviderId
-
-impl ProviderId {
-    /// Generate ProviderId ("`{CONTRACT_ADDRESS}:{METHOD_NAME}`") from contract_id and method_name
-    fn new(contract_id: String, method_name: String) -> Self {
-        ProviderId(format!(
-            "{}{}{}",
-            contract_id, PROVIDER_ID_DELIMITER, method_name
-        ))
-    }
-
-    /// Decompose ProviderId into contract_id and method_name
-    pub fn decompose(&self) -> (String, String) {
-        let parts: Vec<&str> = self.0.split(PROVIDER_ID_DELIMITER).collect();
-        if parts.len() != 2 {
-            panic!("Invalid provider ID format. Expected 'contract_id:method_name'.");
-        }
-        (parts[0].to_string(), parts[1].to_string())
-    }
-
-    /// Validate (individual elements cannot be empty, cannot contain PROVIDER_ID_DELIMITER)
-    pub fn validate(&self) {
-        let (contract_id, method_name) = self.decompose();
-        assert!(!contract_id.is_empty(), "Contract ID cannot be empty");
-        assert!(!method_name.is_empty(), "Method name cannot be empty");
-        assert!(
-            !contract_id.contains(PROVIDER_ID_DELIMITER),
-            "Contract ID cannot contain delimiter ('{}')",
-            PROVIDER_ID_DELIMITER
-        );
-        assert!(
-            !method_name.contains(PROVIDER_ID_DELIMITER),
-            "Method name cannot contain delimiter ('{}')",
-            PROVIDER_ID_DELIMITER
-        );
-    }
-}
-```
-
-### Sybil configuration
-
-A Sybil Provider can be used to enhance sybil resistance for public donations. This provider acts as a wrapper around individual sybil resistance providers (e.g. I-Am-Human, Wormhole, etc) and can be either used in its default configuration, or customized by providing `CustomSybilCheck`s.
-
-```rs
-/// Weighting for a given CustomSybilCheck
-type SybilProviderWeight = u32;
-
-/// Ephemeral-only
-pub struct CustomSybilCheck {
-    contract_id: AccountId,
-    method_name: String,
-    weight: SybilProviderWeight,
-}
 ```
 
 ### Contract Source Metadata
@@ -442,344 +353,371 @@ pub struct ContractSourceMetadata {
 
 ### Write Methods
 
-**NB: ALL privileged write methods (those beginning with `chef_*`, `admin_*` or `owner_*`) require an attached deposit of at least one yoctoNEAR, for security purposes.**
-
 ```rs
 // INIT
 
 pub fn new(
-    // permissioned accounts
-    owner: Option<AccountId>, // defaults to signer account if not provided
-    admins: Option<Vec<AccountId>>,
-    chef: Option<AccountId>,
+    owner: AccountId,
+    protocol_fee_recipient: Option<AccountId>,
+    protocol_fee_basis_points: Option<u16>,
+    contract_source_metadata: ContractSourceMetadata,
+) -> Self
 
-    // pot config
-    pot_name: String,
-    pot_description: String,
-    tags: Option<Vec<String>>,
-    max_projects: u32,
-    application_start_ms: TimestampMs,
-    application_end_ms: TimestampMs,
-    public_round_start_ms: TimestampMs,
-    public_round_end_ms: TimestampMs,
-    registry_provider: Option<ProviderId>,
-    min_matching_pool_donation_amount: Option<U128>,
+
+// CONTRACT OWNER / TOP-LEVEL CONTRACT CONFIG
+
+pub fn owner_set_default_page_size(&mut self, default_page_size: u64)
+
+#[payable]
+pub fn owner_set_protocol_fee_config(
+    &mut self,
+    protocol_fee_recipient: Option<AccountId>,
+    protocol_fee_basis_points: Option<u16>,
+)
+
+
+// ROUNDS
+
+#[payable]
+pub fn create_round(&mut self, round_detail: CreateRoundParams) -> RoundDetailExternal
+
+#[payable]
+/// All-purpose update method; granular methods also available (outlined below)
+pub fn update_round(
+    &mut self,
+    // NB: changing owner &/or round_complete via this method is not allowed
+    round_id: RoundId,
+    admins: Option<Vec<AccountId>>,
+    name: Option<String>,
+    description: Option<String>,
+    contacts: Option<Vec<Contact>>,
+    allow_applications: Option<bool>,
+    application_start_ms: Option<TimestampMs>,
+    application_end_ms: Option<TimestampMs>,
+    application_requires_video: Option<bool>,
+    voting_start_ms: Option<TimestampMs>,
+    voting_end_ms: Option<TimestampMs>,
+    blacklisted_voters: Option<Vec<AccountId>>,
+    whitelisted_voters: Option<Vec<AccountId>>,
+    use_whitelist: Option<bool>,
+    expected_amount: Option<U128>,
+    use_referrals: Option<bool>,
+    referrer_fee_basis_points: Option<u16>,
+    allow_remaining_funds_redistribution: Option<bool>,
+    remaining_funds_redistribution_recipient: Option<AccountId>,
+    num_picks_per_voter: Option<u32>,
+    max_participants: Option<u32>,
+    use_cooldown: Option<bool>,
     cooldown_period_ms: Option<u64>,
+    use_compliance: Option<bool>,
+    compliance_requirement_description: Option<String>,
     compliance_period_ms: Option<u64>,
+) -> RoundDetailExternal
+
+#[payable]
+/// Must have no balance, no applications & no votes
+pub fn delete_round(&mut self, round_id: RoundId) -> RoundDetailExternal
+
+#[payable]
+pub fn set_name(&mut self, round_id: RoundId, name: String) -> RoundDetailExternal
+
+#[payable]
+pub fn set_description(
+    &mut self,
+    round_id: RoundId,
+    description: String,
+) -> RoundDetailExternal
+
+#[payable]
+pub fn set_contacts(
+    &mut self,
+    round_id: RoundId,
+    contacts: Vec<Contact>,
+) -> RoundDetailExternal
+
+#[payable]
+pub fn set_voting_period(
+    &mut self,
+    round_id: RoundId,
+    start_ms: TimestampMs,
+    end_ms: TimestampMs,
+) -> RoundDetailExternal
+
+#[payable]
+pub fn set_applications_config(
+    &mut self,
+    round_id: RoundId,
+    allow_applications: Option<bool>,
+    application_start_ms: Option<TimestampMs>,
+    application_end_ms: Option<TimestampMs>,
+    application_requires_video: Option<bool>,
+) -> RoundDetailExternal
+
+#[payable]
+pub fn set_expected_amount(
+    &mut self,
+    round_id: RoundId,
+    expected_amount: U128,
+) -> RoundDetailExternal
+
+#[payable]
+pub fn close_voting_period(&mut self, round_id: RoundId) -> RoundDetailExternal
+
+#[payable]
+pub fn set_cooldown_config(
+    &mut self,
+    round_id: RoundId,
+    use_cooldown: bool,
+    cooldown_period_ms: Option<u64>,
+) -> RoundDetailExternal
+
+#[payable]
+pub fn set_compliance_config(
+    &mut self,
+    round_id: RoundId,
+    use_compliance: bool,
+    compliance_requirement_description: Option<String>,
+    compliance_period_ms: Option<u64>,
+) -> RoundDetailExternal
+
+#[payable]
+pub fn set_redistribution_config(
+    &mut self,
+    round_id: RoundId,
     allow_remaining_funds_redistribution: bool,
     remaining_funds_redistribution_recipient: Option<AccountId>,
+) -> RoundDetailExternal
 
-    // sybil resistance
-    sybil_wrapper_provider: Option<ProviderId>,
-    custom_sybil_checks: Option<HashMap<ProviderId, SybilProviderWeight>>,
-    custom_min_threshold_score: Option<u32>,
+#[payable]
+pub fn add_admins(&mut self, round_id: RoundId, admins: Vec<AccountId>) -> RoundDetailExternal
 
-    // fees
-    referral_fee_matching_pool_basis_points: u32, // this could be optional with a default, but better to set explicitly for now
-    referral_fee_public_round_basis_points: u32, // this could be optional with a default, but better to set explicitly for now
-    chef_fee_basis_points: u32,
+#[payable]
+pub fn remove_admins(
+    &mut self,
+    round_id: RoundId,
+    admins: Vec<AccountId>,
+) -> RoundDetailExternal
 
-    // other
-    protocol_config_provider: Option<ProviderId>,
-    source_metadata: ContractSourceMetadata,
-) -> Self
+#[payable]
+pub fn set_admins(&mut self, round_id: RoundId, admins: Vec<AccountId>) -> RoundDetailExternal
+
+#[payable]
+pub fn clear_admins(&mut self, round_id: RoundId) -> RoundDetailExternal
+
+#[payable]
+pub fn flag_voters(
+    &mut self,
+    round_id: RoundId,
+    voters: Vec<AccountId>,
+) -> RoundDetailExternal
+
+#[payable]
+pub fn unflag_voters(
+    &mut self,
+    round_id: RoundId,
+    voters: Vec<AccountId>,
+) -> RoundDetailExternal
+
+#[payable]
+pub fn set_round_complete(&mut self, round_id: RoundId) -> RoundDetailExternal
 
 
 // APPLICATIONS
 
-/// The calling account should be the project/account that is applying
 #[payable]
-pub fn apply(&mut self, message: Option<String>) -> Application
-
-/// Only allowed for projects/applications that are in Pending status
-pub fn unapply(&mut self) -> ()
-
-#[payable]
-pub fn chef_set_application_status(
+pub fn apply_to_round(
     &mut self,
-    project_id: ProjectId,
+    round_id: RoundId,
+    note: Option<String>,
+    video_url: Option<String>,
+    review_note: Option<String>,
+    applicant: Option<AccountId>, // only allowed to be provided by round owner/admin, otherwise it is ignored
+) -> RoundApplicationExternal
+
+#[payable]
+/// Available to owner/admin ownly
+pub fn apply_to_round_batch(
+    &mut self,
+    round_id: RoundId,
+    review_notes: Vec<Option<String>>,
+    applicants: Vec<AccountId>,
+) -> Vec<RoundApplicationExternal>
+
+#[payable]
+pub fn unapply_from_round(
+    &mut self,
+    round_id: RoundId,
+    applicant: Option<AccountId>,
+) -> RoundApplicationExternal
+
+#[payable]
+/// The idea here is that an applicant can update their message, and indexers can store these as individual "messages" in a conversation thread between applicant & reviewer. But the full thread doesn't need to be stored on-chain, just the latest message.
+pub fn update_applicant_note(
+    &mut self,
+    round_id: RoundId,
+    note: String,
+) -> RoundApplicationExternal
+
+#[payable]
+/// An owner/admin can review a single application many times, but each time they must provide a status and a note. This is to allow for a conversation thread between the applicant and the reviewer. The full thread doesn't need to be stored on-chain, just the latest message.
+pub fn review_application(
+    &mut self,
+    round_id: RoundId,
+    applicant: AccountId,
     status: ApplicationStatus,
-    notes: String,
-) -> Application
+    note: String,
+) -> RoundApplicationExternal
 
-// convenience methods that wrap chef_set_application_status (may remove, TBD)
 
-#[payable]
-pub fn chef_mark_application_approved(
-    &mut self,
-    project_id: ProjectId,
-    notes: String,
-) -> Application
+// DEPOSITS
 
 #[payable]
-pub fn chef_mark_application_rejected(
+pub fn deposit_to_round(
     &mut self,
-    project_id: ProjectId,
-    notes: String,
-) -> Application
-
-#[payable]
-pub fn chef_mark_application_in_review(
-    &mut self,
-    project_id: ProjectId,
-    notes: String,
-) -> Application
-
-#[payable]
-pub fn chef_mark_application_pending(
-    &mut self,
-    project_id: ProjectId,
-    notes: String,
-) -> Application
-
-#[payable]
-pub fn chef_mark_application_blacklisted(
-    &mut self,
-    project_id: ProjectId,
-    notes: String,
-) -> Application
-
-
-// DONATIONS
-
-#[payable]
-pub fn donate(
-    &mut self,
-    project_id: Option<ProjectId>,
-    message: Option<String>,
+    round_id: RoundId,
+    memo: Option<String>,
     referrer_id: Option<AccountId>,
-    matching_pool: Option<bool>,
-    bypass_protocol_fee: Option<bool>, // Allows donor to bypass protocol fee if they wish. Defaults to "false".
-    custom_chef_fee_basis_points: Option<u32>, // Allows donor to set custom chef fee % if they wish. If provided value is greater than self.chef_fee_basis_points, the smaller value will be used.
-) -> DonationExternal
+) -> DepositExternal
+
+
+// VOTES
+
+#[payable]
+pub fn vote(&mut self, round_id: RoundId, picks: Vec<Pick>) -> VotingResult
 
 
 // PAYOUTS
 
 #[payable]
-pub fn chef_set_payouts(&mut self, payouts: Vec<PayoutInput>, clear_existing: bool) -> () // Sets payouts on the contract; clears any existing payouts if `clear_existing` is `true`
-
-#[payable]
-pub fn admin_process_payouts(&mut self, project_ids: Option<Vec<ProjectId>>) -> () // Processes any payouts that have been set on contract but not yet paid out. Takes optional vec of account IDs to process payouts for. Panics if cooldown period not complete.
-
-#[payable]
-pub fn admin_redistribute_matching_pool(&mut self) -> () // Distributes remaining matching pool balance to redistribution recipient as specified on contract. Asserts that caller is admin or owner, cooldown period is complete, all payouts challenges are resolved, and compliance period is complete. Does not allow redistribution if !self.allow_remaining_funds_redistribution (set at deployment) or self.remaining_funds_redistribution_recipient.is_none() (can be set up until public round starts)
-
-
-#[payable]
-pub fn challenge_payouts(&mut self, reason: String)
-
-pub fn remove_payouts_challenge(&mut self)
-
-
-// CONFIG / ADMIN
-
-#[payable]
-pub fn owner_change_owner(&mut self, owner: AccountId) -> ()
-
-#[payable]
-pub fn owner_add_admins(&mut self, admins: Vec<AccountId>) -> ()
-
-#[payable]
-pub fn owner_remove_admins(&mut self, admins: Vec<AccountId>) -> ()
-
-#[payable]
-pub fn owner_set_admins(&mut self, admins: Vec<AccountId>) -> ()
-
-#[payable]
-pub fn owner_clear_admins(&mut self) -> ()
-
-#[payable]
-pub fn admin_set_chef(&mut self, chef: AccountId) -> ()
-
-#[payable]
-pub fn admin_remove_chef(&mut self) -> ()
-
-#[payable]
-pub fn admin_set_chef_fee_basis_points(&mut self, chef_fee_basis_points: u32) -> ()
-
-#[payable]
-pub fn admin_add_blacklisted_donors(&mut self, donor_ids: Vec<AccountId>) -> () // Adds specified accounts to blacklisted donors. Does not clear existing blacklisted donors set. Emits update_blacklisted_donors event (does not contain data as could be too large)
-
-#[payable]
-pub fn admin_set_blacklisted_donors(&mut self, donor_ids: Vec<AccountId>) -> () // Clears existing blacklisted donors set and adds specified accounts to blacklisted donors. Emits update_blacklisted_donors event (does not contain data as could be too large)
-
-#[payable]
-pub fn admin_set_pot_name(&mut self, pot_name: String) -> ()
-
-#[payable]
-pub fn admin_set_pot_description(&mut self, pot_description: String) -> ()
-
-#[payable]
-pub fn admin_set_tags(&mut self, tags: Vec<String>) -> ()
-
-#[payable]
-pub fn admin_set_max_projects(&mut self, max_projects: u32) -> ()
-
-#[payable]
-pub fn admin_set_base_currency(&mut self, base_currency: AccountId) -> ()
-
-#[payable]
-pub fn admin_set_round_timestamps(
+pub fn set_payouts(
     &mut self,
-    application_start_ms: Option<TimestampMs>,
-    application_end_ms: Option<TimestampMs>,
-    public_round_start_ms: Option<TimestampMs>,
-    public_round_end_ms: Option<TimestampMs>,
-)
+    round_id: RoundId,
+    payouts: Vec<PayoutInput>,
+    clear_existing: bool,
+) -> Vec<PayoutExternal>
 
 #[payable]
-pub fn admin_set_compliance_period_ms(&mut self, compliance_period_ms: TimestampMs) -> ()
+pub fn process_payouts(&mut self, round_id: RoundId)
 
 #[payable]
-pub fn admin_set_compliance_end_ms(&mut self, compliance_end_ms: TimestampMs) -> ()
-
-#[payable]
-pub fn admin_set_remaining_funds_redistribution_recipient(&mut self, account_id: AccountId) -> () // panics if public round has already started
-
-#[payable]
-pub fn admin_remove_remaining_funds_redistribution_recipient(&mut self) -> () // panics if public round has already started
-
-#[payable]
-pub fn admin_set_registry_provider(&mut self, contract_id: AccountId, method_name: String) -> ()
-
-#[payable]
-pub fn admin_remove_registry_provider(&mut self) -> ()
-
-#[payable]
-pub fn admin_set_min_matching_pool_donation_amount(&mut self, min_matching_pool_donation_amount: U128) -> ()
-
-#[payable]
-pub fn admin_set_sybil_wrapper_provider(
+pub fn challenge_payouts(
     &mut self,
-    contract_id: AccountId,
-    method_name: String,
-) -> ()
+    round_id: RoundId,
+    reason: String,
+) -> PayoutsChallengeExternal
+
+pub fn remove_payouts_challenge(&mut self, round_id: RoundId) -> ()
 
 #[payable]
-pub fn admin_remove_sybil_wrapper_provider(&mut self) -> ()
-
-#[payable]
-pub fn admin_set_custom_sybil_checks(&mut self, custom_sybil_checks: Vec<CustomSybilCheck>) -> ()
-
-#[payable]
-pub fn admin_remove_custom_sybil_checks(&mut self) -> ()
-
-#[payable]
-pub fn admin_set_custom_min_threshold_score(&mut self, custom_min_threshold_score: u32) -> ()
-
-#[payable]
-pub fn admin_remove_custom_min_threshold_score(&mut self) -> ()
-
-#[payable]
-pub fn admin_set_referral_fee_matching_pool_basis_points(
+pub fn update_payouts_challenge(
     &mut self,
-    referral_fee_matching_pool_basis_points: u32,
-) -> ()
-
-#[payable]
-pub fn admin_set_referral_fee_public_round_basis_points(
-    &mut self,
-    referral_fee_public_round_basis_points: u32,
-) -> ()
-
-#[payable]
-pub fn admin_set_cooldown_end_ms(&mut self, cooldown_end_ms: TimestampMs) -> ()
-
-#[payable]
-pub fn admin_update_payouts_challenge(
-    &mut self,
+    round_id: RoundId,
     challenger_id: AccountId,
     notes: Option<String>,
     resolve_challenge: Option<bool>,
-)
-
-pub fn admin_remove_resolved_payouts_challenges(&mut self)
+) -> ()
 
 #[payable]
-pub fn admin_dangerously_set_pot_config(&mut self, update_args: UpdatePotArgs) -> PotConfig
+pub fn remove_resolved_payouts_challenges(&mut self, round_id: RoundId) -> ()
 
 
-// SOURCE METADATA
+// VAULT REDISTRIBUTION
 
-pub fn self_set_source_metadata(&mut self, source_metadata: ContractSourceMetadata) // only callable by the contract account (reasoning is that this should be able to be updated by the same account that can deploy code to the account)
+#[payable]
+// Callable by owner or admin
+pub fn redistribute_vault(&mut self, round_id: RoundId, memo: Option<String>)
 
 ```
 
 ### Read Methods
 
 ```rs
-// POT CONFIG
+// TOP-LEVEL CONTRACT CONFIG
 
-pub fn get_config(&self) -> PotConfig
+pub fn get_config(&self) -> Config
 
+
+// ROUNDS
+
+pub fn get_rounds(
+    &self,
+    from_index: Option<u64>,
+    limit: Option<u64>,
+) -> Vec<RoundDetailExternal>
+
+
+pub fn get_round(&self, round_id: RoundId) -> Option<RoundDetailExternal>
+
+pub fn is_voting_live(&self, round_id: RoundId) -> bool
 
 // APPLICATIONS
 
-pub fn get_applications(
+pub fn get_applications_for_round(
     &self,
+    round_id: RoundId,
     from_index: Option<u64>,
     limit: Option<u64>,
-    status: Option<ApplicationStatus>,
-) -> Vec<Application>
+) -> Vec<RoundApplicationExternal>
 
-pub fn get_approved_applications(
+pub fn get_application(&self, applicant: AccountId) -> Option<RoundApplicationExternal>
+
+pub fn get_application_by_internal_project_id(
+        &self,
+        internal_project_id: InternalProjectId,
+    ) -> Option<RoundApplicationExternal>
+
+
+// DEPOSITS
+
+pub fn get_deposits_for_round(
     &self,
+    round_id: RoundId,
     from_index: Option<u64>,
     limit: Option<u64>,
-) -> Vec<Application>
-
-pub fn get_application_by_project_id(&self, project_id: ProjectId) -> Application
+) -> Vec<DepositExternal>
 
 
-// DONATIONS
+// VOTES
 
-/// Get all donations (both matching pool and public round)
-pub fn get_donations(
+pub fn get_pairs_to_vote(&self, round_id: RoundId) -> Vec<Pair>
+
+pub fn get_all_pairs_for_round(&self, round_id: RoundId) -> Vec<Pair>
+
+pub fn get_pair_by_index(
     &self,
-    from_index: Option<u128>,
-    limit: Option<u64>,
-) -> Vec<DonationExternal>
+    total_available_pairs: u32,
+    index: u32,
+    projects: &Vec<InternalProjectId>,
+) -> Pair
 
-pub fn get_public_round_donations(
-    &self,
-    from_index: Option<u128>,
-    limit: Option<u64>,
-) -> Vec<DonationExternal>
+pub fn get_pair_by_id(&self, round_id: RoundId, pair_id: PairId)
 
-pub fn get_matching_pool_donations(
+pub fn get_votes_for_round(
     &self,
-    from_index: Option<u128>,
+    round_id: RoundId,
+    from_index: Option<u64>,
     limit: Option<u64>,
-) -> Vec<DonationExternal>
+) -> Vec<VotingResult>
 
-pub fn get_donations_for_project(
-    &self,
-    project_id: ProjectId,
-    from_index: Option<u128>,
-    limit: Option<u64>,
-) -> Vec<DonationExternal>
+pub fn get_voting_results_for_round(&self, round_id: RoundId) -> Vec<ProjectVotingResult>
 
-pub fn get_donations_for_donor(
-    &self,
-    donor_id: AccountId,
-    from_index: Option<u128>,
-    limit: Option<u64>,
-) -> Vec<DonationExternal>
+pub fn can_vote(&self, round_id: RoundId, voter: AccountId) -> bool
 
 
 // PAYOUTS
 
-pub fn get_payouts(&self, from_index: Option<u64>, limit: Option<u64>) -> Vec<Payout>
+pub fn get_payouts(&self, from_index: Option<u64>, limit: Option<u64>) -> Vec<PayoutExternal>
 
 pub fn get_payouts_challenges(
     &self,
+    round_id: RoundId,
     from_index: Option<u64>,
     limit: Option<u64>,
 ) -> Vec<PayoutsChallengeExternal>
 
+
 // SOURCE METADATA
 
-pub fn get_contract_source_metadata(&self) -> Option<ContractSourceMetadata>
+pub fn get_contract_source_metadata(&self) -> ContractSourceMetadata
 
 ```

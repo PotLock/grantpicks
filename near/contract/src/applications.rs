@@ -57,32 +57,31 @@ impl Contract {
         let is_owner_or_admin = round.is_caller_owner_or_admin();
 
         // if owner or admin, verify that voting hasn't started
-        // ! TODO: ADD BACK IN AFTER TESTING!!!
-        // if is_owner_or_admin {
-        //     assert!(
-        //         env::block_timestamp_ms() < round.voting_start_ms,
-        //         "Voting has already started"
-        //     );
-        // } else {
-        //     assert!(
-        //         round.allow_applications,
-        //         "Applications are not allowed for this round"
-        //     );
-        //     assert!(
-        //         round
-        //             .application_start_ms
-        //             .expect("round.application_start_ms not present")
-        //             <= env::block_timestamp_ms(),
-        //         "Application period has not started"
-        //     );
-        //     assert!(
-        //         round
-        //             .application_end_ms
-        //             .expect("round.application_end_ms not present")
-        //             >= env::block_timestamp(),
-        //         "Application period has ended"
-        //     );
-        // }
+        if is_owner_or_admin {
+            assert!(
+                env::block_timestamp_ms() < round.voting_start_ms,
+                "Voting has already started"
+            );
+        } else {
+            assert!(
+                round.allow_applications,
+                "Applications are not allowed for this round"
+            );
+            assert!(
+                round
+                    .application_start_ms
+                    .expect("round.application_start_ms not present")
+                    <= env::block_timestamp_ms(),
+                "Application period has not started"
+            );
+            assert!(
+                round
+                    .application_end_ms
+                    .expect("round.application_end_ms not present")
+                    >= env::block_timestamp(),
+                "Application period has ended"
+            );
+        }
 
         // determine applicant based on caller and `applicant` parameter
         let applicant = if let Some(applicant) = applicant {
@@ -388,6 +387,8 @@ impl Contract {
         app_external
     }
 
+    // GETTERS / VIEW METHODS
+
     pub fn get_applications_for_round(
         &self,
         round_id: RoundId,
@@ -429,10 +430,10 @@ impl Contract {
 
     pub fn get_application(&self, applicant: AccountId) -> Option<RoundApplicationExternal> {
         let internal_project_id = self.project_id_to_internal_id.get(&applicant)?;
-        self.get_application_by_internal_id(internal_project_id.clone())
+        self.get_application_by_internal_project_id(internal_project_id.clone())
     }
 
-    pub fn get_application_by_internal_id(
+    pub fn get_application_by_internal_project_id(
         &self,
         internal_project_id: InternalProjectId,
     ) -> Option<RoundApplicationExternal> {

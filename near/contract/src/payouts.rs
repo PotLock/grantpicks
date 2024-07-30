@@ -118,7 +118,6 @@ impl PayoutsChallenge {
 
 #[near_bindgen]
 impl Contract {
-    // set_payouts (callable by chef or admin)
     #[payable]
     pub fn set_payouts(
         &mut self,

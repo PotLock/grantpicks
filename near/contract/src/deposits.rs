@@ -139,6 +139,8 @@ impl Contract {
         deposit_external
     }
 
+    // GETTERS / VIEW METHODS
+
     pub fn get_deposits_for_round(
         &self,
         round_id: RoundId,

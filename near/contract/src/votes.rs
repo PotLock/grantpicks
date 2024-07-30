@@ -2,11 +2,13 @@ use crate::*;
 
 // NB: Pairs are not stored on the contract, they are generated on the fly
 
+pub type PairId = u32;
+
 #[derive(BorshDeserialize, BorshSerialize, PartialEq, Debug, Clone, Serialize, Deserialize)]
 #[borsh(crate = "near_sdk::borsh")]
 #[serde(crate = "near_sdk::serde")]
 pub struct Pair {
-    pub id: u32,
+    pub id: PairId,
     pub projects: Vec<AccountId>,
 }
 
@@ -14,7 +16,7 @@ pub struct Pair {
 #[borsh(crate = "near_sdk::borsh")]
 #[serde(crate = "near_sdk::serde")]
 pub struct Pick {
-    pub pair_id: u32,
+    pub pair_id: PairId,
     pub voted_project: AccountId,
 }
 
@@ -208,7 +210,7 @@ impl Contract {
         }
     }
 
-    pub fn get_pair_by_id(&self, round_id: RoundId, pair_id: u32) -> Pair {
+    pub fn get_pair_by_id(&self, round_id: RoundId, pair_id: PairId) -> Pair {
         let approved_internal_ids = self
             .approved_internal_project_ids_for_round
             .get(&round_id)
@@ -247,7 +249,7 @@ impl Contract {
             .collect()
     }
 
-    pub fn get_results_for_round(&self, round_id: RoundId) -> Vec<ProjectVotingResult> {
+    pub fn get_voting_results_for_round(&self, round_id: RoundId) -> Vec<ProjectVotingResult> {
         let round = self.rounds_by_id.get(&round_id).expect("Round not found");
         round.assert_voting_ended();
         let vote_counts_for_round = self

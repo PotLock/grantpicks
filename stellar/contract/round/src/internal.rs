@@ -3,7 +3,7 @@ use loam_sdk::soroban_sdk::{
 };
 
 use crate::{
-    admin_writer::{add_admin, read_admins, remove_admin, write_admins},
+    admin_writer::{add_admin, read_admins, remove_admin, remove_all_admins, write_admins},
     application_writer::{
         add_application, delete_application, find_applications, get_application_by_applicant,
         update_application,
@@ -14,7 +14,15 @@ use crate::{
     calculation::calculate_voting_results,
     core::IsRound,
     data_type::{
-        ApplicationStatus, CreateRoundParams, Pair, PayoutExternal, PayoutInternal, PickResult, PickedPair, ProjectVotingResult, RoundApplicationExternal, RoundApplicationInternal, RoundDetailExternal, RoundDetailInternal, UpdateRoundParams, VotingResult
+        ApplicationStatus, Config, CreateRoundParams, DepositExternal, DepositInternal, Pair,
+        PayoutExternal, PayoutInput, PayoutInternal, PayoutsChallengeExternal,
+        PayoutsChallengeInternal, PickResult, PickedPair, ProjectVotingResult,
+        RoundApplicationExternal, RoundApplicationInternal, RoundDetailExternal,
+        RoundDetailInternal, UpdateRoundParams, VotingResult,
+    },
+    deposit_writer::{
+        increment_deposit_id, read_deposit, read_deposit_from_round,
+        write_deposit, write_deposit_id_to_round,
     },
     events::{
         log_create_round, log_deposit, log_payout, log_project_application,
@@ -23,17 +31,32 @@ use crate::{
         log_update_white_list, log_vote,
     },
     external::ProjectRegistryClient,
-    factory::RoundFactory,
+    factory::RoundCreator,
+    fee_writer::{
+        read_fee_address, read_fee_basis_points, write_fee_address, write_fee_basis_points,
+    },
     owner_writer::{read_factory_owner, write_factory_owner},
     pair::{get_all_pairs, get_all_rounds, get_pair_by_index, get_random_pairs},
-    payout_writer::{has_paid, read_payouts, write_payouts},
+    payout_writer::{
+        add_payout_id_to_project_payout_ids, clear_payouts, clear_project_payout_ids, has_paid,
+        increment_payout_id, read_all_payouts, read_payout_challenge, read_payout_challenges,
+        read_payout_info, read_payouts, read_project_payout_ids_for_project,
+        remove_payout_challenge, remove_payout_info, write_payout_challenge,
+        write_payout_challenges, write_payout_info, write_payouts,
+    },
     project_registry_writer::{read_project_contract, write_project_contract},
     round_writer::{increment_round_number, is_initialized, read_round_info, write_round_info},
-    storage::{clear_round_storage, extend_instance, extend_round},
+    storage::{clear_round, extend_instance, extend_round},
     token_writer::{read_token_address, write_token_address},
-    utils::{count_total_available_pairs, get_ledger_second_as_millis},
+    utils::{calculate_protocol_fee, count_total_available_pairs, get_ledger_second_as_millis},
     validation::{
-        validate_application_period, validate_approved_projects, validate_blacklist, validate_blacklist_already, validate_can_payout, validate_contract_owner, validate_has_voted, validate_max_participant, validate_max_participants, validate_not_blacklist, validate_number_of_votes, validate_owner_or_admin, validate_pick_per_votes, validate_project_to_approve, validate_review_notes, validate_round_detail, validate_round_detail_update, validate_specify_applicant, validate_vault_fund, validate_voting_not_started, validate_voting_period, validate_whitelist
+        validate_application_period, validate_approved_projects, validate_blacklist,
+        validate_blacklist_already, validate_can_payout, validate_has_voted,
+        validate_max_participant, validate_max_participants, validate_not_blacklist,
+        validate_number_of_votes, validate_owner_or_admin, validate_pick_per_votes,
+        validate_project_to_approve, validate_review_notes, validate_round_detail,
+        validate_round_detail_update, validate_specify_applicant, validate_vault_fund,
+        validate_voting_not_started, validate_voting_period, validate_whitelist,
     },
     voter_writer::{
         add_to_black_list, add_to_white_list, is_black_listed, is_white_listed,
@@ -49,11 +72,31 @@ use crate::{
 pub struct RoundContract;
 
 #[contractimpl]
-impl RoundFactory for RoundContract {
-    fn initialize(env: &Env, owner: Address, token_address: Address, registry_address: Address) {
-        write_factory_owner(env, &owner);
+impl RoundCreator for RoundContract {
+    fn initialize(
+        env: &Env,
+        caller: Address,
+        token_address: Address,
+        registry_address: Address,
+        fee_basis_points: Option<u32>,
+        fee_address: Option<Address>,
+    ) {
+        caller.require_auth();
+
+        write_factory_owner(env, &caller);
         write_token_address(env, &token_address);
         write_project_contract(env, &registry_address);
+
+        if fee_basis_points.is_some() && fee_address.is_some() {
+            let fee_basis_points = fee_basis_points.unwrap();
+            let fee_address = fee_address.unwrap();
+
+            write_fee_basis_points(env, fee_basis_points);
+            write_fee_address(env, &fee_address);
+        } else {
+            write_fee_basis_points(env, 0);
+            write_fee_address(env, &caller);
+        }
     }
 
     fn create_round(
@@ -85,15 +128,28 @@ impl RoundFactory for RoundContract {
             voting_end_ms: round_detail.voting_end_ms,
             is_video_required: round_detail.is_video_required,
             contacts: round_detail.contacts,
-            owner: round_detail.owner,
+            owner: round_detail.owner.clone(),
             application_start_ms: round_detail.application_start_ms,
             application_end_ms: round_detail.application_end_ms,
             expected_amount: round_detail.expected_amount,
             use_whitelist: round_detail.use_whitelist.unwrap_or(false),
             num_picks_per_voter,
             max_participants: round_detail.max_participants.unwrap_or(10),
-            vault_balance: 0,
+            current_vault_balance: 0,
+            vault_total_deposits: 0,
             allow_applications: round_detail.allow_applications,
+            cooldown_period_ms: round_detail.cooldown_period_ms,
+            cooldown_end_ms: round_detail.cooldown_end_ms,
+            compliance_req_desc: round_detail.compliance_req_desc,
+            compliance_period_ms: round_detail.compliance_period_ms,
+            compliance_end_ms: round_detail.compliance_end_ms,
+            allow_remaining_dist: Some(round_detail.allow_remaining_dist),
+            remaining_dist_address: round_detail.remaining_dist_address,
+            remaining_dist_at_ms: None,
+            remaining_dist_memo: String::from_str(env, ""),
+            remaining_dist_by: round_detail.owner.clone(),
+            referrer_fee_basis_points: round_detail.referrer_fee_basis_points,
+            round_complete_ms: None,
         };
 
         write_round_info(env, round_id, &round_info);
@@ -129,6 +185,19 @@ impl RoundFactory for RoundContract {
         write_factory_owner(env, &new_owner);
 
         extend_instance(env);
+    }
+
+    fn get_config(env: &Env) -> Config {
+        let owner = read_factory_owner(env);
+        let fee_basis_points = read_fee_basis_points(env);
+        let fee_address = read_fee_address(env);
+
+        Config {
+            owner: owner.clone(),
+            protocol_fee_basis_points: fee_basis_points.unwrap_or_default(),
+            protocol_fee_recipient: fee_address.unwrap_or(owner),
+            default_page_size: 10,
+        }
     }
 }
 
@@ -168,7 +237,7 @@ impl IsRound for RoundContract {
         round_application_start_ms: u64,
         round_application_end_ms: u64,
     ) {
-      caller.require_auth();
+        caller.require_auth();
 
         assert!(
             round_application_start_ms < round_application_end_ms,
@@ -188,12 +257,14 @@ impl IsRound for RoundContract {
         log_update_round(env, round.to_external());
     }
 
-    fn change_amount(env: &Env, round_id: u128, caller: Address, amount: u128) {
+    fn change_expected_amount(env: &Env, round_id: u128, caller: Address, amount: u128) {
         caller.require_auth();
 
         let mut round = read_round_info(env, round_id);
 
         validate_owner_or_admin(env, &caller, &round);
+
+        assert!(round.round_complete_ms.is_none(), "Round is complete");
 
         round.expected_amount = amount;
 
@@ -202,11 +273,10 @@ impl IsRound for RoundContract {
         extend_round(env, round_id);
     }
 
-    fn close_voting_period(env: &Env, round_id: u128, caller: Address)->RoundDetailExternal {
+    fn close_voting_period(env: &Env, round_id: u128, caller: Address) -> RoundDetailExternal {
         caller.require_auth();
 
         let mut round = read_round_info(env, round_id);
-
         validate_owner_or_admin(env, &caller, &round);
 
         round.voting_end_ms = get_ledger_second_as_millis(env);
@@ -218,29 +288,68 @@ impl IsRound for RoundContract {
         round.to_external()
     }
 
-    fn add_admin(env: &Env, round_id: u128, round_admin: Address) {
+    fn add_admins(env: &Env, round_id: u128, round_admin: Vec<Address>) {
         let round = read_round_info(env, round_id);
-        assert!(round.owner != round_admin, "Can not add owner as admin");
 
         round.owner.require_auth();
-        add_admin(env, round_id, round_admin);
 
-        write_round_info(env, round_id, &round);
+        let mut admins = read_admins(env, round_id);
+
+        round_admin.iter().for_each(|admin| {
+            assert!(!admins.contains(admin.clone()), "Admin already exists");
+            assert!(admin != round.owner, "Owner cannot be admin");
+            admins.push_back(admin.clone());
+        });
+
+        write_admins(env, round_id, &admins);
+        extend_instance(env);
+        extend_round(env, round_id);
+
+        log_update_round(env, round.to_external());
+    }
+
+    fn remove_admins(env: &Env, round_id: u128, round_admin: Vec<Address>) {
+        let round = read_round_info(env, round_id);
+
+        round.owner.require_auth();
+
+        let admins = read_admins(env, round_id);
+
+        round_admin.iter().for_each(|admin| {
+            assert!(admins.contains(admin.clone()), "Admin does not exist");
+
+            remove_admin(env, round_id, &admin);
+        });
+
         extend_instance(env);
         extend_round(env, round_id);
         log_update_round(env, round.to_external());
     }
 
-    fn remove_admin(env: &Env, round_id: u128, round_admin: Address) {
+    fn set_admins(env: &Env, round_id: u128, round_admin: Vec<Address>) {
         let round = read_round_info(env, round_id);
-        assert!(round.owner != round_admin, "Can not add owner as admin");
 
         round.owner.require_auth();
-        remove_admin(env, round_id, &round_admin);
 
+        round_admin.iter().for_each(|admin| {
+            assert!(admin != round.owner, "Owner cannot be admin");
+        });
+
+        write_admins(env, round_id, &round_admin);
         extend_instance(env);
         extend_round(env, round_id);
         log_update_round(env, round.to_external());
+    }
+
+    fn clear_admins(env: &Env, round_id: u128) {
+        let round = read_round_info(env, round_id);
+
+        round.owner.require_auth();
+
+        remove_all_admins(env, round_id);
+
+        extend_instance(env);
+        extend_round(env, round_id);
     }
 
     fn apply_to_round(
@@ -301,7 +410,7 @@ impl IsRound for RoundContract {
         let mut applicant_note_internal = String::from_str(env, "");
 
         if review_note.is_some() {
-            review_note_internal = review_note.unwrap()
+            review_note_internal = review_note.unwrap();
         }
 
         if note.is_some() {
@@ -377,26 +486,68 @@ impl IsRound for RoundContract {
         updated_application.to_external()
     }
 
-    fn deposit(env: &Env, round_id: u128, actor: Address, amount: u128) {
-        actor.require_auth();
+    fn deposit_to_round(
+        env: &Env,
+        round_id: u128,
+        caller: Address,
+        amount: u128,
+        memo: Option<String>,
+        referrer_id: Option<Address>,
+    ) {
+        caller.require_auth();
 
+        let round = read_round_info(env, round_id);
         let token_contract = read_token_address(env);
         let token_client = TokenClient::new(env, &token_contract);
 
-        let balance = token_client.balance(&actor);
+        let balance = token_client.balance(&caller);
         let amount_i128: i128 = amount.try_into().expect("Conversion failed");
+        let internal_memo = memo.unwrap_or(String::from_str(env, ""));
 
         assert!(balance > amount_i128, "Insufficient balance");
 
-        token_client.transfer(&actor, &env.current_contract_address(), &amount_i128);
-        let mut round = read_round_info(env, round_id);
+        let protocol_fee = calculate_protocol_fee(env, amount).unwrap_or(0);
+        let referrer_fee = round.calculate_referrer_fee(amount).unwrap_or(0);
 
-        round.vault_balance += amount;
+        let deposit_id = increment_deposit_id(env);
 
-        write_round_info(env, round_id, &round);
+        let mut deposit = DepositInternal {
+            round_id,
+            depositor_id: caller.clone(),
+            total_amount: amount_i128,
+            protocol_fee: protocol_fee.try_into().unwrap(),
+            referrer_fee: referrer_fee.try_into().unwrap(),
+            net_amount: 0, // will be updated in a moment after storage has been calculated
+            deposited_at: get_ledger_second_as_millis(env),
+            memo: internal_memo,
+        };
+
+        let nett_amount = deposit.total_amount - deposit.protocol_fee - deposit.referrer_fee;
+        deposit.net_amount = nett_amount.try_into().unwrap();
+
+        token_client.transfer(&caller, &env.current_contract_address(), &nett_amount);
+
+        let fee_address = read_fee_address(env);
+        if deposit.protocol_fee > 0 && fee_address.is_some() {
+            token_client.transfer(&caller, &fee_address.unwrap(), &deposit.protocol_fee);
+        }
+
+        if referrer_id.is_some() {
+            let referrer = referrer_id.unwrap();
+            token_client.transfer(&caller, &referrer, &deposit.referrer_fee);
+        }
+
+        let mut updated_round = round.clone();
+
+        updated_round.current_vault_balance += amount;
+        updated_round.vault_total_deposits += amount;
+
+        write_deposit(env, deposit_id, &deposit);
+        write_deposit_id_to_round(env, round_id, deposit_id);
+        write_round_info(env, round_id, &updated_round);
         extend_instance(env);
         extend_round(env, round_id);
-        log_deposit(env, round.id, actor, amount);
+        log_deposit(env, round.id, caller, amount);
     }
 
     fn vote(env: &Env, round_id: u128, voter: Address, picks: Vec<PickedPair>) {
@@ -455,7 +606,7 @@ impl IsRound for RoundContract {
 
     fn get_pairs_to_vote(env: &Env, round_id: u128) -> Vec<Pair> {
         let round = read_round_info(env, round_id);
-        let pairs = get_random_pairs(env, round_id, round.num_picks_per_voter.into());
+        let pairs = get_random_pairs(env, round_id, round.num_picks_per_voter);
         extend_instance(env);
         extend_round(env, round_id);
         pairs
@@ -501,7 +652,7 @@ impl IsRound for RoundContract {
         results
     }
 
-    fn admin_process_payouts(env: &Env, round_id: u128, caller: Address) {
+    fn process_payouts(env: &Env, round_id: u128, caller: Address) {
         caller.require_auth();
 
         let round = read_round_info(env, round_id);
@@ -510,51 +661,56 @@ impl IsRound for RoundContract {
         validate_can_payout(env, &round);
         validate_vault_fund(&round);
 
+        assert!(round.round_complete_ms.is_none(), "All paid out");
+
+        round.assert_cooldown_period_complete(env);
+        round.assert_all_payouts_challenges_resolved(env);
+
+        let approved_projects = read_approved_projects(env, round_id);
+        assert!(
+            !approved_projects.is_empty(),
+            "No approved projects for round"
+        );
+
         let token_contract = read_token_address(env);
         let token_client = TokenClient::new(env, &token_contract);
-        let project_registry_contract = read_project_contract(env);
-        let project_registry_client = ProjectRegistryClient::new(env, &project_registry_contract);
-        let results = calculate_voting_results(env, round_id);
 
         let mut updated_round = round.clone();
+        let mut total_amount_paid: i128 = 0;
+        let round_payouts = read_payouts(env, round_id);
 
-        let mut payouts: Map<u128, PayoutInternal> = Map::new(env);
-        results.iter().for_each(|result| {
-            if result.allocation > 0 {
-                let payout_amount = (round.vault_balance * result.allocation) / 10000;
-                let payout_amount_i128: i128 = payout_amount.try_into().expect("Conversion failed");
+        approved_projects.iter().for_each(|project_id| {
+            let project_payout_ids = read_project_payout_ids_for_project(env, project_id);
 
-                let detail_project = project_registry_client
-                    .get_project_by_id(&result.project_id)
-                    .unwrap();
+            project_payout_ids.iter().for_each(|payout_id| {
+                let payout_exist_on_round = round_payouts.contains(payout_id);
+
+                if !payout_exist_on_round {
+                    return;
+                }
+
+                let mut payout = read_payout_info(env, payout_id).unwrap();
+
+                if payout.paid_at_ms.is_some() {
+                    return;
+                }
 
                 token_client.transfer(
                     &env.current_contract_address(),
-                    &detail_project.payout_address,
-                    &payout_amount_i128,
+                    &payout.recipient_id,
+                    &payout.amount,
                 );
 
-                updated_round.vault_balance -= payout_amount;
-                log_payout(
-                    env,
-                    round.id,
-                    detail_project.payout_address.clone(),
-                    payout_amount,
-                );
+                payout.paid_at_ms = Some(get_ledger_second_as_millis(env));
 
-                let payout = PayoutInternal {
-                    project_id: detail_project.id,
-                    amount: payout_amount_i128,
-                    address: detail_project.payout_address,
-                    paid_at_ms: get_ledger_second_as_millis(env),
-                };
-
-                payouts.set(detail_project.id, payout);
-            }
+                let payout_amount_u128: u128 = payout.amount.try_into().unwrap();
+                updated_round.current_vault_balance -= payout_amount_u128;
+                total_amount_paid += payout.amount;
+                log_payout(env, round.id, payout.recipient_id.clone(), payout.amount);
+            });
         });
 
         write_round_info(env, round_id, &updated_round);
-        write_payouts(env, round_id, &payouts);
         extend_instance(env);
         extend_round(env, round_id);
     }
@@ -645,9 +801,7 @@ impl IsRound for RoundContract {
         extend_instance(env);
         extend_round(env, round_id);
 
-        if application.is_none() {
-            return None;
-        }
+        application.as_ref()?;
 
         let external_application = application.unwrap().to_external();
 
@@ -670,7 +824,7 @@ impl IsRound for RoundContract {
 
     fn total_funding(env: &Env, round_id: u128) -> u128 {
         let round = read_round_info(env, round_id);
-        let total_funding = round.vault_balance;
+        let total_funding = round.current_vault_balance;
         extend_instance(env);
         extend_round(env, round_id);
 
@@ -905,9 +1059,10 @@ impl IsRound for RoundContract {
     ) -> RoundDetailExternal {
         caller.require_auth();
 
-        if start_ms.is_some() && end_ms.is_none() {
-            panic!("Round application end time must be specified");
-        }
+        assert!(
+            !(start_ms.is_some() && end_ms.is_none()),
+            "Round application end time must be specified"
+        );
 
         if start_ms.is_some() && end_ms.is_some() {
             assert!(
@@ -920,7 +1075,7 @@ impl IsRound for RoundContract {
 
         validate_owner_or_admin(env, &caller, &round);
 
-        if allow_applications == false {
+        if !allow_applications {
             round.application_start_ms = None;
             round.application_end_ms = None;
         } else {
@@ -938,131 +1093,472 @@ impl IsRound for RoundContract {
         round.to_external()
     }
 
-    fn update_round(env: &Env, caller: Address, round_id: u128, round_detail: UpdateRoundParams)->RoundDetailExternal{
-      caller.require_auth();
+    fn update_round(
+        env: &Env,
+        caller: Address,
+        round_id: u128,
+        round_detail: UpdateRoundParams,
+    ) -> RoundDetailExternal {
+        caller.require_auth();
 
-      let mut round = read_round_info(env, round_id);
+        let mut round = read_round_info(env, round_id);
 
-      validate_owner_or_admin(env, &caller, &round);
-      validate_round_detail_update(&round_detail);
+        validate_owner_or_admin(env, &caller, &round);
+        validate_round_detail_update(&round_detail);
 
-      round.allow_applications = round_detail.allow_applications;
-      round.application_end_ms = round_detail.application_end_ms;
-      round.application_start_ms = round_detail.application_start_ms;
-      round.contacts = round_detail.contacts;
-      round.expected_amount = round_detail.expected_amount;
-      round.description = round_detail.description;
-      round.max_participants = round_detail.max_participants.unwrap_or(10);
-      round.name = round_detail.name;
+        round.allow_applications = round_detail.allow_applications;
+        round.application_end_ms = round_detail.application_end_ms;
+        round.application_start_ms = round_detail.application_start_ms;
+        round.contacts = round_detail.contacts;
+        round.expected_amount = round_detail.expected_amount;
+        round.description = round_detail.description;
+        round.max_participants = round_detail.max_participants.unwrap_or(10);
+        round.name = round_detail.name;
 
-      write_round_info(env, round_id, &round);
-      extend_instance(env);
-      log_create_round(env, round.to_external());
+        write_round_info(env, round_id, &round);
+        extend_instance(env);
+        log_create_round(env, round.to_external());
 
-      round.to_external()
+        round.to_external()
     }
 
-    //TODO: need to check this method cause unable to upload to testnet
-    // fn delete_round(env: &Env, round_id: u128) -> RoundDetailExternal{
-    //   let round = read_round_info(env, round_id);
-    //   round.owner.require_auth();
+    fn delete_round(env: &Env, round_id: u128) -> RoundDetailExternal {
+        let round = read_round_info(env, round_id);
+        round.owner.require_auth();
 
-    //   assert_eq!(round.vault_balance, 0, "Round must have no balance");
+        assert_eq!(round.current_vault_balance, 0, "Round must have no balance");
 
-    //   clear_round_storage(env, round_id);
-    //   round.to_external()
-    // }
+        clear_round(env, round_id);
+        round.to_external()
+    }
 
     fn apply_to_round_batch(
-      env: &Env,
-      caller: Address,
-      round_id: u128,
-      review_notes: Vec<Option<String>>,
-      applicants: Vec<Address>,
-  ) -> Vec<RoundApplicationExternal>{
-    caller.require_auth();
+        env: &Env,
+        caller: Address,
+        round_id: u128,
+        review_notes: Vec<Option<String>>,
+        applicants: Vec<Address>,
+    ) -> Vec<RoundApplicationExternal> {
+        caller.require_auth();
 
-    let round = read_round_info(env, round_id);
-    let current_ms = get_ledger_second_as_millis(env);
+        let round = read_round_info(env, round_id);
+        let current_ms = get_ledger_second_as_millis(env);
 
-    validate_owner_or_admin(env, &caller, &round);
-    validate_voting_not_started(env, &round);
+        validate_owner_or_admin(env, &caller, &round);
+        validate_voting_not_started(env, &round);
 
-    let project_contract = read_project_contract(env);
-    let project_client = ProjectRegistryClient::new(env, &project_contract);
-    let mut applications: Vec<RoundApplicationExternal> = Vec::new(env);
+        let project_contract = read_project_contract(env);
+        let project_client = ProjectRegistryClient::new(env, &project_contract);
+        let mut applications: Vec<RoundApplicationExternal> = Vec::new(env);
 
-    let mut index = 0;
-    applicants.iter().for_each(|applicant| {
-        let project = project_client.get_project_from_applicant(&applicant);
-        assert!(
-            project.is_some(),
-            "Project not found. Please register project first using project registry"
-        );
-
-        let uwrap_project = project.unwrap();
-
-        if round.is_video_required {
+        let mut index = 0;
+        applicants.iter().for_each(|applicant| {
+            let project = project_client.get_project_from_applicant(&applicant);
             assert!(
-                !uwrap_project.video_url.is_empty(),
-                "Video is Required. Please Update Your Profile"
+                project.is_some(),
+                "Project not found. Please register project first using project registry"
             );
-        }
 
-        let existing_application = get_application_by_applicant(env, round_id, &applicant);
+            let uwrap_project = project.unwrap();
 
-        assert!(existing_application.is_none(), "Application already exists");
+            if round.is_video_required {
+                assert!(
+                    !uwrap_project.video_url.is_empty(),
+                    "Video is Required. Please Update Your Profile"
+                );
+            }
 
-        let mut review_note_internal = String::from_str(env, "");
-        let applicant_note_internal = String::from_str(env, "");
+            let existing_application = get_application_by_applicant(env, round_id, &applicant);
 
-        if review_notes.get(index).is_some() {
-            review_note_internal = review_notes.get(index).unwrap().unwrap();
-        }
+            assert!(existing_application.is_none(), "Application already exists");
 
-        let application = RoundApplicationInternal {
-            project_id: uwrap_project.id,
-            applicant_id: applicant.clone(),
-            status: ApplicationStatus::Pending,
-            submited_ms: current_ms,
-            review_note: review_note_internal,
-            applicant_note: applicant_note_internal,
-            updated_ms: None,
-        };
+            let mut review_note_internal = String::from_str(env, "");
+            let applicant_note_internal = String::from_str(env, "");
 
-        add_application(env, round_id, &application);
+            if review_notes.get(index).is_some() {
+                review_note_internal = review_notes.get(index).unwrap().unwrap();
+            }
+
+            let application = RoundApplicationInternal {
+                project_id: uwrap_project.id,
+                applicant_id: applicant.clone(),
+                status: ApplicationStatus::Pending,
+                submited_ms: current_ms,
+                review_note: review_note_internal,
+                applicant_note: applicant_note_internal,
+                updated_ms: None,
+            };
+
+            add_application(env, round_id, &application);
+            extend_instance(env);
+            extend_round(env, round_id);
+            log_project_application(env, application.to_external());
+
+            applications.push_back(application.to_external());
+            index += 1;
+        });
+
+        applications
+    }
+
+    fn get_payouts_for_round(
+        env: &Env,
+        round_id: u128,
+        from_index: Option<u64>,
+        limit: Option<u64>,
+    ) -> Vec<PayoutExternal> {
+        let limit_internal: usize = limit.unwrap_or(10).try_into().expect("Conversion failed");
+        let from_index_internal: usize = from_index
+            .unwrap_or(0)
+            .try_into()
+            .expect("Conversion failed");
+        let payouts = read_payouts(env, round_id);
         extend_instance(env);
         extend_round(env, round_id);
-        log_project_application(env, application.to_external());
 
-        applications.push_back(application.to_external());
-        index += 1;
-    });
+        let mut payouts_external: Vec<PayoutExternal> = Vec::new(env);
 
-    applications
-  }
+        payouts
+            .iter()
+            .skip(from_index_internal)
+            .take(limit_internal)
+            .for_each(|payout_id| {
+                let internal = read_payout_info(env, payout_id).unwrap();
+                payouts_external.push_back(internal.to_external());
+            });
 
-  fn get_payouts( env: &Env,round_id: u128, from_index: Option<u64>, limit: Option<u64>) -> Vec<PayoutExternal>{
-    let limit_internal:usize = limit.unwrap_or(10) as usize;
-    let from_index_internal:usize = from_index.unwrap_or(0) as usize;
-    let payouts = read_payouts(env, round_id);
-    extend_instance(env);
-    extend_round(env, round_id);
+        payouts_external
+    }
 
-    let mut payouts_external: Vec<PayoutExternal> = Vec::new(env);
+    fn set_payouts(
+        env: &Env,
+        round_id: u128,
+        caller: Address,
+        payouts: Vec<PayoutInput>,
+        clear_existing: bool,
+    ) -> Vec<PayoutExternal> {
+        caller.require_auth();
 
-    payouts.keys().iter().skip(from_index_internal).take(limit_internal).for_each(|key| {
-        let payout = payouts.get(key).unwrap();
-        let payout_external = PayoutExternal {
-            project_id: payout.project_id,
-            amount: payout.amount,
-            address: payout.address,
-            paid_at_ms: payout.paid_at_ms,
+        let round = read_round_info(env, round_id);
+        validate_owner_or_admin(env, &caller, &round);
+
+        let approved_project = read_approved_projects(env, round_id);
+
+        if clear_existing {
+            clear_payouts(env, round_id);
+
+            approved_project.iter().for_each(|project_id| {
+                let payout_ids = read_project_payout_ids_for_project(env, project_id);
+
+                payout_ids.iter().for_each(|payout_id| {
+                    remove_payout_info(env, payout_id);
+                });
+
+                clear_project_payout_ids(env, project_id);
+            });
+        }
+
+        let mut payouts_internal: Vec<u32> = read_payouts(env, round_id);
+        let mut payouts_external: Vec<PayoutExternal> = Vec::new(env);
+
+        let mut running_total: i128 = 0;
+        let mut updated_round = round.clone();
+
+        payouts.iter().for_each(|payout_input| {
+            if round.cooldown_end_ms.is_some() {
+                updated_round.cooldown_end_ms =
+                    Some(get_ledger_second_as_millis(env) + round.cooldown_period_ms.unwrap());
+            }
+
+            if round.compliance_end_ms.is_some() {
+                updated_round.compliance_end_ms =
+                    Some(get_ledger_second_as_millis(env) + round.compliance_period_ms.unwrap());
+            }
+
+            let payout_id = increment_payout_id(env);
+            let application =
+                get_application_by_applicant(env, round_id, &payout_input.recipient_id);
+
+            assert!(application.is_some(), "Application not found");
+
+            let project_id = application.unwrap().project_id;
+
+            assert!(
+                approved_project.contains(project_id),
+                "Project ID is not approved for this round",
+            );
+
+            let payout = PayoutInternal {
+                round_id,
+                id: payout_id,
+                amount: payout_input.amount,
+                recipient_id: payout_input.recipient_id,
+                paid_at_ms: None,
+                memo: payout_input.memo,
+            };
+
+            write_payout_info(env, payout_id, &payout);
+            payouts_internal.push_back(payout_id);
+            add_payout_id_to_project_payout_ids(env, project_id, payout_id);
+            payouts_external.push_back(payout.to_external());
+
+            running_total += payout_input.amount;
+        });
+
+        let vault_balance: i128 = round
+            .current_vault_balance
+            .try_into()
+            .expect("Conversion failed");
+
+        assert!(
+            running_total <= vault_balance,
+            "Total payout amount exceeds vault balance"
+        );
+
+        write_payouts(env, round_id, &payouts_internal);
+        write_round_info(env, round_id, &updated_round);
+        extend_instance(env);
+        extend_round(env, round_id);
+
+        payouts_external
+    }
+
+    fn set_round_complete(env: &Env, round_id: u128, caller: Address) -> RoundDetailExternal {
+        caller.require_auth();
+
+        let mut round = read_round_info(env, round_id);
+        validate_owner_or_admin(env, &caller, &round);
+
+        round.round_complete_ms = Some(get_ledger_second_as_millis(env));
+
+        write_round_info(env, round_id, &round);
+        extend_instance(env);
+        extend_round(env, round_id);
+
+        round.to_external()
+    }
+
+    fn challenge_payouts(
+        env: &Env,
+        round_id: u128,
+        caller: Address,
+        reason: String,
+    ) -> PayoutsChallengeExternal {
+        caller.require_auth();
+        let challenger_id = caller.clone();
+
+        let challenges = PayoutsChallengeInternal {
+            admin_notes: String::from_str(env, ""),
+            reason,
+            resolved: false,
+            created_at: get_ledger_second_as_millis(env),
         };
 
-        payouts_external.push_back(payout_external);
-    });
-    
-    payouts_external
-  }
+        write_payout_challenge(env, round_id, &challenger_id, &challenges);
+        extend_instance(env);
+        extend_round(env, round_id);
+
+        challenges.to_external(round_id, &challenger_id)
+    }
+
+    fn remove_payouts_challenge(env: &Env, round_id: u128, caller: Address) {
+        caller.require_auth();
+
+        let challenger_id = caller.clone();
+
+        remove_payout_challenge(env, round_id, &challenger_id);
+        extend_instance(env);
+        extend_round(env, round_id);
+    }
+
+    fn update_payouts_challenge(
+        env: &Env,
+        round_id: u128,
+        caller: Address,
+        challenger_id: Address,
+        notes: Option<String>,
+        resolve_challenge: Option<bool>,
+    ) -> PayoutsChallengeExternal {
+        caller.require_auth();
+
+        let round = read_round_info(env, round_id);
+        validate_owner_or_admin(env, &caller, &round);
+
+        let challenge = read_payout_challenge(env, round_id, &challenger_id);
+        assert!(challenge.is_some(), "Challenge not found");
+
+        let mut challenge_internal = challenge.unwrap();
+        let internal_notes = notes.unwrap_or(String::from_str(env, ""));
+        if resolve_challenge.is_some() {
+            challenge_internal.resolved = resolve_challenge.unwrap();
+        }
+
+        challenge_internal.admin_notes = internal_notes;
+
+        write_payout_challenge(env, round_id, &challenger_id, &challenge_internal);
+        extend_instance(env);
+        extend_round(env, round_id);
+        challenge_internal.to_external(round_id, &challenger_id)
+    }
+
+    fn remove_resolved_challenges(env: &Env, round_id: u128, caller: Address) {
+        caller.require_auth();
+
+        let round = read_round_info(env, round_id);
+        validate_owner_or_admin(env, &caller, &round);
+
+        let challenges = read_payout_challenges(env, round_id);
+        let mut challenges_internal: Map<Address, PayoutsChallengeInternal> = Map::new(env);
+
+        challenges.keys().iter().for_each(|challenger_id| {
+            let challenge = challenges.get(challenger_id.clone()).unwrap();
+
+            if challenge.resolved {
+                challenges_internal.remove(challenger_id);
+            }
+        });
+
+        write_payout_challenges(env, round_id, &challenges_internal);
+        extend_instance(env);
+        extend_round(env, round_id);
+    }
+
+    fn get_payouts(env: &Env, from_index: Option<u64>, limit: Option<u64>) -> Vec<PayoutExternal> {
+        let limit_internal: u64 = limit.unwrap_or(10);
+        let from_index_internal: u64 = from_index
+            .unwrap_or(0);
+        let payouts = read_all_payouts(env);
+        extend_instance(env);
+
+        let mut payouts_external: Vec<PayoutExternal> = Vec::new(env);
+
+        payouts
+            .keys()
+            .iter()
+            .skip(from_index_internal as usize)
+            .take(limit_internal as usize)
+            .for_each(|payout_id| {
+                let internal = payouts.get(payout_id).unwrap();
+                payouts_external.push_back(internal.to_external());
+            });
+
+        payouts_external
+    }
+
+    fn get_payout(env: &Env, payout_id: u32) -> PayoutExternal {
+        let payout = read_payout_info(env, payout_id);
+
+        assert!(payout.is_some(), "Payout not found");
+
+        extend_instance(env);
+        payout.unwrap().to_external()
+    }
+
+    fn redistribute_vault(env: &Env, round_id: u128, caller: Address, memo: Option<String>) {
+        caller.require_auth();
+
+        let round = read_round_info(env, round_id);
+        validate_owner_or_admin(env, &caller, &round);
+
+        assert!(round.current_vault_balance > 0, "No funds to redistribute");
+        assert!(round.allow_remaining_dist.is_some() && round.allow_remaining_dist.unwrap(), "Redistribution not allowed");
+        assert!(
+            round.remaining_dist_at_ms.is_none(),
+            "Redistribution already done"
+        );
+
+        round.assert_cooldown_period_complete(env);
+        round.assert_compliance_period_complete(env);
+
+        round.assert_all_payouts_challenges_resolved(env);
+
+        let mut updated_round = round.clone();
+        let amount: i128 = round
+            .current_vault_balance
+            .try_into()
+            .expect("Conversion failed");
+        let redistribute_to = round.remaining_dist_address;
+
+        let token_contract = read_token_address(env);
+        let token_client = TokenClient::new(env, &token_contract);
+
+        token_client.transfer(&env.current_contract_address(), &redistribute_to, &amount);
+
+        updated_round.remaining_dist_at_ms = Some(get_ledger_second_as_millis(env));
+        updated_round.current_vault_balance = 0;
+        updated_round.remaining_dist_by = caller.clone();
+
+        write_round_info(env, round_id, &updated_round);
+        extend_instance(env);
+        extend_round(env, round_id);
+    }
+
+    fn get_deposits_for_round(
+        env: &Env,
+        round_id: u128,
+        from_index: Option<u64>,
+        limit: Option<u64>,
+    ) -> Vec<DepositExternal> {
+        let limit_internal: u64 = limit.unwrap_or(10);
+        let from_index_internal: u64 = from_index
+            .unwrap_or(0);
+        let deposits = read_deposit_from_round(env, round_id);
+        extend_instance(env);
+        extend_round(env, round_id);
+
+        let mut deposits_external: Vec<DepositExternal> = Vec::new(env);
+
+        deposits
+            .iter()
+            .skip(from_index_internal as usize)
+            .take(limit_internal as usize)
+            .for_each(|deposit_id| {
+                let internal = read_deposit(env, deposit_id).unwrap();
+                deposits_external.push_back(internal.to_external(deposit_id));
+            });
+
+        deposits_external
+    }
+
+    fn set_cooldown_config(
+        env: &Env,
+        round_id: u128,
+        caller: Address,
+        cooldown_period_ms: Option<u64>,
+    ) -> RoundDetailExternal {
+        caller.require_auth();
+
+        let mut round = read_round_info(env, round_id);
+        validate_owner_or_admin(env, &caller, &round);
+
+        round.cooldown_period_ms = cooldown_period_ms;
+
+        write_round_info(env, round_id, &round);
+        extend_instance(env);
+        extend_round(env, round_id);
+
+        round.to_external()
+    }
+
+    fn set_compliance_config(
+        env: &Env,
+        round_id: u128,
+        caller: Address,
+        compliance_req_desc: Option<String>,
+        compliance_period_ms: Option<u64>,
+    ) -> RoundDetailExternal {
+        caller.require_auth();
+
+        let mut round = read_round_info(env, round_id);
+        validate_owner_or_admin(env, &caller, &round);
+
+        round.compliance_req_desc = compliance_req_desc.unwrap_or(String::from_str(env, ""));
+        round.compliance_period_ms = compliance_period_ms;
+
+        write_round_info(env, round_id, &round);
+        extend_instance(env);
+        extend_round(env, round_id);
+
+        round.to_external()
+    }
 }

@@ -1,6 +1,6 @@
-use loam_sdk::soroban_sdk::{Address, Env};
+use loam_sdk::soroban_sdk::{Env};
 
-use crate::{admin_writer::is_admin, data_type::RoundDetailExternal};
+use crate::fee_writer::read_fee_basis_points;
 
 pub fn count_total_available_pairs(num_of_projects: u32) -> u32 {
     num_of_projects * (num_of_projects - 1) / 2
@@ -22,4 +22,16 @@ pub fn get_arithmetic_index(num_of_projects: u32, index: u32) -> (u32, u32) {
 
 pub fn get_ledger_second_as_millis(env: &Env) -> u64 {
     env.ledger().timestamp() * 1000
+}
+
+pub fn calculate_protocol_fee(env: &Env, amount: u128) -> Option<u128> {
+    let protocol_fee_basis_points = read_fee_basis_points(env);
+    if let Some(protocol_fee_basis_points) = protocol_fee_basis_points {
+        let total_basis_points = 10_000u128;
+        let fee_amount = (protocol_fee_basis_points as u128).saturating_mul(amount);
+        // Round up
+        Some(fee_amount.div_ceil(total_basis_points))
+    } else {
+        None
+    }
 }

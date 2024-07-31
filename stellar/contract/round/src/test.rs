@@ -11,9 +11,9 @@ use crate::{internal::RoundContract, internal::RoundContractClient};
 loam_sdk::import_contract!(project_registry);
 
 #[contracttype]
-pub struct FakeProject{
-  owner: Address,
-  project: project_registry::Project
+pub struct FakeProject {
+    owner: Address,
+    project: project_registry::Project,
 }
 
 fn deploy_contract<'a>(env: &Env, _admin: &Address) -> RoundContractClient<'a> {
@@ -37,7 +37,7 @@ fn generate_fake_project(
     env: &Env,
     project_contract: &project_registry::Client,
     total: u64,
-)->Vec<FakeProject> {
+) -> Vec<FakeProject> {
     let admin = Address::generate(&env);
     let mut project_contracts: Vec<project_registry::ProjectContract> = Vec::new(&env);
     let mut project_contacts: Vec<project_registry::ProjectContact> = Vec::new(&env);
@@ -76,7 +76,7 @@ fn generate_fake_project(
 
     project_admins.push_back(admin.clone());
 
-    let mut results : Vec<FakeProject> = Vec::new(env);
+    let mut results: Vec<FakeProject> = Vec::new(env);
     for _i in 0..total {
         let owner = Address::generate(env);
         let project_params = &project_registry::ProjectParams {
@@ -94,10 +94,7 @@ fn generate_fake_project(
         };
 
         let project = project_contract.apply(&owner, project_params);
-        results.push_back(FakeProject{
-          owner,
-          project
-        })
+        results.push_back(FakeProject { owner, project })
     }
 
     results
@@ -139,9 +136,23 @@ fn test_round_create() {
         max_participants: Some(10),
         allow_applications: true,
         owner: admin.clone(),
+        cooldown_period_ms: None,
+        cooldown_end_ms: None,
+        compliance_req_desc: String::from_str(&env, ""),
+        compliance_period_ms: None,
+        compliance_end_ms: Some(1000),
+        allow_remaining_dist: false,
+        remaining_dist_address: admin.clone(),
+        referrer_fee_basis_points: None,
     };
 
-    round.initialize(&admin, &token_contract.address, &project_contract.address);
+    round.initialize(
+        &admin,
+        &token_contract.address,
+        &project_contract.address,
+        &None,
+        &None,
+    );
 
     let created_round = round.create_round(&admin, &round_detail);
 
@@ -188,13 +199,33 @@ fn test_apply_applications() {
         max_participants: Some(10),
         allow_applications: true,
         owner: admin.clone(),
+        cooldown_period_ms: None,
+        cooldown_end_ms: None,
+        compliance_req_desc: String::from_str(&env, ""),
+        compliance_period_ms: None,
+        compliance_end_ms: Some(1000),
+        allow_remaining_dist: false,
+        remaining_dist_address: admin.clone(),
+        referrer_fee_basis_points: None,
     };
 
-    round.initialize(&admin, &token_contract.address, &project_contract.address);
+    round.initialize(
+        &admin,
+        &token_contract.address,
+        &project_contract.address,
+        &None,
+        &None,
+    );
 
     let created_round = round.create_round(&admin, &round_detail);
 
-    round.apply_to_round(&created_round.id, &projects.get(0).unwrap().owner, &None, &None, &None);
+    round.apply_to_round(
+        &created_round.id,
+        &projects.get(0).unwrap().owner,
+        &None,
+        &None,
+        &None,
+    );
 
     let application = round
         .get_applications_for_round(&created_round.id, &None, &None)
@@ -233,12 +264,32 @@ fn test_review_application() {
         max_participants: Some(10),
         allow_applications: true,
         owner: admin.clone(),
+        cooldown_period_ms: None,
+        cooldown_end_ms: None,
+        compliance_req_desc: String::from_str(&env, ""),
+        compliance_period_ms: None,
+        compliance_end_ms: Some(1000),
+        allow_remaining_dist: false,
+        remaining_dist_address: admin.clone(),
+        referrer_fee_basis_points: None,
     };
 
-    round.initialize(&admin, &token_contract.address, &project_contract.address);
+    round.initialize(
+        &admin,
+        &token_contract.address,
+        &project_contract.address,
+        &None,
+        &None,
+    );
 
     let created_round = round.create_round(&admin, &round_detail);
-    round.apply_to_round(&created_round.id, &projects.get(0).unwrap().owner, &None, &None, &None);
+    round.apply_to_round(
+        &created_round.id,
+        &projects.get(0).unwrap().owner,
+        &None,
+        &None,
+        &None,
+    );
 
     let review_note = String::from_str(&env, "review_note");
     round.review_application(
@@ -286,12 +337,32 @@ fn test_whitelist_applicant() {
         max_participants: Some(10),
         allow_applications: true,
         owner: admin.clone(),
+        cooldown_period_ms: None,
+        cooldown_end_ms: None,
+        compliance_req_desc: String::from_str(&env, ""),
+        compliance_period_ms: None,
+        compliance_end_ms: Some(1000),
+        allow_remaining_dist: false,
+        remaining_dist_address: admin.clone(),
+        referrer_fee_basis_points: None,
     };
 
-    round.initialize(&admin, &token_contract.address, &project_contract.address);
+    round.initialize(
+        &admin,
+        &token_contract.address,
+        &project_contract.address,
+        &None,
+        &None,
+    );
 
     let created_round = round.create_round(&admin, &round_detail);
-    round.apply_to_round(&created_round.id, &projects.get(0).unwrap().owner, &None, &None, &None);
+    round.apply_to_round(
+        &created_round.id,
+        &projects.get(0).unwrap().owner,
+        &None,
+        &None,
+        &None,
+    );
 }
 
 #[test]
@@ -323,9 +394,24 @@ fn test_whitelist_voters() {
         max_participants: Some(10),
         allow_applications: true,
         owner: admin.clone(),
+        cooldown_period_ms: None,
+        cooldown_end_ms: None,
+        compliance_req_desc: String::from_str(&env, ""),
+        compliance_period_ms: None,
+        compliance_end_ms: Some(1000),
+        allow_remaining_dist: false,
+        remaining_dist_address: admin.clone(),
+
+        referrer_fee_basis_points: None,
     };
 
-    round.initialize(&admin, &token_contract.address, &project_contract.address);
+    round.initialize(
+        &admin,
+        &token_contract.address,
+        &project_contract.address,
+        &None,
+        &None,
+    );
 
     let created_round = round.create_round(&admin, &round_detail);
     let project_id = 1;
@@ -333,7 +419,13 @@ fn test_whitelist_voters() {
 
     round.add_white_list(&created_round.id, &admin, &applicant);
 
-    round.apply_to_round(&created_round.id, &projects.get(0).unwrap().owner, &None, &None, &None);
+    round.apply_to_round(
+        &created_round.id,
+        &projects.get(0).unwrap().owner,
+        &None,
+        &None,
+        &None,
+    );
 
     round.review_application(
         &created_round.id,
@@ -381,13 +473,33 @@ fn test_blacklist() {
         max_participants: Some(10),
         allow_applications: true,
         owner: admin.clone(),
+        cooldown_period_ms: None,
+        cooldown_end_ms: None,
+        compliance_req_desc: String::from_str(&env, ""),
+        compliance_period_ms: None,
+        compliance_end_ms: Some(1000),
+        allow_remaining_dist: false,
+        remaining_dist_address: admin.clone(),
+        referrer_fee_basis_points: None,
     };
 
-    round.initialize(&admin, &token_contract.address, &project_contract.address);
+    round.initialize(
+        &admin,
+        &token_contract.address,
+        &project_contract.address,
+        &None,
+        &None,
+    );
 
     let created_round = round.create_round(&admin, &round_detail);
     round.flag_voter(&created_round.id, &admin, &projects.get(0).unwrap().owner);
-    round.apply_to_round(&created_round.id, &projects.get(0).unwrap().owner, &None, &None, &None);
+    round.apply_to_round(
+        &created_round.id,
+        &projects.get(0).unwrap().owner,
+        &None,
+        &None,
+        &None,
+    );
     // round.apply_project(&project_id, &applicant);
 }
 
@@ -419,16 +531,54 @@ fn test_voting() {
         max_participants: Some(10),
         allow_applications: true,
         owner: admin.clone(),
+        cooldown_period_ms: None,
+        cooldown_end_ms: None,
+        compliance_req_desc: String::from_str(&env, ""),
+        compliance_period_ms: None,
+        compliance_end_ms: Some(1000),
+        allow_remaining_dist: false,
+        remaining_dist_address: admin.clone(),
+        referrer_fee_basis_points: None,
     };
 
-    round.initialize(&admin, &token_contract.address, &project_contract.address);
+    round.initialize(
+        &admin,
+        &token_contract.address,
+        &project_contract.address,
+        &None,
+        &None,
+    );
 
     let created_round = round.create_round(&admin, &round_detail);
 
-    round.apply_to_round(&created_round.id, &projects.get(0).unwrap().owner, &None, &None, &None);
-    round.apply_to_round(&created_round.id, &projects.get(1).unwrap().owner, &None, &None, &None);
-    round.apply_to_round(&created_round.id, &projects.get(2).unwrap().owner, &None, &None, &None);
-    round.apply_to_round(&created_round.id, &projects.get(3).unwrap().owner, &None, &None, &None);
+    round.apply_to_round(
+        &created_round.id,
+        &projects.get(0).unwrap().owner,
+        &None,
+        &None,
+        &None,
+    );
+    round.apply_to_round(
+        &created_round.id,
+        &projects.get(1).unwrap().owner,
+        &None,
+        &None,
+        &None,
+    );
+    round.apply_to_round(
+        &created_round.id,
+        &projects.get(2).unwrap().owner,
+        &None,
+        &None,
+        &None,
+    );
+    round.apply_to_round(
+        &created_round.id,
+        &projects.get(3).unwrap().owner,
+        &None,
+        &None,
+        &None,
+    );
 
     round.review_application(
         &created_round.id,
@@ -516,18 +666,34 @@ fn test_add_remove_admin() {
         max_participants: Some(10),
         allow_applications: true,
         owner: admin.clone(),
+        cooldown_period_ms: None,
+        cooldown_end_ms: None,
+        compliance_req_desc: String::from_str(&env, ""),
+        compliance_period_ms: None,
+        compliance_end_ms: Some(1000),
+        allow_remaining_dist: false,
+        remaining_dist_address: admin.clone(),
+        referrer_fee_basis_points: None,
     };
 
-    round.initialize(&admin, &token_contract.address, &project_contract.address);
+    round.initialize(
+        &admin,
+        &token_contract.address,
+        &project_contract.address,
+        &None,
+        &None,
+    );
 
     let created_round = round.create_round(&admin, &round_detail);
     let new_admin = Address::generate(&env);
-    round.add_admin(&created_round.id, &new_admin);
+    let mut new_admins: Vec<Address> = Vec::new(&env);
+    new_admins.push_back(new_admin.clone());
+    round.add_admins(&created_round.id, &new_admins);
 
     let mut admins = round.admins(&created_round.id);
     assert_eq!(admins.len(), 2);
 
-    round.remove_admin(&created_round.id, &new_admin);
+    round.remove_admins(&created_round.id, &new_admins);
 
     admins = round.admins(&created_round.id);
 
@@ -565,9 +731,23 @@ fn test_voting_deposit_and_payout() {
         max_participants: Some(10),
         allow_applications: true,
         owner: admin.clone(),
+        cooldown_period_ms: None,
+        cooldown_end_ms: None,
+        compliance_req_desc: String::from_str(&env, ""),
+        compliance_period_ms: None,
+        compliance_end_ms: Some(1000),
+        allow_remaining_dist: false,
+        remaining_dist_address: admin.clone(),
+        referrer_fee_basis_points: None,
     };
 
-    round.initialize(&admin, &token_contract.address, &project_contract.address);
+    round.initialize(
+        &admin,
+        &token_contract.address,
+        &project_contract.address,
+        &None,
+        &None,
+    );
 
     let created_round = round.create_round(&admin, &round_detail);
     let mut project_ids: Vec<u128> = Vec::new(&env);
@@ -598,7 +778,7 @@ fn test_voting_deposit_and_payout() {
 
     token_admin.mint(&cindy, &deposit_i128);
 
-    round.deposit(&created_round.id, &cindy, &(deposit / 2));
+    round.deposit_to_round(&created_round.id, &cindy, &(deposit / 2), &None, &None);
 
     round.vote(&created_round.id, &voter, &picks);
 
@@ -626,12 +806,12 @@ fn test_voting_deposit_and_payout() {
     let project_id = voter_pairs2.get(0).unwrap().projects.get(0).unwrap();
     let project = project_contract.get_project_by_id(&project_id).unwrap();
     let payout_balance = token_contract.balance(&project.payout_address);
-    round.admin_process_payouts(&created_round.id, &admin);
+    round.process_payouts(&created_round.id, &admin);
     let new_payout_balance = token_contract.balance(&project.payout_address);
 
     assert!(new_payout_balance > payout_balance);
 
-    let payouts = round.get_payouts(&created_round.id, &None, &None);
+    let payouts = round.get_payouts_for_round(&created_round.id, &None, &None);
     assert_eq!(payouts.is_empty(), false);
 }
 
@@ -670,9 +850,23 @@ fn test_get_all_pairs() {
         max_participants: Some(10),
         allow_applications: true,
         owner: admin.clone(),
+        cooldown_period_ms: None,
+        cooldown_end_ms: None,
+        compliance_req_desc: String::from_str(&env, ""),
+        compliance_period_ms: None,
+        compliance_end_ms: Some(1000),
+        allow_remaining_dist: false,
+        remaining_dist_address: admin.clone(),
+        referrer_fee_basis_points: None,
     };
 
-    round.initialize(&admin, &token_contract.address, &project_contract.address);
+    round.initialize(
+        &admin,
+        &token_contract.address,
+        &project_contract.address,
+        &None,
+        &None,
+    );
 
     let created_round = round.create_round(&admin, &round_detail);
     let num_of_projects: u32 = 10;
@@ -748,9 +942,23 @@ fn test_change_number_of_votes() {
         max_participants: Some(10),
         allow_applications: true,
         owner: admin.clone(),
+        cooldown_period_ms: None,
+        cooldown_end_ms: None,
+        compliance_req_desc: String::from_str(&env, ""),
+        compliance_period_ms: None,
+        compliance_end_ms: Some(1000),
+        allow_remaining_dist: false,
+        remaining_dist_address: admin.clone(),
+        referrer_fee_basis_points: None,
     };
 
-    round.initialize(&admin, &token_contract.address, &project_contract.address);
+    round.initialize(
+        &admin,
+        &token_contract.address,
+        &project_contract.address,
+        &None,
+        &None,
+    );
 
     let created_round = round.create_round(&admin, &round_detail);
     let new_num_picks_per_voter = 3;
@@ -787,13 +995,27 @@ fn test_change_amount() {
         max_participants: Some(10),
         allow_applications: true,
         owner: admin.clone(),
+        cooldown_period_ms: None,
+        cooldown_end_ms: None,
+        compliance_req_desc: String::from_str(&env, ""),
+        compliance_period_ms: None,
+        compliance_end_ms: Some(1000),
+        allow_remaining_dist: false,
+        remaining_dist_address: admin.clone(),
+        referrer_fee_basis_points: None,
     };
 
-    round.initialize(&admin, &token_contract.address, &project_contract.address);
+    round.initialize(
+        &admin,
+        &token_contract.address,
+        &project_contract.address,
+        &None,
+        &None,
+    );
 
     let created_round = round.create_round(&admin, &round_detail);
     let new_amount = 10;
-    round.change_amount(&created_round.id, &admin, &new_amount);
+    round.change_expected_amount(&created_round.id, &admin, &new_amount);
 
     let round_info = round.get_round(&created_round.id);
     assert_eq!(round_info.expected_amount, new_amount);
@@ -826,9 +1048,23 @@ fn test_change_voting_period() {
         max_participants: Some(10),
         allow_applications: true,
         owner: admin.clone(),
+        cooldown_period_ms: None,
+        cooldown_end_ms: None,
+        compliance_req_desc: String::from_str(&env, ""),
+        compliance_period_ms: None,
+        compliance_end_ms: Some(1000),
+        allow_remaining_dist: false,
+        remaining_dist_address: admin.clone(),
+        referrer_fee_basis_points: None,
     };
 
-    round.initialize(&admin, &token_contract.address, &project_contract.address);
+    round.initialize(
+        &admin,
+        &token_contract.address,
+        &project_contract.address,
+        &None,
+        &None,
+    );
 
     let created_round = round.create_round(&admin, &round_detail);
     let new_start_ms = get_ledger_second_as_millis(&env) + 1000;
@@ -867,9 +1103,23 @@ fn test_application_period() {
         max_participants: Some(10),
         allow_applications: true,
         owner: admin.clone(),
+        cooldown_period_ms: None,
+        cooldown_end_ms: None,
+        compliance_req_desc: String::from_str(&env, ""),
+        compliance_period_ms: None,
+        compliance_end_ms: Some(1000),
+        allow_remaining_dist: false,
+        remaining_dist_address: admin.clone(),
+        referrer_fee_basis_points: None,
     };
 
-    round.initialize(&admin, &token_contract.address, &project_contract.address);
+    round.initialize(
+        &admin,
+        &token_contract.address,
+        &project_contract.address,
+        &None,
+        &None,
+    );
 
     let created_round = round.create_round(&admin, &round_detail);
     let new_application_start_ms = get_ledger_second_as_millis(&env) + 1000;
@@ -893,7 +1143,7 @@ fn test_application_period() {
 }
 
 #[test]
-fn test_update_round(){
+fn test_update_round() {
     let env = Env::default();
     env.mock_all_auths();
     let admin = Address::generate(&env);
@@ -919,12 +1169,26 @@ fn test_update_round(){
         max_participants: Some(10),
         allow_applications: true,
         owner: admin.clone(),
+        cooldown_period_ms: None,
+        cooldown_end_ms: None,
+        compliance_req_desc: String::from_str(&env, ""),
+        compliance_period_ms: None,
+        compliance_end_ms: Some(1000),
+        allow_remaining_dist: false,
+        remaining_dist_address: admin.clone(),
+        referrer_fee_basis_points: None,
     };
 
-    round.initialize(&admin, &token_contract.address, &project_contract.address);
+    round.initialize(
+        &admin,
+        &token_contract.address,
+        &project_contract.address,
+        &None,
+        &None,
+    );
 
     let created_round = round.create_round(&admin, &round_detail);
-    let new_round_detail = UpdateRoundParams{
+    let new_round_detail = UpdateRoundParams {
         name: String::from_str(&env, "new_name"),
         description: String::from_str(&env, "new_description"),
         is_video_required: false,
@@ -947,9 +1211,8 @@ fn test_update_round(){
     assert!(created_round.expected_amount != updated_round.expected_amount);
 }
 
-
 #[test]
-fn test_change_allow_applications(){
+fn test_change_allow_applications() {
     let env = Env::default();
     env.mock_all_auths();
     let admin = Address::generate(&env);
@@ -975,20 +1238,40 @@ fn test_change_allow_applications(){
         max_participants: Some(10),
         allow_applications: true,
         owner: admin.clone(),
+        cooldown_period_ms: None,
+        cooldown_end_ms: None,
+        compliance_req_desc: String::from_str(&env, ""),
+        compliance_period_ms: None,
+        compliance_end_ms: Some(1000),
+        allow_remaining_dist: false,
+        remaining_dist_address: admin.clone(),
+        referrer_fee_basis_points: None,
     };
 
-    round.initialize(&admin, &token_contract.address, &project_contract.address);
+    round.initialize(
+        &admin,
+        &token_contract.address,
+        &project_contract.address,
+        &None,
+        &None,
+    );
 
     let created_round = round.create_round(&admin, &round_detail);
     let new_allow_applications = false;
-    round.change_allow_applications(&created_round.id, &admin, &new_allow_applications, &None, &None);
+    round.change_allow_applications(
+        &created_round.id,
+        &admin,
+        &new_allow_applications,
+        &None,
+        &None,
+    );
 
     let round_info = round.get_round(&created_round.id);
     assert_eq!(round_info.allow_applications, new_allow_applications);
 }
 
 #[test]
-fn test_unapply_from_round(){
+fn test_unapply_from_round() {
     let env = Env::default();
     env.mock_all_auths();
     let admin = Address::generate(&env);
@@ -999,12 +1282,12 @@ fn test_unapply_from_round(){
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
-    let round_detail = &CreateRoundParams{
+    let round_detail = &CreateRoundParams {
         name: String::from_str(&env, "name"),
         description: String::from_str(&env, "description"),
         is_video_required: false,
         contacts: Vec::new(&env),
-        voting_start_ms: get_ledger_second_as_millis(&env)+10000,
+        voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
         voting_end_ms: get_ledger_second_as_millis(&env) + 300000,
         application_start_ms: Some(get_ledger_second_as_millis(&env)),
         application_end_ms: Some(get_ledger_second_as_millis(&env)),
@@ -1015,12 +1298,32 @@ fn test_unapply_from_round(){
         max_participants: Some(10),
         allow_applications: true,
         owner: admin.clone(),
+        cooldown_period_ms: None,
+        cooldown_end_ms: None,
+        compliance_req_desc: String::from_str(&env, ""),
+        compliance_period_ms: None,
+        compliance_end_ms: Some(1000),
+        allow_remaining_dist: false,
+        remaining_dist_address: admin.clone(),
+        referrer_fee_basis_points: None,
     };
 
-    round.initialize(&admin, &token_contract.address, &project_contract.address);
+    round.initialize(
+        &admin,
+        &token_contract.address,
+        &project_contract.address,
+        &None,
+        &None,
+    );
 
     let created_round = round.create_round(&admin, &round_detail);
-    let new_application = round.apply_to_round(&created_round.id, &projects.get(0).unwrap().owner, &None, &None, &None);
+    let new_application = round.apply_to_round(
+        &created_round.id,
+        &projects.get(0).unwrap().owner,
+        &None,
+        &None,
+        &None,
+    );
     let check_applications = round.get_applications_for_round(&created_round.id, &None, &None);
     assert!(new_application.applicant_id == check_applications.get(0).unwrap().applicant_id);
     round.unapply_from_round(&created_round.id, &projects.get(0).unwrap().owner, &None);
@@ -1029,7 +1332,7 @@ fn test_unapply_from_round(){
 }
 
 #[test]
-fn test_apply_to_round_batch(){
+fn test_apply_to_round_batch() {
     let env = Env::default();
     env.mock_all_auths();
     let admin = Address::generate(&env);
@@ -1040,12 +1343,12 @@ fn test_apply_to_round_batch(){
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
-    let round_detail = &CreateRoundParams{
+    let round_detail = &CreateRoundParams {
         name: String::from_str(&env, "name"),
         description: String::from_str(&env, "description"),
         is_video_required: false,
         contacts: Vec::new(&env),
-        voting_start_ms: get_ledger_second_as_millis(&env)+10000,
+        voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
         voting_end_ms: get_ledger_second_as_millis(&env) + 300000,
         application_start_ms: Some(get_ledger_second_as_millis(&env)),
         application_end_ms: Some(get_ledger_second_as_millis(&env)),
@@ -1056,16 +1359,31 @@ fn test_apply_to_round_batch(){
         max_participants: Some(10),
         allow_applications: true,
         owner: admin.clone(),
+        cooldown_period_ms: None,
+        cooldown_end_ms: None,
+        compliance_req_desc: String::from_str(&env, ""),
+        compliance_period_ms: None,
+        compliance_end_ms: Some(1000),
+        allow_remaining_dist: false,
+        remaining_dist_address: admin.clone(),
+        referrer_fee_basis_points: None,
     };
 
-    round.initialize(&admin, &token_contract.address, &project_contract.address);
+    round.initialize(
+        &admin,
+        &token_contract.address,
+        &project_contract.address,
+        &None,
+        &None,
+    );
 
     let created_round = round.create_round(&admin, &round_detail);
     let mut applicants: Vec<Address> = Vec::new(&env);
-    for i in 0..5{
+    for i in 0..5 {
         applicants.push_back(projects.get(i).unwrap().owner);
     }
-    let new_applications = round.apply_to_round_batch(&admin,&created_round.id, & Vec::new(&env), &applicants);
+    let new_applications =
+        round.apply_to_round_batch(&admin, &created_round.id, &Vec::new(&env), &applicants);
     let check_applications = round.get_applications_for_round(&created_round.id, &None, &None);
     assert_eq!(new_applications.len(), check_applications.len());
 }

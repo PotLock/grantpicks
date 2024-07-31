@@ -37,7 +37,7 @@ pub fn get_project(env: &Env, project_id: u128) -> Option<Project> {
     let projects = read_projects(env);
 
     projects.get(project_id)
-  }
+}
 
 pub fn find_projects(env: &Env, skip: Option<u64>, limit: Option<u64>) -> Vec<Project> {
     let projects = read_projects(env);
@@ -47,9 +47,14 @@ pub fn find_projects(env: &Env, skip: Option<u64>, limit: Option<u64>) -> Vec<Pr
 
     let mut found_projects: Vec<Project> = Vec::new(env);
 
-    projects.keys().iter().skip(skip).take(limit).for_each(|project_id| {
-        found_projects.push_back(projects.get(project_id).unwrap());
-    });
+    projects
+        .keys()
+        .iter()
+        .skip(skip)
+        .take(limit)
+        .for_each(|project_id| {
+            found_projects.push_back(projects.get(project_id).unwrap());
+        });
 
     found_projects
 }

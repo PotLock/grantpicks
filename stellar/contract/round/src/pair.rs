@@ -2,7 +2,7 @@ use crate::{
     approval_writer::read_approved_projects,
     data_type::{Pair, RoundDetailExternal},
     round_writer::read_round_info,
-    storage::has_storage,
+    storage::has_store_key,
     storage_key::ContractKey,
     utils::{count_total_available_pairs, get_arithmetic_index},
 };
@@ -80,7 +80,7 @@ pub fn get_all_rounds(
     let mut limit: u64 = limit.unwrap_or(5).try_into().unwrap();
 
     if limit > 10 {
-        limit = 10
+        limit = 10;
     }
 
     let mut results: Vec<RoundDetailExternal> = Vec::new(env);
@@ -89,7 +89,7 @@ pub fn get_all_rounds(
         let round_id: u128 = (i + 1).into();
         let key = ContractKey::RoundInfo(round_id);
 
-        if has_storage(env, &key) {
+        if has_store_key(env, &key) {
             let detail = read_round_info(env, round_id);
             results.push_back(detail.to_external());
         }

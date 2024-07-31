@@ -5,7 +5,8 @@ use crate::data_type::{Project, ProjectParams, ProjectStatus, UpdateProjectParam
 use crate::events::{log_create_project_event, log_update_project_event};
 use crate::methods::ProjectRegistryTrait;
 use crate::project_writer::{
-    add_applicant_project, add_project, find_projects, get_applicant_project_id, get_project, increment_project_num, read_projects, update_project
+    add_applicant_project, add_project, find_projects, get_applicant_project_id, get_project,
+    increment_project_num, read_projects, update_project,
 };
 use crate::soroban_sdk::{self, contract, contractimpl, Address, Env, Vec};
 use crate::storage::extend_instance;

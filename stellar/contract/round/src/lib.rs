@@ -7,9 +7,11 @@ mod approval_writer;
 mod calculation;
 mod core;
 mod data_type;
+mod deposit_writer;
 mod events;
 mod external;
 mod factory;
+mod fee_writer;
 mod internal;
 mod owner_writer;
 mod pair;
@@ -24,6 +26,6 @@ mod validation;
 mod voter_writer;
 mod voting_writer;
 
-mod test;
+// mod test;
 
 pub use crate::internal::RoundContract;

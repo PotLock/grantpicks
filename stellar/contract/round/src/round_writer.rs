@@ -20,14 +20,14 @@ pub fn is_initialized(env: &Env) -> bool {
 pub fn read_round_number(env: &Env) -> u128 {
     env.storage()
         .persistent()
-        .get(&ContractKey::RoundNumber)
+        .get(&ContractKey::NextRoundId)
         .unwrap_or_default()
 }
 
 pub fn write_round_number(env: &Env, round_number: u128) {
     env.storage()
         .persistent()
-        .set(&ContractKey::RoundNumber, &round_number);
+        .set(&ContractKey::NextRoundId, &round_number);
 }
 
 pub fn increment_round_number(env: &Env) -> u128 {

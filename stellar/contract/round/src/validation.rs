@@ -3,7 +3,6 @@ use crate::{
     approval_writer::{is_project_approved, read_approved_projects},
     data_type::{CreateRoundParams, RoundDetailInternal, UpdateRoundParams},
     external::ProjectRegistryClient,
-    owner_writer::read_factory_owner,
     project_registry_writer::read_project_contract,
     utils::get_ledger_second_as_millis,
     voter_writer::{is_black_listed, is_white_listed},
@@ -39,30 +38,30 @@ pub fn validate_round_detail(round_detail: &CreateRoundParams) {
 }
 
 pub fn validate_round_detail_update(round_detail: &UpdateRoundParams) {
-  assert!(
-      round_detail.voting_start_ms < round_detail.voting_end_ms,
-      "Round start time must be less than round end time"
-  );
+    assert!(
+        round_detail.voting_start_ms < round_detail.voting_end_ms,
+        "Round start time must be less than round end time"
+    );
 
-  assert!(
-      round_detail.application_start_ms.unwrap() <= round_detail.application_end_ms.unwrap(),
-      "Round application start time must be less than equal round application end time"
-  );
+    assert!(
+        round_detail.application_start_ms.unwrap() <= round_detail.application_end_ms.unwrap(),
+        "Round application start time must be less than equal round application end time"
+    );
 
-  assert!(
-      round_detail.voting_start_ms >= round_detail.application_end_ms.unwrap(),
-      "Round start time must be greater than or equal round application end time"
-  );
+    assert!(
+        round_detail.voting_start_ms >= round_detail.application_end_ms.unwrap(),
+        "Round start time must be greater than or equal round application end time"
+    );
 
-  assert!(
-      round_detail.expected_amount > 0,
-      "Expected Amount must be greater than 0"
-  );
+    assert!(
+        round_detail.expected_amount > 0,
+        "Expected Amount must be greater than 0"
+    );
 
-  assert!(
-      round_detail.contacts.len() <= 10,
-      "Contact must be less than 10"
-  );
+    assert!(
+        round_detail.contacts.len() <= 10,
+        "Contact must be less than 10"
+    );
 }
 
 pub fn validate_owner_or_admin(env: &Env, admin: &Address, round: &RoundDetailInternal) {
@@ -73,7 +72,6 @@ pub fn validate_owner_or_admin(env: &Env, admin: &Address, round: &RoundDetailIn
         );
     }
 }
-
 
 pub fn validate_can_payout(env: &Env, round: &RoundDetailInternal) {
     let current_time = get_ledger_second_as_millis(env);
@@ -89,7 +87,7 @@ pub fn validate_can_payout(env: &Env, round: &RoundDetailInternal) {
 }
 
 pub fn validate_vault_fund(round: &RoundDetailInternal) {
-    let vault_fund = round.vault_balance;
+    let vault_fund = round.current_vault_balance;
     assert!(vault_fund > 0, "Vault fund must be greater than 0");
 }
 
@@ -218,14 +216,6 @@ pub fn validate_pick_per_votes(num_picks_per_voter: u32) {
     assert!(
         num_picks_per_voter <= 10,
         "Number of picks per voter must be less than or equal 10"
-    );
-}
-
-pub fn validate_contract_owner(env: &Env, admin: &Address) {
-    let contract_owner = read_factory_owner(env);
-    assert!(
-        &contract_owner == admin,
-        "Only contract owner can call this method"
     );
 }
 

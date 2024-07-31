@@ -50,7 +50,7 @@ pub fn log_vote(env: &Env, round_id: u128, result: VotingResult) {
     );
 }
 
-pub fn log_payout(env: &Env, round_id: u128, address: Address, amount: u128) {
+pub fn log_payout(env: &Env, round_id: u128, address: Address, amount: i128) {
     env.events().publish(
         (symbol_short!("payout"), env.current_contract_address()),
         (round_id, address, amount),

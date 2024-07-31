@@ -17,11 +17,6 @@ pub fn delete_application(env: &Env, round_id: u128, applicant_id: &Address) {
     write_application(env, round_id, &applications);
 }
 
-pub fn has_applied(env: &Env, round_id: u128, applicant_id: &Address) -> bool {
-    let applications = read_application(env, round_id);
-    applications.contains_key(applicant_id.clone())
-}
-
 pub fn read_application(env: &Env, round_id: u128) -> Map<Address, RoundApplicationInternal> {
     let key = ContractKey::ProjectApplicants(round_id);
     match env.storage().persistent().get(&key) {

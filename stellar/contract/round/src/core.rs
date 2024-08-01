@@ -88,7 +88,7 @@ pub trait IsRound {
     fn get_all_voters(
         env: &Env,
         round_id: u128,
-        skip: Option<u64>,
+        from_index: Option<u64>,
         limit: Option<u64>,
     ) -> Vec<VotingResult>;
     fn can_vote(env: &Env, round_id: u128, voter: Address) -> bool;
@@ -98,7 +98,7 @@ pub trait IsRound {
     fn get_applications_for_round(
         env: &Env,
         round_id: u128,
-        skip: Option<u64>,
+        from_index: Option<u64>,
         limit: Option<u64>,
     ) -> Vec<RoundApplication>;
     fn get_application(

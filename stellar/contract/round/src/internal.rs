@@ -146,8 +146,8 @@ impl RoundCreator for RoundContract {
         round_info.clone()
     }
 
-    fn get_rounds(env: &Env, skip: Option<u64>, limit: Option<u64>) -> Vec<RoundDetail> {
-        let results = get_all_rounds(env, skip, limit);
+    fn get_rounds(env: &Env, from_index: Option<u64>, limit: Option<u64>) -> Vec<RoundDetail> {
+        let results = get_all_rounds(env, from_index, limit);
         extend_instance(env);
 
         results
@@ -792,11 +792,11 @@ impl IsRound for RoundContract {
     fn get_applications_for_round(
         env: &Env,
         round_id: u128,
-        skip: Option<u64>,
+        from_index: Option<u64>,
         limit: Option<u64>,
     ) -> Vec<RoundApplication> {
         // implementation goes here
-        let applications = find_applications(env, round_id, skip, limit);
+        let applications = find_applications(env, round_id, from_index, limit);
         extend_instance(env);
         extend_round(env, round_id);
 

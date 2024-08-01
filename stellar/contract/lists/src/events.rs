@@ -1,5 +1,5 @@
 use crate::data_type::{ListExternal, RegistrationExternal};
-use loam_sdk::soroban_sdk::{self, symbol_short, Address, Env, Vec};
+use soroban_sdk::{self, symbol_short, Address, Env, Vec};
 
 pub fn log_create_list_event(env: &Env, list: ListExternal) {
     env.events().publish(

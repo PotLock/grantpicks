@@ -7,14 +7,18 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-loam-sdk = { workspace = true, features = ["soroban-sdk-alloc"] }
-soroban-token-sdk = { workspace = true }
+soroban-sdk = { workspace = true }
+
 
 [dev-dependencies]
-loam-sdk = { workspace = true, features = ["soroban-sdk-testutils", "soroban-sdk-alloc"] }
+soroban-sdk = { workspace = true, features = ["testutils"] }
 
-[features]
-testutils = ["loam-sdk/soroban-sdk-testutils"]
-
-[package.metadata.loam]
-contract = true
+[profile.release]
+opt-level = "z"
+overflow-checks = true
+debug = 0
+strip = "symbols"
+debug-assertions = false
+panic = "abort"
+codegen-units = 1
+lto = true

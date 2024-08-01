@@ -1,4 +1,4 @@
-use loam_sdk::soroban_sdk::{Address, Env, Map, Vec};
+use soroban_sdk::{Address, Env, Map, Vec};
 
 use crate::{data_type::VotingResult, storage_key::ContractKey};
 
@@ -84,11 +84,4 @@ pub fn write_voting_count(env: &Env, round_id: u128, voting_count: &Map<u128, u1
 pub fn get_voting_count(env: &Env, round_id: u128, project_id: u128) -> u128 {
     let voting_count = read_voting_count(env, round_id);
     voting_count.get(project_id).unwrap_or(0)
-}
-
-pub fn increment_voting_count(env: &Env, round_id: u128, project_id: u128) {
-    let mut voting_count = read_voting_count(env, round_id);
-    let count = voting_count.get(project_id).unwrap_or(0);
-    voting_count.set(project_id, count + 1);
-    write_voting_count(env, round_id, &voting_count);
 }

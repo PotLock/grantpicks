@@ -1,14 +1,14 @@
 use crate::{
     admin_writer::is_admin,
     approval_writer::{is_project_approved, read_approved_projects},
-    data_type::{CreateRoundParams, RoundDetailInternal, UpdateRoundParams},
+    data_type::{CreateRoundParams, RoundDetail, UpdateRoundParams},
     external::ProjectRegistryClient,
     project_registry_writer::read_project_contract,
     utils::get_ledger_second_as_millis,
     voter_writer::{is_black_listed, is_white_listed},
     voting_writer::get_voting_state,
 };
-use loam_sdk::soroban_sdk::{Address, Env, String, Vec};
+use soroban_sdk::{Address, Env, String, Vec};
 
 pub fn validate_round_detail(round_detail: &CreateRoundParams) {
     assert!(
@@ -64,7 +64,7 @@ pub fn validate_round_detail_update(round_detail: &UpdateRoundParams) {
     );
 }
 
-pub fn validate_owner_or_admin(env: &Env, admin: &Address, round: &RoundDetailInternal) {
+pub fn validate_owner_or_admin(env: &Env, admin: &Address, round: &RoundDetail) {
     if round.owner != admin.clone() {
         assert!(
             is_admin(env, round.id, admin),
@@ -73,7 +73,7 @@ pub fn validate_owner_or_admin(env: &Env, admin: &Address, round: &RoundDetailIn
     }
 }
 
-pub fn validate_can_payout(env: &Env, round: &RoundDetailInternal) {
+pub fn validate_can_payout(env: &Env, round: &RoundDetail) {
     let current_time = get_ledger_second_as_millis(env);
     assert!(
         round.voting_start_ms <= current_time,
@@ -86,12 +86,12 @@ pub fn validate_can_payout(env: &Env, round: &RoundDetailInternal) {
     );
 }
 
-pub fn validate_vault_fund(round: &RoundDetailInternal) {
+pub fn validate_vault_fund(round: &RoundDetail) {
     let vault_fund = round.current_vault_balance;
     assert!(vault_fund > 0, "Vault fund must be greater than 0");
 }
 
-pub fn validate_voting_period(env: &Env, round: &RoundDetailInternal) {
+pub fn validate_voting_period(env: &Env, round: &RoundDetail) {
     let current_time = get_ledger_second_as_millis(env);
     assert!(
         current_time >= round.voting_start_ms,
@@ -103,7 +103,7 @@ pub fn validate_voting_period(env: &Env, round: &RoundDetailInternal) {
     );
 }
 
-pub fn validate_application_period(env: &Env, round: &RoundDetailInternal) {
+pub fn validate_application_period(env: &Env, round: &RoundDetail) {
     let current_time = get_ledger_second_as_millis(env);
     assert!(
         current_time >= round.application_start_ms.unwrap(),
@@ -115,7 +115,7 @@ pub fn validate_application_period(env: &Env, round: &RoundDetailInternal) {
     );
 }
 
-pub fn validate_voting_not_started(env: &Env, round: &RoundDetailInternal) {
+pub fn validate_voting_not_started(env: &Env, round: &RoundDetail) {
     let current_time = get_ledger_second_as_millis(env);
     assert!(
         current_time < round.voting_start_ms,
@@ -148,7 +148,7 @@ pub fn validate_project_to_approve(env: &Env, round_id: u128, project_ids: &Vec<
     });
 }
 
-pub fn validate_max_participants(env: &Env, round: &RoundDetailInternal, project_ids: &Vec<u128>) {
+pub fn validate_max_participants(env: &Env, round: &RoundDetail, project_ids: &Vec<u128>) {
     let approved_project = read_approved_projects(env, round.id);
     assert!(
         approved_project.len() + project_ids.len() <= round.max_participants,
@@ -157,7 +157,7 @@ pub fn validate_max_participants(env: &Env, round: &RoundDetailInternal, project
     );
 }
 
-pub fn validate_max_participant(env: &Env, round: &RoundDetailInternal) {
+pub fn validate_max_participant(env: &Env, round: &RoundDetail) {
     let approved_project = read_approved_projects(env, round.id);
     assert!(
         approved_project.len() < round.max_participants,

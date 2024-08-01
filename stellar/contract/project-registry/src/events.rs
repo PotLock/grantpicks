@@ -1,5 +1,5 @@
 use crate::data_type::Project;
-use loam_sdk::soroban_sdk::{self, symbol_short, Env};
+use soroban_sdk::{self, symbol_short, Env};
 
 pub fn log_create_project_event(env: &Env, project: Project) {
     env.events().publish(

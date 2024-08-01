@@ -1,8 +1,8 @@
 use crate::{
-    data_type::{PayoutInternal, PayoutsChallengeInternal},
+    data_type::{Payout, PayoutsChallenge},
     storage_key::ContractKey,
 };
-use loam_sdk::soroban_sdk::{Address, Env, Map, Vec};
+use soroban_sdk::{Address, Env, Map, Vec};
 
 pub fn read_payouts(env: &Env, round_id: u128) -> Vec<u32> {
     let key = ContractKey::Payouts(round_id);
@@ -47,7 +47,7 @@ pub fn increment_payout_id(env: &Env) -> u32 {
     payout_id
 }
 
-pub fn read_all_payouts(env: &Env) -> Map<u32, PayoutInternal> {
+pub fn read_all_payouts(env: &Env) -> Map<u32, Payout> {
     let key = ContractKey::PayoutInfo;
     match env.storage().persistent().get(&key) {
         Some(payouts) => payouts,
@@ -55,18 +55,18 @@ pub fn read_all_payouts(env: &Env) -> Map<u32, PayoutInternal> {
     }
 }
 
-pub fn write_all_payouts(env: &Env, payouts: &Map<u32, PayoutInternal>) {
+pub fn write_all_payouts(env: &Env, payouts: &Map<u32, Payout>) {
     let key = ContractKey::PayoutInfo;
     env.storage().persistent().set(&key, payouts);
 }
 
-pub fn write_payout_info(env: &Env, payout_id: u32, payout: &PayoutInternal) {
+pub fn write_payout_info(env: &Env, payout_id: u32, payout: &Payout) {
     let mut payouts = read_all_payouts(env);
     payouts.set(payout_id, payout.clone());
     write_all_payouts(env, &payouts);
 }
 
-pub fn read_payout_info(env: &Env, payout_id: u32) -> Option<PayoutInternal> {
+pub fn read_payout_info(env: &Env, payout_id: u32) -> Option<Payout> {
     let payouts = read_all_payouts(env);
     payouts.get(payout_id)
 }
@@ -113,7 +113,7 @@ pub fn clear_project_payout_ids(env: &Env, project_id: u128) {
     env.storage().persistent().set(&key, &project_payout_ids);
 }
 
-pub fn read_payout_challenges(env: &Env, round_id: u128) -> Map<Address, PayoutsChallengeInternal> {
+pub fn read_payout_challenges(env: &Env, round_id: u128) -> Map<Address, PayoutsChallenge> {
     let key = ContractKey::PayoutChallenges(round_id);
     match env.storage().persistent().get(&key) {
         Some(payouts) => payouts,
@@ -124,7 +124,7 @@ pub fn read_payout_challenges(env: &Env, round_id: u128) -> Map<Address, Payouts
 pub fn write_payout_challenges(
     env: &Env,
     round_id: u128,
-    payout_challenges: &Map<Address, PayoutsChallengeInternal>,
+    payout_challenges: &Map<Address, PayoutsChallenge>,
 ) {
     let key = ContractKey::PayoutChallenges(round_id);
     env.storage().persistent().set(&key, payout_challenges);
@@ -134,7 +134,7 @@ pub fn read_payout_challenge(
     env: &Env,
     round_id: u128,
     challenger_id: &Address,
-) -> Option<PayoutsChallengeInternal> {
+) -> Option<PayoutsChallenge> {
     let payout_challenges = read_payout_challenges(env, round_id);
     payout_challenges.get(challenger_id.clone())
 }
@@ -143,7 +143,7 @@ pub fn write_payout_challenge(
     env: &Env,
     round_id: u128,
     challenger_id: &Address,
-    payout: &PayoutsChallengeInternal,
+    payout: &PayoutsChallenge,
 ) {
     let mut payout_challenges = read_payout_challenges(env, round_id);
     payout_challenges.set(challenger_id.clone(), payout.clone());

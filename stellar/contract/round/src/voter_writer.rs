@@ -1,5 +1,5 @@
 use crate::storage_key::ContractKey;
-use loam_sdk::soroban_sdk::{Address, Env, Map};
+use soroban_sdk::{Address, Env, Map};
 
 pub fn read_voters(env: &Env, round_id: u128) -> Map<Address, bool> {
     let key = ContractKey::WhitelistAndBlacklist(round_id);

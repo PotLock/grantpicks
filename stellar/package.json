@@ -13,7 +13,7 @@
 		"contract:deploy-testnet": "bash deploy.testnet.sh",
 		"contract:clippy": "cargo clippy --  -D clippy::pedantic",
 		"contract:format": "cargo fmt",
-		"setup": "cargo install soroban-cli --debug --version 21.0.0-rc.1 --root node_modules/.bin && cargo install loam-cli --debug --root ./node_modules/.bin && cd node_modules/.bin && ln -s ./bin/* .",
+		"setup": "cargo install soroban-cli --debug --version 21.0.0-rc.1 --root node_modules/.bin",
 		"soroban:show-xlm": "soroban lab token id --asset native --network testnet"
 	}
 }

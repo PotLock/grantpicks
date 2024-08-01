@@ -1,4 +1,4 @@
-use loam_sdk::soroban_sdk::{self, contractclient, contracttype, Address, Env, String, Vec};
+use soroban_sdk::{self, contractclient, contracttype, Address, Env, String, Vec};
 
 #[contractclient(name = "ProjectRegistryClient")]
 pub trait ProjectRegistryTrait {

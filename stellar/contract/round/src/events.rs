@@ -1,35 +1,35 @@
-use crate::data_type::{RoundApplicationExternal, RoundDetailExternal, VotingResult};
-use loam_sdk::soroban_sdk::{self, symbol_short, Address, Env, Vec};
+use crate::data_type::{RoundApplication, RoundDetail, VotingResult};
+use soroban_sdk::{self, symbol_short, Address, Env, Vec};
 
-pub fn log_create_round(env: &Env, round_detail: RoundDetailExternal) {
+pub fn log_create_round(env: &Env, round_detail: RoundDetail) {
     env.events().publish(
         (symbol_short!("c_round"), env.current_contract_address()),
         round_detail,
     );
 }
 
-pub fn log_update_round(env: &Env, round_detail: RoundDetailExternal) {
+pub fn log_update_round(env: &Env, round_detail: RoundDetail) {
     env.events().publish(
         (symbol_short!("u_round"), env.current_contract_address()),
         round_detail,
     );
 }
 
-pub fn log_project_application(env: &Env, application: RoundApplicationExternal) {
+pub fn log_project_application(env: &Env, application: RoundApplication) {
     env.events().publish(
         (symbol_short!("c_app"), env.current_contract_address()),
         application,
     );
 }
 
-pub fn log_project_application_update(env: &Env, application: RoundApplicationExternal) {
+pub fn log_project_application_update(env: &Env, application: RoundApplication) {
     env.events().publish(
         (symbol_short!("u_app"), env.current_contract_address()),
         application,
     );
 }
 
-pub fn log_project_application_delete(env: &Env, application: RoundApplicationExternal) {
+pub fn log_project_application_delete(env: &Env, application: RoundApplication) {
     env.events().publish(
         (symbol_short!("d_app"), env.current_contract_address()),
         application,

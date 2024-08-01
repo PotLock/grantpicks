@@ -1,5 +1,5 @@
 #![no_std]
-pub(crate) use loam_sdk::soroban_sdk;
+pub(crate) use soroban_sdk;
 
 mod data_type;
 mod events;

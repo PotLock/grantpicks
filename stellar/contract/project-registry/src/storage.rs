@@ -1,4 +1,4 @@
-use loam_sdk::soroban_sdk::Env;
+use soroban_sdk::Env;
 
 use crate::storage_key::ContractKey;
 

@@ -1,6 +1,6 @@
-use loam_sdk::soroban_sdk::{Env, Map, Vec};
+use soroban_sdk::{Env, Map, Vec};
 
-use crate::{data_type::DepositInternal, storage_key::ContractKey};
+use crate::{data_type::Deposit, storage_key::ContractKey};
 
 pub fn read_deposit_id(env: &Env) -> u128 {
     let key = &ContractKey::NextDepositId;
@@ -19,12 +19,12 @@ pub fn increment_deposit_id(env: &Env) -> u128 {
     incremented_deposit_id
 }
 
-pub fn write_deposit_info(env: &Env, deposit_info: &Map<u128, DepositInternal>) {
+pub fn write_deposit_info(env: &Env, deposit_info: &Map<u128, Deposit>) {
     let key = &ContractKey::DepositInfo;
     env.storage().persistent().set(key, deposit_info);
 }
 
-pub fn read_deposit_info(env: &Env) -> Map<u128, DepositInternal> {
+pub fn read_deposit_info(env: &Env) -> Map<u128, Deposit> {
     let key = &ContractKey::DepositInfo;
     match env.storage().persistent().get(key) {
         Some(deposit_info) => deposit_info,
@@ -32,13 +32,13 @@ pub fn read_deposit_info(env: &Env) -> Map<u128, DepositInternal> {
     }
 }
 
-pub fn write_deposit(env: &Env, deposit_id: u128, deposit: &DepositInternal) {
+pub fn write_deposit(env: &Env, deposit_id: u128, deposit: &Deposit) {
     let mut deposit_info = read_deposit_info(env);
     deposit_info.set(deposit_id, deposit.clone());
     write_deposit_info(env, &deposit_info);
 }
 
-pub fn read_deposit(env: &Env, deposit_id: u128) -> Option<DepositInternal> {
+pub fn read_deposit(env: &Env, deposit_id: u128) -> Option<Deposit> {
     let deposit_info = read_deposit_info(env);
     deposit_info.get(deposit_id)
 }

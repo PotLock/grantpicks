@@ -1,5 +1,5 @@
 #![cfg(test)]
-use loam_sdk::soroban_sdk::Vec;
+use soroban_sdk::Vec;
 
 use crate::data_type::{
     ProjectContact, ProjectContract, ProjectFundingHistory, ProjectRepository, ProjectStatus,

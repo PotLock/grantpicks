@@ -3,7 +3,7 @@ use crate::{
     data_type::{Project, ProjectParams, UpdateProjectParams},
     project_writer::is_applied,
 };
-use loam_sdk::soroban_sdk::{Address, Env};
+use soroban_sdk::{Address, Env};
 
 pub fn validate_application(project_params: &ProjectParams) {
     assert!(!project_params.name.is_empty(), "name is required");

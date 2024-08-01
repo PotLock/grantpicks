@@ -1,5 +1,5 @@
 use crate::storage_key::ContractKey;
-use loam_sdk::soroban_sdk::{Address, Env};
+use soroban_sdk::{Address, Env};
 
 pub fn write_factory_owner(env: &Env, owner: &Address) {
     env.storage()

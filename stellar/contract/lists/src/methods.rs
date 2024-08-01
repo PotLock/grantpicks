@@ -1,4 +1,4 @@
-use loam_sdk::soroban_sdk::{Address, BytesN, Env, String, Vec};
+use soroban_sdk::{Address, BytesN, Env, String, Vec};
 
 use crate::data_type::{ListExternal, RegistrationExternal, RegistrationInput, RegistrationStatus};
 

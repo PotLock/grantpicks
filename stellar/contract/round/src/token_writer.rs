@@ -1,5 +1,5 @@
 use crate::storage_key::ContractKey;
-use loam_sdk::soroban_sdk::{Address, Env};
+use soroban_sdk::{Address, Env};
 
 pub fn write_token_address(env: &Env, token_address: &Address) {
     env.storage()

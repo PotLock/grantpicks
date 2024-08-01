@@ -1,4 +1,4 @@
-use loam_sdk::soroban_sdk::{self, contracttype, Address, String, Vec};
+use soroban_sdk::{self, contracttype, Address, String, Vec};
 
 #[contracttype]
 #[derive(Debug, Clone, PartialEq)]

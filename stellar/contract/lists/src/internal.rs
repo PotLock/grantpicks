@@ -1,4 +1,4 @@
-use loam_sdk::soroban_sdk::{self, contract, contractimpl, Address, BytesN, Env, Map, String, Vec};
+use soroban_sdk::{self, contract, contractimpl, Address, BytesN, Env, Map, String, Vec};
 
 use crate::{
     data_type::{

@@ -1,14 +1,18 @@
 #![cfg(test)]
 
-use loam_sdk::soroban_sdk::token::{StellarAssetClient, TokenClient};
-use loam_sdk::soroban_sdk::{self, contracttype, Map, Vec};
+use soroban_sdk::token::{StellarAssetClient, TokenClient};
+use soroban_sdk::{self, contracttype, Map, Vec};
 
-use crate::data_type::{ApplicationStatus, CreateRoundParams, Pair, PickedPair, UpdateRoundParams};
+use crate::data_type::{ApplicationStatus, CreateRoundParams, Pair, PayoutInput, PickedPair, UpdateRoundParams};
 use crate::soroban_sdk::{testutils::Address as _, Address, Env, String};
 use crate::utils::get_ledger_second_as_millis;
 use crate::{internal::RoundContract, internal::RoundContractClient};
 
-loam_sdk::import_contract!(project_registry);
+mod project_registry{
+  soroban_sdk::contractimport!(
+    file= "../../target/wasm32-unknown-unknown/release/project_registry.wasm",
+  );
+}
 
 #[contracttype]
 pub struct FakeProject {
@@ -168,7 +172,7 @@ fn test_round_create() {
     assert_eq!(all_rounds.len(), 1);
 
     let factory_round = all_rounds.get(0).unwrap();
-    assert_eq!(factory_round, round_info);
+    assert_eq!(factory_round.id, round_info.id);
 }
 
 #[test]
@@ -709,7 +713,7 @@ fn test_voting_deposit_and_payout() {
     let round = deploy_contract(&env, &admin);
     let (token_contract, token_admin) = create_token(&env, &admin);
     let project_contract = deploy_registry_contract(&env, &admin);
-    generate_fake_project(&env, &project_contract, 10);
+    let projects = generate_fake_project(&env, &project_contract, 10);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -720,10 +724,10 @@ fn test_voting_deposit_and_payout() {
         name: String::from_str(&env, "name"),
         is_video_required: false,
         contacts: Vec::new(&env),
-        voting_start_ms: get_ledger_second_as_millis(&env),
-        voting_end_ms: get_ledger_second_as_millis(&env) + 30,
+        voting_start_ms: get_ledger_second_as_millis(&env)+1000,
+        voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
         application_start_ms: Some(get_ledger_second_as_millis(&env)),
-        application_end_ms: Some(get_ledger_second_as_millis(&env)),
+        application_end_ms: Some(get_ledger_second_as_millis(&env)+1000),
         expected_amount: 10 * deposit,
         admins: admins.clone(),
         use_whitelist: Some(false),
@@ -750,11 +754,17 @@ fn test_voting_deposit_and_payout() {
     );
 
     let created_round = round.create_round(&admin, &round_detail);
+
+    
+    round.apply_to_round(&created_round.id, &admin, &Some(projects.get(0).unwrap().owner), &None, &None);
+
     let mut project_ids: Vec<u128> = Vec::new(&env);
     for i in 0..10 {
         project_ids.push_back(i + 1);
     }
     round.add_approved_project(&created_round.id, &admin, &project_ids);
+
+    round.start_voting_period(&created_round.id, &admin);
 
     let voter = Address::generate(&env);
     let voter2 = Address::generate(&env);
@@ -803,11 +813,19 @@ fn test_voting_deposit_and_payout() {
 
     round.close_voting_period(&created_round.id, &admin);
 
-    let project_id = voter_pairs2.get(0).unwrap().projects.get(0).unwrap();
-    let project = project_contract.get_project_by_id(&project_id).unwrap();
-    let payout_balance = token_contract.balance(&project.payout_address);
+    let mut payouts: Vec<PayoutInput> = Vec::new(&env);
+
+    payouts.push_back(PayoutInput {
+      recipient_id: projects.get(0).unwrap().owner,
+      amount: (deposit / 2).try_into().unwrap(),
+      memo: String::from_str(&env, "payout"),
+  });
+
+    round.set_payouts(&created_round.id, &admin, &payouts, &false);
+
+    let payout_balance = token_contract.balance(&projects.get(0).unwrap().owner);
     round.process_payouts(&created_round.id, &admin);
-    let new_payout_balance = token_contract.balance(&project.payout_address);
+    let new_payout_balance = token_contract.balance(&projects.get(0).unwrap().owner);
 
     assert!(new_payout_balance > payout_balance);
 

@@ -1,4 +1,4 @@
-use loam_sdk::soroban_sdk::{Env, Vec};
+use soroban_sdk::{Env, Vec};
 
 use crate::{
     approval_writer::read_approved_projects,

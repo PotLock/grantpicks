@@ -1,4 +1,2 @@
-loam build --package lists
-loam build --package project-registry
-loam build --package round
-# loam build --package round-factory
+ cargo build --target=wasm32-unknown-unknown --release
+ wasm-opt target/wasm32-unknown-unknown/release/round.wasm  -Oz -o target/wasm32-unknown-unknown/release/round_opt.wasm

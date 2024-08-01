@@ -1,4 +1,4 @@
-use loam_sdk::soroban_sdk::{Address, Env, Map, Vec};
+use soroban_sdk::{Address, Env, Map, Vec};
 
 use crate::{data_type::RegistrationInternal, storage_key::ContractKey};
 

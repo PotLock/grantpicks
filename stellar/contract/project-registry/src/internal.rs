@@ -1,4 +1,4 @@
-use loam_sdk::soroban_sdk::BytesN;
+use soroban_sdk::BytesN;
 
 use crate::admin::{read_contract_owner, write_contract_owner};
 use crate::data_type::{Project, ProjectParams, ProjectStatus, UpdateProjectParams};

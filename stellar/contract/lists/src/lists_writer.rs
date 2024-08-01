@@ -1,5 +1,5 @@
 use crate::{data_type::ListInternal, storage_key::ContractKey};
-use loam_sdk::soroban_sdk::{Address, Env, Map, Vec};
+use soroban_sdk::{Address, Env, Map, Vec};
 
 pub fn read_lists_number(env: &Env) -> u128 {
     let key = ContractKey::ListsNumber;

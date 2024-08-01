@@ -1,5 +1,5 @@
 #![no_std]
-pub(crate) use loam_sdk::soroban_sdk;
+pub(crate) use soroban_sdk;
 
 mod admin_writer;
 mod application_writer;
@@ -26,6 +26,6 @@ mod validation;
 mod voter_writer;
 mod voting_writer;
 
-// mod test;
+mod test;
 
 pub use crate::internal::RoundContract;

@@ -1,4 +1,4 @@
-use loam_sdk::soroban_sdk::{Address, Env, String};
+use soroban_sdk::{Address, Env, String};
 
 use crate::{lists_writer::read_lists_number, upvotes_writer::read_list_upvotes};
 

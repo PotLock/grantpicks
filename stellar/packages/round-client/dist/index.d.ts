@@ -1,4 +1,3 @@
-/// <reference types="node" resolution-mode="require"/>
 import { Buffer } from "buffer";
 import { AssembledTransaction, Client as ContractClient, ClientOptions as ContractClientOptions } from '@stellar/stellar-sdk/contract';
 import type { u32, u64, u128, i128, Option } from '@stellar/stellar-sdk/contract';
@@ -8,7 +7,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CDSKTD7GO6KMPVM6RGOPDAN3DAEGBBJT2IDKHFKWENPWB5GAIRSB2STC";
+        readonly contractId: "CBCQSWY5QP43OM4OFEJIQMFFTAJUSNENSK5ZBKSQ2D3HD46A3NR5TBHV";
     };
 };
 export type ApplicationStatus = {
@@ -333,8 +332,8 @@ export interface Client {
     /**
      * Construct and simulate a get_rounds transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    get_rounds: ({ skip, limit }: {
-        skip: Option<u64>;
+    get_rounds: ({ from_index, limit }: {
+        from_index: Option<u64>;
         limit: Option<u64>;
     }, options?: {
         /**
@@ -408,11 +407,11 @@ export interface Client {
     /**
      * Construct and simulate a change_voting_period transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    change_voting_period: ({ round_id, caller, round_start_ms, round_end_ms }: {
+    change_voting_period: ({ round_id, caller, start_ms, end_ms }: {
         round_id: u128;
         caller: string;
-        round_start_ms: u64;
-        round_end_ms: u64;
+        start_ms: u64;
+        end_ms: u64;
     }, options?: {
         /**
          * The fee to pay for the transaction. Default: BASE_FEE
@@ -430,11 +429,11 @@ export interface Client {
     /**
      * Construct and simulate a change_application_period transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    change_application_period: ({ round_id, caller, round_application_start_ms, round_application_end_ms }: {
+    change_application_period: ({ round_id, caller, start_ms, end_ms }: {
         round_id: u128;
         caller: string;
-        round_application_start_ms: u64;
-        round_application_end_ms: u64;
+        start_ms: u64;
+        end_ms: u64;
     }, options?: {
         /**
          * The fee to pay for the transaction. Default: BASE_FEE
@@ -880,9 +879,9 @@ export interface Client {
     /**
      * Construct and simulate a get_applications_for_round transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    get_applications_for_round: ({ round_id, skip, limit }: {
+    get_applications_for_round: ({ round_id, from_index, limit }: {
         round_id: u128;
-        skip: Option<u64>;
+        from_index: Option<u64>;
         limit: Option<u64>;
     }, options?: {
         /**

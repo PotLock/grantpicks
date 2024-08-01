@@ -193,22 +193,22 @@ impl IsRound for RoundContract {
         env: &Env,
         round_id: u128,
         caller: Address,
-        round_start_ms: u64,
-        round_end_ms: u64,
+        start_ms: u64,
+        end_ms: u64,
     ) {
         caller.require_auth();
 
         assert!(
-            round_start_ms < round_end_ms,
-            "Round start time must be less than round end time"
+          start_ms < end_ms,
+            "Voting start time must be less than voting end time"
         );
 
         let mut round = read_round_info(env, round_id);
 
         validate_owner_or_admin(env, &caller, &round);
 
-        round.voting_start_ms = round_start_ms;
-        round.voting_end_ms = round_end_ms;
+        round.voting_start_ms = start_ms;
+        round.voting_end_ms = end_ms;
 
         write_round_info(env, round_id, &round);
         extend_instance(env);
@@ -220,13 +220,13 @@ impl IsRound for RoundContract {
         env: &Env,
         round_id: u128,
         caller: Address,
-        round_application_start_ms: u64,
-        round_application_end_ms: u64,
+        start_ms: u64,
+        end_ms: u64,
     ) {
         caller.require_auth();
 
         assert!(
-            round_application_start_ms < round_application_end_ms,
+            start_ms < end_ms,
             "Round application start time must be less than round application end time"
         );
 
@@ -234,8 +234,8 @@ impl IsRound for RoundContract {
 
         validate_owner_or_admin(env, &caller, &round);
 
-        round.application_start_ms = Some(round_application_start_ms);
-        round.application_end_ms = Some(round_application_end_ms);
+        round.application_start_ms = Some(start_ms);
+        round.application_end_ms = Some(end_ms);
 
         write_round_info(env, round_id, &round);
         extend_instance(env);

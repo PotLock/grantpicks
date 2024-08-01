@@ -10,15 +10,15 @@ pub trait IsRound {
     fn change_voting_period(env: &Env,
         round_id: u128,
         caller: Address,
-        round_start_time: u64,
-        round_end_time: u64,
+        start_ms: u64,
+        end_ms: u64,
     );
     fn change_application_period(
         env: &Env,
         round_id: u128,
         caller: Address,
-        round_application_start_time: u64,
-        round_application_end_time: u64,
+        start_ms: u64,
+        end_ms: u64,
     );
     fn change_number_of_votes(env: &Env, round_id: u128, caller: Address, num_picks_per_voter: u32);
     fn change_expected_amount(env: &Env, round_id: u128, caller: Address, amount: u128);

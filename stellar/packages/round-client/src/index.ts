@@ -33,7 +33,7 @@ if (typeof window !== 'undefined') {
 export const networks = {
   testnet: {
     networkPassphrase: "Test SDF Network ; September 2015",
-    contractId: "CDSKTD7GO6KMPVM6RGOPDAN3DAEGBBJT2IDKHFKWENPWB5GAIRSB2STC",
+    contractId: "CBCQSWY5QP43OM4OFEJIQMFFTAJUSNENSK5ZBKSQ2D3HD46A3NR5TBHV",
   }
 } as const
 
@@ -317,7 +317,7 @@ export interface Client {
   /**
    * Construct and simulate a get_rounds transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
    */
-  get_rounds: ({skip, limit}: {skip: Option<u64>, limit: Option<u64>}, options?: {
+  get_rounds: ({from_index, limit}: {from_index: Option<u64>, limit: Option<u64>}, options?: {
     /**
      * The fee to pay for the transaction. Default: BASE_FEE
      */
@@ -397,7 +397,7 @@ export interface Client {
   /**
    * Construct and simulate a change_voting_period transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
    */
-  change_voting_period: ({round_id, caller, round_start_ms, round_end_ms}: {round_id: u128, caller: string, round_start_ms: u64, round_end_ms: u64}, options?: {
+  change_voting_period: ({round_id, caller, start_ms, end_ms}: {round_id: u128, caller: string, start_ms: u64, end_ms: u64}, options?: {
     /**
      * The fee to pay for the transaction. Default: BASE_FEE
      */
@@ -417,7 +417,7 @@ export interface Client {
   /**
    * Construct and simulate a change_application_period transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
    */
-  change_application_period: ({round_id, caller, round_application_start_ms, round_application_end_ms}: {round_id: u128, caller: string, round_application_start_ms: u64, round_application_end_ms: u64}, options?: {
+  change_application_period: ({round_id, caller, start_ms, end_ms}: {round_id: u128, caller: string, start_ms: u64, end_ms: u64}, options?: {
     /**
      * The fee to pay for the transaction. Default: BASE_FEE
      */
@@ -857,7 +857,7 @@ export interface Client {
   /**
    * Construct and simulate a get_applications_for_round transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
    */
-  get_applications_for_round: ({round_id, skip, limit}: {round_id: u128, skip: Option<u64>, limit: Option<u64>}, options?: {
+  get_applications_for_round: ({round_id, from_index, limit}: {round_id: u128, from_index: Option<u64>, limit: Option<u64>}, options?: {
     /**
      * The fee to pay for the transaction. Default: BASE_FEE
      */
@@ -1583,12 +1583,12 @@ export class Client extends ContractClient {
         "AAAAAQAAAAAAAAAAAAAAFVByb2plY3RGdW5kaW5nSGlzdG9yeQAAAAAAAAUAAAAAAAAABmFtb3VudAAAAAAACgAAAAAAAAALZGVub21pYXRpb24AAAAAEAAAAAAAAAALZGVzY3JpcHRpb24AAAAAEAAAAAAAAAAJZnVuZGVkX21zAAAAAAAABgAAAAAAAAAGc291cmNlAAAAAAAQ",
         "AAAAAAAAAAAAAAAKaW5pdGlhbGl6ZQAAAAAABQAAAAAAAAAGY2FsbGVyAAAAAAATAAAAAAAAAA10b2tlbl9hZGRyZXNzAAAAAAAAEwAAAAAAAAAQcmVnaXN0cnlfYWRkcmVzcwAAABMAAAAAAAAAEGZlZV9iYXNpc19wb2ludHMAAAPoAAAABAAAAAAAAAALZmVlX2FkZHJlc3MAAAAD6AAAABMAAAAA",
         "AAAAAAAAAAAAAAAMY3JlYXRlX3JvdW5kAAAAAgAAAAAAAAAGY2FsbGVyAAAAAAATAAAAAAAAAAxyb3VuZF9kZXRhaWwAAAfQAAAAEUNyZWF0ZVJvdW5kUGFyYW1zAAAAAAAAAQAAB9AAAAALUm91bmREZXRhaWwA",
-        "AAAAAAAAAAAAAAAKZ2V0X3JvdW5kcwAAAAAAAgAAAAAAAAAEc2tpcAAAA+gAAAAGAAAAAAAAAAVsaW1pdAAAAAAAA+gAAAAGAAAAAQAAA+oAAAfQAAAAC1JvdW5kRGV0YWlsAA==",
+        "AAAAAAAAAAAAAAAKZ2V0X3JvdW5kcwAAAAAAAgAAAAAAAAAKZnJvbV9pbmRleAAAAAAD6AAAAAYAAAAAAAAABWxpbWl0AAAAAAAD6AAAAAYAAAABAAAD6gAAB9AAAAALUm91bmREZXRhaWwA",
         "AAAAAAAAAAAAAAAHdXBncmFkZQAAAAABAAAAAAAAAA1uZXdfd2FzbV9oYXNoAAAAAAAD7gAAACAAAAAA",
         "AAAAAAAAAAAAAAASdHJhbnNmZXJfb3duZXJzaGlwAAAAAAABAAAAAAAAAAluZXdfb3duZXIAAAAAAAATAAAAAA==",
         "AAAAAAAAAAAAAAAKZ2V0X2NvbmZpZwAAAAAAAAAAAAEAAAfQAAAABkNvbmZpZwAA",
-        "AAAAAAAAAAAAAAAUY2hhbmdlX3ZvdGluZ19wZXJpb2QAAAAEAAAAAAAAAAhyb3VuZF9pZAAAAAoAAAAAAAAABmNhbGxlcgAAAAAAEwAAAAAAAAAOcm91bmRfc3RhcnRfbXMAAAAAAAYAAAAAAAAADHJvdW5kX2VuZF9tcwAAAAYAAAAA",
-        "AAAAAAAAAAAAAAAZY2hhbmdlX2FwcGxpY2F0aW9uX3BlcmlvZAAAAAAAAAQAAAAAAAAACHJvdW5kX2lkAAAACgAAAAAAAAAGY2FsbGVyAAAAAAATAAAAAAAAABpyb3VuZF9hcHBsaWNhdGlvbl9zdGFydF9tcwAAAAAABgAAAAAAAAAYcm91bmRfYXBwbGljYXRpb25fZW5kX21zAAAABgAAAAA=",
+        "AAAAAAAAAAAAAAAUY2hhbmdlX3ZvdGluZ19wZXJpb2QAAAAEAAAAAAAAAAhyb3VuZF9pZAAAAAoAAAAAAAAABmNhbGxlcgAAAAAAEwAAAAAAAAAIc3RhcnRfbXMAAAAGAAAAAAAAAAZlbmRfbXMAAAAAAAYAAAAA",
+        "AAAAAAAAAAAAAAAZY2hhbmdlX2FwcGxpY2F0aW9uX3BlcmlvZAAAAAAAAAQAAAAAAAAACHJvdW5kX2lkAAAACgAAAAAAAAAGY2FsbGVyAAAAAAATAAAAAAAAAAhzdGFydF9tcwAAAAYAAAAAAAAABmVuZF9tcwAAAAAABgAAAAA=",
         "AAAAAAAAAAAAAAAWY2hhbmdlX2V4cGVjdGVkX2Ftb3VudAAAAAAAAwAAAAAAAAAIcm91bmRfaWQAAAAKAAAAAAAAAAZjYWxsZXIAAAAAABMAAAAAAAAABmFtb3VudAAAAAAACgAAAAA=",
         "AAAAAAAAAAAAAAATY2xvc2Vfdm90aW5nX3BlcmlvZAAAAAACAAAAAAAAAAhyb3VuZF9pZAAAAAoAAAAAAAAABmNhbGxlcgAAAAAAEwAAAAEAAAfQAAAAC1JvdW5kRGV0YWlsAA==",
         "AAAAAAAAAAAAAAATc3RhcnRfdm90aW5nX3BlcmlvZAAAAAACAAAAAAAAAAhyb3VuZF9pZAAAAAoAAAAAAAAABmNhbGxlcgAAAAAAEwAAAAEAAAfQAAAAC1JvdW5kRGV0YWlsAA==",
@@ -1610,7 +1610,7 @@ export class Client extends ContractClient {
         "AAAAAAAAAAAAAAAJZ2V0X3JvdW5kAAAAAAAAAQAAAAAAAAAIcm91bmRfaWQAAAAKAAAAAQAAB9AAAAALUm91bmREZXRhaWwA",
         "AAAAAAAAAAAAAAAOaXNfdm90aW5nX2xpdmUAAAAAAAEAAAAAAAAACHJvdW5kX2lkAAAACgAAAAEAAAAB",
         "AAAAAAAAAAAAAAATaXNfYXBwbGljYXRpb25fbGl2ZQAAAAABAAAAAAAAAAhyb3VuZF9pZAAAAAoAAAABAAAAAQ==",
-        "AAAAAAAAAAAAAAAaZ2V0X2FwcGxpY2F0aW9uc19mb3Jfcm91bmQAAAAAAAMAAAAAAAAACHJvdW5kX2lkAAAACgAAAAAAAAAEc2tpcAAAA+gAAAAGAAAAAAAAAAVsaW1pdAAAAAAAA+gAAAAGAAAAAQAAA+oAAAfQAAAAEFJvdW5kQXBwbGljYXRpb24=",
+        "AAAAAAAAAAAAAAAaZ2V0X2FwcGxpY2F0aW9uc19mb3Jfcm91bmQAAAAAAAMAAAAAAAAACHJvdW5kX2lkAAAACgAAAAAAAAAKZnJvbV9pbmRleAAAAAAD6AAAAAYAAAAAAAAABWxpbWl0AAAAAAAD6AAAAAYAAAABAAAD6gAAB9AAAAAQUm91bmRBcHBsaWNhdGlvbg==",
         "AAAAAAAAAAAAAAAPZ2V0X2FwcGxpY2F0aW9uAAAAAAIAAAAAAAAACHJvdW5kX2lkAAAACgAAAAAAAAAJYXBwbGljYW50AAAAAAAAEwAAAAEAAAPoAAAH0AAAABBSb3VuZEFwcGxpY2F0aW9u",
         "AAAAAAAAAAAAAAAOaXNfcGF5b3V0X2RvbmUAAAAAAAEAAAAAAAAACHJvdW5kX2lkAAAACgAAAAEAAAAB",
         "AAAAAAAAAAAAAAANdXNlcl9oYXNfdm90ZQAAAAAAAAIAAAAAAAAACHJvdW5kX2lkAAAACgAAAAAAAAAFdm90ZXIAAAAAAAATAAAAAQAAAAE=",

@@ -9,7 +9,7 @@ import {
 	u32,
 	u64,
 } from '@stellar/stellar-sdk/contract'
-import { Contact, RoundDetailExternal } from 'round-client'
+import { Contact, RoundDetail } from 'round-client'
 
 interface GetRoundsParams {
 	skip: number
@@ -38,9 +38,15 @@ export interface CreateRoundContact {
 export interface CreateRoundParams {
 	admins: string[]
 	allow_applications: boolean
+	allow_remaining_dist: boolean
 	application_end_ms: u64
 	application_start_ms: u64
+	compliance_end_ms: u64
+	compliance_period_ms: u64
+	compliance_req_desc: string
 	contacts: Contact[]
+	cooldown_end_ms: u64
+	cooldown_period_ms: u64
 	description: string
 	expected_amount: u128
 	is_video_required: boolean
@@ -48,6 +54,8 @@ export interface CreateRoundParams {
 	name: string
 	num_picks_per_voter: u32
 	owner: string
+	referrer_fee_basis_points: u32
+	remaining_dist_address: string
 	use_whitelist: boolean
 	voting_end_ms: u64
 	voting_start_ms: u64
@@ -71,8 +79,10 @@ export interface UpdateRoundParams {
 
 export interface DepositFundRoundParams {
 	round_id: u128
-	actor: string
+	caller: string
 	amount: u128
+	memo?: string
+	referrer_id: string
 }
 
 export const getRounds: (
@@ -86,7 +96,7 @@ export const getRounds: (
 	let limit = params.limit ? params.limit : 10
 
 	let rounds = await contract.round_contract.get_rounds({
-		skip: BigInt(skip),
+		from_index: BigInt(skip),
 		limit: BigInt(limit),
 	})
 	return rounds.result
@@ -117,7 +127,7 @@ export const getRoundApplications: (
 
 	let rounds = await contract.round_contract.get_applications_for_round({
 		round_id: BigInt(params.round_id),
-		skip: BigInt(skip),
+		from_index: BigInt(skip),
 		limit: BigInt(limit),
 	})
 	return rounds.result
@@ -140,7 +150,7 @@ export const createRound: (
 	caller: string,
 	params: CreateRoundParams,
 	contract: Contracts,
-) => Promise<AssembledTransaction<RoundDetailExternal>> = async (
+) => Promise<AssembledTransaction<RoundDetail>> = async (
 	caller: string,
 	params: CreateRoundParams,
 	contract: Contracts,
@@ -157,7 +167,7 @@ export const editRound: (
 	round_id: bigint,
 	params: UpdateRoundParams,
 	contract: Contracts,
-) => Promise<AssembledTransaction<RoundDetailExternal>> = async (
+) => Promise<AssembledTransaction<RoundDetail>> = async (
 	caller: string,
 	round_id: bigint,
 	params: UpdateRoundParams,
@@ -173,14 +183,14 @@ export const editRound: (
 
 export const addAdminRound: (
 	round_id: bigint,
-	round_admin: string,
+	round_admin: string[],
 	contract: Contracts,
 ) => Promise<AssembledTransaction<null>> = async (
 	round_id: bigint,
-	round_admin: string,
+	round_admin: string[],
 	contract: Contracts,
 ) => {
-	let round = await contract.round_contract.add_admin({
+	let round = await contract.round_contract.add_admins({
 		round_id,
 		round_admin,
 	})
@@ -213,10 +223,12 @@ export const depositFundRound: (
 	params: DepositFundRoundParams,
 	contract: Contracts,
 ) => {
-	let res = await contract.round_contract.deposit({
+	let res = await contract.round_contract.deposit_to_round({
 		round_id: params.round_id,
-		actor: params.actor,
+		caller: params.caller,
 		amount: params.amount,
+		memo: params.memo,
+		referrer_id: params.referrer_id,
 	})
 	return res
 }

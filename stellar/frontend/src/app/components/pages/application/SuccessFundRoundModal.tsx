@@ -6,6 +6,8 @@ import IconClose from '@/app/components/svgs/IconClose'
 import { IGetRoundsResponse } from '@/types/on-chain'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import { prettyTruncate } from '@/utils/helper'
+import Link from 'next/link'
+import IconExternalLink from '../../svgs/IconExternalLink'
 
 interface SuccessFundRoundModalProps extends BaseModalProps {
 	amount: string
@@ -54,10 +56,19 @@ const SuccessFundRoundModal = ({
 					<p className="text-xs font-normal text-grantpicks-black-600 mb-2">
 						Transaction ID
 					</p>
-					<div className="py-2 px-3 bg-grantpicks-black-50 flex items-center justify-center rounded-full">
+					<div className="py-2 px-3 bg-grantpicks-black-50 flex items-center justify-center space-x-2 rounded-full">
 						<p className="text-sm font-semibold text-grantpicks-black-950">
 							{prettyTruncate(txHash, 10)}
 						</p>
+						<Link
+							href={`https://stellar.expert/explorer/testnet/tx/${txHash}`}
+							target="_blank"
+						>
+							<IconExternalLink
+								size={24}
+								className="stroke-grantpicks-black-950"
+							/>
+						</Link>
 					</div>
 				</div>
 			</div>

@@ -60,6 +60,7 @@ import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
 import { useModalContext } from '@/app/providers/ModalProvider'
+import { IRoundPeriodData } from '@/types/round'
 
 const EditRoundPage = () => {
 	const router = useRouter()
@@ -104,6 +105,18 @@ const EditRoundPage = () => {
 		control,
 		name: 'admins',
 	})
+	const [cooldownPeriodData, setCooldownPeriodData] =
+		useState<IRoundPeriodData>({
+			selected: 'days',
+			isOpen: false,
+			end_ms: null,
+		})
+	const [compliancePeriodData, setCompliancePeriodData] =
+		useState<IRoundPeriodData>({
+			selected: 'days',
+			isOpen: false,
+			end_ms: null,
+		})
 
 	const onFetchAdmins = async () => {
 		let cmdWallet = new CMDWallet({
@@ -195,11 +208,10 @@ const EditRoundPage = () => {
 				setValue('description', resRoundInfo?.description)
 				setValue('vote_per_person', resRoundInfo?.num_picks_per_voter)
 				setValue('vote_per_person', resRoundInfo?.num_picks_per_voter)
-				if (resRoundInfo.contacts.length > 0) {
-					setValue('contact_type', resRoundInfo?.contacts[0].name)
-					setValue('contact_address', resRoundInfo?.contacts[0].value)
-				}
-				setValue('amount', formatStroopToXlm(resRoundInfo?.expected_amount))
+				setValue(
+					'amount',
+					formatStroopToXlm(resRoundInfo?.current_vault_balance),
+				)
 				setValue(
 					'expected_amount',
 					formatStroopToXlm(resRoundInfo?.expected_amount),
@@ -209,6 +221,53 @@ const EditRoundPage = () => {
 					stellarPrice
 				setExpectAmountUsd(`${calculation.toFixed(3)}`)
 				setValue('open_funding', true)
+				if (resRoundInfo.compliance_end_ms) {
+					setValue(
+						'allow_compliance',
+						resRoundInfo.compliance_end_ms ? true : false,
+					)
+					setValue(
+						'compliance_end_ms',
+						new Date(Number(resRoundInfo.compliance_end_ms)),
+					)
+					setValue(
+						'compliance_period_ms',
+						new Date(Number(resRoundInfo.compliance_period_ms)),
+					)
+					setValue('compliance_req_desc', resRoundInfo.compliance_req_desc)
+				}
+				if (resRoundInfo.cooldown_end_ms) {
+					setValue(
+						'allow_cooldown',
+						resRoundInfo.cooldown_end_ms ? true : false,
+					)
+					setValue(
+						'cooldown_end_ms',
+						new Date(Number(resRoundInfo.cooldown_end_ms)),
+					)
+					setValue(
+						'cooldown_period_ms',
+						new Date(Number(resRoundInfo.cooldown_period_ms)),
+					)
+				}
+				if (resRoundInfo.allow_remaining_dist) {
+					setValue(
+						'allow_remaining_dist',
+						resRoundInfo.allow_remaining_dist || false,
+					)
+					setValue(
+						'remaining_dist_address',
+						resRoundInfo.remaining_dist_address,
+					)
+				}
+				setValue(
+					'referrer_fee_basis_points',
+					resRoundInfo.referrer_fee_basis_points || 0,
+				)
+				if (resRoundInfo.contacts.length > 0) {
+					setValue('contact_type', resRoundInfo?.contacts[0].name)
+					setValue('contact_address', resRoundInfo?.contacts[0].value)
+				}
 				if (resRoundInfo.allow_applications) {
 					setValue('allow_application', true)
 					setValue('max_participants', resRoundInfo?.max_participants)

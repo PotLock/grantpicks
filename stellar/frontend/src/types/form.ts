@@ -78,6 +78,16 @@ export type CreateRoundData = {
 	voting_duration_end: Date | null
 	projects: IGetProjectsResponse[]
 	admins: IAdminCreateRound[]
+	allow_remaining_dist: boolean
+	allow_compliance: boolean
+	allow_cooldown: boolean
+	compliance_req_desc: string
+	compliance_end_ms: Date | null
+	compliance_period_ms: Date | null
+	cooldown_end_ms: Date | null
+	cooldown_period_ms: Date | null
+	remaining_dist_address: string
+	referrer_fee_basis_points: number
 }
 
 export type UpdateRoundData = {
@@ -98,6 +108,16 @@ export type UpdateRoundData = {
 	voting_duration_end: Date | null
 	projects: IGetProjectsResponse[]
 	admins: IAdminCreateRound[]
+	allow_remaining_dist: boolean
+	allow_compliance: boolean
+	allow_cooldown: boolean
+	compliance_req_desc: string
+	compliance_end_ms: Date | null
+	compliance_period_ms: Date | null
+	cooldown_end_ms: Date | null
+	cooldown_period_ms: Date | null
+	remaining_dist_address: string
+	referrer_fee_basis_points: number
 }
 
 export type CreateProjectStep1Data = {

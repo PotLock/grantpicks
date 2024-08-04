@@ -10,6 +10,8 @@ import {
 import { WalletSelectorModal } from '@near-wallet-selector/modal-ui'
 import { Dispatch, SetStateAction } from 'react'
 import { IGetRoundsResponse } from './on-chain'
+import { Livepeer } from 'livepeer'
+import { Project } from 'round-client'
 
 export interface IWalletContext {
 	connectedWallet: 'near' | 'stellar' | null
@@ -36,6 +38,11 @@ export interface ISuccessCreateRoundModalProps extends IModalContextProps {
 	txHash?: string
 }
 
+export interface ISuccessCreateProjectModalProps extends IModalContextProps {
+	createProjectRes: Project | undefined
+	txHash?: string
+}
+
 export interface ISuccessUpdateRoundModalProps extends IModalContextProps {
 	updateRoundRes: IGetRoundsResponse | undefined
 	txHash?: string
@@ -54,6 +61,9 @@ export interface IModalContext {
 	>
 	setSuccessUpdateRoundModalProps: Dispatch<
 		SetStateAction<ISuccessUpdateRoundModalProps>
+	>
+	setSuccessCreateProjectModalProps: Dispatch<
+		SetStateAction<ISuccessCreateProjectModalProps>
 	>
 	setSuccessFundRoundModalProps: Dispatch<
 		SetStateAction<ISuccessFundRoundModalProps>
@@ -98,6 +108,7 @@ export interface ICreateProjectFormContext {
 	step: number
 	setStep: Dispatch<SetStateAction<number>>
 	onClose: () => void
+	onProceedApply: () => Promise<void>
 }
 
 export interface IGlobalContext {
@@ -105,4 +116,5 @@ export interface IGlobalContext {
 	nearPrice: number
 	dismissPageLoading: () => void
 	openPageLoading: () => void
+	livepeer: Livepeer | null
 }

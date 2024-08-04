@@ -4,6 +4,7 @@ import React, { useContext, useState } from 'react'
 import { ModalContext } from '../contexts/ModalContext'
 import {
 	IModalContextProps,
+	ISuccessCreateProjectModalProps,
 	ISuccessCreateRoundModalProps,
 	ISuccessFundRoundModalProps,
 	ISuccessUpdateRoundModalProps,
@@ -13,12 +14,19 @@ import ApplyProjectModal from '../components/pages/application/create-apply-proj
 import CreateProjectFormMainModal from '../components/pages/application/create-apply-project/create-project-form/CreateProjectFormMainModal'
 import SuccessCreateRoundModal from '../components/pages/create-round/SuccessCreateRoundModal'
 import SuccessEditRoundModal from '../components/pages/application/edit-round/SuccessEditRoundModal'
+import SuccessCreateProjectModal from '../components/pages/application/create-apply-project/SuccessCreateProjectModal'
 
 const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 	const [successCreateRoundProps, setSuccessCreateRoundProps] =
 		useState<ISuccessCreateRoundModalProps>({
 			isOpen: false,
 			createRoundRes: undefined,
+			txHash: '',
+		})
+	const [successCreateProjectProps, setSuccessCreateProjectProps] =
+		useState<ISuccessCreateProjectModalProps>({
+			isOpen: false,
+			createProjectRes: undefined,
 			txHash: '',
 		})
 	const [successUpdateRoundProps, setSuccessUpdateRoundProps] =
@@ -50,6 +58,7 @@ const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 				setSuccessFundRoundModalProps: setSuccessFundRoundProps,
 				setSuccessCreateRoundModalProps: setSuccessCreateRoundProps,
 				setSuccessUpdateRoundModalProps: setSuccessUpdateRoundProps,
+				setSuccessCreateProjectModalProps: setSuccessCreateProjectProps,
 				successFundRoundModalProps: successFundRoundProps,
 				setApplyProjectInitProps,
 				setCreateProjectFormMainProps,
@@ -85,6 +94,17 @@ const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 				txHash={successFundRoundProps.txHash}
 				onClose={() =>
 					setSuccessFundRoundProps((prev) => ({
+						...prev,
+						isOpen: false,
+					}))
+				}
+			/>
+			<SuccessCreateProjectModal
+				isOpen={successCreateProjectProps.isOpen}
+				createProjectRes={successCreateProjectProps.createProjectRes}
+				txHash={successCreateProjectProps.txHash}
+				onClose={() =>
+					setSuccessCreateProjectProps((prev) => ({
 						...prev,
 						isOpen: false,
 					}))

@@ -15,9 +15,17 @@ import { YOUTUBE_URL_REGEX } from '@/constants/regex'
 import IconPlay from '@/app/components/svgs/IconPlay'
 import IconPause from '@/app/components/svgs/IconPause'
 import PreviousConfirmationModal from './PreviousConfirmationModal'
+import { useGlobalContext } from '@/app/providers/GlobalProvider'
+import { getSrc } from '@livepeer/react/external'
+import IconLoading from '@/app/components/svgs/IconLoading'
+import { GetAssetResponse } from 'livepeer/models/operations'
+import { requestUpload, retrieveAsset, uploadFile } from '@/services/upload'
+import * as tus from 'tus-js-client'
+import { Src } from '@livepeer/react'
 
 const CreateProjectStep5 = () => {
-	const { setStep } = useCreateProject()
+	const { setStep, onProceedApply } = useCreateProject()
+	const { livepeer } = useGlobalContext()
 	const [showPrevConfirm, setShowPrevConfirm] = useState<boolean>(false)
 	const {
 		handleSubmit,
@@ -31,6 +39,14 @@ const CreateProjectStep5 = () => {
 	const [isDirtyInput, setIsDirtyInput] = useState<boolean>(false)
 	const videoRef = useRef<HTMLVideoElement>(null)
 	const [videoPlayed, setVideoPlayed] = useState<boolean>(false)
+	const [playbackSrc, setPlaybackSrc] = useState<Src[] | null>(null)
+	const [loadingFlow, setLoadingFlow] = useState<
+		'Preparing' | 'Uploading' | 'Finishing' | null
+	>(null)
+	const [uploadResult, setUploadResult] = useState<
+		| { upload?: tus.Upload; uploadedUrl: string | null; percentage?: string }
+		| undefined
+	>(undefined)
 
 	const onDrop = useCallback(async (acceptedFiles: File[]) => {
 		if (acceptedFiles[0].size / 10 ** 6 > 25) {
@@ -39,10 +55,48 @@ const CreateProjectStep5 = () => {
 			})
 			return
 		}
+		setLoadingFlow('Preparing')
 		setAccFiles((prev) => [...prev, acceptedFiles[0]])
 		const objectUrl = URL.createObjectURL(acceptedFiles[0])
 		setAccFileUrls((prev) => [...prev, objectUrl])
-		setValue('video', { url: objectUrl, file: acceptedFiles[0] })
+		const resLivepeer = await requestUpload(livepeer, acceptedFiles[0].name)
+		await uploadFile(
+			acceptedFiles[0],
+			setUploadResult,
+			(percentage) => {
+				setLoadingFlow('Uploading')
+				//@ts-ignore
+				setUploadResult((prev) => ({ ...prev, percentage }))
+			},
+			async (uploadedUrl) => {
+				setUploadResult((prev) => ({
+					...prev,
+					uploadedUrl: uploadedUrl,
+					percentage: ``,
+				}))
+				let assetResult: GetAssetResponse | undefined = undefined
+				assetResult = await retrieveAsset(livepeer, resLivepeer)
+				const closePoolingAsset = setInterval(async () => {
+					setLoadingFlow('Finishing')
+					assetResult = await retrieveAsset(livepeer, resLivepeer)
+					if (assetResult?.asset?.status?.phase.includes('ready')) {
+						const playbackInfo = await livepeer?.playback.get(
+							assetResult.asset.playbackId as string,
+						)
+						const src = getSrc(playbackInfo?.playbackInfo)
+						setValue('video', {
+							url: src?.[0].src || '',
+							file: acceptedFiles[0],
+						})
+						setPlaybackSrc(src)
+						setLoadingFlow(null)
+						clearInterval(closePoolingAsset)
+						return
+					}
+				}, 1000)
+			},
+			resLivepeer,
+		)
 	}, [])
 
 	const { getRootProps, getInputProps } = useDropzone({
@@ -53,8 +107,8 @@ const CreateProjectStep5 = () => {
 		},
 	})
 
-	const onProceed = () => {
-		setStep(5)
+	const onProceed = async () => {
+		await onProceedApply()
 	}
 
 	return (
@@ -78,7 +132,18 @@ const CreateProjectStep5 = () => {
 					You’ve made it all the way here, add a 3min video to give more
 					insights about your project.{' '}
 				</p>
-				{accFiles.length === 0 ? (
+				{loadingFlow ? (
+					<div className="w-full aspect-video relative flex items-center justify-center">
+						<div className="flex flex-col items-center">
+							<IconLoading size={24} className="fill-grantpicks-black-900" />
+							<p className="text-sm font-normal text-grantpicks-black-950/80">
+								{loadingFlow}{' '}
+								{loadingFlow === 'Uploading' &&
+									`- ${uploadResult?.percentage || 0}%`}
+							</p>
+						</div>
+					</div>
+				) : accFiles.length === 0 ? (
 					<div className="bg-white rounded-xl p-4 md:p-6 border border-black/10">
 						<div
 							{...getRootProps()}
@@ -152,7 +217,7 @@ const CreateProjectStep5 = () => {
 						<div className="relative">
 							<video
 								ref={videoRef}
-								src={accFileUrls[0]}
+								src={playbackSrc?.[0].src || ''}
 								autoPlay={false}
 								controls={false}
 								className="w-[80%] mx-auto aspect-video"

@@ -47,8 +47,10 @@ const FundRoundModal = ({
 			const tx = await depositFundRound(
 				{
 					round_id: doc.id,
-					actor: stellarPubKey,
+					caller: stellarPubKey,
 					amount: BigInt(parseToStroop(amount)),
+					memo: '',
+					referrer_id: '',
 				},
 				contracts,
 			)
@@ -90,8 +92,8 @@ const FundRoundModal = ({
 				</div>
 				<div className="p-4 bg-grantpicks-alpha-50/5 rounded-xl mb-4 md:mb-6">
 					<p className="text-sm font-normal text-grantpicks-black-950">
-						We’ve raised XLM {formatStroopToXlm(doc.vault_balance)} and have
-						reached{' '}
+						We’ve raised XLM {formatStroopToXlm(doc.current_vault_balance)} and
+						have reached{' '}
 						<span className="font-semibold text-grantpicks-green-800">
 							80% of our expected funds.
 						</span>

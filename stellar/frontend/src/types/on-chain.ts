@@ -1,7 +1,7 @@
 import {
 	Horizon,
-	RoundApplicationExternal,
-	RoundDetailExternal,
+	RoundApplication,
+	RoundDetail,
 	SorobanRpc,
 } from 'round-client'
 
@@ -12,10 +12,9 @@ export type ApplicationStatus =
 	| { tag: 'Approved'; values: void }
 	| { tag: 'Rejected'; values: void }
 
-export interface IGetRoundsResponse extends RoundDetailExternal {}
+export interface IGetRoundsResponse extends RoundDetail {}
 
-export interface IGetRoundApplicationsResponse
-	extends RoundApplicationExternal {}
+export interface IGetRoundApplicationsResponse extends RoundApplication {}
 
 export enum ENetworkEnv {
 	'TESTNET' = 'testnet',

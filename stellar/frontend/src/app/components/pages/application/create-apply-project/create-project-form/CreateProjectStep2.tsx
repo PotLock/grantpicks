@@ -8,6 +8,7 @@ import { SubmitHandler, useForm } from 'react-hook-form'
 import { useCreateProject } from './CreateProjectFormMainModal'
 import IconCloseFilled from '@/app/components/svgs/IconCloseFilled'
 import PreviousConfirmationModal from './PreviousConfirmationModal'
+import { prettyTruncate } from '@/utils/helper'
 
 const CreateProjectStep2 = () => {
 	const [members, setMembers] = useState<string[]>([])
@@ -99,7 +100,7 @@ const CreateProjectStep2 = () => {
 								/>
 								<div className="bg-grantpicks-black-400 w-16 h-16 mb-2 rounded-full" />
 								<p className="text-base font-normal text-grantpicks-black-950">
-									{member}
+									{prettyTruncate(member, 10, 'address')}
 								</p>
 								<p className="text-xs font-normal text-grantpicks-black-600">
 									@abdul.near

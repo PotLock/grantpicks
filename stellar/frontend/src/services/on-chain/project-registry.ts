@@ -1,5 +1,10 @@
 import Contracts from '@/lib/contracts'
-import { Option, u128, u64 } from '@stellar/stellar-sdk/contract'
+import {
+	AssembledTransaction,
+	Option,
+	u128,
+	u64,
+} from '@stellar/stellar-sdk/contract'
 import { Project } from 'project-registry-client'
 
 interface GetProjectsParams {
@@ -9,6 +14,28 @@ interface GetProjectsParams {
 
 interface GetProjectParams {
 	project_id: bigint
+}
+
+export interface ProjectFundingHistory {
+	amount: u128
+	denomiation: string
+	description: string
+	funded_ms: u64
+	source: string
+}
+
+export interface ICreateProjectParams {
+	admins: string[]
+	contacts: ProjectContact[]
+	contracts: ProjectContract[]
+	fundings: ProjectFundingHistory[]
+	image_url: string
+	name: string
+	overview: string
+	payout_address: string
+	repositories: ProjectRepository[]
+	team_members: ProjectTeamMember[]
+	video_url: string
 }
 
 export interface ProjectContact {
@@ -67,4 +94,20 @@ export const getProject: (
 		project_id: params.project_id,
 	})
 	return round.result
+}
+
+export const createProject: (
+	applicant: string,
+	params: ICreateProjectParams,
+	contract: Contracts,
+) => Promise<AssembledTransaction<Project>> = async (
+	applicant: string,
+	params: ICreateProjectParams,
+	contract: Contracts,
+) => {
+	let project = await contract.project_contract.apply({
+		applicant,
+		project_params: params,
+	})
+	return project
 }

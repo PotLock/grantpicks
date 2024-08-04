@@ -10,6 +10,21 @@ import CreateProjectStep3 from './CreateProjectStep3'
 import CreateProjectStep4 from './CreateProjectStep4'
 import CreateProjectStep5 from './CreateProjectStep5'
 import { DEFAULT_CREATE_PROJECT_DATA } from '@/constants/project'
+import toast from 'react-hot-toast'
+import { toastOptions } from '@/constants/style'
+import { useGlobalContext } from '@/app/providers/GlobalProvider'
+import {
+	createProject,
+	ICreateProjectParams,
+	IGetProjectsResponse,
+} from '@/services/on-chain/project-registry'
+import { useWallet } from '@/app/providers/WalletProvider'
+import CMDWallet from '@/lib/wallet'
+import Contracts from '@/lib/contracts'
+import { Network } from '@/types/on-chain'
+import { parseToStroop } from '@/utils/helper'
+import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
+import { useModalContext } from '@/app/providers/ModalProvider'
 
 const CreateProjectFormContext = createContext<ICreateProjectFormContext>({
 	data: DEFAULT_CREATE_PROJECT_DATA,
@@ -17,13 +32,88 @@ const CreateProjectFormContext = createContext<ICreateProjectFormContext>({
 	step: 1,
 	setStep: () => {},
 	onClose: () => {},
+	onProceedApply: () => Promise.resolve(),
 })
 
 const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 	const [dataForm, setDataForm] = useState<ICreateProjectForm>(
 		DEFAULT_CREATE_PROJECT_DATA,
 	)
+	const { dismissPageLoading, openPageLoading } = useGlobalContext()
 	const [step, setStep] = useState<number>(1)
+	const { stellarPubKey, stellarKit } = useWallet()
+	const { setSuccessCreateProjectModalProps } = useModalContext()
+
+	const onProceedApply = async () => {
+		try {
+			openPageLoading()
+			let cmdWallet = new CMDWallet({
+				stellarPubKey: stellarPubKey,
+			})
+			const contracts = new Contracts(
+				process.env.NETWORK_ENV as Network,
+				cmdWallet,
+			)
+			const params: ICreateProjectParams = {
+				name: dataForm.title,
+				overview: dataForm.description,
+				admins: [stellarPubKey],
+				contacts: dataForm.contacts.map((c) => ({
+					name: c.platform,
+					value: c.link_url,
+				})),
+				contracts: dataForm.smart_contracts.map((sm) => ({
+					name: sm.chain,
+					contract_address: sm.address,
+				})),
+				fundings: dataForm.funding_histories.map((f) => ({
+					source: f.source,
+					denomiation: f.denomination,
+					description: f.description,
+					amount: parseToStroop(f.amount),
+					funded_ms: BigInt(f.date.getTime() as number),
+				})),
+				image_url: '',
+				payout_address: stellarPubKey,
+				repositories: dataForm.github_urls.map((g) => ({
+					label: 'github',
+					url: g,
+				})),
+				video_url: dataForm.video.url,
+				team_members: dataForm.team_member.map((mem) => ({
+					name: mem,
+					value: mem,
+				})),
+			}
+			const txCreateProject = await createProject(
+				stellarPubKey,
+				params,
+				contracts,
+			)
+			const txHashCreateProject = await contracts.signAndSendTx(
+				stellarKit as StellarWalletsKit,
+				txCreateProject,
+				stellarPubKey,
+			)
+			if (txHashCreateProject) {
+				setSuccessCreateProjectModalProps((prev) => ({
+					...prev,
+					isOpen: true,
+					createProjectRes: txCreateProject.result,
+					txHash: txHashCreateProject,
+				}))
+				setDataForm(DEFAULT_CREATE_PROJECT_DATA)
+				dismissPageLoading()
+				onClose()
+			}
+		} catch (error: any) {
+			console.log('error', error?.message)
+			toast.error(error?.message || 'Something went wrong', {
+				style: toastOptions.error.style,
+			})
+			dismissPageLoading()
+		}
+	}
 
 	return (
 		<CreateProjectFormContext.Provider
@@ -33,6 +123,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 				setStep,
 				setData: setDataForm,
 				onClose,
+				onProceedApply,
 			}}
 		>
 			<Modal isOpen={isOpen} onClose={onClose}>

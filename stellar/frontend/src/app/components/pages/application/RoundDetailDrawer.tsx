@@ -216,7 +216,7 @@ const RoundDetailDrawer = ({
 					<div className="flex items-center mb-4 md:mb-5">
 						<div className="flex-1">
 							<p className="font-semibold text-lg md:text-xl text-grantpicks-black-950">
-								{formatStroopToXlm(doc.vault_balance)} XLM
+								{formatStroopToXlm(doc.current_vault_balance)} XLM
 							</p>
 							<p className="font-semibold text-xs text-grantpicks-black-600">
 								AVAILABLE FUNDS

@@ -3,8 +3,14 @@ import { createContext } from 'react'
 
 export const ModalContext = createContext<IModalContext>({
 	setSuccessFundRoundModalProps: () => {},
+	setSuccessCreateRoundModalProps: () => {},
+	setSuccessUpdateRoundModalProps: () => {},
+	setSuccessCreateProjectModalProps: () => {},
 	successFundRoundModalProps: {
 		isOpen: false,
+		doc: undefined,
+		txHash: undefined,
+		amount: '',
 	},
 	setApplyProjectInitProps: () => {},
 	setVoteConfirmationProps: () => {},

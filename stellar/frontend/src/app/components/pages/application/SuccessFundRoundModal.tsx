@@ -3,8 +3,26 @@ import { BaseModalProps } from '@/types/dialog'
 import Modal from '@/app/components/commons/Modal'
 import IconCheck from '@/app/components/svgs/IconCheck'
 import IconClose from '@/app/components/svgs/IconClose'
+import { IGetRoundsResponse } from '@/types/on-chain'
+import { useGlobalContext } from '@/app/providers/GlobalProvider'
+import { prettyTruncate } from '@/utils/helper'
+import Link from 'next/link'
+import IconExternalLink from '../../svgs/IconExternalLink'
 
-const SuccessFundRoundModal = ({ isOpen, onClose }: BaseModalProps) => {
+interface SuccessFundRoundModalProps extends BaseModalProps {
+	amount: string
+	doc?: IGetRoundsResponse
+	txHash?: string
+}
+
+const SuccessFundRoundModal = ({
+	isOpen,
+	onClose,
+	doc,
+	txHash,
+	amount,
+}: SuccessFundRoundModalProps) => {
+	const { stellarPrice } = useGlobalContext()
 	return (
 		<Modal isOpen={isOpen} onClose={onClose}>
 			<div className="w-11/12 md:w-[340px] mx-auto bg-white rounded-xl shadow-md p-4 md:p-6 relative">
@@ -28,20 +46,29 @@ const SuccessFundRoundModal = ({ isOpen, onClose }: BaseModalProps) => {
 						You’ve Successfully Donated{' '}
 					</p>
 					<p className="text-xl font-semibold text-grantpicks-black-950">
-						2036.9499 XLM
+						{amount} XLM
 					</p>
 					<p className="text-sm font-normal text-grantpicks-black-950">
-						~200 USD
+						~{parseFloat(amount || '0') * stellarPrice} USD
 					</p>
 				</div>
 				<div className="flex flex-col items-center">
 					<p className="text-xs font-normal text-grantpicks-black-600 mb-2">
 						Transaction ID
 					</p>
-					<div className="py-2 px-3 bg-grantpicks-black-50 flex items-center justify-center rounded-full">
+					<div className="py-2 px-3 bg-grantpicks-black-50 flex items-center justify-center space-x-2 rounded-full">
 						<p className="text-sm font-semibold text-grantpicks-black-950">
-							0x063834efe2...
+							{prettyTruncate(txHash, 10)}
 						</p>
+						<Link
+							href={`https://stellar.expert/explorer/testnet/tx/${txHash}`}
+							target="_blank"
+						>
+							<IconExternalLink
+								size={24}
+								className="stroke-grantpicks-black-950"
+							/>
+						</Link>
 					</div>
 				</div>
 			</div>

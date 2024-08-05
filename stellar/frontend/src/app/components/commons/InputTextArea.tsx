@@ -24,12 +24,22 @@ const InputTextArea = forwardRef<HTMLTextAreaElement, InputTextAreaProps>(
 		return (
 			<div className={label ? `gap-y-[10px]` : `gap-y-0`}>
 				{label && (
-					<p className="font-semibold text-sm text-grantpicks-black-950 mb-2 cursor-default">
+					<p
+						className={clsx(
+							`font-semibold text-sm mb-2 cursor-default`,
+							disabled
+								? `text-grantpicks-black-300`
+								: `text-grantpicks-black-950`,
+						)}
+					>
 						{label}
 						{required && <span className="text-red-500">*</span>}
 					</p>
 				)}
 				<div className="relative mb-1">
+					{disabled && (
+						<div className="absolute inset-0 z-20 bg-grantpicks-black-50/50 cursor-not-allowed rounded-xl" />
+					)}
 					<textarea
 						ref={ref}
 						disabled={disabled}

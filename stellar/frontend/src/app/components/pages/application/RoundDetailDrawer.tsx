@@ -18,15 +18,72 @@ import moment from 'moment'
 import { formatStroopToXlm, prettyTruncate } from '@/utils/helper'
 import CMDWallet from '@/lib/wallet'
 import Contracts from '@/lib/contracts'
-import { getRoundAdmins } from '@/services/on-chain/round-factory'
+import { getRoundAdmins } from '@/services/on-chain/round'
 import useSWR from 'swr'
 import IconLoading from '../../svgs/IconLoading'
+import { Contact } from 'round-client'
+import IconInstagram from '../../svgs/IconInstagram'
+import IconTwitter from '../../svgs/IconTwitter'
+import IconEmail from '../../svgs/IconEmail'
+import Link from 'next/link'
 
 interface RoundDetailDrawerProps extends IDrawerProps {
 	doc: IGetRoundsResponse
 	onOpenFundRound: () => void
 	onApplyRound: () => void
 	onVote: () => void
+}
+
+const RoundDetailContact = ({ contact }: { contact: Contact }) => {
+	const generateLink = () => {
+		if (contact.name.toLowerCase().includes('telegram')) {
+			return `https://t.me/${contact.value}`
+		} else if (contact.name.toLowerCase().includes('instagram')) {
+			return `https://instagram.com/${contact.value}`
+		} else if (contact.name.toLowerCase().includes('twitter')) {
+			return `https://x.com/${contact.value}`
+		} else if (contact.name.toLowerCase().includes('email')) {
+			return `mailto:${contact.value}`
+		} else return ``
+	}
+	return (
+		<>
+			<div className="flex items-center space-x-3">
+				<div className="bg-grantpicks-black-50 rounded-full w-10 h-10 flex items-center justify-center">
+					{contact.name.toLowerCase().includes('telegram') && (
+						<IconTelegram size={18} className="fill-grantpicks-black-400" />
+					)}
+					{contact.name.toLowerCase().includes('instagram') && (
+						<IconInstagram size={18} className="stroke-grantpicks-black-400" />
+					)}
+					{contact.name.toLowerCase().includes('twitter') && (
+						<IconTwitter size={18} className="fill-grantpicks-black-400" />
+					)}
+					{contact.name.toLowerCase().includes('email') && (
+						<IconEmail size={18} className="fill-grantpicks-black-400" />
+					)}
+				</div>
+				<p className="text-grantpicks-black-950 font-semibold text-base">
+					{contact.name.toLowerCase().includes('telegram') &&
+						`@${contact.value}`}
+					{contact.name.toLowerCase().includes('instagram') &&
+						`@${contact.value}`}
+					{contact.name.toLowerCase().includes('twitter') &&
+						`@${contact.value}`}
+					{contact.name.toLowerCase().includes('email') && `@${contact.value}`}
+				</p>
+			</div>
+			<Link href={generateLink()} target="_blank">
+				<Button
+					color="alpha-50"
+					onClick={() => {}}
+					className="!text-sm !font-semibold"
+				>
+					Chat
+				</Button>
+			</Link>
+		</>
+	)
 }
 
 const RoundDetailDrawer = ({
@@ -161,7 +218,7 @@ const RoundDetailDrawer = ({
 					<div className="flex items-center mb-4 md:mb-5">
 						<div className="flex-1">
 							<p className="font-semibold text-lg md:text-xl text-grantpicks-black-950">
-								{formatStroopToXlm(doc.expected_amount)} XLM
+								{formatStroopToXlm(doc.current_vault_balance)} XLM
 							</p>
 							<p className="font-semibold text-xs text-grantpicks-black-600">
 								AVAILABLE FUNDS
@@ -227,24 +284,7 @@ const RoundDetailDrawer = ({
 										key={idx}
 										className="flex items-center justify-between pt-3"
 									>
-										<div className="flex items-center space-x-3">
-											<div className="bg-grantpicks-black-50 rounded-full w-10 h-10 flex items-center justify-center">
-												<IconTelegram
-													size={18}
-													className="fill-grantpicks-black-400"
-												/>
-											</div>
-											<p className="text-grantpicks-black-950 font-semibold text-base">
-												Tele Address
-											</p>
-										</div>
-										<Button
-											color="alpha-50"
-											onClick={() => {}}
-											className="!text-sm !font-semibold"
-										>
-											Chat
-										</Button>
+										<RoundDetailContact contact={contact} />
 									</div>
 								))}
 							</div>

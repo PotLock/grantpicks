@@ -1,4 +1,3 @@
-/// <reference types="node" resolution-mode="require"/>
 import { Buffer } from "buffer";
 import { AssembledTransaction, Client as ContractClient, ClientOptions as ContractClientOptions } from '@stellar/stellar-sdk/contract';
 import type { u64, u128, Option } from '@stellar/stellar-sdk/contract';
@@ -8,7 +7,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CD5XBFIY7FPGM44WPL6G3MKICI253CUQI3HLJ2FFAP5RF6LVPSP3H7P6";
+        readonly contractId: "CD2NDMDERPHEXCWJK64GVFHGSL557MI7ELJRFVL5QPKO2ZCBLOYKVWIX";
     };
 };
 export type RegistrationStatus = {
@@ -639,6 +638,25 @@ export interface Client {
          */
         simulate?: boolean;
     }) => Promise<AssembledTransaction<null>>;
+    /**
+     * Construct and simulate a admins transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     */
+    admins: ({ list_id }: {
+        list_id: u128;
+    }, options?: {
+        /**
+         * The fee to pay for the transaction. Default: BASE_FEE
+         */
+        fee?: number;
+        /**
+         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+         */
+        timeoutInSeconds?: number;
+        /**
+         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+         */
+        simulate?: boolean;
+    }) => Promise<AssembledTransaction<Array<string>>>;
 }
 export declare class Client extends ContractClient {
     readonly options: ContractClientOptions;
@@ -669,5 +687,6 @@ export declare class Client extends ContractClient {
         is_registered: (json: string) => AssembledTransaction<boolean>;
         owner: (json: string) => AssembledTransaction<string>;
         upgrade: (json: string) => AssembledTransaction<null>;
+        admins: (json: string) => AssembledTransaction<string[]>;
     };
 }

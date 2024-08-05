@@ -1,3 +1,4 @@
+import { IGetProjectsResponse } from '@/services/on-chain/project-registry'
 import { ChangeEvent, HTMLAttributes } from 'react'
 
 export interface InputProps {
@@ -70,11 +71,53 @@ export type CreateRoundData = {
 	open_funding: boolean
 	allow_application: boolean
 	max_participants: number
-	apply_duration: Date
+	apply_duration_start: Date | null
+	apply_duration_end: Date | null
 	video_required: boolean
-	voting_duration: Date
-	projects: IProjectCreateRound[]
+	voting_duration_start: Date | null
+	voting_duration_end: Date | null
+	projects: IGetProjectsResponse[]
 	admins: IAdminCreateRound[]
+	allow_remaining_dist: boolean
+	allow_compliance: boolean
+	allow_cooldown: boolean
+	compliance_req_desc: string
+	compliance_end_ms: Date | null
+	compliance_period_ms: Date | null
+	cooldown_end_ms: Date | null
+	cooldown_period_ms: Date | null
+	remaining_dist_address: string
+	referrer_fee_basis_points: number
+}
+
+export type UpdateRoundData = {
+	title: string
+	description: string
+	vote_per_person: number
+	contact_type: string
+	contact_address: string
+	amount: string
+	expected_amount: string
+	open_funding: boolean
+	allow_application: boolean
+	max_participants: number
+	apply_duration_start: Date | null
+	apply_duration_end: Date | null
+	video_required: boolean
+	voting_duration_start: Date | null
+	voting_duration_end: Date | null
+	projects: IGetProjectsResponse[]
+	admins: IAdminCreateRound[]
+	allow_remaining_dist: boolean
+	allow_compliance: boolean
+	allow_cooldown: boolean
+	compliance_req_desc: string
+	compliance_end_ms: Date | null
+	compliance_period_ms: Date | null
+	cooldown_end_ms: Date | null
+	cooldown_period_ms: Date | null
+	remaining_dist_address: string
+	referrer_fee_basis_points: number
 }
 
 export type CreateProjectStep1Data = {

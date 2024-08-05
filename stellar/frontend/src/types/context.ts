@@ -10,6 +10,8 @@ import {
 import { WalletSelectorModal } from '@near-wallet-selector/modal-ui'
 import { Dispatch, SetStateAction } from 'react'
 import { IGetRoundsResponse } from './on-chain'
+import { Livepeer } from 'livepeer'
+import { Project } from 'round-client'
 
 export interface IWalletContext {
 	connectedWallet: 'near' | 'stellar' | null
@@ -35,9 +37,41 @@ export interface IVoteConfirmationModalContextProps extends IModalContextProps {
 	doc?: IGetRoundsResponse
 }
 
+export interface ISuccessCreateRoundModalProps extends IModalContextProps {
+	createRoundRes: IGetRoundsResponse | undefined
+	txHash?: string
+}
+
+export interface ISuccessCreateProjectModalProps extends IModalContextProps {
+	createProjectRes: Project | undefined
+	txHash?: string
+}
+
+export interface ISuccessUpdateRoundModalProps extends IModalContextProps {
+	updateRoundRes: IGetRoundsResponse | undefined
+	txHash?: string
+}
+
+export interface ISuccessFundRoundModalProps extends IModalContextProps {
+	doc: IGetRoundsResponse | undefined
+	txHash?: string
+	amount: string
+}
+
 export interface IModalContext {
-	successFundRoundModalProps: IModalContextProps
-	setSuccessFundRoundModalProps: Dispatch<SetStateAction<IModalContextProps>>
+	successFundRoundModalProps: ISuccessFundRoundModalProps
+	setSuccessCreateRoundModalProps: Dispatch<
+		SetStateAction<ISuccessCreateRoundModalProps>
+	>
+	setSuccessUpdateRoundModalProps: Dispatch<
+		SetStateAction<ISuccessUpdateRoundModalProps>
+	>
+	setSuccessCreateProjectModalProps: Dispatch<
+		SetStateAction<ISuccessCreateProjectModalProps>
+	>
+	setSuccessFundRoundModalProps: Dispatch<
+		SetStateAction<ISuccessFundRoundModalProps>
+	>
 	setApplyProjectInitProps: Dispatch<SetStateAction<IModalContextProps>>
 	setVoteConfirmationProps: Dispatch<
 		SetStateAction<IVoteConfirmationModalContextProps>
@@ -81,9 +115,13 @@ export interface ICreateProjectFormContext {
 	step: number
 	setStep: Dispatch<SetStateAction<number>>
 	onClose: () => void
+	onProceedApply: () => Promise<void>
 }
 
 export interface IGlobalContext {
 	stellarPrice: number
 	nearPrice: number
+	dismissPageLoading: () => void
+	openPageLoading: () => void
+	livepeer: Livepeer | null
 }

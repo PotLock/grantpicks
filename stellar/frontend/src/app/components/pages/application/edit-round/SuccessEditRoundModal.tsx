@@ -1,28 +1,26 @@
 import React from 'react'
-import Modal from '../../commons/Modal'
 import { BaseModalProps } from '@/types/dialog'
-import IconClock from '../../svgs/IconClock'
-import Button from '../../commons/Button'
-import IconEye from '../../svgs/IconEye'
-import IconCheck from '../../svgs/IconCheck'
 import { IGetRoundsResponse } from '@/types/on-chain'
 import moment from 'moment'
 import { useRouter } from 'next/navigation'
 import { prettyTruncate } from '@/utils/helper'
-import Link from 'next/link'
-import IconExternalLink from '../../svgs/IconExternalLink'
+import Modal from '@/app/components/commons/Modal'
+import IconCheck from '@/app/components/svgs/IconCheck'
+import IconClock from '@/app/components/svgs/IconClock'
+import Button from '@/app/components/commons/Button'
+import IconEye from '@/app/components/svgs/IconEye'
 
-interface SuccessCreateRoundModalProps extends BaseModalProps {
-	createRoundRes?: IGetRoundsResponse
+interface SuccessEditRoundModalProps extends BaseModalProps {
+	updateRoundRes?: IGetRoundsResponse
 	txHash?: string
 }
 
-const SuccessCreateRoundModal = ({
+const SuccessEditRoundModal = ({
 	isOpen,
 	onClose,
-	createRoundRes,
+	updateRoundRes,
 	txHash,
-}: SuccessCreateRoundModalProps) => {
+}: SuccessEditRoundModalProps) => {
 	const router = useRouter()
 	return (
 		<Modal isOpen={isOpen} onClose={onClose}>
@@ -44,18 +42,18 @@ const SuccessCreateRoundModal = ({
 				</div>
 				<div className="p-6 border border-black/10 flex flex-col items-center my-8">
 					<p className="text-[25px] font-semibold text-grantpicks-black-950 mb-4">
-						{createRoundRes?.name}
+						{updateRoundRes?.name}
 					</p>
 					<div className="flex items-center space-x-2 mb-4">
 						<IconClock size={18} className="fill-grantpicks-black-600" />
 						<p className="text-sm font-normal text-grantpicks-black-600">
 							Starting{' '}
 							{moment(
-								Number(createRoundRes?.application_start_ms) as number,
+								Number(updateRoundRes?.application_start_ms) as number,
 							).format('l')}{' '}
 							and Ending{' '}
 							{moment(
-								Number(createRoundRes?.application_end_ms) as number,
+								Number(updateRoundRes?.application_end_ms) as number,
 							).format('l')}
 						</p>
 					</div>
@@ -78,19 +76,10 @@ const SuccessCreateRoundModal = ({
 					<p className="text-xs font-normal text-grantpicks-black-600 mb-2">
 						Transaction ID
 					</p>
-					<div className="py-2 px-3 bg-grantpicks-black-50 flex items-center justify-center space-x-2 rouxl">
+					<div className="py-2 px-3 bg-grantpicks-black-50 flex items-center justify-center rouxl">
 						<p className="text-sm font-semibold text-grantpicks-black-950">
 							{prettyTruncate(txHash, 25)}
 						</p>
-						<Link
-							href={`https://stellar.expert/explorer/testnet/tx/${txHash}`}
-							target="_blank"
-						>
-							<IconExternalLink
-								size={24}
-								className="stroke-grantpicks-black-950"
-							/>
-						</Link>
 					</div>
 				</div>
 			</div>
@@ -98,4 +87,4 @@ const SuccessCreateRoundModal = ({
 	)
 }
 
-export default SuccessCreateRoundModal
+export default SuccessEditRoundModal

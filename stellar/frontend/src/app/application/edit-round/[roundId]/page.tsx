@@ -11,9 +11,12 @@ import IconAdd from '@/app/components/svgs/IconAdd'
 import IconNear from '@/app/components/svgs/IconNear'
 import IconRemove from '@/app/components/svgs/IconRemove'
 import IconUnfoldMore from '@/app/components/svgs/IconUnfoldMore'
-import { getPriceCrypto } from '@/services/common'
-import { CreateRoundData } from '@/types/form'
-import React, { ChangeEvent, useEffect, useState } from 'react'
+import {
+	CreateRoundData,
+	IAdminCreateRound,
+	UpdateRoundData,
+} from '@/types/form'
+import React, { useEffect, useState } from 'react'
 import {
 	useForm,
 	useFieldArray,
@@ -28,60 +31,72 @@ import IconClose from '@/app/components/svgs/IconClose'
 import AddAdminsModal from '@/app/components/pages/create-round/AddAdminsModal'
 import clsx from 'clsx'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
-import { skip } from 'node:test'
-import { IGetProjectsResponse } from '@/services/on-chain/project-registry'
-import CMDWallet from '@/lib/wallet'
-import { useWallet } from '@/app/providers/WalletProvider'
-import Contracts from '@/lib/contracts'
-import { Network } from '@/types/on-chain'
 import {
+	addAdminRound,
 	addProjectsRound,
-	createRound,
-	CreateRoundParams,
-	depositFundRound,
+	editRound,
+	getRoundAdmins,
+	getRoundApplications,
+	getRoundInfo,
+	UpdateRoundParams,
 } from '@/services/on-chain/round'
-import { parseToStroop, prettyTruncate } from '@/utils/helper'
-import { useModalContext } from '@/app/providers/ModalProvider'
-import toast from 'react-hot-toast'
-import { toastOptions } from '@/constants/style'
+import { useParams, useRouter } from 'next/navigation'
+import CMDWallet from '@/lib/wallet'
+import Contracts from '@/lib/contracts'
+import { IGetRoundApplicationsResponse, Network } from '@/types/on-chain'
+import { useWallet } from '@/app/providers/WalletProvider'
+import {
+	formatStroopToXlm,
+	parseToStroop,
+	prettyTruncate,
+} from '@/utils/helper'
+import { LIMIT_SIZE } from '@/constants/query'
+import {
+	getProject,
+	IGetProjectsResponse,
+} from '@/services/on-chain/project-registry'
 import IconStellar from '@/app/components/svgs/IconStellar'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
-import { useRouter } from 'next/navigation'
-import { PERIODS } from '@/constants/round'
-import moment from 'moment'
+import toast from 'react-hot-toast'
+import { toastOptions } from '@/constants/style'
+import { useModalContext } from '@/app/providers/ModalProvider'
 import { IRoundPeriodData } from '@/types/round'
-import { subDays } from 'date-fns'
 
-const CreateRoundPage = () => {
+const EditRoundPage = () => {
 	const router = useRouter()
+	const params = useParams<{ roundId: string }>()
+	const { setSuccessUpdateRoundModalProps } = useModalContext()
 	const [showContactType, setShowContactType] = useState<boolean>(false)
-	const { nearPrice, stellarPrice, openPageLoading, dismissPageLoading } =
-		useGlobalContext()
-	const { stellarPubKey, stellarKit } = useWallet()
-	const { setSuccessCreateRoundModalProps } = useModalContext()
+	const { stellarPrice } = useGlobalContext()
 	const [amountUsd, setAmountUsd] = useState<string>('0.00')
 	const [expectAmountUsd, setExpectAmountUsd] = useState<string>('0.00')
 	const [showAddProjectsModal, setShowAddProjectsModal] =
 		useState<boolean>(false)
+	const { stellarPubKey, stellarKit } = useWallet()
 	const [showAddAdminsModal, setShowAddAdminsModal] = useState<boolean>(false)
 	const {
 		control,
 		register,
 		handleSubmit,
 		setValue,
-		reset,
 		watch,
+		reset,
 		formState: { errors },
-	} = useForm<CreateRoundData>({
+	} = useForm<UpdateRoundData>({
 		defaultValues: {
 			vote_per_person: 0,
-			apply_duration_start: null,
-			apply_duration_end: null,
+			apply_duration_start: new Date(),
+			apply_duration_end: new Date(),
 			max_participants: 0,
-			voting_duration_start: null,
-			voting_duration_end: null,
+			voting_duration_start: new Date(),
+			voting_duration_end: new Date(),
 		},
 	})
+	const { openPageLoading, dismissPageLoading } = useGlobalContext()
+	const [selectedProjects, setSelectedProjects] = useState<
+		IGetProjectsResponse[]
+	>([])
+	const [selectedAdmins, setSelectedAdmins] = useState<string[]>([])
 	const { append: appendProject, remove: removeProject } = useFieldArray({
 		control,
 		name: 'projects',
@@ -90,10 +105,6 @@ const CreateRoundPage = () => {
 		control,
 		name: 'admins',
 	})
-	const [selectedProjects, setSelectedProjects] = useState<
-		IGetProjectsResponse[]
-	>([])
-	const [selectedAdmins, setSelectedAdmins] = useState<string[]>([])
 	const [cooldownPeriodData, setCooldownPeriodData] =
 		useState<IRoundPeriodData>({
 			selected: 'days',
@@ -106,6 +117,195 @@ const CreateRoundPage = () => {
 			isOpen: false,
 			end_ms: null,
 		})
+
+	const onFetchAdmins = async () => {
+		let cmdWallet = new CMDWallet({
+			stellarPubKey: stellarPubKey,
+		})
+		const contracts = new Contracts(
+			process.env.NETWORK_ENV as Network,
+			cmdWallet,
+		)
+		const res = await getRoundAdmins(
+			{ round_id: BigInt(params.roundId) },
+			contracts,
+		)
+		return res
+	}
+
+	const onFetchRoundInfo = async () => {
+		let cmdWallet = new CMDWallet({
+			stellarPubKey: stellarPubKey,
+		})
+		const contracts = new Contracts(
+			process.env.NETWORK_ENV as Network,
+			cmdWallet,
+		)
+		const resRoundInfo = await getRoundInfo(
+			{ round_id: BigInt(params.roundId) },
+			contracts,
+		)
+		return resRoundInfo
+	}
+
+	const onFetchRoundApplications = async () => {
+		let cmdWallet = new CMDWallet({
+			stellarPubKey: stellarPubKey,
+		})
+		const contracts = new Contracts(
+			process.env.NETWORK_ENV as Network,
+			cmdWallet,
+		)
+		let resRoundApps: IGetRoundApplicationsResponse[] = []
+		let currData: IGetRoundApplicationsResponse[]
+		do {
+			currData = []
+			const currRes = await getRoundApplications(
+				{ round_id: BigInt(params.roundId), skip: 0, limit: LIMIT_SIZE },
+				contracts,
+			)
+			resRoundApps = [...resRoundApps, ...currRes]
+			currData = currRes
+		} while (currData.length >= LIMIT_SIZE)
+		return resRoundApps
+	}
+
+	const onFetchProjectsByApplication = async (
+		roundApps: IGetRoundApplicationsResponse[],
+	) => {
+		let cmdWallet = new CMDWallet({
+			stellarPubKey: stellarPubKey,
+		})
+		const contracts = new Contracts(
+			process.env.NETWORK_ENV as Network,
+			cmdWallet,
+		)
+		console.log('project id from round apps', roundApps)
+		let resProjects: IGetProjectsResponse[] = []
+		roundApps.forEach(async (app, index) => {
+			const currRes = await getProject(
+				{ project_id: BigInt(app.project_id) },
+				contracts,
+			)
+			resProjects = [...resProjects, currRes as IGetProjectsResponse]
+		})
+		return resProjects
+	}
+
+	const onFetchDefaultValue = async () => {
+		try {
+			openPageLoading()
+			const resRoundInfo = await onFetchRoundInfo()
+			console.log('res round info', resRoundInfo)
+			const resRoundAdmins = await onFetchAdmins()
+			console.log('res round admins', resRoundAdmins)
+			// const resRoundApps = await onFetchRoundApplications()
+			// console.log('res round apps', resRoundApps)
+			// const resProjects = await onFetchProjectsByApplication(resRoundApps)
+			// console.log('res round projects', resProjects)
+			if (resRoundInfo) {
+				setValue('title', resRoundInfo?.name)
+				setValue('description', resRoundInfo?.description)
+				setValue('vote_per_person', resRoundInfo?.num_picks_per_voter)
+				setValue('vote_per_person', resRoundInfo?.num_picks_per_voter)
+				setValue(
+					'amount',
+					formatStroopToXlm(resRoundInfo?.current_vault_balance),
+				)
+				setValue(
+					'expected_amount',
+					formatStroopToXlm(resRoundInfo?.expected_amount),
+				)
+				const calculation =
+					parseFloat(formatStroopToXlm(resRoundInfo?.expected_amount) || '0') *
+					stellarPrice
+				setExpectAmountUsd(`${calculation.toFixed(3)}`)
+				setValue('open_funding', true)
+				if (resRoundInfo.compliance_end_ms) {
+					setValue(
+						'allow_compliance',
+						resRoundInfo.compliance_end_ms ? true : false,
+					)
+					setValue(
+						'compliance_end_ms',
+						new Date(Number(resRoundInfo.compliance_end_ms)),
+					)
+					setValue(
+						'compliance_period_ms',
+						new Date(Number(resRoundInfo.compliance_period_ms)),
+					)
+					setValue('compliance_req_desc', resRoundInfo.compliance_req_desc)
+				}
+				if (resRoundInfo.cooldown_end_ms) {
+					setValue(
+						'allow_cooldown',
+						resRoundInfo.cooldown_end_ms ? true : false,
+					)
+					setValue(
+						'cooldown_end_ms',
+						new Date(Number(resRoundInfo.cooldown_end_ms)),
+					)
+					setValue(
+						'cooldown_period_ms',
+						new Date(Number(resRoundInfo.cooldown_period_ms)),
+					)
+				}
+				if (resRoundInfo.allow_remaining_dist) {
+					setValue(
+						'allow_remaining_dist',
+						resRoundInfo.allow_remaining_dist || false,
+					)
+					setValue(
+						'remaining_dist_address',
+						resRoundInfo.remaining_dist_address,
+					)
+				}
+				setValue(
+					'referrer_fee_basis_points',
+					resRoundInfo.referrer_fee_basis_points || 0,
+				)
+				if (resRoundInfo.contacts.length > 0) {
+					setValue('contact_type', resRoundInfo?.contacts[0].name)
+					setValue('contact_address', resRoundInfo?.contacts[0].value)
+				}
+				if (resRoundInfo.allow_applications) {
+					setValue('allow_application', true)
+					setValue('max_participants', resRoundInfo?.max_participants)
+					setValue(
+						'apply_duration_start',
+						new Date(Number(resRoundInfo.application_start_ms)),
+					)
+					setValue(
+						'apply_duration_end',
+						new Date(Number(resRoundInfo.application_end_ms)),
+					)
+					setValue(
+						'voting_duration_start',
+						new Date(Number(resRoundInfo.voting_start_ms)),
+					)
+					setValue(
+						'voting_duration_end',
+						new Date(Number(resRoundInfo.voting_end_ms)),
+					)
+					setValue('video_required', resRoundInfo?.is_video_required)
+				}
+				// if (resProjects.length > 0) {
+				// 	setValue(`projects`, resProjects)
+				// }
+				if (resRoundAdmins.length > 0) {
+					setSelectedAdmins(resRoundAdmins.map((admin) => admin))
+					setValue(
+						'admins',
+						resRoundAdmins.map((admin) => ({ admin_id: admin })),
+					)
+				}
+				dismissPageLoading()
+			}
+		} catch (error: any) {
+			dismissPageLoading()
+			console.log('error', error)
+		}
+	}
 
 	const onAddApprovedProjects = async (roundId: bigint) => {
 		try {
@@ -134,39 +334,33 @@ const CreateRoundPage = () => {
 		}
 	}
 
-	const onInitialDeposit = async (roundId: bigint) => {
-		try {
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
-			const txAddProject = await depositFundRound(
-				{
-					caller: stellarPubKey,
-					round_id: roundId,
-					amount: BigInt(parseToStroop(watch().amount)),
-					memo: '',
-					referrer_id: '',
-				},
-				contracts,
-			)
-			const txHash = await contracts.signAndSendTx(
-				stellarKit as StellarWalletsKit,
-				txAddProject,
-				stellarPubKey,
-			)
-			return txHash
-		} catch (error: any) {
-			dismissPageLoading()
-			console.log('error', error)
-		}
-	}
+	// const onAddAdmins = async () => {
+	// 	try {
+	// 		let cmdWallet = new CMDWallet({
+	// 			stellarPubKey: stellarPubKey,
+	// 		})
+	// 		const contracts = new Contracts(
+	// 			process.env.NETWORK_ENV as Network,
+	// 			cmdWallet,
+	// 		)
+	// 		// const txAddProject = await addAdminRound(
+	// 		// 	BigInt(params.roundId),
+	// 		// 	watch().admins.map((p) => p.admin_id),
+	// 		// 	contracts,
+	// 		// )
+	// 		// const txHash = await contracts.signAndSendTx(
+	// 		// 	stellarKit as StellarWalletsKit,
+	// 		// 	txAddProject,
+	// 		// 	stellarPubKey,
+	// 		// )
+	// 		// return txHash
+	// 	} catch (error: any) {
+	// 		dismissPageLoading()
+	// 		console.log('error', error)
+	// 	}
+	// }
 
-	const onCreateRound: SubmitHandler<CreateRoundData> = async (data) => {
-		console.log('final data', data, cooldownPeriodData, compliancePeriodData)
+	const onEditRound: SubmitHandler<CreateRoundData> = async (data) => {
 		try {
 			openPageLoading()
 			let cmdWallet = new CMDWallet({
@@ -176,8 +370,7 @@ const CreateRoundPage = () => {
 				process.env.NETWORK_ENV as Network,
 				cmdWallet,
 			)
-			const createRoundParams: CreateRoundParams = {
-				owner: stellarPubKey,
+			const udpateRoundParams: UpdateRoundParams = {
 				name: data.title,
 				description: data.description,
 				application_start_ms: BigInt(
@@ -202,46 +395,37 @@ const CreateRoundPage = () => {
 					data.voting_duration_start?.getTime() as number,
 				),
 				voting_end_ms: BigInt(data.voting_duration_end?.getTime() as number),
-				admins:
-					data.admins?.length > 0
-						? data.admins.map((admin) => admin.admin_id)
-						: [],
-				allow_remaining_dist: true,
-				compliance_req_desc: data.compliance_req_desc,
-				compliance_end_ms: BigInt(
-					compliancePeriodData.end_ms?.getTime() as number,
-				),
-				compliance_period_ms: BigInt(''),
-				cooldown_end_ms: BigInt(cooldownPeriodData.end_ms?.getTime() as number),
-				cooldown_period_ms: BigInt(''),
-				remaining_dist_address: '',
-				referrer_fee_basis_points: 0,
 			}
-			const txCreateRound = await createRound(
+			console.log('update round params', udpateRoundParams)
+			const txUpdateRound = await editRound(
 				stellarPubKey,
-				createRoundParams,
+				BigInt(params.roundId),
+				udpateRoundParams,
 				contracts,
 			)
-			const txHashCreateRound = await contracts.signAndSendTx(
+			console.log('tx update round', txUpdateRound)
+			const txHashUpdateRound = await contracts.signAndSendTx(
 				stellarKit as StellarWalletsKit,
-				txCreateRound,
+				txUpdateRound,
 				stellarPubKey,
 			)
-			if (txHashCreateRound) {
-				let txHashAddProjects, txHashInitialDeposit
+			console.log('tx hash update round', txUpdateRound)
+			if (txHashUpdateRound) {
+				let txHashAddProjects
+				let txHashAddAdmins
 				if (selectedProjects.length > 0) {
 					txHashAddProjects = await onAddApprovedProjects(
-						txCreateRound.result.id,
+						txUpdateRound.result.id,
 					)
 				}
-				if (watch().amount && watch().amount !== '0') {
-					txHashInitialDeposit = await onInitialDeposit(txCreateRound.result.id)
-				}
-				setSuccessCreateRoundModalProps((prev) => ({
+				// if (selectedAdmins.length > 0) {
+				// 	txHashAddAdmins = await onAddAdmins()
+				// }
+				setSuccessUpdateRoundModalProps((prev) => ({
 					...prev,
 					isOpen: true,
-					createRoundRes: txCreateRound.result,
-					txHash: txHashCreateRound,
+					updateRoundRes: txUpdateRound.result,
+					txHash: txHashUpdateRound,
 				}))
 				reset()
 				dismissPageLoading()
@@ -257,17 +441,7 @@ const CreateRoundPage = () => {
 	}
 
 	useEffect(() => {
-		const handleKeyDown = (ev: KeyboardEvent) => {
-			if (ev.code === 'Escape') {
-				setCooldownPeriodData({ ...cooldownPeriodData, isOpen: false })
-				setCompliancePeriodData({ ...compliancePeriodData, isOpen: false })
-			}
-		}
-		window.addEventListener('keydown', handleKeyDown)
-
-		return () => {
-			window.removeEventListener('keydown', handleKeyDown)
-		}
+		onFetchDefaultValue()
 	}, [])
 
 	return (
@@ -276,7 +450,7 @@ const CreateRoundPage = () => {
 			<div className="w-[90%] md:w-[70%] lg:w-[50%] mx-auto">
 				<div className="pt-28 md:pt-32 lg:pt-36 pb-16 text-grantpicks-black-950">
 					<p className="text-[50px] font-black text-center uppercase mb-8 md:mb-12">
-						Create new Round
+						Edit Round
 					</p>
 					<div className="p-5 rounded-2xl shadow-md bg-white space-y-6 mb-4 lg:mb-6">
 						<InputText
@@ -302,48 +476,6 @@ const CreateRoundPage = () => {
 								) : undefined
 							}
 						/>
-						<div className="w-full">
-							<p className="text-base font-semibold text-grantpicks-black-950 mb-2">
-								Voting Duration{' '}
-								<span className="text-grantpicks-red-600 ml-1">*</span>
-							</p>
-							<Controller
-								name="voting_duration_start"
-								control={control}
-								rules={{ required: true }}
-								render={({ field }) => (
-									<DatePicker
-										showIcon
-										minDate={subDays(new Date(), 0)}
-										selectsRange={true}
-										icon={
-											<div className="flex items-center mt-2">
-												<IconCalendar
-													size={20}
-													className="fill-grantpicks-black-400"
-												/>
-											</div>
-										}
-										calendarIconClassName="flex items-center"
-										startDate={field.value as Date}
-										endDate={watch().voting_duration_end as Date}
-										placeholderText="Voting Duration"
-										isClearable={true}
-										onChange={(date) => {
-											field.onChange(date[0])
-											setValue('voting_duration_end', date[1])
-										}}
-										className="border border-grantpicks-black-200 rounded-xl w-full h-12"
-										wrapperClassName="w-full mb-1"
-									/>
-								)}
-							/>
-							{errors.voting_duration_start?.type === 'required' ? (
-								<p className="text-red-500 text-xs mt-1 ml-2">
-									Start and end voting duration is required
-								</p>
-							) : undefined}
-						</div>
 						<div className="space-y-2">
 							<div className="border border-grantpicks-black-200 rounded-xl py-2 px-3 flex items-center justify-between">
 								<p className="text-sm font-semibold text-grantpicks-black-950">
@@ -478,7 +610,7 @@ const CreateRoundPage = () => {
 						<div className="flex items-center space-x-4 w-full mb-4">
 							<div className="flex-1">
 								<InputText
-									label="Initial Deposit"
+									label="Amount"
 									placeholder="Enter amount..."
 									onChange={async (e) => {
 										const calculation =
@@ -570,88 +702,135 @@ const CreateRoundPage = () => {
 								handleDiameter={18}
 							/>
 						</div>
-						<div className={`pt-4 mb-6`}>
-							<div className="flex space-x-4 mb-2">
-								<div className="w-[35%] space-y-1">
-									<InputText
-										disabled={!watch().allow_application}
-										label="Max Participants"
-										placeholder="0"
-										required
-										{...register('max_participants', {
-											required: true,
-											onChange: (e) => {
-												setValue('max_participants', parseInt(e.target.value))
-											},
-										})}
-										preffixIcon={
-											<Button
-												color="transparent"
-												isDisabled={watch().max_participants === 0}
-												onClick={() =>
-													setValue(
-														'max_participants',
-														watch().max_participants - 1,
-													)
+						{watch('allow_application') && (
+							<>
+								<div className={`pt-4 mb-6`}>
+									<div className="flex space-x-4 mb-2">
+										<div className="w-[35%] space-y-1">
+											<InputText
+												label="Max Participants"
+												placeholder="0"
+												required
+												{...register('max_participants', {
+													required: true,
+													onChange: (e) => {
+														setValue(
+															'max_participants',
+															parseInt(e.target.value),
+														)
+													},
+												})}
+												preffixIcon={
+													<Button
+														color="transparent"
+														isDisabled={watch().max_participants === 0}
+														onClick={() =>
+															setValue(
+																'max_participants',
+																watch().max_participants - 1,
+															)
+														}
+													>
+														<IconRemove
+															size={24}
+															className="stroke-grantpicks-black-600"
+														/>
+													</Button>
 												}
-											>
-												<IconRemove
-													size={24}
-													className="stroke-grantpicks-black-600"
-												/>
-											</Button>
-										}
-										textAlign="center"
-										suffixIcon={
-											<Button
-												color="transparent"
-												onClick={() =>
-													setValue(
-														'max_participants',
-														watch().max_participants + 1,
-													)
+												textAlign="center"
+												suffixIcon={
+													<Button
+														color="transparent"
+														onClick={() =>
+															setValue(
+																'max_participants',
+																watch().max_participants + 1,
+															)
+														}
+													>
+														<IconAdd
+															size={24}
+															className="fill-grantpicks-black-600"
+														/>
+													</Button>
 												}
-											>
-												<IconAdd
-													size={24}
-													className="fill-grantpicks-black-600"
-												/>
-											</Button>
+											/>
+											{errors.max_participants?.type === 'required' ? (
+												<p className="text-red-500 text-xs mt-1 ml-2">
+													Max Participants is required
+												</p>
+											) : undefined}
+										</div>
+										<div className="w-[65%]">
+											<p className="text-base font-semibold text-grantpicks-black-950 mb-2">
+												Application Duration{' '}
+												<span className="text-grantpicks-red-600 ml-1">*</span>
+											</p>
+											<Controller
+												name="apply_duration_start"
+												control={control}
+												rules={{ required: true }}
+												render={({ field }) => (
+													<DatePicker
+														showIcon
+														selectsRange={true}
+														icon={
+															<div className="flex items-center mt-2">
+																<IconCalendar
+																	size={20}
+																	className="fill-grantpicks-black-400"
+																/>
+															</div>
+														}
+														calendarIconClassName="flex items-center"
+														startDate={field.value as Date}
+														endDate={watch().apply_duration_end as Date}
+														placeholderText="Apply Duration"
+														isClearable={true}
+														onChange={(date) => {
+															field.onChange(date[0])
+															setValue('apply_duration_end', date[1])
+														}}
+														className="border border-grantpicks-black-200 rounded-xl w-full h-12"
+														wrapperClassName="w-full mb-1"
+													/>
+												)}
+											/>
+											{errors.apply_duration_start?.type === 'required' ? (
+												<p className="text-red-500 text-xs mt-1 ml-2">
+													Start and end apply duration is required
+												</p>
+											) : undefined}
+										</div>
+									</div>
+									<p className="text-xs font-normal text-grantpicks-black-600">
+										You must have a minimum of 10 Participants
+									</p>
+								</div>
+								<div className="flex items-center mb-4">
+									<Checkbox
+										label="Video Required"
+										checked={watch().open_funding}
+										onChange={(e) =>
+											setValue('video_required', e.target.checked)
 										}
 									/>
-									{errors.max_participants?.type === 'required' ? (
-										<p className="text-red-500 text-xs mt-1 ml-2">
-											Max Participants is required
-										</p>
-									) : undefined}
 								</div>
-								<div className="w-[65%]">
-									<p
-										className={clsx(
-											`text-sm font-semibold mb-2`,
-											!watch().allow_application
-												? `text-grantpicks-black-300`
-												: `text-grantpicks-black-950`,
-										)}
-									>
-										Application Duration{' '}
+								<div className="w-full">
+									<p className="text-base font-semibold text-grantpicks-black-950 mb-2">
+										Voting Duration{' '}
 										<span className="text-grantpicks-red-600 ml-1">*</span>
 									</p>
 									<Controller
-										name="apply_duration_start"
+										name="voting_duration_start"
 										control={control}
 										rules={{ required: true }}
 										render={({ field }) => (
 											<DatePicker
-												disabled={!watch().allow_application}
 												showIcon
 												selectsRange={true}
-												minDate={subDays(
-													watch().voting_duration_end as Date,
-													0,
-												)}
 												icon={
-													<div className="flex items-center mt-2 pr-2">
+													<div className="flex items-center mt-2">
 														<IconCalendar
 															size={20}
 															className="fill-grantpicks-black-400"
@@ -660,245 +839,26 @@ const CreateRoundPage = () => {
 												}
 												calendarIconClassName="flex items-center"
 												startDate={field.value as Date}
-												endDate={watch().apply_duration_end as Date}
-												placeholderText="Apply Duration"
+												endDate={watch().voting_duration_end as Date}
+												placeholderText="Voting Duration"
 												isClearable={true}
 												onChange={(date) => {
 													field.onChange(date[0])
-													setValue('apply_duration_end', date[1])
+													setValue('voting_duration_end', date[1])
 												}}
 												className="border border-grantpicks-black-200 rounded-xl w-full h-12"
 												wrapperClassName="w-full mb-1"
 											/>
 										)}
 									/>
-									{errors.apply_duration_start?.type === 'required' ? (
+									{errors.voting_duration_start?.type === 'required' ? (
 										<p className="text-red-500 text-xs mt-1 ml-2">
-											start and end of apply duration is required
+											Start and end voting duration is required
 										</p>
 									) : undefined}
 								</div>
-							</div>
-							<p className="text-xs font-normal text-grantpicks-black-600">
-								You must have a minimum of 10 Participants
-							</p>
-						</div>
-						<div className="flex items-center mb-4">
-							<Checkbox
-								disabled={!watch().allow_application}
-								label="Video Required"
-								checked={watch().video_required}
-								onChange={(e) => setValue('video_required', e.target.checked)}
-							/>
-						</div>
-					</div>
-
-					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
-						<div className="flex items-center justify-between pb-4 border-b border-black/10">
-							<p className="text-base font-semibold">Cooldown</p>
-							<Switch
-								checked={watch().allow_cooldown}
-								onChange={async (checked: boolean) => {
-									setValue('allow_cooldown', checked)
-								}}
-								height={22}
-								width={42}
-								checkedIcon={false}
-								uncheckedIcon={false}
-								offColor="#DCDCDC"
-								onColor="#292929"
-								handleDiameter={18}
-							/>
-						</div>
-						<div className={`pt-4 mb-6`}>
-							<InputText
-								disabled={!watch().allow_cooldown}
-								label="Set Deadline"
-								placeholder="0"
-								required
-								{...register('cooldown_end_ms', {
-									required: watch().allow_cooldown === true,
-									onChange: (ev: ChangeEvent<HTMLInputElement>) => {
-										setCooldownPeriodData({
-											...cooldownPeriodData,
-											end_ms: moment()
-												.add(
-													parseInt(ev.target.value),
-													cooldownPeriodData.selected as any,
-												)
-												.toDate(),
-										})
-									},
-								})}
-								suffixIcon={
-									<div className="relative">
-										<div
-											onClick={() =>
-												setCooldownPeriodData({
-													...cooldownPeriodData,
-													isOpen: !cooldownPeriodData.isOpen,
-												})
-											}
-											className="border-l pl-4 border-black/10 cursor-pointer flex items-center space-x-2"
-										>
-											<p className="text-sm font-normal text-grantpicks-black-600">
-												{cooldownPeriodData.selected}
-											</p>
-											<IconUnfoldMore
-												size={24}
-												className="fill-grantpicks-black-400"
-											/>
-										</div>
-										{cooldownPeriodData.isOpen && (
-											<div className="border bg-white border-black/10 rounded-xl absolute top-8 right-0 w-24">
-												{PERIODS.map((period, index) => (
-													<div
-														key={index}
-														className="p-2 text-xs font-normal text-gray-950 cursor-pointer hover:opacity-70"
-														onClick={() =>
-															setCooldownPeriodData({
-																...cooldownPeriodData,
-																selected: period,
-																isOpen: false,
-															})
-														}
-													>
-														{period}
-													</div>
-												))}
-											</div>
-										)}
-									</div>
-								}
-							/>
-						</div>
-					</div>
-
-					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
-						<div className="flex items-center justify-between pb-4 border-b border-black/10">
-							<p className="text-base font-semibold">Require Compliance</p>
-							<Switch
-								checked={watch().allow_compliance}
-								onChange={async (checked: boolean) => {
-									setValue('allow_compliance', checked)
-								}}
-								height={22}
-								width={42}
-								checkedIcon={false}
-								uncheckedIcon={false}
-								offColor="#DCDCDC"
-								onColor="#292929"
-								handleDiameter={18}
-							/>
-						</div>
-						<div className={`pt-4 mb-6`}>
-							<InputTextArea
-								disabled={!watch().allow_compliance}
-								label="Description"
-								{...register('compliance_req_desc', {
-									required: watch().allow_compliance,
-								})}
-								errorMessage={
-									errors.compliance_req_desc?.type === 'required' ? (
-										<p className="text-red-500 text-xs mt-1 ml-2">
-											Compliance description is required
-										</p>
-									) : undefined
-								}
-							/>
-							<InputText
-								disabled={!watch().allow_compliance}
-								label="Set Deadline"
-								placeholder="0"
-								required
-								{...register('compliance_end_ms', {
-									required: watch().allow_compliance === true,
-									onChange: (ev: ChangeEvent<HTMLInputElement>) => {
-										setCompliancePeriodData({
-											...compliancePeriodData,
-											end_ms: moment()
-												.add(
-													parseInt(ev.target.value),
-													compliancePeriodData.selected as any,
-												)
-												.toDate(),
-										})
-									},
-								})}
-								suffixIcon={
-									<div className="relative">
-										<div
-											onClick={() =>
-												setCompliancePeriodData({
-													...compliancePeriodData,
-													isOpen: !compliancePeriodData.isOpen,
-												})
-											}
-											className="border-l pl-4 border-black/10 cursor-pointer flex items-center space-x-2"
-										>
-											<p className="text-sm font-normal text-grantpicks-black-600">
-												{compliancePeriodData.selected}
-											</p>
-											<IconUnfoldMore
-												size={24}
-												className="fill-grantpicks-black-400"
-											/>
-										</div>
-										{compliancePeriodData.isOpen && (
-											<div className="border bg-white border-black/10 rounded-xl absolute top-8 right-0 w-24">
-												{PERIODS.map((period, index) => (
-													<div
-														key={index}
-														className="p-2 text-xs font-normal text-gray-950 cursor-pointer hover:opacity-70"
-														onClick={() =>
-															setCompliancePeriodData({
-																...compliancePeriodData,
-																selected: period,
-																isOpen: false,
-															})
-														}
-													>
-														{period}
-													</div>
-												))}
-											</div>
-										)}
-									</div>
-								}
-							/>
-						</div>
-					</div>
-
-					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
-						<div className="flex items-center justify-between pb-4 border-b border-black/10">
-							<p className="text-base font-semibold">
-								Remaining Funds Redistribution
-							</p>
-							<Switch
-								checked={watch().allow_remaining_dist}
-								onChange={async (checked: boolean) => {
-									setValue('allow_remaining_dist', checked)
-								}}
-								height={22}
-								width={42}
-								checkedIcon={false}
-								uncheckedIcon={false}
-								offColor="#DCDCDC"
-								onColor="#292929"
-								handleDiameter={18}
-							/>
-						</div>
-						<div className={`pt-4 mb-6`}>
-							<InputText
-								disabled={!watch().allow_remaining_dist}
-								label="Recipient Address"
-								placeholder="Address..."
-								required
-								{...register('remaining_dist_address', {
-									required: watch().allow_remaining_dist === true,
-								})}
-							/>
-						</div>
+							</>
+						)}
 					</div>
 
 					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
@@ -942,7 +902,6 @@ const CreateRoundPage = () => {
 											let temp = [...selectedProjects]
 											temp.splice(index, 1)
 											setSelectedProjects(temp)
-											removeProject(index)
 										}}
 									/>
 								</div>
@@ -999,7 +958,6 @@ const CreateRoundPage = () => {
 											let temp = [...selectedAdmins]
 											temp.splice(index, 1)
 											setSelectedAdmins(temp)
-											removeAdmin(index)
 										}}
 									/>
 								</div>
@@ -1019,9 +977,9 @@ const CreateRoundPage = () => {
 						color="black-950"
 						className="!py-3"
 						isFullWidth
-						onClick={handleSubmit(onCreateRound)}
+						onClick={handleSubmit(onEditRound)}
 					>
-						Create Round
+						Edit Round
 					</Button>
 				</div>
 			</div>
@@ -1029,4 +987,4 @@ const CreateRoundPage = () => {
 	)
 }
 
-export default CreateRoundPage
+export default EditRoundPage

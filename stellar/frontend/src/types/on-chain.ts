@@ -1,5 +1,9 @@
-import { u128, u32, u64 } from '@stellar/stellar-sdk/contract'
-import { Contact } from 'round-client'
+import {
+	Horizon,
+	RoundApplication,
+	RoundDetail,
+	SorobanRpc,
+} from 'round-client'
 
 export type Network = 'testnet' | 'mainnet'
 
@@ -8,31 +12,25 @@ export type ApplicationStatus =
 	| { tag: 'Approved'; values: void }
 	| { tag: 'Rejected'; values: void }
 
-export interface IGetRoundsResponse {
-	application_end_ms: u64
-	application_start_ms: u64
-	contacts: Array<Contact>
-	description: string
-	expected_amount: u128
-	id: u128
-	is_completed: boolean
-	max_participants: u32
-	name: string
-	num_picks_per_voter: u32
-	owner: string
-	use_whitelist: boolean
-	vault_balance: u128
-	video_url: string
-	voting_end_ms: u64
-	voting_start_ms: u64
+export interface IGetRoundsResponse extends RoundDetail {}
+
+export interface IGetRoundApplicationsResponse extends RoundApplication {}
+
+export enum ENetworkEnv {
+	'TESTNET' = 'testnet',
+	'MAINNET' = 'mainnet',
 }
 
-export interface IGetRoundApplicationsResponse {
-	applicant: string
-	application_id: u128
-	project_id: u128
-	review_note: string
-	status: ApplicationStatus
-	submited_ms: u64
-	updated_ms?: u64
+export enum Networks {
+	PUBLIC = 'Public Global Stellar Network ; September 2015',
+	TESTNET = 'Test SDF Network ; September 2015',
+	FUTURENET = 'Test SDF Future Network ; October 2022',
+	SANDBOX = 'Local Sandbox Stellar Network ; September 2022',
+	STANDALONE = 'Standalone Network ; February 2017',
+}
+
+export interface SubmitTxProps {
+	signedXDR: string
+	networkPassphrase: string
+	server: SorobanRpc.Server | Horizon.Server
 }

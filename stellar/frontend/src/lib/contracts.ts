@@ -1,10 +1,18 @@
 import { Client as ListClient } from 'lists-client'
 import { Client as ProjectClient } from 'project-registry-client'
 import { Client as RoundClient } from 'round-client'
-import { ClientOptions } from '@stellar/stellar-sdk/contract'
+import {
+	AssembledTransaction,
+	ClientOptions,
+} from '@stellar/stellar-sdk/contract'
 import CMDWallet from './wallet'
 import { Network } from '@/types/on-chain'
 import { envVarConfigs } from '@/configs/env-var'
+import {
+	StellarWalletsKit,
+	WalletNetwork,
+} from '@creit.tech/stellar-wallets-kit'
+import { getSorobanConfig, getSorobanServer, submitTx } from '@/utils/helper'
 
 class Contracts {
 	private _lists_contract: ListClient
@@ -68,6 +76,33 @@ class Contracts {
 
 	get wallet() {
 		return this._wallet
+	}
+
+	async signAndSendTx(
+		kit: StellarWalletsKit,
+		tx: AssembledTransaction<null | any> | undefined,
+		publicKey: string,
+	) {
+		let signedXdr
+		const signedRes = await kit?.signTx({
+			xdr: tx?.toXDR() as string,
+			publicKeys: [publicKey],
+			network:
+				envVarConfigs.NETWORK_ENV === 'testnet'
+					? WalletNetwork.TESTNET
+					: WalletNetwork.FUTURENET,
+		})
+		signedXdr = signedRes?.result
+		if (signedXdr) {
+			const server = getSorobanServer()
+			const txHash = await submitTx({
+				signedXDR: signedXdr,
+				networkPassphrase: getSorobanConfig(envVarConfigs.NETWORK_ENV as string)
+					?.network_passphrase as string,
+				server,
+			})
+			return txHash
+		}
 	}
 
 	// round_contract(contractId: string) {

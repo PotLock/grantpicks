@@ -5,6 +5,7 @@ export const envVarConfigs = {
 	ADMIN_SECRET: process.env.ADMIN_SECRET as string,
 	ADMIN: process.env.ADMIN as string,
 	NATIVE_TOKEN: process.env.NATIVE_TOKEN as string,
+	LIVEPEER_API_KEY: process.env.LIVEPEER_API_KEY as string,
 	LISTS_CONTRACT_ID: process.env.LISTS_CONTRACT_ID as string,
 	PROJECT_REGISTRY_CONTRACT_ID: process.env
 		.PROJECT_REGISTRY_CONTRACT_ID as string,

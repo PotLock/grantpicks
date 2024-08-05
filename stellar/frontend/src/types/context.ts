@@ -33,6 +33,10 @@ export interface IModalContextProps {
 	isOpen: boolean
 }
 
+export interface IVoteConfirmationModalContextProps extends IModalContextProps {
+	doc?: IGetRoundsResponse
+}
+
 export interface ISuccessCreateRoundModalProps extends IModalContextProps {
 	createRoundRes: IGetRoundsResponse | undefined
 	txHash?: string
@@ -69,6 +73,9 @@ export interface IModalContext {
 		SetStateAction<ISuccessFundRoundModalProps>
 	>
 	setApplyProjectInitProps: Dispatch<SetStateAction<IModalContextProps>>
+	setVoteConfirmationProps: Dispatch<
+		SetStateAction<IVoteConfirmationModalContextProps>
+	>
 	setCreateProjectFormMainProps: Dispatch<SetStateAction<IModalContextProps>>
 }
 

@@ -6,6 +6,7 @@ import {
 	IApplyProjectToRoundModalProps,
 	IModalContextProps,
 	ISuccessAppplyProjectToRoundModalProps,
+	IVoteConfirmationModalContextProps,
 	ISuccessCreateProjectModalProps,
 	ISuccessCreateRoundModalProps,
 	ISuccessFundRoundModalProps,
@@ -14,6 +15,7 @@ import {
 import SuccessFundRoundModal from '../components/pages/application/SuccessFundRoundModal'
 import ApplyProjectModal from '../components/pages/application/create-apply-project/ApplyProjectModal'
 import CreateProjectFormMainModal from '../components/pages/application/create-apply-project/create-project-form/CreateProjectFormMainModal'
+import VoteConfirmationModal from '../components/pages/application/VoteConfirmationModal'
 import SuccessCreateRoundModal from '../components/pages/create-round/SuccessCreateRoundModal'
 import SuccessEditRoundModal from '../components/pages/application/edit-round/SuccessEditRoundModal'
 import SuccessCreateProjectModal from '../components/pages/application/create-apply-project/SuccessCreateProjectModal'
@@ -58,7 +60,11 @@ const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 			round_id: undefined,
 			roundData: undefined,
 		})
-
+	const [voteConfirmationProps, setVoteConfirmationProps] =
+		useState<IVoteConfirmationModalContextProps>({
+			isOpen: false,
+			doc: undefined,
+		})
 	const [createProjectFormMainProps, setCreateProjectFormMainProps] =
 		useState<IModalContextProps>({
 			isOpen: false,
@@ -74,6 +80,7 @@ const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 				setSuccessApplyProjectInitProps: setSuccessApplyProjectToRoundProps,
 				successFundRoundModalProps: successFundRoundProps,
 				setApplyProjectInitProps,
+				setVoteConfirmationProps,
 				setCreateProjectFormMainProps,
 			}}
 		>
@@ -140,6 +147,16 @@ const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 				roundData={successApplyProjectToRoundProps.roundData}
 				onClose={() =>
 					setSuccessApplyProjectToRoundProps((prev) => ({
+						...prev,
+						isOpen: false,
+					}))
+				}
+			/>
+			<VoteConfirmationModal
+				isOpen={voteConfirmationProps.isOpen}
+				doc={voteConfirmationProps.doc}
+				onClose={() =>
+					setVoteConfirmationProps((prev) => ({
 						...prev,
 						isOpen: false,
 					}))

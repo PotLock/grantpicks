@@ -13,6 +13,7 @@ export const ModalContext = createContext<IModalContext>({
 		amount: '',
 	},
 	setApplyProjectInitProps: () => {},
+	setVoteConfirmationProps: () => {},
 	setCreateProjectFormMainProps: () => {},
 	setSuccessApplyProjectInitProps: () => {},
 })

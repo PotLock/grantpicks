@@ -14,4 +14,5 @@ export const ModalContext = createContext<IModalContext>({
 	},
 	setApplyProjectInitProps: () => {},
 	setCreateProjectFormMainProps: () => {},
+	setSuccessApplyProjectInitProps: () => {},
 })

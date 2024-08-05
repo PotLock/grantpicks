@@ -9,7 +9,7 @@ import {
 	u32,
 	u64,
 } from '@stellar/stellar-sdk/contract'
-import { Contact, RoundDetail } from 'round-client'
+import { Contact, RoundApplication, RoundDetail } from 'round-client'
 
 interface GetRoundsParams {
 	skip: number
@@ -54,7 +54,7 @@ export interface CreateRoundParams {
 	name: string
 	num_picks_per_voter: u32
 	owner: string
-	referrer_fee_basis_points: u32
+	referrer_fee_basis_points: u32 | null
 	remaining_dist_address: string
 	use_whitelist: boolean
 	voting_end_ms: u64
@@ -83,6 +83,14 @@ export interface DepositFundRoundParams {
 	amount: u128
 	memo?: string
 	referrer_id: string
+}
+
+export interface ApplyProjectToRoundParams {
+	round_id: u128
+	caller: string
+	applicant?: string
+	note?: string
+	review_note?: string
 }
 
 export const getRounds: (
@@ -157,7 +165,10 @@ export const createRound: (
 ) => {
 	let round = await contract.round_contract.create_round({
 		caller,
-		round_detail: params,
+		round_detail: {
+			...params,
+			referrer_fee_basis_points: params.referrer_fee_basis_points as number,
+		},
 	})
 	return round
 }
@@ -229,6 +240,23 @@ export const depositFundRound: (
 		amount: params.amount,
 		memo: params.memo,
 		referrer_id: params.referrer_id,
+	})
+	return res
+}
+
+export const applyProjectToRound: (
+	params: ApplyProjectToRoundParams,
+	contract: Contracts,
+) => Promise<AssembledTransaction<RoundApplication>> = async (
+	params: ApplyProjectToRoundParams,
+	contract: Contracts,
+) => {
+	let res = await contract.round_contract.apply_to_round({
+		round_id: params.round_id,
+		caller: params.caller,
+		applicant: params.applicant,
+		note: params.note,
+		review_note: params.review_note,
 	})
 	return res
 }

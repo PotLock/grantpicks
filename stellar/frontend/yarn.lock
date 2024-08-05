@@ -293,10 +293,10 @@
     tweetnacl "^1.0.3"
     tweetnacl-util "^0.15.1"
 
-"@creit.tech/stellar-wallets-kit@^0.9.0":
-  version "0.9.0"
-  resolved "https://registry.yarnpkg.com/@creit.tech/stellar-wallets-kit/-/stellar-wallets-kit-0.9.0.tgz#d2d79dd0ad34b7b3a8fcffb6581a938f0319fa76"
-  integrity sha512-5d1LiScCOTxgS4rjqx6ICqF2x6p+DdNdsKuTJstTqkBQTFWVRaSh1XgI/nShAzsTuVC2sY8sccMxpPbTDMuT9Q==
+"@creit.tech/stellar-wallets-kit@^0.9.2":
+  version "0.9.2"
+  resolved "https://registry.yarnpkg.com/@creit.tech/stellar-wallets-kit/-/stellar-wallets-kit-0.9.2.tgz#25d12a3e05a29476e21932fd3c53187d194a4ef1"
+  integrity sha512-RUDAGz5Pmg6QAf4UOUEhMQ/KfWXLFMF40VwuIKIntoVjNercu9uFMiDUZjqZCz5WNS3Gic7rPfM8mt/7xQKMtQ==
   dependencies:
     "@albedo-link/intent" "0.12.0"
     "@creit-tech/xbull-wallet-connect" "github:Creit-Tech/xBull-Wallet-Connect#0.2.0"

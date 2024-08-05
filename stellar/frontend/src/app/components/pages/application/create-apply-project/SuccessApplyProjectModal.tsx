@@ -1,28 +1,30 @@
 import React from 'react'
-import Modal from '../../commons/Modal'
 import { BaseModalProps } from '@/types/dialog'
-import IconClock from '../../svgs/IconClock'
-import Button from '../../commons/Button'
-import IconEye from '../../svgs/IconEye'
-import IconCheck from '../../svgs/IconCheck'
 import { IGetRoundsResponse } from '@/types/on-chain'
 import moment from 'moment'
 import { useRouter } from 'next/navigation'
 import { prettyTruncate } from '@/utils/helper'
 import Link from 'next/link'
-import IconExternalLink from '../../svgs/IconExternalLink'
+import Modal from '@/app/components/commons/Modal'
+import IconCheck from '@/app/components/svgs/IconCheck'
+import Button from '@/app/components/commons/Button'
+import IconEye from '@/app/components/svgs/IconEye'
+import IconExternalLink from '@/app/components/svgs/IconExternalLink'
+import { Project } from 'round-client'
 
-interface SuccessCreateRoundModalProps extends BaseModalProps {
-	createRoundRes?: IGetRoundsResponse
+interface SuccessApplyProjectModalProps extends BaseModalProps {
+	applyProjectRes?: Project
+	roundData?: IGetRoundsResponse
 	txHash?: string
 }
 
-const SuccessCreateRoundModal = ({
+const SuccessApplyProjectModal = ({
 	isOpen,
 	onClose,
-	createRoundRes,
+	applyProjectRes,
+	roundData,
 	txHash,
-}: SuccessCreateRoundModalProps) => {
+}: SuccessApplyProjectModalProps) => {
 	const router = useRouter()
 	return (
 		<Modal isOpen={isOpen} onClose={onClose}>
@@ -39,26 +41,19 @@ const SuccessCreateRoundModal = ({
 						<IconCheck size={24} className="stroke-white" />
 					</div>
 					<p className="text-base font-bold text-grantpicks-black-950">
-						You’ve Successfully created a Round.
+						You’ve Successfully Applied to {roundData?.name}
 					</p>
 				</div>
 				<div className="p-6 border border-black/10 flex flex-col items-center my-8">
-					<p className="text-[25px] font-semibold text-grantpicks-black-950 mb-4">
-						{createRoundRes?.name}
+					<p className="text-base font-bold text-grantpicks-black-950 text-center">
+						{roundData?.name}
 					</p>
-					<div className="flex items-center space-x-2 mb-4">
-						<IconClock size={18} className="fill-grantpicks-black-600" />
-						<p className="text-sm font-normal text-grantpicks-black-600">
-							Starting{' '}
-							{moment(
-								Number(createRoundRes?.application_start_ms) as number,
-							).format('l')}{' '}
-							and Ending{' '}
-							{moment(
-								Number(createRoundRes?.application_end_ms) as number,
-							).format('l')}
-						</p>
-					</div>
+					<p className="text-xs font-normal text-grantpicks-black-600 text-center mb-4">
+						{roundData?.owner}
+					</p>
+					<p className="text-sm font-normal text-grantpicks-black-600 text-center mb-4">
+						{roundData?.description}
+					</p>
 					<Button
 						color="black"
 						className="!rounded-full"
@@ -70,7 +65,7 @@ const SuccessCreateRoundModal = ({
 					>
 						<div className="flex items-center space-x-2">
 							<IconEye size={18} className="fill-grantpicks-black-400" />
-							<p className="text-sm font-semibold">View Round</p>
+							<p className="text-sm font-semibold">Explore Round</p>
 						</div>
 					</Button>
 				</div>
@@ -98,4 +93,4 @@ const SuccessCreateRoundModal = ({
 	)
 }
 
-export default SuccessCreateRoundModal
+export default SuccessApplyProjectModal

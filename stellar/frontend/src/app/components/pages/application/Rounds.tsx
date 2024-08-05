@@ -171,6 +171,8 @@ const ApplicationRoundsItem = ({
 							setApplyProjectInitProps((prev) => ({
 								...prev,
 								isOpen: true,
+								round_id: doc.id,
+								roundData: doc,
 							}))
 						} else {
 						}

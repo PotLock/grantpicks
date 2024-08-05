@@ -98,13 +98,13 @@ const CreateRoundPage = () => {
 		useState<IRoundPeriodData>({
 			selected: 'days',
 			isOpen: false,
-			end_ms: null,
+			period_ms: null,
 		})
 	const [compliancePeriodData, setCompliancePeriodData] =
 		useState<IRoundPeriodData>({
 			selected: 'days',
 			isOpen: false,
-			end_ms: null,
+			period_ms: null,
 		})
 
 	const onAddApprovedProjects = async (roundId: bigint) => {
@@ -209,12 +209,12 @@ const CreateRoundPage = () => {
 				allow_remaining_dist: true,
 				compliance_req_desc: data.compliance_req_desc,
 				compliance_end_ms: BigInt(
-					compliancePeriodData.end_ms?.getTime() as number,
+					BigInt(data.voting_duration_end?.getTime() as number),
 				),
-				compliance_period_ms: BigInt(''),
-				cooldown_end_ms: BigInt(cooldownPeriodData.end_ms?.getTime() as number),
-				cooldown_period_ms: BigInt(''),
-				remaining_dist_address: '',
+				compliance_period_ms: BigInt(data.compliance_period_ms as number),
+				cooldown_end_ms: BigInt(data.voting_duration_end?.getTime() as number),
+				cooldown_period_ms: BigInt(0),
+				remaining_dist_address: data.remaining_dist_address || stellarPubKey,
 				referrer_fee_basis_points: 0,
 			}
 			const txCreateRound = await createRound(
@@ -314,7 +314,7 @@ const CreateRoundPage = () => {
 								render={({ field }) => (
 									<DatePicker
 										showIcon
-										minDate={subDays(new Date(), 0)}
+										minDate={subDays(watch().apply_duration_end as Date, 1)}
 										selectsRange={true}
 										icon={
 											<div className="flex items-center mt-2">
@@ -646,8 +646,8 @@ const CreateRoundPage = () => {
 												disabled={!watch().allow_application}
 												showIcon
 												selectsRange={true}
-												minDate={subDays(
-													watch().voting_duration_end as Date,
+												maxDate={subDays(
+													watch().voting_duration_start as Date,
 													0,
 												)}
 												icon={
@@ -721,12 +721,13 @@ const CreateRoundPage = () => {
 									onChange: (ev: ChangeEvent<HTMLInputElement>) => {
 										setCooldownPeriodData({
 											...cooldownPeriodData,
-											end_ms: moment()
-												.add(
-													parseInt(ev.target.value),
-													cooldownPeriodData.selected as any,
-												)
-												.toDate(),
+											period_ms:
+												parseInt(ev.target.value) *
+												(compliancePeriodData.selected === 'days'
+													? 1000 * 60 * 60 * 24
+													: compliancePeriodData.selected === 'weeks'
+														? 1000 * 60 * 60 * 24 * 7
+														: 1000 * 60 * 60 * 24 * 7 * 30),
 										})
 									},
 								})}
@@ -811,17 +812,18 @@ const CreateRoundPage = () => {
 								label="Set Deadline"
 								placeholder="0"
 								required
-								{...register('compliance_end_ms', {
+								{...register('compliance_period_ms', {
 									required: watch().allow_compliance === true,
 									onChange: (ev: ChangeEvent<HTMLInputElement>) => {
 										setCompliancePeriodData({
 											...compliancePeriodData,
-											end_ms: moment()
-												.add(
-													parseInt(ev.target.value),
-													compliancePeriodData.selected as any,
-												)
-												.toDate(),
+											period_ms:
+												parseInt(ev.target.value) *
+												(compliancePeriodData.selected === 'days'
+													? 1000 * 60 * 60 * 24
+													: compliancePeriodData.selected === 'weeks'
+														? 1000 * 60 * 60 * 24 * 7
+														: 1000 * 60 * 60 * 24 * 7 * 30),
 										})
 									},
 								})}

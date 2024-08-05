@@ -3,7 +3,9 @@
 import React, { useContext, useState } from 'react'
 import { ModalContext } from '../contexts/ModalContext'
 import {
+	IApplyProjectToRoundModalProps,
 	IModalContextProps,
+	ISuccessAppplyProjectToRoundModalProps,
 	ISuccessCreateProjectModalProps,
 	ISuccessCreateRoundModalProps,
 	ISuccessFundRoundModalProps,
@@ -15,6 +17,7 @@ import CreateProjectFormMainModal from '../components/pages/application/create-a
 import SuccessCreateRoundModal from '../components/pages/create-round/SuccessCreateRoundModal'
 import SuccessEditRoundModal from '../components/pages/application/edit-round/SuccessEditRoundModal'
 import SuccessCreateProjectModal from '../components/pages/application/create-apply-project/SuccessCreateProjectModal'
+import SuccessApplyProjectModal from '../components/pages/application/create-apply-project/SuccessApplyProjectModal'
 
 const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 	const [successCreateRoundProps, setSuccessCreateRoundProps] =
@@ -42,9 +45,18 @@ const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 			txHash: undefined,
 			amount: '',
 		})
-	const [applyProjectInitProps, setApplyProjectInitProps] =
-		useState<IModalContextProps>({
+	const [successApplyProjectToRoundProps, setSuccessApplyProjectToRoundProps] =
+		useState<ISuccessAppplyProjectToRoundModalProps>({
 			isOpen: false,
+			applyProjectRes: undefined,
+			roundData: undefined,
+			txHash: '',
+		})
+	const [applyProjectInitProps, setApplyProjectInitProps] =
+		useState<IApplyProjectToRoundModalProps>({
+			isOpen: false,
+			round_id: undefined,
+			roundData: undefined,
 		})
 
 	const [createProjectFormMainProps, setCreateProjectFormMainProps] =
@@ -59,6 +71,7 @@ const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 				setSuccessCreateRoundModalProps: setSuccessCreateRoundProps,
 				setSuccessUpdateRoundModalProps: setSuccessUpdateRoundProps,
 				setSuccessCreateProjectModalProps: setSuccessCreateProjectProps,
+				setSuccessApplyProjectInitProps: setSuccessApplyProjectToRoundProps,
 				successFundRoundModalProps: successFundRoundProps,
 				setApplyProjectInitProps,
 				setCreateProjectFormMainProps,
@@ -112,8 +125,21 @@ const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 			/>
 			<ApplyProjectModal
 				isOpen={applyProjectInitProps.isOpen}
+				round_id={applyProjectInitProps.round_id}
+				roundData={applyProjectInitProps.roundData}
 				onClose={() =>
 					setApplyProjectInitProps((prev) => ({
+						...prev,
+						isOpen: false,
+					}))
+				}
+			/>
+			<SuccessApplyProjectModal
+				isOpen={successApplyProjectToRoundProps.isOpen}
+				applyProjectRes={successApplyProjectToRoundProps.applyProjectRes}
+				roundData={successApplyProjectToRoundProps.roundData}
+				onClose={() =>
+					setSuccessApplyProjectToRoundProps((prev) => ({
 						...prev,
 						isOpen: false,
 					}))

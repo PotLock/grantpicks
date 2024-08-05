@@ -4,18 +4,107 @@ import Modal from '@/app/components/commons/Modal'
 import IconClose from '@/app/components/svgs/IconClose'
 import IconErrorCircle from '@/app/components/svgs/IconErrorCircle'
 import IconProject from '@/app/components/svgs/IconProject'
+import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import { useModalContext } from '@/app/providers/ModalProvider'
+import { useWallet } from '@/app/providers/WalletProvider'
+import Contracts from '@/lib/contracts'
+import CMDWallet from '@/lib/wallet'
+import { getProjectApplicant } from '@/services/on-chain/project-registry'
+import {
+	applyProjectToRound,
+	ApplyProjectToRoundParams,
+} from '@/services/on-chain/round'
 import { BaseModalProps } from '@/types/dialog'
+import { IGetRoundsResponse, Network } from '@/types/on-chain'
+import { prettyTruncate } from '@/utils/helper'
+import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import Image from 'next/image'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import { Project } from 'round-client'
 
-const ApplyProjectModal = ({ isOpen, onClose }: BaseModalProps) => {
-	const { setApplyProjectInitProps, setCreateProjectFormMainProps } =
-		useModalContext()
+interface ApplyProjectToRoundModalProps extends BaseModalProps {
+	round_id?: bigint
+	roundData?: IGetRoundsResponse
+}
+
+const ApplyProjectModal = ({
+	isOpen,
+	onClose,
+	round_id,
+	roundData,
+}: ApplyProjectToRoundModalProps) => {
+	const { setCreateProjectFormMainProps } = useModalContext()
+	const { stellarPubKey, stellarKit } = useWallet()
 	const [isProjectMissingInfo, setIsProjectMissingInfo] =
 		useState<boolean>(false)
-	const [projectData, setProjectData] = useState<boolean>(false)
+	const [projectData, setProjectData] = useState<Project | undefined>(undefined)
 	const [applyNote, setApplyNote] = useState<string>('')
+	const { openPageLoading, dismissPageLoading } = useGlobalContext()
+	const { setSuccessApplyProjectInitProps } = useModalContext()
+
+	const fetchProjectApplicant = async () => {
+		try {
+			let cmdWallet = new CMDWallet({
+				stellarPubKey: stellarPubKey,
+			})
+			const contracts = new Contracts(
+				process.env.NETWORK_ENV as Network,
+				cmdWallet,
+			)
+			const res = await getProjectApplicant(stellarPubKey, contracts)
+			setProjectData(res)
+			console.log('res project applicant', res)
+		} catch (error: any) {
+			console.log('error fetch project applicant', error)
+		}
+	}
+
+	const onApplyProjectToRound = async () => {
+		try {
+			openPageLoading()
+			let cmdWallet = new CMDWallet({
+				stellarPubKey: stellarPubKey,
+			})
+			const contracts = new Contracts(
+				process.env.NETWORK_ENV as Network,
+				cmdWallet,
+			)
+			const applyParams: ApplyProjectToRoundParams = {
+				round_id: round_id as bigint,
+				caller: stellarPubKey,
+				applicant: stellarPubKey,
+				note: applyNote,
+				review_note: '',
+			}
+			const txApplyProject = await applyProjectToRound(applyParams, contracts)
+			const txHashApplyProject = await contracts.signAndSendTx(
+				stellarKit as StellarWalletsKit,
+				txApplyProject,
+				stellarPubKey,
+			)
+			if (txHashApplyProject) {
+				dismissPageLoading()
+				setSuccessApplyProjectInitProps((prev) => ({
+					...prev,
+					isOpen: true,
+					createProjectRes: txApplyProject.result,
+					txHash: txHashApplyProject,
+					roundData,
+				}))
+				onClose
+			}
+		} catch (error: any) {
+			dismissPageLoading()
+			console.log('error apply project to round', error)
+		}
+	}
+
+	useEffect(() => {
+		if (isOpen && !projectData) {
+			fetchProjectApplicant()
+		}
+	}, [isOpen])
+
 	return (
 		<Modal
 			isOpen={isOpen}
@@ -79,10 +168,10 @@ const ApplyProjectModal = ({ isOpen, onClose }: BaseModalProps) => {
 								<div className="bg-grantpicks-black-400 rounded-full w-10 h-10" />
 								<div>
 									<p className="text-sm font-bold text-grantpicks-black-950">
-										Magicbuild
+										{prettyTruncate(projectData.owner, 18, 'address')}
 									</p>
 									<p className="text-sm font-normal text-grantpicks-black-600">
-										@magicbuild.near
+										{prettyTruncate(projectData.owner, 18, 'address')}
 									</p>
 								</div>
 							</div>
@@ -117,7 +206,11 @@ const ApplyProjectModal = ({ isOpen, onClose }: BaseModalProps) => {
 				)}
 				{projectData && !isProjectMissingInfo && (
 					<div className="flex flex-col w-full space-y-4 mt-6">
-						<Button color="black-950" onClick={() => {}} isFullWidth>
+						<Button
+							color="black-950"
+							onClick={onApplyProjectToRound}
+							isFullWidth
+						>
 							<p className="text-sm font-semibold text-white">Apply</p>
 						</Button>
 						<Button color="transparent" onClick={() => onClose()} isFullWidth>

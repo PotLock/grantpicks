@@ -109,13 +109,13 @@ const EditRoundPage = () => {
 		useState<IRoundPeriodData>({
 			selected: 'days',
 			isOpen: false,
-			end_ms: null,
+			period_ms: null,
 		})
 	const [compliancePeriodData, setCompliancePeriodData] =
 		useState<IRoundPeriodData>({
 			selected: 'days',
 			isOpen: false,
-			end_ms: null,
+			period_ms: null,
 		})
 
 	const onFetchAdmins = async () => {
@@ -232,7 +232,7 @@ const EditRoundPage = () => {
 					)
 					setValue(
 						'compliance_period_ms',
-						new Date(Number(resRoundInfo.compliance_period_ms)),
+						Number(resRoundInfo.compliance_period_ms),
 					)
 					setValue('compliance_req_desc', resRoundInfo.compliance_req_desc)
 				}
@@ -247,7 +247,7 @@ const EditRoundPage = () => {
 					)
 					setValue(
 						'cooldown_period_ms',
-						new Date(Number(resRoundInfo.cooldown_period_ms)),
+						Number(resRoundInfo.cooldown_period_ms),
 					)
 				}
 				if (resRoundInfo.allow_remaining_dist) {
@@ -360,7 +360,7 @@ const EditRoundPage = () => {
 	// 	}
 	// }
 
-	const onEditRound: SubmitHandler<CreateRoundData> = async (data) => {
+	const onEditRound: SubmitHandler<UpdateRoundData> = async (data) => {
 		try {
 			openPageLoading()
 			let cmdWallet = new CMDWallet({

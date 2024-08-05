@@ -11,17 +11,13 @@ export const requestUpload = async (
 	livepeer: Livepeer | null,
 	filename: string,
 ) => {
-	try {
-		const resLivepeer = await livepeer?.asset.create({
-			name: filename + '/' + new Date().toISOString(),
-			staticMp4: true,
-		})
-		if (resLivepeer) {
-			const resTypedLivePeer: RequestUploadResponse = resLivepeer
-			return resTypedLivePeer
-		}
-	} catch (error: any) {
-		console.log('error request upload', error)
+	const resLivepeer = await livepeer?.asset.create({
+		name: filename + '/' + new Date().toISOString(),
+		staticMp4: true,
+	})
+	if (resLivepeer) {
+		const resTypedLivePeer: RequestUploadResponse = resLivepeer
+		return resTypedLivePeer
 	}
 }
 
@@ -37,41 +33,37 @@ export const uploadFile = async (
 	onCbSuccess: (uploadedUrl: string | null) => Promise<void>,
 	livepeerRes?: RequestUploadResponse,
 ) => {
-	try {
-		let uploadedUrl: string = ''
-		let percentage: string = ''
-		const upload = new tus.Upload(file, {
-			endpoint: livepeerRes?.data?.tusEndpoint,
-			metadata: {
-				filename: livepeerRes?.data?.asset.name || '',
-				filetype: 'video/mp4',
-			},
-			uploadSize: file.size,
-			onError(err) {
-				console.error('Error uploading file:', err)
-			},
-			onProgress(bytesUploaded, bytesTotal) {
-				percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2)
-				onCbProgress(percentage)
-				// setUploadResult((prev) => ({ ...prev, percentage: percentage || '' }))
-				// console.log('Uploaded ' + percentage + '%')
-			},
-			async onSuccess() {
-				console.log('Upload finished:', upload.url)
-				await onCbSuccess(upload.url)
-				// setUploadResult((prev) => ({ ...prev, uploadedUrl: upload.url || '' }))
-				uploadedUrl = upload.url || ''
-			},
-		})
-		const previousUploads = await upload.findPreviousUploads()
-		if (previousUploads.length > 0) {
-			upload.resumeFromPreviousUpload(previousUploads[0])
-		}
-		upload.start()
-		return { upload, uploadedUrl, percentage }
-	} catch (error: any) {
-		console.log('error request upload', error)
+	let uploadedUrl: string = ''
+	let percentage: string = ''
+	const upload = new tus.Upload(file, {
+		endpoint: livepeerRes?.data?.tusEndpoint,
+		metadata: {
+			filename: livepeerRes?.data?.asset.name || '',
+			filetype: 'video/mp4',
+		},
+		uploadSize: file.size,
+		onError(err) {
+			console.error('Error uploading file:', err)
+		},
+		onProgress(bytesUploaded, bytesTotal) {
+			percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2)
+			onCbProgress(percentage)
+			// setUploadResult((prev) => ({ ...prev, percentage: percentage || '' }))
+			// console.log('Uploaded ' + percentage + '%')
+		},
+		async onSuccess() {
+			console.log('Upload finished:', upload.url)
+			await onCbSuccess(upload.url)
+			// setUploadResult((prev) => ({ ...prev, uploadedUrl: upload.url || '' }))
+			uploadedUrl = upload.url || ''
+		},
+	})
+	const previousUploads = await upload.findPreviousUploads()
+	if (previousUploads.length > 0) {
+		upload.resumeFromPreviousUpload(previousUploads[0])
 	}
+	upload.start()
+	return { upload, uploadedUrl, percentage }
 }
 
 export const retrieveAsset = async (

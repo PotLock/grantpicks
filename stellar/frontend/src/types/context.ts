@@ -54,6 +54,18 @@ export interface ISuccessFundRoundModalProps extends IModalContextProps {
 	amount: string
 }
 
+export interface IApplyProjectToRoundModalProps extends IModalContextProps {
+	round_id: bigint | undefined
+	roundData: IGetRoundsResponse | undefined
+}
+
+export interface ISuccessAppplyProjectToRoundModalProps
+	extends IModalContextProps {
+	applyProjectRes: Project | undefined
+	roundData?: IGetRoundsResponse
+	txHash?: string
+}
+
 export interface IModalContext {
 	successFundRoundModalProps: ISuccessFundRoundModalProps
 	setSuccessCreateRoundModalProps: Dispatch<
@@ -68,7 +80,12 @@ export interface IModalContext {
 	setSuccessFundRoundModalProps: Dispatch<
 		SetStateAction<ISuccessFundRoundModalProps>
 	>
-	setApplyProjectInitProps: Dispatch<SetStateAction<IModalContextProps>>
+	setApplyProjectInitProps: Dispatch<
+		SetStateAction<IApplyProjectToRoundModalProps>
+	>
+	setSuccessApplyProjectInitProps: Dispatch<
+		SetStateAction<ISuccessAppplyProjectToRoundModalProps>
+	>
 	setCreateProjectFormMainProps: Dispatch<SetStateAction<IModalContextProps>>
 }
 

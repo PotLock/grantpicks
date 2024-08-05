@@ -38,6 +38,12 @@ export interface ICreateProjectParams {
 	video_url: string
 }
 
+export interface IChangeProjectStatusParams {
+	contract_owner: string
+	project_id: u128
+	new_status: ProjectStatus
+}
+
 export interface ProjectContact {
 	name: string
 	value: string
@@ -76,11 +82,11 @@ export const getProjects: (
 	let skip = params.skip ? params.skip : 0
 	let limit = params.limit ? params.limit : 10
 
-	let rounds = await contract.project_contract.get_projects({
+	let projects = await contract.project_contract.get_projects({
 		skip: BigInt(skip),
 		limit: BigInt(limit),
 	})
-	return rounds.result
+	return projects.result
 }
 
 export const getProject: (
@@ -90,10 +96,23 @@ export const getProject: (
 	params: GetProjectParams,
 	contract: Contracts,
 ) => {
-	let round = await contract.project_contract.get_project_by_id({
+	let project = await contract.project_contract.get_project_by_id({
 		project_id: params.project_id,
 	})
-	return round.result
+	return project.result
+}
+
+export const getProjectApplicant: (
+	applicant: string,
+	contract: Contracts,
+) => Promise<Project | undefined> = async (
+	applicant: string,
+	contract: Contracts,
+) => {
+	let project = await contract.project_contract.get_project_from_applicant({
+		applicant,
+	})
+	if (project) return project.result
 }
 
 export const createProject: (
@@ -108,6 +127,21 @@ export const createProject: (
 	let project = await contract.project_contract.apply({
 		applicant,
 		project_params: params,
+	})
+	return project
+}
+
+export const changeProjectStatus: (
+	params: IChangeProjectStatusParams,
+	contract: Contracts,
+) => Promise<AssembledTransaction<null>> = async (
+	params: IChangeProjectStatusParams,
+	contract: Contracts,
+) => {
+	let project = await contract.project_contract.change_project_status({
+		contract_owner: params.contract_owner,
+		project_id: params.project_id,
+		new_status: params.new_status,
 	})
 	return project
 }

@@ -71,11 +71,7 @@ pub fn get_all_pairs(env: &Env, round_id: u128) -> Vec<Pair> {
     pairs
 }
 
-pub fn get_all_rounds(
-    env: &Env,
-    skip: Option<u64>,
-    limit: Option<u64>,
-) -> Vec<RoundDetail> {
+pub fn get_all_rounds(env: &Env, skip: Option<u64>, limit: Option<u64>) -> Vec<RoundDetail> {
     let skip: u64 = skip.unwrap_or(0).try_into().unwrap();
     let mut limit: u64 = limit.unwrap_or(5).try_into().unwrap();
 

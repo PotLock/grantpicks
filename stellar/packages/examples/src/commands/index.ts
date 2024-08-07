@@ -3,12 +3,24 @@ import createRandomRounds from './round-factory/create-random.js'
 import getRound from './round-factory/get-round.js'
 import { addAdmin } from './round/add-admin.js'
 import { roundInfo } from './round/info.js'
+import { generateApplicator } from './project-registry/apply.js'
+import { applyToRound } from './round/apply.js'
+import { reviewApplicationAndApprove } from './round/review.js'
 
 async function commands(params: string[], app: App) {
 	let result = null
 	switch (params[0]) {
 		case 'rf_create':
 			result = await createRandomRounds(params.slice(1), app)
+			break
+		case 'rf_gen_applicator':
+			result = await generateApplicator(params.slice(1), app)
+			break
+		case 'rf_apply':
+			result = await applyToRound(params.slice(1), app)
+			break
+		case 'rf_approve':
+			result = await reviewApplicationAndApprove(params.slice(1), app)
 			break
 		case 'rf_rounds':
 			result = await getRound(params.slice(1), app)

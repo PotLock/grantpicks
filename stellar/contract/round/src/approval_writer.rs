@@ -18,4 +18,3 @@ pub fn is_project_approved(env: &Env, round_id: u128, project_id: u128) -> bool 
     let approved_projects = read_approved_projects(env, round_id);
     approved_projects.contains(project_id)
 }
-

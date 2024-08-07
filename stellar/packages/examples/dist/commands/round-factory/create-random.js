@@ -17,6 +17,14 @@ export default async function createRandomRounds(params, app) {
             use_whitelist: false,
             contacts: [],
             owner: app.wallet.account.publicKey,
+            compliance_end_ms: BigInt(new Date().getTime() + 1000 * 60 * 60 * 24 * 7),
+            compliance_period_ms: BigInt(1000 * 60 * 60 * 24 * 7),
+            compliance_req_desc: 'This is a compliance requirement',
+            cooldown_end_ms: BigInt(new Date().getTime() + 1000 * 60 * 60 * 24 * 7),
+            cooldown_period_ms: BigInt(1000 * 60 * 60 * 24 * 7),
+            allow_remaining_dist: false,
+            remaining_dist_address: app.wallet.account.publicKey,
+            referrer_fee_basis_points: 0,
         },
     });
     return (await tx.signAndSend()).result;

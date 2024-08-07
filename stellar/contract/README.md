@@ -36,3 +36,4 @@ npm run contract:test
 ### Build Contract
 
 After meet all requirements use `npm run contract:build` , the wasm output should be on ./stellar/target/loam/
+

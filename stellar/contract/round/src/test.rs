@@ -3,15 +3,17 @@
 use soroban_sdk::token::{StellarAssetClient, TokenClient};
 use soroban_sdk::{self, contracttype, Map, Vec};
 
-use crate::data_type::{ApplicationStatus, CreateRoundParams, Pair, PayoutInput, PickedPair, UpdateRoundParams};
+use crate::data_type::{
+    ApplicationStatus, CreateRoundParams, Pair, PayoutInput, PickedPair, UpdateRoundParams,
+};
 use crate::soroban_sdk::{testutils::Address as _, Address, Env, String};
 use crate::utils::get_ledger_second_as_millis;
 use crate::{internal::RoundContract, internal::RoundContractClient};
 
-mod project_registry{
-  soroban_sdk::contractimport!(
-    file= "../../target/wasm32-unknown-unknown/release/project_registry.wasm",
-  );
+mod project_registry {
+    soroban_sdk::contractimport!(
+        file = "../../target/wasm32-unknown-unknown/release/project_registry.wasm",
+    );
 }
 
 #[contracttype]
@@ -421,7 +423,7 @@ fn test_whitelist_voters() {
     let project_id = 1;
     let applicant = Address::generate(&env);
 
-    round.add_white_list(&created_round.id, &admin, &applicant);
+    round.add_whitelist(&created_round.id, &admin, &applicant);
 
     round.apply_to_round(
         &created_round.id,
@@ -446,6 +448,10 @@ fn test_whitelist_voters() {
         voted_project_id: project_id,
     });
     round.vote(&created_round.id, &voter, &picks);
+
+    let whitelistes = round.whitelisted_voters(&created_round.id);
+
+    assert_eq!(whitelistes.len(), 1);
 }
 
 #[test]
@@ -724,10 +730,10 @@ fn test_voting_deposit_and_payout() {
         name: String::from_str(&env, "name"),
         is_video_required: false,
         contacts: Vec::new(&env),
-        voting_start_ms: get_ledger_second_as_millis(&env)+1000,
+        voting_start_ms: get_ledger_second_as_millis(&env) + 1000,
         voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
         application_start_ms: Some(get_ledger_second_as_millis(&env)),
-        application_end_ms: Some(get_ledger_second_as_millis(&env)+1000),
+        application_end_ms: Some(get_ledger_second_as_millis(&env) + 1000),
         expected_amount: 10 * deposit,
         admins: admins.clone(),
         use_whitelist: Some(false),
@@ -755,8 +761,13 @@ fn test_voting_deposit_and_payout() {
 
     let created_round = round.create_round(&admin, &round_detail);
 
-    
-    round.apply_to_round(&created_round.id, &admin, &Some(projects.get(0).unwrap().owner), &None, &None);
+    round.apply_to_round(
+        &created_round.id,
+        &admin,
+        &Some(projects.get(0).unwrap().owner),
+        &None,
+        &None,
+    );
 
     let mut project_ids: Vec<u128> = Vec::new(&env);
     for i in 0..10 {
@@ -816,10 +827,10 @@ fn test_voting_deposit_and_payout() {
     let mut payouts: Vec<PayoutInput> = Vec::new(&env);
 
     payouts.push_back(PayoutInput {
-      recipient_id: projects.get(0).unwrap().owner,
-      amount: (deposit / 2).try_into().unwrap(),
-      memo: String::from_str(&env, "payout"),
-  });
+        recipient_id: projects.get(0).unwrap().owner,
+        amount: (deposit / 2).try_into().unwrap(),
+        memo: String::from_str(&env, "payout"),
+    });
 
     round.set_payouts(&created_round.id, &admin, &payouts, &false);
 

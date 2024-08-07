@@ -6,7 +6,7 @@
 	"scripts": {
 		"tsc": "tsc --init",
 		"build": "tsc",
-		"start": "npm run build && node dist/run.js"
+		"start": "tsc && node dist/run.js"
 	},
 	"author": "",
 	"license": "ISC",
@@ -17,7 +17,9 @@
 	},
 	"dependencies": {
 		"@stellar/stellar-sdk": "^12.1.0",
+		"axios": "^1.7.3",
 		"dotenv": "^16.4.5",
+		"examples": "^1.0.0",
 		"lists-client": "0.0.0",
 		"project-registry-client": "0.0.0",
 		"round-client": "0.0.0",

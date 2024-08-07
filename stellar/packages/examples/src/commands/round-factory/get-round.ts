@@ -5,7 +5,7 @@ export default async function getRound(params: string[], app: App) {
 	let limit = params[1] ? parseInt(params[1]) : 10
 
 	let rounds = await app.round_contract.get_rounds({
-		skip: BigInt(skip),
+		from_index: BigInt(skip),
 		limit: BigInt(limit),
 	})
 

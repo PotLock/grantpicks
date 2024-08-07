@@ -1,18 +1,25 @@
 use soroban_sdk::{Address, Env, String, Vec};
 
 use crate::data_type::{
-    ApplicationStatus, Deposit, Pair, Payout, PayoutInput,
-    PayoutsChallenge, PickedPair, ProjectVotingResult, RoundApplication,
-    RoundDetail, UpdateRoundParams, VotingResult,
+    ApplicationStatus, Deposit, Pair, Payout, PayoutInput, PayoutsChallenge, PickedPair,
+    ProjectVotingResult, RoundApplication, RoundDetail, UpdateRoundParams, VotingResult,
 };
 
 pub trait IsRound {
-    fn change_voting_period(env: &Env,
+    fn set_cooldown_config(
+        env: &Env,
         round_id: u128,
         caller: Address,
-        start_ms: u64,
-        end_ms: u64,
-    );
+        cooldown_period_ms: Option<u64>,
+    ) -> RoundDetail;
+    fn set_compliance_config(
+        env: &Env,
+        round_id: u128,
+        caller: Address,
+        compliance_req_desc: Option<String>,
+        compliance_period_ms: Option<u64>,
+    ) -> RoundDetail;
+    fn change_voting_period(env: &Env, round_id: u128, caller: Address, start_ms: u64, end_ms: u64);
     fn change_application_period(
         env: &Env,
         round_id: u128,
@@ -58,7 +65,6 @@ pub trait IsRound {
     fn unflag_voter(env: &Env, round_id: u128, caller: Address, voter: Address);
     fn add_approved_project(env: &Env, round_id: u128, caller: Address, project_ids: Vec<u128>);
     fn remove_approved_project(env: &Env, around_id: u128, caller: Address, project_ids: Vec<u128>);
-    fn get_results_for_round(env: &Env, round_id: u128) -> Vec<ProjectVotingResult>;
     fn process_payouts(env: &Env, round_id: u128, caller: Address);
     fn set_round_complete(env: &Env, round_id: u128, caller: Address) -> RoundDetail;
     fn challenge_payouts(
@@ -84,39 +90,7 @@ pub trait IsRound {
         payouts: Vec<PayoutInput>,
         clear_existing: bool,
     ) -> Vec<Payout>;
-    fn get_payouts(env: &Env, from_index: Option<u64>, limit: Option<u64>) -> Vec<Payout>;
-    fn get_all_voters(
-        env: &Env,
-        round_id: u128,
-        from_index: Option<u64>,
-        limit: Option<u64>,
-    ) -> Vec<VotingResult>;
-    fn can_vote(env: &Env, round_id: u128, voter: Address) -> bool;
-    fn get_round(env: &Env, round_id: u128) -> RoundDetail;
-    fn is_voting_live(env: &Env, round_id: u128) -> bool;
-    fn is_application_live(env: &Env, round_id: u128) -> bool;
-    fn get_applications_for_round(
-        env: &Env,
-        round_id: u128,
-        from_index: Option<u64>,
-        limit: Option<u64>,
-    ) -> Vec<RoundApplication>;
-    fn get_application(
-        env: &Env,
-        round_id: u128,
-        applicant: Address,
-    ) -> Option<RoundApplication>;
-    fn is_payout_done(env: &Env, round_id: u128) -> bool;
-    fn user_has_vote(env: &Env, round_id: u128, voter: Address) -> bool;
-    fn total_funding(env: &Env, round_id: u128) -> u128;
-    fn get_pairs_to_vote(env: &Env, round_id: u128) -> Vec<Pair>;
-    fn add_white_list(env: &Env, round_id: u128, admin: Address, address: Address);
-    fn remove_from_white_list(env: &Env, round_id: u128, admin: Address, address: Address);
-    fn whitelist_status(env: &Env, round_id: u128, address: Address) -> bool;
-    fn blacklist_status(env: &Env, round_id: u128, address: Address) -> bool;
-    fn get_all_pairs_for_round(env: &Env, round_id: u128) -> Vec<Pair>;
-    fn get_pair_by_index(env: &Env, round_id: u128, index: u32) -> Pair;
-    fn admins(env: &Env, round_id: u128) -> Vec<Address>;
+    fn redistribute_vault(env: &Env, round_id: u128, caller: Address, memo: Option<String>);
     fn unapply_from_round(
         env: &Env,
         round_id: u128,
@@ -151,6 +125,36 @@ pub trait IsRound {
         review_notes: Vec<Option<String>>,
         applicants: Vec<Address>,
     ) -> Vec<RoundApplication>;
+    fn add_whitelist(env: &Env, round_id: u128, caller: Address, address: Address);
+    fn remove_from_whitelist(env: &Env, round_id: u128, caller: Address, address: Address);
+
+    fn get_payouts(env: &Env, from_index: Option<u64>, limit: Option<u64>) -> Vec<Payout>;
+    fn get_all_voters(
+        env: &Env,
+        round_id: u128,
+        from_index: Option<u64>,
+        limit: Option<u64>,
+    ) -> Vec<VotingResult>;
+    fn can_vote(env: &Env, round_id: u128, voter: Address) -> bool;
+    fn get_round(env: &Env, round_id: u128) -> RoundDetail;
+    fn is_voting_live(env: &Env, round_id: u128) -> bool;
+    fn is_application_live(env: &Env, round_id: u128) -> bool;
+    fn get_applications_for_round(
+        env: &Env,
+        round_id: u128,
+        from_index: Option<u64>,
+        limit: Option<u64>,
+    ) -> Vec<RoundApplication>;
+    fn get_application(env: &Env, round_id: u128, applicant: Address) -> Option<RoundApplication>;
+    fn is_payout_done(env: &Env, round_id: u128) -> bool;
+    fn user_has_vote(env: &Env, round_id: u128, voter: Address) -> bool;
+    fn total_funding(env: &Env, round_id: u128) -> u128;
+    fn get_pairs_to_vote(env: &Env, round_id: u128) -> Vec<Pair>;
+    fn whitelist_status(env: &Env, round_id: u128, address: Address) -> bool;
+    fn blacklist_status(env: &Env, round_id: u128, address: Address) -> bool;
+    fn get_all_pairs_for_round(env: &Env, round_id: u128) -> Vec<Pair>;
+    fn get_pair_by_index(env: &Env, round_id: u128, index: u32) -> Pair;
+    fn admins(env: &Env, round_id: u128) -> Vec<Address>;
     fn get_payouts_for_round(
         env: &Env,
         round_id: u128,
@@ -158,26 +162,13 @@ pub trait IsRound {
         limit: Option<u64>,
     ) -> Vec<Payout>;
     fn get_payout(env: &Env, payout_id: u32) -> Payout;
-    fn redistribute_vault(env: &Env, round_id: u128, caller: Address, memo: Option<String>);
     fn get_deposits_for_round(
         env: &Env,
         round_id: u128,
         from_index: Option<u64>,
         limit: Option<u64>,
     ) -> Vec<Deposit>;
-
-    fn set_cooldown_config(
-        env: &Env,
-        round_id: u128,
-        caller: Address,
-        cooldown_period_ms: Option<u64>,
-    ) -> RoundDetail;
-
-    fn set_compliance_config(
-        env: &Env,
-        round_id: u128,
-        caller: Address,
-        compliance_req_desc: Option<String>,
-        compliance_period_ms: Option<u64>,
-    ) -> RoundDetail;
+    fn get_results_for_round(env: &Env, round_id: u128) -> Vec<ProjectVotingResult>;
+    fn blacklisted_voters(env: &Env, round_id: u128) -> Vec<Address>;
+    fn whitelisted_voters(env: &Env, round_id: u128) -> Vec<Address>;
 }

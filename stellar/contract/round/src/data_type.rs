@@ -2,7 +2,7 @@ use soroban_sdk::Env;
 
 use crate::{
     admin_writer::is_admin,
-    payout_writer::{read_payout_challenges},
+    payout_writer::read_payout_challenges,
     soroban_sdk::{self, contracttype, Address, String, Vec},
     utils::get_ledger_second_as_millis,
 };
@@ -13,6 +13,7 @@ pub enum ApplicationStatus {
     Pending,
     Approved,
     Rejected,
+    Blacklisted,
 }
 
 #[contracttype]
@@ -47,7 +48,7 @@ pub struct RoundDetail {
     pub is_video_required: bool,
     pub cooldown_period_ms: Option<u64>,
     pub cooldown_end_ms: Option<u64>,
-    pub compliance_req_desc: String, // too long on stellar
+    pub compliance_req_desc: String,
     pub compliance_period_ms: Option<u64>,
     pub compliance_end_ms: Option<u64>,
     pub allow_remaining_dist: Option<bool>,
@@ -108,7 +109,7 @@ pub struct UpdateRoundParams {
 //Note: use String for Option<String>. soroban SDK not allow Option<soroban_sdk::String>
 #[contracttype]
 #[derive(Clone, Eq, PartialEq)]
-pub struct RoundApplication{
+pub struct RoundApplication {
     pub project_id: u128,
     pub applicant_id: Address,
     pub applicant_note: String,
@@ -207,7 +208,6 @@ pub struct Deposit {
 }
 
 impl RoundDetail {
-
     pub fn is_caller_owner_or_admin(&self, env: &Env, caller: &Address) -> bool {
         self.owner == caller.clone() || is_admin(env, self.id, caller)
     }

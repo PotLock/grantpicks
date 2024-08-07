@@ -5,7 +5,7 @@ use crate::{
     external::ProjectRegistryClient,
     project_registry_writer::read_project_contract,
     utils::get_ledger_second_as_millis,
-    voter_writer::{is_black_listed, is_white_listed},
+    voter_writer::{is_blacklisted, is_whitelisted},
     voting_writer::get_voting_state,
 };
 use soroban_sdk::{Address, Env, String, Vec};
@@ -182,23 +182,23 @@ pub fn validate_number_of_votes(required: u32, voted: u32) {
 }
 
 pub fn validate_blacklist(env: &Env, round_id: u128, voter: &Address) {
-    let is_black_listed = is_black_listed(env, round_id, voter.clone());
-    assert!(!is_black_listed, "Voter is black listed");
+    let is_black_listed = is_blacklisted(env, round_id, voter.clone());
+    assert!(!is_black_listed, "Voter is blacklisted");
 }
 
 pub fn validate_blacklist_already(env: &Env, round_id: u128, voter: &Address) {
-    let is_black_listed = is_black_listed(env, round_id, voter.clone());
-    assert!(!is_black_listed, "Voter is already black listed");
+    let is_black_listed = is_blacklisted(env, round_id, voter.clone());
+    assert!(!is_black_listed, "Voter is already blacklisted");
 }
 
 pub fn validate_not_blacklist(env: &Env, round_id: u128, voter: &Address) {
-    let is_black_listed = is_black_listed(env, round_id, voter.clone());
-    assert!(is_black_listed, "Voter is not black listed");
+    let is_black_listed = is_blacklisted(env, round_id, voter.clone());
+    assert!(is_black_listed, "Voter is not blacklisted");
 }
 
 pub fn validate_whitelist(env: &Env, round_id: u128, voter: &Address) {
-    let is_white_listed = is_white_listed(env, round_id, voter.clone());
-    assert!(is_white_listed, "Voter is not white listed");
+    let is_white_listed = is_whitelisted(env, round_id, voter.clone());
+    assert!(is_white_listed, "Voter is not whitelisted");
 }
 
 pub fn validate_review_notes(notes: &String) {

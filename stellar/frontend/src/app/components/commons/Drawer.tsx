@@ -43,7 +43,7 @@ const Drawer = ({
 			)}
 			<div
 				className={clsx(
-					`fixed right-0 inset-y-0 w-full md:w-[360px] z-[60] transition-transform transform-gpu duration-500 min-h-screen`,
+					`fixed right-0 inset-y-0 w-full md:w-[380px] z-[60] transition-transform transform-gpu duration-500 min-h-screen`,
 					isOpen ? 'translate-x-[0%]' : 'translate-x-[100%]',
 					className,
 				)}

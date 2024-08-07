@@ -63,6 +63,17 @@ body {
 		background: radial-gradient(83.78% 135.19% at 52.55% 0%, #7B3AED 0%, #5A21B6 99.6%);
 		box-shadow: 0px 16px 16px -8px rgba(137, 90, 246, 0.20), 0px 8px 8px -4px rgba(137, 90, 246, 0.30), 0px 0px 0px 0.5px #895AF6, 0px -2px 2px 0px rgba(117, 177, 252, 0.70) inset, 2px 0px 2px 0px rgba(221, 214, 254, 0.50) inset, -2px 0px 2px 0px rgba(221, 214, 254, 0.50) inset, 0px -2px 4px 0px rgba(117, 177, 252, 0.70) inset;
 	}
+
+	/* Hide scrollbar for Chrome, Safari and Opera */
+	.no-scrollbar::-webkit-scrollbar {
+		display: none;
+	}
+
+	/* Hide scrollbar for IE, Edge and Firefox */
+	.no-scrollbar {
+		-ms-overflow-style: none;  /* IE and Edge */
+		scrollbar-width: none;  /* Firefox */
+	}
 }
 
 

@@ -28,6 +28,7 @@ const config: Config = {
 					purple: {
 						100: '#ede9fe',
 						400: '#A78BFA',
+						500: '#895AF6',
 						950: '#2E1065',
 					},
 					alpha: {

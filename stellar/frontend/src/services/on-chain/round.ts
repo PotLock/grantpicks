@@ -9,7 +9,13 @@ import {
 	u32,
 	u64,
 } from '@stellar/stellar-sdk/contract'
-import { Contact, RoundApplication, RoundDetail } from 'round-client'
+import {
+	Contact,
+	Pair,
+	PickedPair,
+	RoundApplication,
+	RoundDetail,
+} from 'round-client'
 
 interface GetRoundsParams {
 	skip: number
@@ -59,6 +65,22 @@ export interface CreateRoundParams {
 	use_whitelist: boolean
 	voting_end_ms: u64
 	voting_start_ms: u64
+}
+
+export interface VoteRoundParams {
+	round_id: u128
+	voter: string
+	picks: PickedPair[]
+}
+
+export interface AvailableVoteRoundParams {
+	round_id: u128
+	voter: string
+}
+
+export interface HasVotedRoundParams {
+	round_id: u128
+	voter: string
 }
 
 export interface UpdateRoundParams {
@@ -259,4 +281,57 @@ export const applyProjectToRound: (
 		review_note: params.review_note,
 	})
 	return res
+}
+
+export const voteRound: (
+	params: VoteRoundParams,
+	contract: Contracts,
+) => Promise<AssembledTransaction<null>> = async (
+	params: VoteRoundParams,
+	contract: Contracts,
+) => {
+	let round = await contract.round_contract.vote({
+		round_id: params.round_id,
+		voter: params.voter,
+		picks: params.picks,
+	})
+	return round
+}
+
+export const getPairsRound: (
+	round_id: u128,
+	contract: Contracts,
+) => Promise<Array<Pair>> = async (round_id: u128, contract: Contracts) => {
+	let round = await contract.round_contract.get_pairs_to_vote({
+		round_id,
+	})
+	return round.result
+}
+
+export const isAvailableVoteRound: (
+	params: AvailableVoteRoundParams,
+	contract: Contracts,
+) => Promise<boolean> = async (
+	params: AvailableVoteRoundParams,
+	contract: Contracts,
+) => {
+	let round = await contract.round_contract.can_vote({
+		round_id: params.round_id,
+		voter: params.voter,
+	})
+	return round.result
+}
+
+export const isHasVotedRound: (
+	params: HasVotedRoundParams,
+	contract: Contracts,
+) => Promise<boolean> = async (
+	params: HasVotedRoundParams,
+	contract: Contracts,
+) => {
+	let round = await contract.round_contract.user_has_vote({
+		round_id: params.round_id,
+		voter: params.voter,
+	})
+	return round.result
 }

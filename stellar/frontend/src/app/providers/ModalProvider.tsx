@@ -11,6 +11,7 @@ import {
 	ISuccessCreateRoundModalProps,
 	ISuccessFundRoundModalProps,
 	ISuccessUpdateRoundModalProps,
+	IVideoPlayerModalProps,
 } from '@/types/context'
 import SuccessFundRoundModal from '../components/pages/application/SuccessFundRoundModal'
 import ApplyProjectModal from '../components/pages/application/create-apply-project/ApplyProjectModal'
@@ -20,6 +21,7 @@ import SuccessCreateRoundModal from '../components/pages/create-round/SuccessCre
 import SuccessEditRoundModal from '../components/pages/application/edit-round/SuccessEditRoundModal'
 import SuccessCreateProjectModal from '../components/pages/application/create-apply-project/SuccessCreateProjectModal'
 import SuccessApplyProjectModal from '../components/pages/application/create-apply-project/SuccessApplyProjectModal'
+import VideoPlayerModal from '../components/commons/VideoPlayerModal'
 
 const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 	const [successCreateRoundProps, setSuccessCreateRoundProps] =
@@ -69,6 +71,11 @@ const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 		useState<IModalContextProps>({
 			isOpen: false,
 		})
+	const [videoPlayerProps, setVideoPlayerProps] =
+		useState<IVideoPlayerModalProps>({
+			isOpen: false,
+			videoUrl: '',
+		})
 
 	return (
 		<ModalContext.Provider
@@ -82,6 +89,7 @@ const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 				setApplyProjectInitProps,
 				setVoteConfirmationProps,
 				setCreateProjectFormMainProps,
+				setVideoPlayerProps,
 			}}
 		>
 			{children}
@@ -154,7 +162,7 @@ const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 			/>
 			<VoteConfirmationModal
 				isOpen={voteConfirmationProps.isOpen}
-				doc={voteConfirmationProps.doc}
+				data={voteConfirmationProps.doc}
 				onClose={() =>
 					setVoteConfirmationProps((prev) => ({
 						...prev,
@@ -166,6 +174,16 @@ const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 				isOpen={createProjectFormMainProps.isOpen}
 				onClose={() =>
 					setCreateProjectFormMainProps((prev) => ({
+						...prev,
+						isOpen: false,
+					}))
+				}
+			/>
+			<VideoPlayerModal
+				isOpen={videoPlayerProps.isOpen}
+				videoUrl={videoPlayerProps.videoUrl}
+				onClose={() =>
+					setVideoPlayerProps((prev) => ({
 						...prev,
 						isOpen: false,
 					}))

@@ -16,4 +16,5 @@ export const ModalContext = createContext<IModalContext>({
 	setVoteConfirmationProps: () => {},
 	setCreateProjectFormMainProps: () => {},
 	setSuccessApplyProjectInitProps: () => {},
+	setVideoPlayerProps: () => {},
 })

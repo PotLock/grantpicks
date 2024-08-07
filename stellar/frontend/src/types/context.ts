@@ -37,6 +37,10 @@ export interface IVoteConfirmationModalContextProps extends IModalContextProps {
 	doc?: IGetRoundsResponse
 }
 
+export interface IVideoPlayerModalProps extends IModalContextProps {
+	videoUrl?: string
+}
+
 export interface ISuccessCreateRoundModalProps extends IModalContextProps {
 	createRoundRes: IGetRoundsResponse | undefined
 	txHash?: string
@@ -94,6 +98,7 @@ export interface IModalContext {
 		SetStateAction<IVoteConfirmationModalContextProps>
 	>
 	setCreateProjectFormMainProps: Dispatch<SetStateAction<IModalContextProps>>
+	setVideoPlayerProps: Dispatch<SetStateAction<IVideoPlayerModalProps>>
 }
 
 export interface ICreateProjectForm {

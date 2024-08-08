@@ -28,7 +28,7 @@ impl ProjectRegistryTrait for ProjectRegistry {
         applicant.require_auth();
 
         validate_applicant(env, &applicant);
-        validate_application(&project_params);
+        validate_application(env, &project_params);
 
         let project_id = increment_project_num(env);
 
@@ -89,14 +89,14 @@ impl ProjectRegistryTrait for ProjectRegistry {
     ) {
         admin.require_auth();
 
-        validate_update_project(&new_project_params);
+        validate_update_project(env, &new_project_params);
 
         let project = get_project(env, project_id);
         assert!(project.is_some(), "project not found");
 
         let mut uproject = project.unwrap();
 
-        validate_owner_or_admin(&admin, &uproject);
+        validate_owner_or_admin(env, &admin, &uproject);
 
         uproject.name = new_project_params.name;
         uproject.image_url = new_project_params.image_url;
@@ -121,7 +121,7 @@ impl ProjectRegistryTrait for ProjectRegistry {
 
         let mut uproject = project.unwrap();
 
-        validate_owner(&admin, &uproject);
+        validate_owner(env, &admin, &uproject);
 
         uproject.admins.push_back(new_admin);
 
@@ -138,7 +138,7 @@ impl ProjectRegistryTrait for ProjectRegistry {
 
         let mut uproject = project.unwrap();
 
-        validate_owner(&admin, &uproject);
+        validate_owner(env, &admin, &uproject);
 
         let index = uproject.admins.first_index_of(&admin_to_remove.clone());
         assert!(index.is_some(), "admin not found");
@@ -192,6 +192,8 @@ impl ProjectRegistryTrait for ProjectRegistry {
 
     fn get_project_from_applicant(env: &Env, applicant: Address) -> Option<Project> {
         let project_id = get_applicant_project_id(env, &applicant);
+
+        extend_instance(env);
 
         if project_id.is_none() {
             return None;

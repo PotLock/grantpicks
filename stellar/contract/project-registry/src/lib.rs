@@ -9,7 +9,8 @@ mod methods;
 mod project_writer;
 mod storage;
 mod storage_key;
-mod test;
 mod validation;
+mod error;
+mod test;
 
 pub use crate::internal::ProjectRegistry;

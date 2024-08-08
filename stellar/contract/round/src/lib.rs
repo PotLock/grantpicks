@@ -25,6 +25,7 @@ mod utils;
 mod validation;
 mod voter_writer;
 mod voting_writer;
+mod error;
 
 mod test;
 

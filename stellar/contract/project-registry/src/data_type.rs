@@ -1,12 +1,12 @@
 use crate::soroban_sdk::{self, contracttype, Address, String, Vec};
 
 #[contracttype]
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub enum ProjectStatus {
-    New,
-    Approved,
-    Rejected,
-    Completed,
+    New = 0,
+    Approved  = 1,
+    Rejected  = 2,
+    Completed = 3,
 }
 
 #[contracttype]

@@ -1,136 +1,127 @@
 use crate::{
-    admin_writer::is_admin,
-    approval_writer::{is_project_approved, read_approved_projects},
-    data_type::{CreateRoundParams, RoundDetail, UpdateRoundParams},
-    external::ProjectRegistryClient,
-    project_registry_writer::read_project_contract,
-    utils::get_ledger_second_as_millis,
-    voter_writer::{is_blacklisted, is_whitelisted},
-    voting_writer::get_voting_state,
+    admin_writer::is_admin, approval_writer::{is_project_approved, read_approved_projects}, data_type::{CreateRoundParams, RoundDetail, UpdateRoundParams}, error::{ApplicationError, Error, RoundError, VoteError}, external::ProjectRegistryClient, project_registry_writer::read_project_contract, utils::get_ledger_second_as_millis, voter_writer::{is_blacklisted, is_whitelisted}, voting_writer::get_voting_state
 };
-use soroban_sdk::{Address, Env, String, Vec};
+use soroban_sdk::{panic_with_error, Address, Env, String, Vec};
 
-pub fn validate_round_detail(round_detail: &CreateRoundParams) {
-    assert!(
-        round_detail.voting_start_ms < round_detail.voting_end_ms,
-        "Round start time must be less than round end time"
-    );
+pub fn validate_round_detail(env: &Env, round_detail: &CreateRoundParams) {
+    if round_detail.voting_start_ms > round_detail.voting_end_ms{
+      panic_with_error!(env, RoundError::VotingStartGreaterThanVotingEnd);
+    }
 
-    assert!(
-        round_detail.application_start_ms.unwrap() <= round_detail.application_end_ms.unwrap(),
-        "Round application start time must be less than equal round application end time"
-    );
+    if round_detail.application_start_ms.unwrap() > round_detail.application_end_ms.unwrap(){
+      panic_with_error!(env, RoundError::ApplicationStartGreaterThanApplicationEnd);
+    }
 
-    assert!(
-        round_detail.voting_start_ms >= round_detail.application_end_ms.unwrap(),
-        "Round start time must be greater than or equal round application end time"
-    );
+    if round_detail.voting_start_ms < round_detail.application_end_ms.unwrap(){
+      panic_with_error!(env, RoundError::VotingStartLessThanApplicationEnd);
+    }
 
-    assert!(
-        round_detail.expected_amount > 0,
-        "Expected Amount must be greater than 0"
-    );
+    if round_detail.expected_amount <= 0{
+      panic_with_error!(env, RoundError::AmountMustBeGreaterThanZero);
+    }
 
-    assert!(
-        round_detail.contacts.len() <= 10,
-        "Contact must be less than 10"
-    );
+    if round_detail.contacts.len() >= 10{
+      panic_with_error!(env, RoundError::ContactMustBeLessThanTen);
+    }
 }
 
-pub fn validate_round_detail_update(round_detail: &UpdateRoundParams) {
-    assert!(
-        round_detail.voting_start_ms < round_detail.voting_end_ms,
-        "Round start time must be less than round end time"
-    );
+pub fn validate_round_detail_update(env: &Env,round_detail: &UpdateRoundParams) {
+  if round_detail.voting_start_ms > round_detail.voting_end_ms{
+    panic_with_error!(env, RoundError::VotingStartGreaterThanVotingEnd);
+  }
 
-    assert!(
-        round_detail.application_start_ms.unwrap() <= round_detail.application_end_ms.unwrap(),
-        "Round application start time must be less than equal round application end time"
-    );
+  if round_detail.application_start_ms.unwrap() > round_detail.application_end_ms.unwrap(){
+    panic_with_error!(env, RoundError::ApplicationStartGreaterThanApplicationEnd);
+  }
 
-    assert!(
-        round_detail.voting_start_ms >= round_detail.application_end_ms.unwrap(),
-        "Round start time must be greater than or equal round application end time"
-    );
+  if round_detail.voting_start_ms < round_detail.application_end_ms.unwrap(){
+    panic_with_error!(env, RoundError::VotingStartLessThanApplicationEnd);
+  }
 
-    assert!(
-        round_detail.expected_amount > 0,
-        "Expected Amount must be greater than 0"
-    );
+  if round_detail.expected_amount <= 0{
+    panic_with_error!(env, RoundError::AmountMustBeGreaterThanZero);
+  }
 
-    assert!(
-        round_detail.contacts.len() <= 10,
-        "Contact must be less than 10"
-    );
+  if round_detail.contacts.len() >= 10{
+    panic_with_error!(env, RoundError::ContactMustBeLessThanTen);
+  }
 }
 
 pub fn validate_owner_or_admin(env: &Env, admin: &Address, round: &RoundDetail) {
     if round.owner != admin.clone() {
-        assert!(
-            is_admin(env, round.id, admin),
-            "Only round owner or round admin can performe this action"
-        );
+       if !is_admin(env, round.id, admin){
+          panic_with_error!(env, Error::OwnerOrAdminOnly);
+       }
     }
 }
 
 pub fn validate_can_payout(env: &Env, round: &RoundDetail) {
     let current_time = get_ledger_second_as_millis(env);
-    assert!(
-        round.voting_start_ms <= current_time,
-        "Voting period is not started"
-    );
+   
+    if round.voting_start_ms > current_time{
+        panic_with_error!(env, VoteError::VotingPeriodNotStarted);
+    }
 
-    assert!(
-        current_time >= round.voting_end_ms,
-        "Voting period is not ended"
-    );
+    if round.voting_end_ms > current_time{
+      panic_with_error!(env, VoteError::VotingPeriodNotEnded);
+    }
 }
 
-pub fn validate_vault_fund(round: &RoundDetail) {
+pub fn validate_vault_fund(env: &Env, round: &RoundDetail) {
     let vault_fund = round.current_vault_balance;
-    assert!(vault_fund > 0, "Vault fund must be greater than 0");
+    
+    if vault_fund <= 0{
+      panic_with_error!(env, RoundError::InvalidVaultBalance);
+    }
 }
 
 pub fn validate_voting_period(env: &Env, round: &RoundDetail) {
     let current_time = get_ledger_second_as_millis(env);
-    assert!(
-        current_time >= round.voting_start_ms,
-        "Voting period has not started yet"
-    );
-    assert!(
-        current_time < round.voting_end_ms,
-        "Voting period has ended"
-    );
+    
+    if current_time < round.voting_start_ms{
+      panic_with_error!(env, VoteError::VotingPeriodNotStarted);
+    }
+
+
+    if current_time > round.voting_end_ms{
+      panic_with_error!(env, VoteError::VotingPeriodEnded);
+    }
 }
 
 pub fn validate_application_period(env: &Env, round: &RoundDetail) {
     let current_time = get_ledger_second_as_millis(env);
-    assert!(
-        current_time >= round.application_start_ms.unwrap(),
-        "Application period has not started yet"
-    );
-    assert!(
-        current_time <= round.application_end_ms.unwrap(),
-        "Application period has ended"
-    );
+
+    if current_time < round.application_start_ms.unwrap(){
+      panic_with_error!(env, ApplicationError::ApplicationPeriodNotStarted);
+    }
+
+    if current_time > round.application_end_ms.unwrap(){
+      panic_with_error!(env, ApplicationError::ApplicationPeriodEnded);
+    }
 }
 
 pub fn validate_voting_not_started(env: &Env, round: &RoundDetail) {
     let current_time = get_ledger_second_as_millis(env);
-    assert!(
-        current_time < round.voting_start_ms,
-        "Voting has already started"
-    );
+
+    if current_time > round.voting_end_ms {
+        panic_with_error!(env, VoteError::VotingAlreadyStarted);
+    }
 }
 
 pub fn validate_approved_projects(env: &Env, round_id: u128, project_id: u128) {
     let already_approved = is_project_approved(env, round_id, project_id);
-    assert!(already_approved, "Project not approved");
+    
+    if !already_approved{
+      panic_with_error!(env, ApplicationError::ProjectNotApproved);
+    }
 }
 
 pub fn validate_not_approved_projects(env: &Env, round_id: u128, project_id: u128) {
     let already_approved = is_project_approved(env, round_id, project_id);
-    assert!(!already_approved, "Project already approved");
+   
+    if already_approved{
+      panic_with_error!(env, ApplicationError::ProjectAlreadyApproved);
+    }
 }
 
 pub fn validate_project_to_approve(env: &Env, round_id: u128, project_ids: &Vec<u128>) {
@@ -139,10 +130,9 @@ pub fn validate_project_to_approve(env: &Env, round_id: u128, project_ids: &Vec<
     let total_projects: u128 = project_client.get_total_projects().into();
 
     project_ids.iter().for_each(|project_id| {
-        assert!(
-            project_id <= total_projects,
-            "Project not found in registry"
-        );
+        if project_id > total_projects{
+          panic_with_error!(env, ApplicationError::ProjectNotFoundInRegistry);
+        }
 
         validate_not_approved_projects(env, round_id, project_id);
     });
@@ -150,78 +140,84 @@ pub fn validate_project_to_approve(env: &Env, round_id: u128, project_ids: &Vec<
 
 pub fn validate_max_participants(env: &Env, round: &RoundDetail, project_ids: &Vec<u128>) {
     let approved_project = read_approved_projects(env, round.id);
-    assert!(
-        approved_project.len() + project_ids.len() <= round.max_participants,
-        "Maximum project participants {}",
-        round.max_participants
-    );
+    
+    if approved_project.len() + project_ids.len() > round.max_participants{
+      panic_with_error!(env, ApplicationError::MaxParticipantsReached);
+    }
 }
 
 pub fn validate_max_participant(env: &Env, round: &RoundDetail) {
     let approved_project = read_approved_projects(env, round.id);
-    assert!(
-        approved_project.len() < round.max_participants,
-        "Maximum project participants {}",
-        round.max_participants
-    );
+    
+    if approved_project.len() >= round.max_participants{
+      panic_with_error!(env, ApplicationError::MaxParticipantsReached);
+    }
 }
 
 pub fn validate_has_voted(env: &Env, round_id: u128, voter: &Address) {
     let state = get_voting_state(env, round_id, voter.clone());
-    assert!(
-        !state,
-        "Voter already voted. Can not vote again in same round"
-    );
+    
+    if state{
+      panic_with_error!(env, VoteError::AlreadyVoted);
+    }
 }
 
-pub fn validate_number_of_votes(required: u32, voted: u32) {
-    assert!(
-        required == voted,
-        "Number of picks must be equal to number of picks per voter"
-    );
+pub fn validate_number_of_votes(env: &Env, required: u32, voted: u32) {
+    if required != voted{
+      panic_with_error!(env, VoteError::NotVoteAllPairs);
+    }
 }
 
 pub fn validate_blacklist(env: &Env, round_id: u128, voter: &Address) {
-    let is_black_listed = is_blacklisted(env, round_id, voter.clone());
-    assert!(!is_black_listed, "Voter is blacklisted");
+    let is_blacklisted = is_blacklisted(env, round_id, voter.clone());
+    
+    if is_blacklisted{
+      panic_with_error!(env, RoundError::UserBlacklisted);
+    }
 }
 
 pub fn validate_blacklist_already(env: &Env, round_id: u128, voter: &Address) {
-    let is_black_listed = is_blacklisted(env, round_id, voter.clone());
-    assert!(!is_black_listed, "Voter is already blacklisted");
+    let is_blacklisted = is_blacklisted(env, round_id, voter.clone());
+    
+    if !is_blacklisted{
+      panic_with_error!(env, RoundError::UserAlreadyBlacklisted);
+    }
 }
 
 pub fn validate_not_blacklist(env: &Env, round_id: u128, voter: &Address) {
-    let is_black_listed = is_blacklisted(env, round_id, voter.clone());
-    assert!(is_black_listed, "Voter is not blacklisted");
+    let is_blacklisted = is_blacklisted(env, round_id, voter.clone());
+    
+    if !is_blacklisted{
+      panic_with_error!(env, RoundError::BlacklistNotFound);
+    }
 }
 
 pub fn validate_whitelist(env: &Env, round_id: u128, voter: &Address) {
-    let is_white_listed = is_whitelisted(env, round_id, voter.clone());
-    assert!(is_white_listed, "Voter is not whitelisted");
+    let is_whitelisted = is_whitelisted(env, round_id, voter.clone());
+   
+    if !is_whitelisted{
+      panic_with_error!(env, RoundError::UserNotWhitelisted);
+    }
 }
 
-pub fn validate_review_notes(notes: &String) {
-    assert!(
-        notes.len() <= 300,
-        "Review notes must be less than 300 characters"
-    );
+pub fn validate_review_notes(env: &Env, notes: &String) {
+    if notes.len() > 300{
+      panic_with_error!(env, RoundError::ReviewNotTooLong);
+    }
 }
 
-pub fn validate_pick_per_votes(num_picks_per_voter: u32) {
-    assert!(
-        num_picks_per_voter > 0,
-        "Number of picks per voter must be greater than 0"
-    );
-    assert!(
-        num_picks_per_voter <= 10,
-        "Number of picks per voter must be less than or equal 10"
-    );
+pub fn validate_pick_per_votes(env: &Env, num_picks_per_voter: u32) {
+    if num_picks_per_voter < 1{
+      panic_with_error!(env, VoteError::EmptyVote);
+    }
+    
+    if num_picks_per_voter > 10{
+      panic_with_error!(env, VoteError::TooManyVotes);
+    }
 }
 
-pub fn validate_specify_applicant(is_owner_or_admin: bool) {
-    assert!(
-        is_owner_or_admin,
-        "Only round owner or admin can specify applicant"
-    );
+pub fn validate_specify_applicant(env: &Env,is_owner_or_admin: bool) {
+    if !is_owner_or_admin{
+      panic_with_error!(env, Error::OwnerOrAdminOnly);
+    }
 }

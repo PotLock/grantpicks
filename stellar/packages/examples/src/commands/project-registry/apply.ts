@@ -63,7 +63,7 @@ export async function generateApplicator(params: string[], adminApp: App) {
 					funded_ms: BigInt(Date.now()),
 					source: 'Stellar Development Foundation',
 				},
-			],
+			] as ProjectFundingHistory[],
 			team_members: [
 				{
 					name: 'Alice',

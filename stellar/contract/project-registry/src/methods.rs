@@ -1,10 +1,10 @@
 use soroban_sdk::{Address, BytesN, Env, Vec};
 
-use crate::data_type::{Project, ProjectParams, ProjectStatus, UpdateProjectParams};
+use crate::data_type::{Project, CreateProjectParams, ProjectStatus, UpdateProjectParams};
 
 pub trait ProjectRegistryTrait {
     fn initialize(env: &Env, contract_owner: Address);
-    fn apply(env: &Env, applicant: Address, params: ProjectParams) -> Project;
+    fn apply(env: &Env, applicant: Address, params: CreateProjectParams) -> Project;
     fn change_project_status(
         env: &Env,
         contract_owner: Address,

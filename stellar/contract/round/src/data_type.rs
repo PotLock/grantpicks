@@ -190,6 +190,7 @@ pub struct PayoutsChallenge {
     pub resolved: bool,
 }
 
+#[allow(clippy::struct_field_names)]
 #[contracttype]
 #[derive(Clone, Eq, PartialEq)]
 pub struct Deposit {

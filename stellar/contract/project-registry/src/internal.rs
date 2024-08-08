@@ -1,7 +1,7 @@
 use soroban_sdk::BytesN;
 
 use crate::admin::{read_contract_owner, write_contract_owner};
-use crate::data_type::{Project, ProjectParams, ProjectStatus, UpdateProjectParams};
+use crate::data_type::{Project, CreateProjectParams, ProjectStatus, UpdateProjectParams};
 use crate::events::{log_create_project_event, log_update_project_event};
 use crate::methods::ProjectRegistryTrait;
 use crate::project_writer::{
@@ -24,7 +24,7 @@ impl ProjectRegistryTrait for ProjectRegistry {
         write_contract_owner(env, &contract_owner);
     }
 
-    fn apply(env: &Env, applicant: Address, project_params: ProjectParams) -> Project {
+    fn apply(env: &Env, applicant: Address, project_params: CreateProjectParams) -> Project {
         applicant.require_auth();
 
         validate_applicant(env, &applicant);

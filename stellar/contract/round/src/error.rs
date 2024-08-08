@@ -1,5 +1,6 @@
 use soroban_sdk::contracterror;
 
+#[allow(clippy::module_name_repetitions)]
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(u32)]
@@ -11,6 +12,7 @@ pub enum Error {
     SameOwner = 38,
 }
 
+#[allow(clippy::module_name_repetitions)]
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(u32)]
@@ -46,6 +48,7 @@ pub enum RoundError{
   NotSolveAllPayoutChallenge = 51,
 }
 
+#[allow(clippy::module_name_repetitions)]
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(u32)]
@@ -61,6 +64,7 @@ pub enum VoteError {
   ProjectNotInPair = 33,
 }
 
+#[allow(clippy::module_name_repetitions)]
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(u32)]

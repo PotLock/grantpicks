@@ -5,6 +5,7 @@
 To facilitate pairwise voting & funding distribution on Stellar
 
 ## Storage Structure
+
 ```rs
 #[contracttype]
 #[derive(Clone)]
@@ -17,8 +18,8 @@ pub enum ContractKey {
     NextDepositId,  // Incremental integeter to determine deposit_id
     ProjectPayoutIds, // Storage key to store owned payout ids by project
     TokenContract, // storage key to store XLM token contract
-    ProjectContract, // storage ke to store project registry / detail 
-    RoundInfo(u128), // storage key to store Round Detail 
+    ProjectContract, // storage ke to store project registry / detail
+    RoundInfo(u128), // storage key to store Round Detail
     PayoutInfo, // key to store payout detail by id
     DepositInfo, // key to store deposit detail by id
     WhiteList(u128), // key to store whitelisted voters by round
@@ -35,7 +36,91 @@ pub enum ContractKey {
 }
 ```
 
-## Data Type Structure
+## Contract Error Code
+
+```rs
+use soroban_sdk::contracterror;
+
+#[contracterror]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[repr(u32)]
+pub enum Error {
+    OwnerOrAdminOnly = 5,
+    ContractNotInitialized = 26,
+    InsufficientBalance = 31,
+    IndexOutOfBound = 32,
+    SameOwner = 38,
+}
+
+#[contracterror]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[repr(u32)]
+pub enum RoundError{
+  VotingStartGreaterThanVotingEnd = 0,
+  ApplicationStartGreaterThanApplicationEnd = 1,
+  VotingStartLessThanApplicationEnd = 2,
+  AmountMustBeGreaterThanZero = 3,
+  ContactMustBeLessThanTen = 4,
+  InvalidVaultBalance = 8,
+  UserBlacklisted = 19,
+  UserAlreadyBlacklisted = 20,
+  BlacklistNotFound = 21,
+  UserNotWhitelisted = 22,
+  ReviewNotTooLong = 23,
+  RoundAlreadyCompleted = 27,
+  AdminNotFound = 28,
+  OwnerCannotBeAdmin = 29,
+  AlreadyPaidOut = 34,
+  NoApprovedProjects = 35,
+  UserWhitelisted = 36,
+  VotesAlreadyCast = 37,
+  ApplicationPeriodMustBeSet = 39,
+  ZeroValutBalance = 40,
+  BalanceNotEmpty = 41,
+  InsufficientFunds = 44,
+  ChallengeNotFound = 45,
+  PayoutNotFound = 46,
+  RedistributionNotAllowed = 47,
+  RedistributionAlreadyDone = 48,
+  CompliancePeriodNotStarted = 49,
+  CooldownPeriodNotInProcess = 50,
+  NotSolveAllPayoutChallenge = 51,
+}
+
+#[contracterror]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[repr(u32)]
+pub enum VoteError {
+  VotingPeriodNotStarted = 6,
+  VotingPeriodEnded = 7,
+  VotingPeriodNotEnded = 9,
+  VotingAlreadyStarted = 12,
+  AlreadyVoted = 17,
+  NotVoteAllPairs = 18,
+  EmptyVote = 24,
+  TooManyVotes = 25,
+  ProjectNotInPair = 33,
+}
+
+#[contracterror]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[repr(u32)]
+pub enum ApplicationError{
+  ApplicationPeriodNotStarted = 10,
+  ApplicationPeriodEnded = 11,
+  ProjectNotApproved = 13,
+  ProjectAlreadyApproved = 14,
+  ProjectNotFoundInRegistry = 15,
+  MaxParticipantsReached = 16,
+  ApplicationNotFound = 30,
+  VideoUrlNotValid = 42,
+  ProjectAlreadyApplied = 43,
+}
+
+```
+
+## Data Type
+
 ```rs
 /*
 Project Application status
@@ -85,7 +170,7 @@ pub struct RoundDetail {
     pub compliance_req_desc: String, // compliance  requiremnt description (shorted too long)
     pub compliance_period_ms: Option<u64>, // use_compliance replaced using .is_some() compliance period
     pub compliance_end_ms: Option<u64>,
-    pub allow_remaining_dist: Option<bool>, // allow remaining distribution shorted 
+    pub allow_remaining_dist: Option<bool>, // allow remaining distribution shorted
     pub remaining_dist_address: Address,
     pub remaining_dist_at_ms: Option<u64>,
     pub remaining_dist_memo: String,
@@ -94,6 +179,7 @@ pub struct RoundDetail {
     pub round_complete_ms: Option<u64>,
 }
 
+// Parameter for creating rounds
 #[contracttype]
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct CreateRoundParams {
@@ -122,6 +208,7 @@ pub struct CreateRoundParams {
     pub referrer_fee_basis_points: Option<u32>,
 }
 
+//parameters for updating round
 #[contracttype]
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct UpdateRoundParams {
@@ -175,7 +262,7 @@ pub struct PickResult {
     pub project_id: u128,
 }
 
-// Voting Result 
+// Voting Result
 #[contracttype]
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct VotingResult {
@@ -278,10 +365,12 @@ fn get_config(env: &Env) -> Config;
 
 ```
 
-## Round & Votes
+## Round & Votes Methods
 
 ```rs
 //WRITE
+
+//manipulate/update round
 fn set_cooldown_config(env: &Env, round_id: u128, caller: Address, cooldown_period_ms: Option<u64>) -> RoundDetail;
 fn set_compliance_config(env: &Env, round_id: u128, caller: Address, compliance_req_desc: Option<String>, compliance_period_ms: Option<u64>) -> RoundDetail;
 fn change_voting_period(env: &Env, round_id: u128, caller: Address, start_ms: u64, end_ms: u64);
@@ -295,31 +384,44 @@ fn remove_admins(env: &Env, round_id: u128, round_admin: Vec<Address>);
 fn set_admins(env: &Env, round_id: u128, round_admin: Vec<Address>);
 fn clear_admins(env: &Env, round_id: u128);
 fn transfer_round_ownership(env: &Env, round_id: u128, new_owner: Address);
+fn set_round_complete(env: &Env, round_id: u128, caller: Address) -> RoundDetail;
+fn change_allow_applications(env: &Env, round_id: u128, caller: Address, allow_applications: bool, start_ms: Option<u64>, end_ms: Option<u64>) -> RoundDetail;
+fn update_round(env: &Env, caller: Address, round_id: u128, round_detail: UpdateRoundParams) -> RoundDetail;
+fn delete_round(env: &Env, round_id: u128) -> RoundDetail;
+
+// round application and manipulate add/remove projects from round
 fn apply_to_round(env: &Env, round_id: u128, caller: Address, applicant: Option<Address>, note: Option<String>, review_note: Option<String>) -> RoundApplication;
 fn review_application(env: &Env,round_id: u128, caller: Address, applicant: Address, status: ApplicationStatus, note: Option<String>) -> RoundApplication;
-fn deposit_to_round(env: &Env, round_id: u128, caller: Address, amount: u128, memo: Option<String>, referrer_id: Option<Address>);
-fn vote(env: &Env, round_id: u128, voter: Address, picks: Vec<PickedPair>);
-fn flag_voter(env: &Env, round_id: u128, caller: Address, voter: Address);
-fn unflag_voter(env: &Env, round_id: u128, caller: Address, voter: Address);
+fn unapply_from_round(env: &Env, round_id: u128, caller: Address, applicant: Option<Address>) -> RoundApplication;
 fn add_approved_project(env: &Env, round_id: u128, caller: Address, project_ids: Vec<u128>);
 fn remove_approved_project(env: &Env, around_id: u128, caller: Address, project_ids: Vec<u128>);
+fn update_applicant_note(env: &Env, round_id: u128, caller: Address, note: String) -> RoundApplication;
+fn apply_to_round_batch(env: &Env, caller: Address, round_id: u128, review_notes: Vec<Option<String>>, applicants: Vec<Address>) -> Vec<RoundApplication>;
+
+// deposit XLM to round
+fn deposit_to_round(env: &Env, round_id: u128, caller: Address, amount: u128, memo: Option<String>, referrer_id: Option<Address>);
+
+// cast vote
+fn vote(env: &Env, round_id: u128, voter: Address, picks: Vec<PickedPair>);
+
+//blacklist user
+fn flag_voter(env: &Env, round_id: u128, caller: Address, voter: Address);
+fn unflag_voter(env: &Env, round_id: u128, caller: Address, voter: Address);
+
+// whitelist user
+fn add_whitelist(env: &Env, round_id: u128, caller: Address, address: Address);
+fn remove_from_whitelist(env: &Env, round_id: u128, caller: Address, address: Address);
+
+// manually add payout and payout challenge
+fn set_payouts(env: &Env, round_id: u128, caller: Address, payouts: Vec<PayoutInput>, clear_existing: bool) -> Vec<Payout>;
 fn process_payouts(env: &Env, round_id: u128, caller: Address);
-fn set_round_complete(env: &Env, round_id: u128, caller: Address) -> RoundDetail;
 fn challenge_payouts(env: &Env, round_id: u128, caller: Address, reason: String) -> PayoutsChallenge;
 fn remove_payouts_challenge(env: &Env, round_id: u128, caller: Address);
 fn update_payouts_challenge(env: &Env, round_id: u128, caller: Address, challenger_id: Address, notes: Option<String>, resolve_challenge: Option<bool>) -> PayoutsChallenge;
 fn remove_resolved_challenges(env: &Env, round_id: u128, caller: Address);
-fn set_payouts(env: &Env, round_id: u128, caller: Address, payouts: Vec<PayoutInput>, clear_existing: bool) -> Vec<Payout>;
-fn redistribute_vault(env: &Env, round_id: u128, caller: Address, memo: Option<String>);
-fn unapply_from_round(env: &Env, round_id: u128, caller: Address, applicant: Option<Address>) -> RoundApplication;
-fn update_applicant_note(env: &Env, round_id: u128, caller: Address, note: String) -> RoundApplication;
-fn change_allow_applications(env: &Env, round_id: u128, caller: Address, allow_applications: bool, start_ms: Option<u64>, end_ms: Option<u64>) -> RoundDetail;
-fn update_round(env: &Env, caller: Address, round_id: u128, round_detail: UpdateRoundParams) -> RoundDetail;
-fn delete_round(env: &Env, round_id: u128) -> RoundDetail;
-fn apply_to_round_batch(env: &Env, caller: Address, round_id: u128, review_notes: Vec<Option<String>>, applicants: Vec<Address>) -> Vec<RoundApplication>;
-fn add_whitelist(env: &Env, round_id: u128, caller: Address, address: Address);
-fn remove_from_whitelist(env: &Env, round_id: u128, caller: Address, address: Address);
 
+// redistribute remaining vault in round
+fn redistribute_vault(env: &Env, round_id: u128, caller: Address, memo: Option<String>);
 // READ
 fn get_payouts(env: &Env, from_index: Option<u64>, limit: Option<u64>) -> Vec<Payout>;
 fn get_all_voters(env: &Env, round_id: u128, from_index: Option<u64>, limit: Option<u64>) -> Vec<VotingResult>;

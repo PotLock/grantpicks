@@ -16,7 +16,7 @@ pub fn validate_round_detail(env: &Env, round_detail: &CreateRoundParams) {
       panic_with_error!(env, RoundError::VotingStartLessThanApplicationEnd);
     }
 
-    if round_detail.expected_amount <= 0{
+    if round_detail.expected_amount == 0{
       panic_with_error!(env, RoundError::AmountMustBeGreaterThanZero);
     }
 
@@ -38,7 +38,7 @@ pub fn validate_round_detail_update(env: &Env,round_detail: &UpdateRoundParams) 
     panic_with_error!(env, RoundError::VotingStartLessThanApplicationEnd);
   }
 
-  if round_detail.expected_amount <= 0{
+  if round_detail.expected_amount == 0{
     panic_with_error!(env, RoundError::AmountMustBeGreaterThanZero);
   }
 
@@ -70,7 +70,7 @@ pub fn validate_can_payout(env: &Env, round: &RoundDetail) {
 pub fn validate_vault_fund(env: &Env, round: &RoundDetail) {
     let vault_fund = round.current_vault_balance;
     
-    if vault_fund <= 0{
+    if vault_fund == 0{
       panic_with_error!(env, RoundError::InvalidVaultBalance);
     }
 }

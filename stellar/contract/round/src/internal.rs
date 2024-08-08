@@ -1,5 +1,3 @@
-use core::panic;
-
 use soroban_sdk::{
     self, contract, contractimpl, panic_with_error, token::TokenClient, Address, BytesN, Env, Map, String, Vec
 };
@@ -16,10 +14,7 @@ use crate::{
         increment_deposit_id, read_deposit, read_deposit_from_round, write_deposit,
         write_deposit_id_to_round,
     }, error::{ApplicationError, Error, RoundError, VoteError}, events::{
-        log_create_round, log_deposit, log_payout, log_project_application,
-        log_project_application_delete, log_project_application_update,
-        log_update_approved_projects, log_update_round, log_update_user_flag,
-        log_update_white_list, log_vote,
+        log_create_app, log_create_deposit, log_create_payout, log_create_round, log_create_vote, log_delete_app, log_update_app, log_update_approved_projects, log_update_round, log_update_user_flag, log_update_whitelist
     }, external::ProjectRegistryClient, factory::RoundCreator, fee_writer::{
         read_fee_address, read_fee_basis_points, write_fee_address, write_fee_basis_points,
     }, owner_writer::{read_factory_owner, write_factory_owner}, pair::{get_all_pairs, get_all_rounds, get_pair_by_index, get_random_pairs}, payout_writer::{
@@ -247,6 +242,7 @@ impl IsRound for RoundContract {
         write_round_info(env, round_id, &round);
         extend_instance(env);
         extend_round(env, round_id);
+        log_update_round(env, round.clone());
     }
 
     fn close_voting_period(env: &Env, round_id: u128, caller: Address) -> RoundDetail {
@@ -260,6 +256,7 @@ impl IsRound for RoundContract {
         write_round_info(env, round_id, &round);
         extend_instance(env);
         extend_round(env, round_id);
+        log_update_round(env, round.clone());
 
         round.clone()
     }
@@ -275,6 +272,7 @@ impl IsRound for RoundContract {
         write_round_info(env, round_id, &round);
         extend_instance(env);
         extend_round(env, round_id);
+        log_update_round(env, round.clone());
 
         round.clone()
     }
@@ -430,7 +428,7 @@ impl IsRound for RoundContract {
         write_application(env, round_id, &applications);
         extend_instance(env);
         extend_round(env, round_id);
-        log_project_application(env, application.clone());
+        log_create_app(env, application.clone());
 
         application.clone()
     }
@@ -488,7 +486,7 @@ impl IsRound for RoundContract {
         write_approved_projects(env, round_id, &approved_projects);
         extend_instance(env);
         extend_round(env, round_id);
-        log_project_application_update(env, updated_application.clone());
+        log_create_app(env, updated_application.clone());
 
         updated_application.clone()
     }
@@ -569,7 +567,7 @@ impl IsRound for RoundContract {
         write_round_info(env, round_id, &updated_round);
         extend_instance(env);
         extend_round(env, round_id);
-        log_deposit(env, round.id, caller, amount);
+        log_create_deposit(env, round.id, caller, amount);
     }
 
     fn vote(env: &Env, round_id: u128, voter: Address, picks: Vec<PickedPair>) {
@@ -629,7 +627,7 @@ impl IsRound for RoundContract {
         set_voting_state(env, round_id, voter, true);
         extend_instance(env);
         extend_round(env, round_id);
-        log_vote(env, round.id, voting_result);
+        log_create_vote(env, round.id, voting_result);
     }
 
     fn get_pairs_to_vote(env: &Env, round_id: u128) -> Vec<Pair> {
@@ -733,7 +731,7 @@ impl IsRound for RoundContract {
                 let payout_amount_u128: u128 = payout.amount.try_into().unwrap();
                 updated_round.current_vault_balance -= payout_amount_u128;
                 total_amount_paid += payout.amount;
-                log_payout(env, round.id, payout.recipient_id.clone(), payout.amount);
+                log_create_payout(env, round.id, payout.recipient_id.clone(), payout.amount);
             });
         });
 
@@ -920,7 +918,7 @@ impl IsRound for RoundContract {
         add_to_whitelist(env, round_id, address.clone());
         extend_instance(env);
         extend_round(env, round_id);
-        log_update_white_list(env, round.id, address, true);
+        log_update_whitelist(env, round.id, address, true);
     }
 
     fn remove_from_whitelist(env: &Env, round_id: u128, caller: Address, address: Address) {
@@ -945,7 +943,7 @@ impl IsRound for RoundContract {
         remove_from_whitelist(env, round_id, address.clone());
         extend_instance(env);
         extend_round(env, round_id);
-        log_update_white_list(env, round.id, address, false);
+        log_update_whitelist(env, round.id, address, false);
     }
 
     fn whitelist_status(env: &Env, round_id: u128, address: Address) -> bool {
@@ -1060,7 +1058,7 @@ impl IsRound for RoundContract {
         write_application(env, round_id, &applications);
         extend_round(env, round_id);
         extend_instance(env);
-        log_project_application_delete(env, application_internal.clone());
+        log_delete_app(env, application_internal.clone());
 
         application_internal.clone()
     }
@@ -1088,7 +1086,7 @@ impl IsRound for RoundContract {
         write_application(env, round_id, &applications);
         extend_round(env, round_id);
         extend_instance(env);
-        log_project_application_update(env, application_internal.clone());
+        log_update_app(env, application_internal.clone());
 
         application_internal.clone()
     }
@@ -1117,7 +1115,7 @@ impl IsRound for RoundContract {
 
         validate_owner_or_admin(env, &caller, &round);
 
-        if !allow_applications {
+        if !allow_applications && (start_ms.is_some() || end_ms.is_some()) {
             round.application_start_ms = None;
             round.application_end_ms = None;
         } else {

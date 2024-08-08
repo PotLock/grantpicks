@@ -1,9 +1,9 @@
 use crate::{
-    admin::{self, read_contract_owner}, data_type::{Project, ProjectParams, UpdateProjectParams}, error::Error, project_writer::is_applied
+    admin::{self, read_contract_owner}, data_type::{Project, CreateProjectParams, UpdateProjectParams}, error::Error, project_writer::is_applied
 };
 use soroban_sdk::{panic_with_error, Address, Env};
 
-pub fn validate_application(env: &Env, project_params: &ProjectParams) {
+pub fn validate_application(env: &Env, project_params: &CreateProjectParams) {
     if project_params.admins.is_empty() {
         panic_with_error!(env, Error::EmptyAdmins);
     }

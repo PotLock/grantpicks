@@ -31,7 +31,7 @@ pub struct Project {
 
 #[contracttype]
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ProjectParams {
+pub struct CreateProjectParams {
     pub image_url: String,
     pub video_url: String,
     pub name: String,

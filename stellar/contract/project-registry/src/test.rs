@@ -63,7 +63,7 @@ fn test_apply() {
 
     let project = contract.apply(
         &bob,
-        &crate::data_type::ProjectParams {
+        &crate::data_type::CreateProjectParams {
             image_url: String::from_str(&env, "image url"),
             video_url: String::from_str(&env, "video url"),
             name: String::from_str(&env, "name"),
@@ -133,7 +133,7 @@ fn test_change_project_status() {
 
     let project = contract.apply(
         &bob,
-        &crate::data_type::ProjectParams {
+        &crate::data_type::CreateProjectParams {
             image_url: String::from_str(&env, "image url"),
             video_url: String::from_str(&env, "video url"),
             name: String::from_str(&env, "name"),
@@ -204,7 +204,7 @@ fn test_add_admin() {
 
     let project = contract.apply(
         &bob,
-        &crate::data_type::ProjectParams {
+        &crate::data_type::CreateProjectParams {
             image_url: String::from_str(&env, "image url"),
             video_url: String::from_str(&env, "video url"),
             name: String::from_str(&env, "name"),
@@ -276,7 +276,7 @@ fn test_remove_admin() {
 
     let project = contract.apply(
         &bob,
-        &crate::data_type::ProjectParams {
+        &crate::data_type::CreateProjectParams {
             image_url: String::from_str(&env, "image url"),
             video_url: String::from_str(&env, "video url"),
             name: String::from_str(&env, "name"),
@@ -353,7 +353,7 @@ fn test_get_projects() {
 
     let project = contract.apply(
         &bob,
-        &crate::data_type::ProjectParams {
+        &crate::data_type::CreateProjectParams {
             image_url: String::from_str(&env, "image url"),
             video_url: String::from_str(&env, "video url"),
             name: String::from_str(&env, "name"),
@@ -423,7 +423,7 @@ fn test_get_project_admins() {
 
     let project = contract.apply(
         &bob,
-        &crate::data_type::ProjectParams {
+        &crate::data_type::CreateProjectParams {
             image_url: String::from_str(&env, "image url"),
             video_url: String::from_str(&env, "video url"),
             name: String::from_str(&env, "name"),
@@ -494,7 +494,7 @@ fn test_get_project_by_id() {
 
     let project = contract.apply(
         &bob,
-        &crate::data_type::ProjectParams {
+        &crate::data_type::CreateProjectParams {
             image_url: String::from_str(&env, "image url"),
             video_url: String::from_str(&env, "video url"),
             name: String::from_str(&env, "name"),
@@ -563,7 +563,7 @@ fn test_update_project() {
 
     let project = contract.apply(
         &bob,
-        &crate::data_type::ProjectParams {
+        &crate::data_type::CreateProjectParams {
             image_url: String::from_str(&env, "image url"),
             video_url: String::from_str(&env, "video url"),
             name: String::from_str(&env, "name"),

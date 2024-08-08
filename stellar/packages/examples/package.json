@@ -1,0 +1,28 @@
+{
+	"name": "examples",
+	"version": "1.0.0",
+	"description": "",
+	"type": "module",
+	"scripts": {
+		"tsc": "tsc --init",
+		"build": "tsc",
+		"start": "tsc && node dist/run.js"
+	},
+	"author": "",
+	"license": "ISC",
+	"devDependencies": {
+		"@types/node": "^20.14.9",
+		"nodemon": "^3.1.4",
+		"typescript": "^5.5.3"
+	},
+	"dependencies": {
+		"@stellar/stellar-sdk": "^12.1.0",
+		"axios": "^1.7.3",
+		"dotenv": "^16.4.5",
+		"examples": "^1.0.0",
+		"lists-client": "0.0.0",
+		"project-registry-client": "0.0.0",
+		"round-client": "0.0.0",
+		"round-factory-client": "0.0.0"
+	}
+}

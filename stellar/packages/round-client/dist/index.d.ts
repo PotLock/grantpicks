@@ -128,7 +128,6 @@ export interface VotingResult {
     voter: string;
 }
 export interface ProjectVotingResult {
-    allocation: u128;
     project_id: u128;
     voting_count: u128;
 }
@@ -168,125 +167,6 @@ export interface Deposit {
     round_id: u128;
     total_amount: i128;
 }
-export declare enum ProjectStatus {
-    New = 0,
-    Approved = 1,
-    Rejected = 2,
-    Completed = 3
-}
-export interface Project {
-    admins: Array<string>;
-    contacts: Array<ProjectContact>;
-    contracts: Array<ProjectContract>;
-    id: u128;
-    image_url: string;
-    name: string;
-    overview: string;
-    owner: string;
-    payout_address: string;
-    repositories: Array<ProjectRepository>;
-    status: ProjectStatus;
-    submited_ms: u64;
-    team_members: Array<ProjectTeamMember>;
-    updated_ms: Option<u64>;
-    video_url: string;
-}
-export interface ProjectContact {
-    name: string;
-    value: string;
-}
-export interface ProjectContract {
-    contract_address: string;
-    name: string;
-}
-export interface ProjectTeamMember {
-    name: string;
-    value: string;
-}
-export interface ProjectRepository {
-    label: string;
-    url: string;
-}
-export interface ProjectFundingHistory {
-    amount: u128;
-    denomiation: string;
-    description: string;
-    funded_ms: u64;
-    source: string;
-}
-export type ContractKey = {
-    tag: "ProtocolFeeRecepient";
-    values: void;
-} | {
-    tag: "ProtocolFee";
-    values: void;
-} | {
-    tag: "DefaultPageSize";
-    values: void;
-} | {
-    tag: "FactoryOwner";
-    values: void;
-} | {
-    tag: "NextRoundId";
-    values: void;
-} | {
-    tag: "NextPayoutId";
-    values: void;
-} | {
-    tag: "NextDepositId";
-    values: void;
-} | {
-    tag: "ProjectPayoutIds";
-    values: void;
-} | {
-    tag: "TokenContract";
-    values: void;
-} | {
-    tag: "ProjectContract";
-    values: void;
-} | {
-    tag: "RoundInfo";
-    values: readonly [u128];
-} | {
-    tag: "PayoutInfo";
-    values: void;
-} | {
-    tag: "DepositInfo";
-    values: void;
-} | {
-    tag: "WhiteList";
-    values: readonly [u128];
-} | {
-    tag: "BlackList";
-    values: readonly [u128];
-} | {
-    tag: "ProjectApplicants";
-    values: readonly [u128];
-} | {
-    tag: "ApprovedProjects";
-    values: readonly [u128];
-} | {
-    tag: "Payouts";
-    values: readonly [u128];
-} | {
-    tag: "PayoutChallenges";
-    values: readonly [u128];
-} | {
-    tag: "VotingState";
-    values: readonly [u128];
-} | {
-    tag: "Votes";
-    values: readonly [u128];
-} | {
-    tag: "ProjectVotingCount";
-    values: readonly [u128];
-} | {
-    tag: "Admin";
-    values: readonly [u128];
-} | {
-    tag: "Deposit";
-    values: readonly [u128];
-};
 export declare const Errors: {
     5: {
         message: string;
@@ -447,6 +327,125 @@ export declare const Errors: {
     43: {
         message: string;
     };
+};
+export declare enum ProjectStatus {
+    New = 0,
+    Approved = 1,
+    Rejected = 2,
+    Completed = 3
+}
+export interface Project {
+    admins: Array<string>;
+    contacts: Array<ProjectContact>;
+    contracts: Array<ProjectContract>;
+    id: u128;
+    image_url: string;
+    name: string;
+    overview: string;
+    owner: string;
+    payout_address: string;
+    repositories: Array<ProjectRepository>;
+    status: ProjectStatus;
+    submited_ms: u64;
+    team_members: Array<ProjectTeamMember>;
+    updated_ms: Option<u64>;
+    video_url: string;
+}
+export interface ProjectContact {
+    name: string;
+    value: string;
+}
+export interface ProjectContract {
+    contract_address: string;
+    name: string;
+}
+export interface ProjectTeamMember {
+    name: string;
+    value: string;
+}
+export interface ProjectRepository {
+    label: string;
+    url: string;
+}
+export interface ProjectFundingHistory {
+    amount: u128;
+    denomiation: string;
+    description: string;
+    funded_ms: u64;
+    source: string;
+}
+export type ContractKey = {
+    tag: "ProtocolFeeRecepient";
+    values: void;
+} | {
+    tag: "ProtocolFee";
+    values: void;
+} | {
+    tag: "DefaultPageSize";
+    values: void;
+} | {
+    tag: "FactoryOwner";
+    values: void;
+} | {
+    tag: "NextRoundId";
+    values: void;
+} | {
+    tag: "NextPayoutId";
+    values: void;
+} | {
+    tag: "NextDepositId";
+    values: void;
+} | {
+    tag: "ProjectPayoutIds";
+    values: void;
+} | {
+    tag: "TokenContract";
+    values: void;
+} | {
+    tag: "ProjectContract";
+    values: void;
+} | {
+    tag: "RoundInfo";
+    values: readonly [u128];
+} | {
+    tag: "PayoutInfo";
+    values: void;
+} | {
+    tag: "DepositInfo";
+    values: void;
+} | {
+    tag: "WhiteList";
+    values: readonly [u128];
+} | {
+    tag: "BlackList";
+    values: readonly [u128];
+} | {
+    tag: "ProjectApplicants";
+    values: readonly [u128];
+} | {
+    tag: "ApprovedProjects";
+    values: readonly [u128];
+} | {
+    tag: "Payouts";
+    values: readonly [u128];
+} | {
+    tag: "PayoutChallenges";
+    values: readonly [u128];
+} | {
+    tag: "VotingState";
+    values: readonly [u128];
+} | {
+    tag: "Votes";
+    values: readonly [u128];
+} | {
+    tag: "ProjectVotingCount";
+    values: readonly [u128];
+} | {
+    tag: "Admin";
+    values: readonly [u128];
+} | {
+    tag: "Deposit";
+    values: readonly [u128];
 };
 export interface Client {
     /**
@@ -943,9 +942,9 @@ export interface Client {
         simulate?: boolean;
     }) => Promise<AssembledTransaction<null>>;
     /**
-     * Construct and simulate a get_results_for_round transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     * Construct and simulate a get_voting_results_for_round transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    get_results_for_round: ({ round_id }: {
+    get_voting_results_for_round: ({ round_id }: {
         round_id: u128;
     }, options?: {
         /**
@@ -982,9 +981,9 @@ export interface Client {
         simulate?: boolean;
     }) => Promise<AssembledTransaction<null>>;
     /**
-     * Construct and simulate a get_all_voters transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     * Construct and simulate a get_votes_for_round transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    get_all_voters: ({ round_id, skip, limit }: {
+    get_votes_for_round: ({ round_id, skip, limit }: {
         round_id: u128;
         skip: Option<u64>;
         limit: Option<u64>;
@@ -1837,6 +1836,28 @@ export interface Client {
          */
         simulate?: boolean;
     }) => Promise<AssembledTransaction<Array<string>>>;
+    /**
+     * Construct and simulate a set_redistribution_config transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     */
+    set_redistribution_config: ({ round_id, caller, allow_remaining_dist, remaining_dist_address }: {
+        round_id: u128;
+        caller: string;
+        allow_remaining_dist: boolean;
+        remaining_dist_address: Option<string>;
+    }, options?: {
+        /**
+         * The fee to pay for the transaction. Default: BASE_FEE
+         */
+        fee?: number;
+        /**
+         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+         */
+        timeoutInSeconds?: number;
+        /**
+         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+         */
+        simulate?: boolean;
+    }) => Promise<AssembledTransaction<RoundDetail>>;
 }
 export declare class Client extends ContractClient {
     readonly options: ContractClientOptions;
@@ -1866,9 +1887,9 @@ export declare class Client extends ContractClient {
         get_pairs_to_vote: (json: string) => AssembledTransaction<Pair[]>;
         flag_voters: (json: string) => AssembledTransaction<null>;
         unflag_voters: (json: string) => AssembledTransaction<null>;
-        get_results_for_round: (json: string) => AssembledTransaction<ProjectVotingResult[]>;
+        get_voting_results_for_round: (json: string) => AssembledTransaction<ProjectVotingResult[]>;
         process_payouts: (json: string) => AssembledTransaction<null>;
-        get_all_voters: (json: string) => AssembledTransaction<VotingResult[]>;
+        get_votes_for_round: (json: string) => AssembledTransaction<VotingResult[]>;
         can_vote: (json: string) => AssembledTransaction<boolean>;
         get_round: (json: string) => AssembledTransaction<RoundDetail>;
         is_voting_live: (json: string) => AssembledTransaction<boolean>;
@@ -1910,5 +1931,6 @@ export declare class Client extends ContractClient {
         set_compliance_config: (json: string) => AssembledTransaction<RoundDetail>;
         blacklisted_voters: (json: string) => AssembledTransaction<string[]>;
         whitelisted_voters: (json: string) => AssembledTransaction<string[]>;
+        set_redistribution_config: (json: string) => AssembledTransaction<RoundDetail>;
     };
 }

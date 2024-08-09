@@ -154,7 +154,6 @@ pub struct VotingResult {
 pub struct ProjectVotingResult {
     pub project_id: u128,
     pub voting_count: u128,
-    pub allocation: u128,
 }
 
 #[contracttype]

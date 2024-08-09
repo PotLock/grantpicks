@@ -724,7 +724,7 @@ fn test_voting() {
 
     round.vote(&created_round.id, &voter, &picks);
 
-    let results = round.get_results_for_round(&created_round.id);
+    let results = round.get_voting_results_for_round(&created_round.id);
 
     assert_eq!(results.len(), 4);
 
@@ -925,7 +925,7 @@ fn test_voting_deposit_and_payout() {
 
     round.vote(&created_round.id, &voter2, &picks2);
 
-    let results = round.get_results_for_round(&created_round.id);
+    let results = round.get_voting_results_for_round(&created_round.id);
     assert_eq!(results.len(), 10);
 
     round.close_voting_period(&created_round.id, &admin);

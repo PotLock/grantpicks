@@ -734,7 +734,7 @@ impl IsRound for RoundContract {
         extend_round(env, round_id);
     }
 
-    fn get_results_for_round(env: &Env, round_id: u128) -> Vec<ProjectVotingResult> {
+    fn get_voting_results_for_round(env: &Env, round_id: u128) -> Vec<ProjectVotingResult> {
         let results = calculate_voting_results(env, round_id);
         extend_instance(env);
         extend_round(env, round_id);
@@ -807,7 +807,7 @@ impl IsRound for RoundContract {
         extend_round(env, round_id);
     }
 
-    fn get_all_voters(
+    fn get_votes_for_round(
         env: &Env,
         round_id: u128,
         skip: Option<u64>,
@@ -1699,5 +1699,20 @@ impl IsRound for RoundContract {
         });
 
         result
+    }
+
+    fn set_redistribution_config(env: &Env, round_id: u128, caller: Address, allow_remaining_dist: bool, remaining_dist_address: Option<Address>) -> RoundDetail{
+      caller.require_auth();
+
+      let mut round = read_round_info(env, round_id);
+      validate_owner_or_admin(env, &caller, &round);
+
+      round.allow_remaining_dist = Some(allow_remaining_dist);
+      round.remaining_dist_address = remaining_dist_address.unwrap_or(round.clone().owner);
+
+      write_round_info(env, round_id, &round);
+      extend_instance(env);
+
+      round.clone()
     }
 }

@@ -1,5 +1,8 @@
 use crate::{
-    admin::{self, read_contract_owner}, data_type::{Project, CreateProjectParams, UpdateProjectParams}, error::Error, project_writer::is_applied
+    admin::{self, read_contract_owner},
+    data_type::{CreateProjectParams, Project, UpdateProjectParams},
+    error::Error,
+    project_writer::is_applied,
 };
 use soroban_sdk::{panic_with_error, Address, Env};
 
@@ -43,11 +46,11 @@ pub fn validate_update_project(env: &Env, update_params: &UpdateProjectParams) {
     }
 }
 
-pub fn validate_owner_or_admin(env: &Env,admin: &Address, project: &Project) {
+pub fn validate_owner_or_admin(env: &Env, admin: &Address, project: &Project) {
     if &project.owner != admin {
         let is_admin = project.admins.first_index_of(&admin.clone());
-        
-        if is_admin.is_none(){
+
+        if is_admin.is_none() {
             panic_with_error!(env, Error::AdminOrOwnerOnly);
         }
     }
@@ -61,14 +64,14 @@ pub fn validate_owner(env: &Env, caller: &Address, project: &Project) {
 
 pub fn validate_contract_owner(env: &Env, caller: &Address) {
     let contract_admin = read_contract_owner(env);
-    
+
     if contract_admin != caller.clone() {
         panic_with_error!(env, Error::ContractOwnerOnly);
     }
 }
 
 pub fn validate_applicant(env: &Env, applicant: &Address) {
-   if is_applied(env, applicant){
+    if is_applied(env, applicant) {
         panic_with_error!(env, Error::AlreadyApplied);
-   }
+    }
 }

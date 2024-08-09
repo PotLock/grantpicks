@@ -2,13 +2,13 @@ use crate::data_type::{RoundApplication, RoundDetail, VotingResult};
 use soroban_sdk::{self, symbol_short, Address, Env, Vec};
 
 /*
-function name fn log_[action]_[resource] 
+function name fn log_[action]_[resource]
 topic : u/c/d_[resource]
 u : update
 c : create
 d : delete
 
-topic shorter : 
+topic shorter :
 1. round = round
 2. application = app
 3. deposit = depo

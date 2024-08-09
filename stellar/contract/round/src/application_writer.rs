@@ -1,6 +1,8 @@
 use soroban_sdk::{Address, Env, Map, Vec};
 
-use crate::{data_type::RoundApplication, page_writer::read_default_page_size, storage_key::ContractKey};
+use crate::{
+    data_type::RoundApplication, page_writer::read_default_page_size, storage_key::ContractKey,
+};
 
 pub fn read_application(env: &Env, round_id: u128) -> Map<Address, RoundApplication> {
     let key = ContractKey::ProjectApplicants(round_id);

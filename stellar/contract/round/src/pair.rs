@@ -1,5 +1,3 @@
-use core::default;
-
 use crate::{
     approval_writer::read_approved_projects,
     data_type::{Pair, RoundDetail},

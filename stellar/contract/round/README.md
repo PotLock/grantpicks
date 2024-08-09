@@ -389,6 +389,7 @@ fn get_config(env: &Env) -> Config;
 //manipulate/update round
 fn set_cooldown_config(env: &Env, round_id: u128, caller: Address, cooldown_period_ms: Option<u64>) -> RoundDetail;
 fn set_compliance_config(env: &Env, round_id: u128, caller: Address, compliance_req_desc: Option<String>, compliance_period_ms: Option<u64>) -> RoundDetail;
+fn set_redistribution_config(env: &Env, round_id: u128, caller: Address, allow_remaining_funds_redistribution: bool, remaining_funds_redistribution_recipient: Option<Address>) -> RoundDetail; 
 fn change_voting_period(env: &Env, round_id: u128, caller: Address, start_ms: u64, end_ms: u64);
 fn change_application_period(env: &Env, round_id: u128, caller: Address, start_ms: u64, end_ms: u64);
 fn change_number_of_votes(env: &Env, round_id: u128, caller: Address, num_picks_per_voter: u32);
@@ -440,7 +441,7 @@ fn remove_resolved_challenges(env: &Env, round_id: u128, caller: Address);
 fn redistribute_vault(env: &Env, round_id: u128, caller: Address, memo: Option<String>);
 // READ
 fn get_payouts(env: &Env, from_index: Option<u64>, limit: Option<u64>) -> Vec<Payout>;
-fn get_all_voters(env: &Env, round_id: u128, from_index: Option<u64>, limit: Option<u64>) -> Vec<VotingResult>;
+fn get_votes_for_round(env: &Env, round_id: u128, from_index: Option<u64>, limit: Option<u64>) -> Vec<VotingResult>;
 fn can_vote(env: &Env, round_id: u128, voter: Address) -> bool;
 fn get_round(env: &Env, round_id: u128) -> RoundDetail;
 fn is_voting_live(env: &Env, round_id: u128) -> bool;
@@ -459,7 +460,7 @@ fn admins(env: &Env, round_id: u128) -> Vec<Address>;
 fn get_payouts_for_round(env: &Env, round_id: u128, from_index: Option<u64>, limit: Option<u64>) -> Vec<Payout>;
 fn get_payout(env: &Env, payout_id: u32) -> Payout;
 fn get_deposits_for_round(env: &Env, round_id: u128, from_index: Option<u64>, limit: Option<u64>) -> Vec<Deposit>;
-fn get_results_for_round(env: &Env, round_id: u128) -> Vec<ProjectVotingResult>;
+fn get_voting_results_for_round(env: &Env, round_id: u128) -> Vec<ProjectVotingResult>;
 fn blacklisted_voters(env: &Env, round_id: u128) -> Vec<Address>;
 fn whitelisted_voters(env: &Env, round_id: u128) -> Vec<Address>;
 ```

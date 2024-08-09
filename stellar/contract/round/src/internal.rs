@@ -17,7 +17,7 @@ use crate::{
         log_create_app, log_create_deposit, log_create_payout, log_create_round, log_create_vote, log_delete_app, log_update_app, log_update_approved_projects, log_update_round, log_update_user_flag, log_update_whitelist
     }, external::ProjectRegistryClient, factory::RoundCreator, fee_writer::{
         read_fee_address, read_fee_basis_points, write_fee_address, write_fee_basis_points,
-    }, owner_writer::{read_factory_owner, write_factory_owner}, pair::{get_all_pairs, get_all_rounds, get_pair_by_index, get_random_pairs}, payout_writer::{
+    }, owner_writer::{read_factory_owner, write_factory_owner}, page_writer::{read_default_page_size, write_default_page_size}, pair::{get_all_pairs, get_all_rounds, get_pair_by_index, get_random_pairs}, payout_writer::{
         add_payout_id_to_project_payout_ids, clear_payouts, clear_project_payout_ids, has_paid,
         increment_payout_id, read_all_payouts, read_payout_challenge, read_payout_challenges,
         read_payout_info, read_payouts, read_project_payout_ids_for_project,
@@ -50,8 +50,9 @@ impl RoundCreator for RoundContract {
         caller: Address,
         token_address: Address,
         registry_address: Address,
-        fee_basis_points: Option<u32>,
-        fee_address: Option<Address>,
+        protocol_fee_basis_points: Option<u32>,
+        protocol_fee_recipient: Option<Address>,
+        default_page_size: Option<u64>
     ) {
         caller.require_auth();
 
@@ -59,15 +60,22 @@ impl RoundCreator for RoundContract {
         write_token_address(env, &token_address);
         write_project_contract(env, &registry_address);
 
-        if fee_basis_points.is_some() && fee_address.is_some() {
-            let fee_basis_points = fee_basis_points.unwrap();
-            let fee_address = fee_address.unwrap();
+        if protocol_fee_basis_points.is_some() && protocol_fee_recipient.is_some() {
+            let fee_basis_points = protocol_fee_basis_points.unwrap();
+            let fee_address = protocol_fee_recipient.unwrap();
 
             write_fee_basis_points(env, fee_basis_points);
             write_fee_address(env, &fee_address);
         } else {
             write_fee_basis_points(env, 0);
             write_fee_address(env, &caller);
+        }
+
+        if default_page_size.is_some() {
+            let page_size = default_page_size.unwrap();
+            write_default_page_size(env, page_size);
+        } else {
+            write_default_page_size(env, 10);
         }
     }
 
@@ -162,13 +170,42 @@ impl RoundCreator for RoundContract {
         let owner = read_factory_owner(env);
         let fee_basis_points = read_fee_basis_points(env);
         let fee_address = read_fee_address(env);
+        let default_page_size = read_default_page_size(env);
 
         Config {
             owner: owner.clone(),
             protocol_fee_basis_points: fee_basis_points.unwrap_or_default(),
             protocol_fee_recipient: fee_address.unwrap_or(owner),
-            default_page_size: 10,
+            default_page_size,
         }
+    }
+
+    fn owner_set_default_page_size(env: &Env, default_page_size: u64){
+      let owner = read_factory_owner(env);
+
+      owner.require_auth();
+
+      write_default_page_size(env, default_page_size);
+    }
+
+    fn owner_set_protocol_fee_config(
+        env: &Env,
+        protocol_fee_recipient: Option<Address>,
+        protocol_fee_basis_points: Option<u32>,
+    ){
+      let owner = read_factory_owner(env);
+
+      owner.require_auth();
+
+      if protocol_fee_basis_points.is_some() {
+          let fee_basis_points = protocol_fee_basis_points.unwrap();
+          write_fee_basis_points(env, fee_basis_points);
+      }
+
+      if protocol_fee_recipient.is_some() {
+          let fee_address = protocol_fee_recipient.unwrap();
+          write_fee_address(env, &fee_address);
+      }
     }
 }
 
@@ -638,33 +675,37 @@ impl IsRound for RoundContract {
         pairs
     }
 
-    fn flag_voter(env: &Env, round_id: u128, admin: Address, voter: Address) {
+    fn flag_voters(env: &Env, round_id: u128, admin: Address, voters: Vec<Address>) {
         admin.require_auth();
 
         let round = read_round_info(env, round_id);
-
         validate_owner_or_admin(env, &admin, &round);
 
-        validate_blacklist_already(env, round_id, &voter);
-
-        add_to_blacklist(env, round_id, voter.clone());
+        voters.iter().for_each(|voter| {
+            validate_not_blacklist(env, round_id, &voter);
+            add_to_blacklist(env, round_id, voter.clone());
+            log_update_user_flag(env, round.id, voter.clone(), true);
+        });
+    
         extend_instance(env);
         extend_round(env, round_id);
-        log_update_user_flag(env, round.id, voter, true);
     }
 
-    fn unflag_voter(env: &Env, round_id: u128, admin: Address, voter: Address) {
+    fn unflag_voters(env: &Env, round_id: u128, admin: Address, voters: Vec<Address>) {
         admin.require_auth();
 
         let round = read_round_info(env, round_id);
 
         validate_owner_or_admin(env, &admin, &round);
-        validate_not_blacklist(env, round_id, &voter);
 
-        remove_from_blacklist(env, round_id, voter.clone());
+        voters.iter().for_each(|voter| {
+            validate_not_blacklist(env, round_id, &voter);
+            remove_from_blacklist(env, round_id, voter.clone());
+            log_update_user_flag(env, round.id, voter.clone(), false);
+        });
+
         extend_instance(env);
         extend_round(env, round_id);
-        log_update_user_flag(env, round.id, voter, false);
     }
 
     fn get_results_for_round(env: &Env, round_id: u128) -> Vec<ProjectVotingResult> {
@@ -896,54 +937,40 @@ impl IsRound for RoundContract {
         extend_round(env, round_id);
     }
 
-    fn add_whitelist(env: &Env, round_id: u128, caller: Address, address: Address) {
+    fn add_whitelists(env: &Env, round_id: u128, caller: Address, users: Vec<Address>) {
         caller.require_auth();
 
         let round = read_round_info(env, round_id);
 
         validate_owner_or_admin(env, &caller, &round);
 
-        let is_blacklisted = is_blacklisted(env, round_id, address.clone());
-       
-        if is_blacklisted {
-            panic_with_error!(env, RoundError::UserBlacklisted);
-        }
+        users.iter().for_each(|user| {
+            let is_blacklisted = is_blacklisted(env, round_id, user.clone());
+            if is_blacklisted {
+                panic_with_error!(env, RoundError::UserBlacklisted);
+            }
 
-        let is_whitelisted = is_whitelisted(env, round_id, address.clone());
-        
-        if is_whitelisted {
-            panic_with_error!(env, RoundError::UserWhitelisted);
-        }
+            add_to_whitelist(env, round_id, user.clone());
+            log_update_whitelist(env, round.id, user.clone(), true);
+        });
 
-        add_to_whitelist(env, round_id, address.clone());
-        extend_instance(env);
         extend_round(env, round_id);
-        log_update_whitelist(env, round.id, address, true);
     }
 
-    fn remove_from_whitelist(env: &Env, round_id: u128, caller: Address, address: Address) {
+    fn remove_from_whitelists(env: &Env, round_id: u128, caller: Address, users: Vec<Address>) {
         caller.require_auth();
 
         let round = read_round_info(env, round_id);
 
         validate_owner_or_admin(env, &caller, &round);
 
-        let is_whitelisted = is_whitelisted(env, round_id, address.clone());
-        
-        if !is_whitelisted {
-            panic_with_error!(env, RoundError::UserNotWhitelisted);
-        }
+        users.iter().for_each(|user| {
+            remove_from_whitelist(env, round_id, user.clone());
+            log_update_whitelist(env, round.id, user.clone(), false);
+        });
 
-        let is_blacklisted = is_blacklisted(env, round_id, address.clone());
-        
-        if is_blacklisted {
-            panic_with_error!(env, RoundError::UserBlacklisted);
-        }
-
-        remove_from_whitelist(env, round_id, address.clone());
         extend_instance(env);
         extend_round(env, round_id);
-        log_update_whitelist(env, round.id, address, false);
     }
 
     fn whitelist_status(env: &Env, round_id: u128, address: Address) -> bool {
@@ -1091,7 +1118,7 @@ impl IsRound for RoundContract {
         application_internal.clone()
     }
 
-    fn change_allow_applications(
+    fn set_applications_config(
         env: &Env,
         round_id: u128,
         caller: Address,
@@ -1252,7 +1279,8 @@ impl IsRound for RoundContract {
         from_index: Option<u64>,
         limit: Option<u64>,
     ) -> Vec<Payout> {
-        let limit_internal: usize = limit.unwrap_or(10).try_into().expect("Conversion failed");
+        let default_page_size = read_default_page_size(env);
+        let limit_internal: usize = limit.unwrap_or(default_page_size).try_into().expect("Conversion failed");
         let from_index_internal: usize = from_index
             .unwrap_or(0)
             .try_into()
@@ -1474,7 +1502,8 @@ impl IsRound for RoundContract {
     }
 
     fn get_payouts(env: &Env, from_index: Option<u64>, limit: Option<u64>) -> Vec<Payout> {
-        let limit_internal: u64 = limit.unwrap_or(10);
+        let default_page_size = read_default_page_size(env);
+        let limit_internal: u64 = limit.unwrap_or(default_page_size);
         let from_index_internal: u64 = from_index.unwrap_or(0);
         let payouts = read_all_payouts(env);
         extend_instance(env);
@@ -1555,7 +1584,8 @@ impl IsRound for RoundContract {
         from_index: Option<u64>,
         limit: Option<u64>,
     ) -> Vec<Deposit> {
-        let limit_internal: u64 = limit.unwrap_or(10);
+        let default_page_size = read_default_page_size(env);
+        let limit_internal: u64 = limit.unwrap_or(default_page_size);
         let from_index_internal: u64 = from_index.unwrap_or(0);
         let deposits = read_deposit_from_round(env, round_id);
         extend_instance(env);

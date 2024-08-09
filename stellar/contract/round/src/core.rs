@@ -61,8 +61,8 @@ pub trait IsRound {
         referrer_id: Option<Address>,
     );
     fn vote(env: &Env, round_id: u128, voter: Address, picks: Vec<PickedPair>);
-    fn flag_voter(env: &Env, round_id: u128, caller: Address, voter: Address);
-    fn unflag_voter(env: &Env, round_id: u128, caller: Address, voter: Address);
+    fn flag_voters(env: &Env, round_id: u128, caller: Address, voters: Vec<Address>);
+    fn unflag_voters(env: &Env, round_id: u128, caller: Address, voters: Vec<Address>);
     fn add_approved_project(env: &Env, round_id: u128, caller: Address, project_ids: Vec<u128>);
     fn remove_approved_project(env: &Env, around_id: u128, caller: Address, project_ids: Vec<u128>);
     fn process_payouts(env: &Env, round_id: u128, caller: Address);
@@ -103,7 +103,7 @@ pub trait IsRound {
         caller: Address,
         note: String,
     ) -> RoundApplication;
-    fn change_allow_applications(
+    fn set_applications_config(
         env: &Env,
         round_id: u128,
         caller: Address,
@@ -125,8 +125,8 @@ pub trait IsRound {
         review_notes: Vec<Option<String>>,
         applicants: Vec<Address>,
     ) -> Vec<RoundApplication>;
-    fn add_whitelist(env: &Env, round_id: u128, caller: Address, address: Address);
-    fn remove_from_whitelist(env: &Env, round_id: u128, caller: Address, address: Address);
+    fn add_whitelists(env: &Env, round_id: u128, caller: Address, users: Vec<Address>);
+    fn remove_from_whitelists(env: &Env, round_id: u128, caller: Address, users: Vec<Address>);
 
     fn get_payouts(env: &Env, from_index: Option<u64>, limit: Option<u64>) -> Vec<Payout>;
     fn get_all_voters(

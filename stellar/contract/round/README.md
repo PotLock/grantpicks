@@ -344,8 +344,15 @@ pub struct Deposit {
 //WRITE
 
 // initialize new contract
-fn initialize(env: &Env, caller: Address, token_address: Address, registry_address: Address, fee_basis_points: Option<u32>,fee_address: Option<Address>);
-
+fn initialize(
+    env: &Env,
+    caller: Address,
+    token_address: Address,
+    registry_address: Address,
+    protocol_fee_basis_points: Option<u32>,
+    protocol_fee_recipient: Option<Address>,
+    default_page_size: Option<u64>
+);
 // create a round
 fn create_round(env: &Env, caller: Address, params: CreateRoundParams) -> RoundDetail;
 
@@ -354,6 +361,15 @@ fn upgrade(env: &Env, new_wasm_hash: BytesN<32>);
 
 // transfer ownership
 fn transfer_ownership(env: &Env, new_owner: Address);
+
+// change config
+fn owner_set_default_page_size(env: &Env, default_page_size: u64);
+fn owner_set_protocol_fee_config(
+    env: &Env,
+    protocol_fee_recipient: Option<Address>,
+    protocol_fee_basis_points: Option<u32>,
+);
+
 
 //READ
 
@@ -405,12 +421,12 @@ fn deposit_to_round(env: &Env, round_id: u128, caller: Address, amount: u128, me
 fn vote(env: &Env, round_id: u128, voter: Address, picks: Vec<PickedPair>);
 
 //blacklist user
-fn flag_voter(env: &Env, round_id: u128, caller: Address, voter: Address);
-fn unflag_voter(env: &Env, round_id: u128, caller: Address, voter: Address);
+fn flag_voters(env: &Env, round_id: u128, caller: Address, voters: Vec<Address>);
+fn unflag_voters(env: &Env, round_id: u128, caller: Address, voters: Vec<Address>);
 
 // whitelist user
-fn add_whitelist(env: &Env, round_id: u128, caller: Address, address: Address);
-fn remove_from_whitelist(env: &Env, round_id: u128, caller: Address, address: Address);
+fn add_whitelists(env: &Env, round_id: u128, caller: Address, users: Vec<Address>);
+fn remove_from_whitelists(env: &Env, round_id: u128, caller: Address, users: Vec<Address>);
 
 // manually add payout and payout challenge
 fn set_payouts(env: &Env, round_id: u128, caller: Address, payouts: Vec<PayoutInput>, clear_existing: bool) -> Vec<Payout>;
@@ -446,4 +462,115 @@ fn get_deposits_for_round(env: &Env, round_id: u128, from_index: Option<u64>, li
 fn get_results_for_round(env: &Env, round_id: u128) -> Vec<ProjectVotingResult>;
 fn blacklisted_voters(env: &Env, round_id: u128) -> Vec<Address>;
 fn whitelisted_voters(env: &Env, round_id: u128) -> Vec<Address>;
+```
+
+## Events For Indexer
+
+1. Round Events
+
+```rs
+pub fn log_create_round(env: &Env, round_detail: RoundDetail) {
+    env.events().publish(
+        (symbol_short!("c_round"), env.current_contract_address()),
+        round_detail,
+    );
+}
+
+pub fn log_update_round(env: &Env, round_detail: RoundDetail) {
+    env.events().publish(
+        (symbol_short!("u_round"), env.current_contract_address()),
+        round_detail,
+    );
+}
+```
+
+2. Application Events
+
+```rs
+pub fn log_create_app(env: &Env, application: RoundApplication) {
+    env.events().publish(
+        (symbol_short!("c_app"), env.current_contract_address()),
+        application,
+    );
+}
+
+pub fn log_update_app(env: &Env, application: RoundApplication) {
+    env.events().publish(
+        (symbol_short!("u_app"), env.current_contract_address()),
+        application,
+    );
+}
+
+pub fn log_delete_app(env: &Env, application: RoundApplication) {
+    env.events().publish(
+        (symbol_short!("d_app"), env.current_contract_address()),
+        application,
+    );
+```
+
+3. Deposit Events
+
+```rs
+pub fn log_create_deposit(env: &Env, round_id: u128, actor: Address, amount: u128) {
+    env.events().publish(
+        (symbol_short!("c_depo"), env.current_contract_address()),
+        (round_id, actor, amount),
+    );
+}
+```
+
+4. Vote Events
+
+```rs
+pub fn log_create_vote(env: &Env, round_id: u128, result: VotingResult) {
+    env.events().publish(
+        (symbol_short!("c_vote"), env.current_contract_address()),
+        (round_id, result),
+    );
+}
+```
+
+5. Payout Events
+
+```rs
+pub fn log_create_payout(env: &Env, round_id: u128, address: Address, amount: i128) {
+    env.events().publish(
+        (symbol_short!("c_pay"), env.current_contract_address()),
+        (round_id, address, amount),
+    );
+}
+```
+
+6. Update Approved Projects
+
+```rs
+pub fn log_update_approved_projects(env: &Env, round_id: u128, project_ids: Vec<u128>) {
+    env.events().publish(
+        (symbol_short!("u_ap"), env.current_contract_address()),
+        (round_id, project_ids),
+    );
+}
+```
+
+7. Update Whitelist
+
+```rs
+pub fn log_update_whitelist(env: &Env, round_id: u128, address: Address, is_add: bool) {
+    env.events().publish(
+        (symbol_short!("u_wl"), env.current_contract_address()),
+        (round_id, address, is_add),
+    );
+}
+```
+
+8. Update Blacklist/Flag
+
+```rs
+pub fn log_update_user_flag(env: &Env, round_id: u128, address: Address, is_flag: bool) {
+    env.events().publish(
+        (symbol_short!("u_bl"), env.current_contract_address()),
+        (round_id, address, is_flag),
+    );
+}
+
 ```

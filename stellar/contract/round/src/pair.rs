@@ -1,10 +1,7 @@
+use core::default;
+
 use crate::{
-    approval_writer::read_approved_projects,
-    data_type::{Pair, RoundDetail},
-    round_writer::read_round_info,
-    storage::has_store_key,
-    storage_key::ContractKey,
-    utils::{count_total_available_pairs, get_arithmetic_index},
+    approval_writer::read_approved_projects, data_type::{Pair, RoundDetail}, page_writer::read_default_page_size, round_writer::read_round_info, storage::has_store_key, storage_key::ContractKey, utils::{count_total_available_pairs, get_arithmetic_index}
 };
 use soroban_sdk::{Env, Vec};
 
@@ -72,8 +69,9 @@ pub fn get_all_pairs(env: &Env, round_id: u128) -> Vec<Pair> {
 }
 
 pub fn get_all_rounds(env: &Env, skip: Option<u64>, limit: Option<u64>) -> Vec<RoundDetail> {
+    let default_page_size = read_default_page_size(env);
     let skip: u64 = skip.unwrap_or(0).try_into().unwrap();
-    let mut limit: u64 = limit.unwrap_or(5).try_into().unwrap();
+    let mut limit: u64 = limit.unwrap_or(default_page_size).try_into().unwrap();
 
     if limit > 10 {
         limit = 10;

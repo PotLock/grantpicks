@@ -38,7 +38,9 @@ fn deploy_registry_contract<'a>(env: &Env, admin: &Address) -> project_registry:
 
     contract
 }
-
+/*
+Generate fake projects for testing
+*/
 fn generate_fake_project(
     env: &Env,
     project_contract: &project_registry::Client,
@@ -85,7 +87,7 @@ fn generate_fake_project(
     let mut results: Vec<FakeProject> = Vec::new(env);
     for _i in 0..total {
         let owner = Address::generate(env);
-        let project_params = &project_registry::ProjectParams {
+        let project_params = &project_registry::CreateProjectParams {
             image_url: String::from_str(&env, "image_url"),
             video_url: String::from_str(&env, "video_url"),
             name: String::from_str(&env, "name"),
@@ -114,7 +116,11 @@ fn create_token<'a>(env: &Env, admin: &Address) -> (TokenClient<'a>, StellarAsse
         StellarAssetClient::new(env, &contract_address),
     )
 }
-
+/*
+Test case: 
+1. Create a round
+2. Get the round and admins
+*/
 #[test]
 fn test_round_create() {
     let env = Env::default();
@@ -158,6 +164,7 @@ fn test_round_create() {
         &project_contract.address,
         &None,
         &None,
+        &None,
     );
 
     let created_round = round.create_round(&admin, &round_detail);
@@ -177,6 +184,11 @@ fn test_round_create() {
     assert_eq!(factory_round.id, round_info.id);
 }
 
+/*
+Test case:
+1. Create a round
+2. Apply to the round
+*/
 #[test]
 fn test_apply_applications() {
     let env = Env::default();
@@ -221,6 +233,7 @@ fn test_apply_applications() {
         &project_contract.address,
         &None,
         &None,
+        &None,
     );
 
     let created_round = round.create_round(&admin, &round_detail);
@@ -242,6 +255,12 @@ fn test_apply_applications() {
     assert_eq!(application.status, ApplicationStatus::Pending);
 }
 
+/*
+Test case:
+1. Create a round
+2. Apply to the round
+3. Review the application
+*/
 #[test]
 fn test_review_application() {
     let env = Env::default();
@@ -286,6 +305,7 @@ fn test_review_application() {
         &project_contract.address,
         &None,
         &None,
+        &None
     );
 
     let created_round = round.create_round(&admin, &round_detail);
@@ -314,6 +334,11 @@ fn test_review_application() {
     assert_eq!(application.review_note, review_note);
 }
 
+/*
+Test case:
+1. Create a round
+2. Apply to the round using whitelist
+*/
 #[test]
 #[should_panic]
 fn test_whitelist_applicant() {
@@ -359,6 +384,7 @@ fn test_whitelist_applicant() {
         &project_contract.address,
         &None,
         &None,
+        &None,
     );
 
     let created_round = round.create_round(&admin, &round_detail);
@@ -371,6 +397,13 @@ fn test_whitelist_applicant() {
     );
 }
 
+/*
+Test case:
+1. Create a round
+2. Apply to the round
+3. Review the application
+4. Vote for the project using whitelist
+*/
 #[test]
 #[should_panic]
 fn test_whitelist_voters() {
@@ -417,13 +450,16 @@ fn test_whitelist_voters() {
         &project_contract.address,
         &None,
         &None,
+        &None
     );
 
     let created_round = round.create_round(&admin, &round_detail);
     let project_id = 1;
     let applicant = Address::generate(&env);
+    let mut whitelist: Vec<Address> = Vec::new(&env);
+    whitelist.push_back(applicant.clone());
 
-    round.add_whitelist(&created_round.id, &admin, &applicant);
+    round.add_whitelists(&created_round.id, &admin, &whitelist);
 
     round.apply_to_round(
         &created_round.id,
@@ -454,6 +490,13 @@ fn test_whitelist_voters() {
     assert_eq!(whitelistes.len(), 1);
 }
 
+/*
+Test case:
+1. Create a round
+2. Apply to the round
+3. Review the application
+4. Vote for the project using blacklist
+*/
 #[test]
 #[should_panic]
 fn test_blacklist() {
@@ -499,10 +542,10 @@ fn test_blacklist() {
         &project_contract.address,
         &None,
         &None,
+        &None,
     );
 
     let created_round = round.create_round(&admin, &round_detail);
-    round.flag_voter(&created_round.id, &admin, &projects.get(0).unwrap().owner);
     round.apply_to_round(
         &created_round.id,
         &projects.get(0).unwrap().owner,
@@ -510,9 +553,56 @@ fn test_blacklist() {
         &None,
         &None,
     );
-    // round.apply_project(&project_id, &applicant);
-}
 
+    round.apply_to_round(
+      &created_round.id,
+      &projects.get(1).unwrap().owner,
+      &None,
+      &None,
+      &None,
+    );
+    
+    round.review_application(
+        &created_round.id,
+        &admin,
+        &projects.get(0).unwrap().owner,
+        &ApplicationStatus::Approved,
+        &None,
+    );
+
+    round.review_application(
+        &created_round.id,
+        &admin,
+        &projects.get(1).unwrap().owner,
+        &ApplicationStatus::Approved,
+        &None,
+    );
+
+    let voter = Address::generate(&env);
+    let pairs_to_vote = round.get_pairs_to_vote(&created_round.id);
+    let mut picks: Vec<PickedPair> = Vec::new(&env);
+   
+    pairs_to_vote.iter().for_each(|pair| {
+        picks.push_back(PickedPair {
+            pair_id: pair.pair_id,
+            voted_project_id: pair.projects.get(0).unwrap(),
+        });
+    });
+
+    let mut blacklist_voters: Vec<Address> = Vec::new(&env);
+    blacklist_voters.push_back(voter.clone());
+    round.flag_voters(&created_round.id, &admin, &blacklist_voters);
+
+    round.vote(&created_round.id, &voter, &picks);
+    
+}
+/*
+Test case:
+1. Create a round
+2. Apply to the round
+3. Review the application
+4. Vote for the project
+*/
 #[test]
 fn test_voting() {
     let env = Env::default();
@@ -555,6 +645,7 @@ fn test_voting() {
         &admin,
         &token_contract.address,
         &project_contract.address,
+        &None,
         &None,
         &None,
     );
@@ -649,6 +740,11 @@ fn test_voting() {
     });
 }
 
+/*
+Test case:
+1. Create a round
+2. Add and remove admins
+*/
 #[test]
 fn test_add_remove_admin() {
     let env = Env::default();
@@ -692,6 +788,7 @@ fn test_add_remove_admin() {
         &project_contract.address,
         &None,
         &None,
+        &None,
     );
 
     let created_round = round.create_round(&admin, &round_detail);
@@ -711,6 +808,15 @@ fn test_add_remove_admin() {
     assert_eq!(admins.len(), 1);
 }
 
+/*
+Test case:
+1. Create a round
+2. Apply to the round
+3. Review the application
+4. Vote for the project
+5. Deposit to the round
+6. Payout to the project owner
+*/
 #[test]
 fn test_voting_deposit_and_payout() {
     let env = Env::default();
@@ -755,6 +861,7 @@ fn test_voting_deposit_and_payout() {
         &admin,
         &token_contract.address,
         &project_contract.address,
+        &None,
         &None,
         &None,
     );
@@ -850,6 +957,13 @@ fn test_voting_deposit_and_payout() {
  * posibilities = (num_of_projects * (num_of_projects - 1))/num_of_project_per_pair
  * expected_generated_pairs_per_project = num_of_projects - 1
  * to allow duplicate pairs eg. A B and B A, we need to change the logic of the test
+ * 
+ * Test case:
+ * 1. Create a round
+ * 2. Add approved projects
+ * 3. Get all pairs
+ * 4. Check the correctness of the pairs
+ * 5. Check the uniqueness of the pairs
  */
 #[test]
 fn test_get_all_pairs() {
@@ -893,6 +1007,7 @@ fn test_get_all_pairs() {
         &admin,
         &token_contract.address,
         &project_contract.address,
+        &None,
         &None,
         &None,
     );
@@ -944,6 +1059,11 @@ fn test_get_all_pairs() {
     });
 }
 
+/*
+Test case:
+1. Create a round
+2. Change the number of votes
+*/
 #[test]
 fn test_change_number_of_votes() {
     let env = Env::default();
@@ -987,6 +1107,7 @@ fn test_change_number_of_votes() {
         &project_contract.address,
         &None,
         &None,
+        &None,
     );
 
     let created_round = round.create_round(&admin, &round_detail);
@@ -997,6 +1118,11 @@ fn test_change_number_of_votes() {
     assert_eq!(round_info.num_picks_per_voter, new_num_picks_per_voter);
 }
 
+/*
+Test case:
+1. Create a round
+2. Change amount of expected amount
+*/
 #[test]
 fn test_change_amount() {
     let env = Env::default();
@@ -1040,6 +1166,7 @@ fn test_change_amount() {
         &project_contract.address,
         &None,
         &None,
+        &None,
     );
 
     let created_round = round.create_round(&admin, &round_detail);
@@ -1050,6 +1177,11 @@ fn test_change_amount() {
     assert_eq!(round_info.expected_amount, new_amount);
 }
 
+/*
+Test case:
+1. Create a round
+2. Change the voting period
+*/
 #[test]
 fn test_change_voting_period() {
     let env = Env::default();
@@ -1093,6 +1225,7 @@ fn test_change_voting_period() {
         &project_contract.address,
         &None,
         &None,
+        &None,
     );
 
     let created_round = round.create_round(&admin, &round_detail);
@@ -1105,6 +1238,11 @@ fn test_change_voting_period() {
     assert_eq!(round_info.voting_end_ms, new_end_ms);
 }
 
+/*
+Test case:
+1. Create a round
+2. Change application period
+*/
 #[test]
 fn test_application_period() {
     let env = Env::default();
@@ -1148,6 +1286,7 @@ fn test_application_period() {
         &project_contract.address,
         &None,
         &None,
+        &None,
     );
 
     let created_round = round.create_round(&admin, &round_detail);
@@ -1171,6 +1310,11 @@ fn test_application_period() {
     );
 }
 
+/*
+Test case:
+1. Create a round
+2. Update the round
+*/
 #[test]
 fn test_update_round() {
     let env = Env::default();
@@ -1214,6 +1358,7 @@ fn test_update_round() {
         &project_contract.address,
         &None,
         &None,
+        &None,
     );
 
     let created_round = round.create_round(&admin, &round_detail);
@@ -1240,6 +1385,11 @@ fn test_update_round() {
     assert!(created_round.expected_amount != updated_round.expected_amount);
 }
 
+/*
+Test case:
+1. Create a round
+2. Change allow applications
+*/
 #[test]
 fn test_change_allow_applications() {
     let env = Env::default();
@@ -1283,11 +1433,12 @@ fn test_change_allow_applications() {
         &project_contract.address,
         &None,
         &None,
+        &None,
     );
 
     let created_round = round.create_round(&admin, &round_detail);
     let new_allow_applications = false;
-    round.change_allow_applications(
+    round.set_applications_config(
         &created_round.id,
         &admin,
         &new_allow_applications,
@@ -1299,6 +1450,13 @@ fn test_change_allow_applications() {
     assert_eq!(round_info.allow_applications, new_allow_applications);
 }
 
+/*
+Test case:
+1. Create a round
+2. Apply to the round
+3. Get applications for the round
+4. Unapply from the round
+*/
 #[test]
 fn test_unapply_from_round() {
     let env = Env::default();
@@ -1343,6 +1501,7 @@ fn test_unapply_from_round() {
         &project_contract.address,
         &None,
         &None,
+        &None,
     );
 
     let created_round = round.create_round(&admin, &round_detail);
@@ -1360,6 +1519,11 @@ fn test_unapply_from_round() {
     assert!(post_check_applications.is_empty());
 }
 
+/*
+Test case:
+1. Create a round
+2. Apply to the round in batch
+*/
 #[test]
 fn test_apply_to_round_batch() {
     let env = Env::default();
@@ -1404,6 +1568,7 @@ fn test_apply_to_round_batch() {
         &project_contract.address,
         &None,
         &None,
+        &None,
     );
 
     let created_round = round.create_round(&admin, &round_detail);
@@ -1415,4 +1580,45 @@ fn test_apply_to_round_batch() {
         round.apply_to_round_batch(&admin, &created_round.id, &Vec::new(&env), &applicants);
     let check_applications = round.get_applications_for_round(&created_round.id, &None, &None);
     assert_eq!(new_applications.len(), check_applications.len());
+}
+
+/*
+Test case:
+1. Create contract
+2. Change round contract config
+*/
+#[test]
+fn test_change_round_contract_config(){
+  let env = Env::default();
+  env.mock_all_auths();
+  let admin = Address::generate(&env);
+  let treasury = Address::generate(&env);
+  let round = deploy_contract(&env, &admin);
+  let (token_contract, token_admin) = create_token(&env, &admin);
+  let project_contract = deploy_registry_contract(&env, &admin);
+
+  round.initialize(
+      &admin,
+      &token_contract.address,
+      &project_contract.address,
+      &None,
+      &None,
+      &None,
+  );
+
+
+  let prev_config = round.get_config();
+
+  round.owner_set_default_page_size(&5);
+  round.owner_set_protocol_fee_config(&Some(treasury.clone()), &Some(2000));
+
+  let new_config = round.get_config();
+
+  assert_eq!(prev_config.default_page_size, 10);
+  assert_eq!(prev_config.protocol_fee_basis_points, 0);
+  assert_eq!(prev_config.protocol_fee_recipient, admin);
+
+  assert_eq!(new_config.default_page_size, 5);
+  assert_eq!(new_config.protocol_fee_basis_points, 2000);
+  assert_eq!(new_config.protocol_fee_recipient, treasury);
 }

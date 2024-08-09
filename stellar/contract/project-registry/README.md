@@ -176,3 +176,22 @@ fn get_total_projects(env: &Env) -> u32;
 fn get_project_from_applicant(env: &Env, applicant: Address) -> Option<Project>;
 
 ```
+
+## Events
+
+```rs
+pub fn log_create_project_event(env: &Env, project: Project) {
+    env.events().publish(
+        (symbol_short!("c_project"), env.current_contract_address()),
+        project,
+    );
+}
+
+pub fn log_update_project_event(env: &Env, project: Project) {
+    env.events().publish(
+        (symbol_short!("u_project"), env.current_contract_address()),
+        project,
+    );
+}
+
+```

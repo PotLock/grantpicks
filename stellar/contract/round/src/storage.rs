@@ -10,6 +10,7 @@ pub fn extend_instance(env: &Env) {
     extend_persistent(env, &ContractKey::FactoryOwner);
     extend_persistent(env, &ContractKey::ProtocolFee);
     extend_persistent(env, &ContractKey::ProtocolFeeRecepient);
+    extend_persistent(env, &ContractKey::DefaultPageSize);
     extend_persistent(env, &ContractKey::NextRoundId);
     extend_persistent(env, &ContractKey::NextPayoutId);
     extend_persistent(env, &ContractKey::NextDepositId);

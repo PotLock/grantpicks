@@ -5,6 +5,7 @@ use crate::soroban_sdk::{self, contracttype};
 pub enum ContractKey {
     ProtocolFeeRecepient, // FEE_RECIPIENT
     ProtocolFee,          // FEE
+    DefaultPageSize,      // DEFAULT_PAGE_SIZE
     FactoryOwner,
     NextRoundId,
     NextPayoutId,

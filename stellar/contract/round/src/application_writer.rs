@@ -1,6 +1,6 @@
 use soroban_sdk::{Address, Env, Map, Vec};
 
-use crate::{data_type::RoundApplication, storage_key::ContractKey};
+use crate::{data_type::RoundApplication, page_writer::read_default_page_size, storage_key::ContractKey};
 
 pub fn read_application(env: &Env, round_id: u128) -> Map<Address, RoundApplication> {
     let key = ContractKey::ProjectApplicants(round_id);
@@ -27,9 +27,10 @@ pub fn find_applications(
     skip: Option<u64>,
     limit: Option<u64>,
 ) -> Vec<RoundApplication> {
+    let default_page_size = read_default_page_size(env);
     let applications = read_application(env, round_id);
     let skip: usize = skip.unwrap_or(0).try_into().unwrap();
-    let limit: usize = limit.unwrap_or(10).try_into().unwrap();
+    let limit: usize = limit.unwrap_or(default_page_size).try_into().unwrap();
     assert!(limit <= 20, "limit should be less than or equal to 20");
     let mut found_applications: Vec<RoundApplication> = Vec::new(env);
     let keys = applications.keys();

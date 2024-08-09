@@ -1,4 +1,3 @@
-/// <reference types="node" resolution-mode="require"/>
 import { Buffer } from "buffer";
 import { AssembledTransaction, Client as ContractClient, ClientOptions as ContractClientOptions } from '@stellar/stellar-sdk/contract';
 import type { u32, u64, u128, i128, Option } from '@stellar/stellar-sdk/contract';
@@ -168,19 +167,12 @@ export interface Deposit {
     round_id: u128;
     total_amount: i128;
 }
-export type ProjectStatus = {
-    tag: "New";
-    values: void;
-} | {
-    tag: "Approved";
-    values: void;
-} | {
-    tag: "Rejected";
-    values: void;
-} | {
-    tag: "Completed";
-    values: void;
-};
+export declare enum ProjectStatus {
+    New = 0,
+    Approved = 1,
+    Rejected = 2,
+    Completed = 3
+}
 export interface Project {
     admins: Array<string>;
     contacts: Array<ProjectContact>;
@@ -226,6 +218,9 @@ export type ContractKey = {
     values: void;
 } | {
     tag: "ProtocolFee";
+    values: void;
+} | {
+    tag: "DefaultPageSize";
     values: void;
 } | {
     tag: "FactoryOwner";
@@ -292,6 +287,23 @@ export type ContractKey = {
     values: readonly [u128];
 };
 export declare const Errors: {
+    5: {
+        message: string;
+    };
+    26: {
+        message: string;
+    };
+    31: {
+        message: string;
+    };
+    32: {
+        message: string;
+    };
+    38: {
+        message: string;
+    };
+};
+export declare const Errors: {
     0: {
         message: string;
     };
@@ -307,46 +319,7 @@ export declare const Errors: {
     4: {
         message: string;
     };
-    5: {
-        message: string;
-    };
-    6: {
-        message: string;
-    };
-    7: {
-        message: string;
-    };
     8: {
-        message: string;
-    };
-    9: {
-        message: string;
-    };
-    10: {
-        message: string;
-    };
-    11: {
-        message: string;
-    };
-    12: {
-        message: string;
-    };
-    13: {
-        message: string;
-    };
-    14: {
-        message: string;
-    };
-    15: {
-        message: string;
-    };
-    16: {
-        message: string;
-    };
-    17: {
-        message: string;
-    };
-    18: {
         message: string;
     };
     19: {
@@ -364,15 +337,6 @@ export declare const Errors: {
     23: {
         message: string;
     };
-    24: {
-        message: string;
-    };
-    25: {
-        message: string;
-    };
-    26: {
-        message: string;
-    };
     27: {
         message: string;
     };
@@ -380,18 +344,6 @@ export declare const Errors: {
         message: string;
     };
     29: {
-        message: string;
-    };
-    30: {
-        message: string;
-    };
-    31: {
-        message: string;
-    };
-    32: {
-        message: string;
-    };
-    33: {
         message: string;
     };
     34: {
@@ -406,9 +358,6 @@ export declare const Errors: {
     37: {
         message: string;
     };
-    38: {
-        message: string;
-    };
     39: {
         message: string;
     };
@@ -416,12 +365,6 @@ export declare const Errors: {
         message: string;
     };
     41: {
-        message: string;
-    };
-    42: {
-        message: string;
-    };
-    43: {
         message: string;
     };
     44: {
@@ -439,17 +382,85 @@ export declare const Errors: {
     48: {
         message: string;
     };
+    49: {
+        message: string;
+    };
+    50: {
+        message: string;
+    };
+    51: {
+        message: string;
+    };
+};
+export declare const Errors: {
+    6: {
+        message: string;
+    };
+    7: {
+        message: string;
+    };
+    9: {
+        message: string;
+    };
+    12: {
+        message: string;
+    };
+    17: {
+        message: string;
+    };
+    18: {
+        message: string;
+    };
+    24: {
+        message: string;
+    };
+    25: {
+        message: string;
+    };
+    33: {
+        message: string;
+    };
+};
+export declare const Errors: {
+    10: {
+        message: string;
+    };
+    11: {
+        message: string;
+    };
+    13: {
+        message: string;
+    };
+    14: {
+        message: string;
+    };
+    15: {
+        message: string;
+    };
+    16: {
+        message: string;
+    };
+    30: {
+        message: string;
+    };
+    42: {
+        message: string;
+    };
+    43: {
+        message: string;
+    };
 };
 export interface Client {
     /**
      * Construct and simulate a initialize transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    initialize: ({ caller, token_address, registry_address, fee_basis_points, fee_address }: {
+    initialize: ({ caller, token_address, registry_address, protocol_fee_basis_points, protocol_fee_recipient, default_page_size }: {
         caller: string;
         token_address: string;
         registry_address: string;
-        fee_basis_points: Option<u32>;
-        fee_address: Option<string>;
+        protocol_fee_basis_points: Option<u32>;
+        protocol_fee_recipient: Option<string>;
+        default_page_size: Option<u64>;
     }, options?: {
         /**
          * The fee to pay for the transaction. Default: BASE_FEE
@@ -559,6 +570,45 @@ export interface Client {
          */
         simulate?: boolean;
     }) => Promise<AssembledTransaction<Config>>;
+    /**
+     * Construct and simulate a owner_set_default_page_size transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     */
+    owner_set_default_page_size: ({ default_page_size }: {
+        default_page_size: u64;
+    }, options?: {
+        /**
+         * The fee to pay for the transaction. Default: BASE_FEE
+         */
+        fee?: number;
+        /**
+         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+         */
+        timeoutInSeconds?: number;
+        /**
+         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+         */
+        simulate?: boolean;
+    }) => Promise<AssembledTransaction<null>>;
+    /**
+     * Construct and simulate a owner_set_protocol_fee_config transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     */
+    owner_set_protocol_fee_config: ({ protocol_fee_recipient, protocol_fee_basis_points }: {
+        protocol_fee_recipient: Option<string>;
+        protocol_fee_basis_points: Option<u32>;
+    }, options?: {
+        /**
+         * The fee to pay for the transaction. Default: BASE_FEE
+         */
+        fee?: number;
+        /**
+         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+         */
+        timeoutInSeconds?: number;
+        /**
+         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+         */
+        simulate?: boolean;
+    }) => Promise<AssembledTransaction<null>>;
     /**
      * Construct and simulate a change_voting_period transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
@@ -853,12 +903,12 @@ export interface Client {
         simulate?: boolean;
     }) => Promise<AssembledTransaction<Array<Pair>>>;
     /**
-     * Construct and simulate a flag_voter transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     * Construct and simulate a flag_voters transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    flag_voter: ({ round_id, admin, voter }: {
+    flag_voters: ({ round_id, admin, voters }: {
         round_id: u128;
         admin: string;
-        voter: string;
+        voters: Array<string>;
     }, options?: {
         /**
          * The fee to pay for the transaction. Default: BASE_FEE
@@ -874,12 +924,12 @@ export interface Client {
         simulate?: boolean;
     }) => Promise<AssembledTransaction<null>>;
     /**
-     * Construct and simulate a unflag_voter transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     * Construct and simulate a unflag_voters transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    unflag_voter: ({ round_id, admin, voter }: {
+    unflag_voters: ({ round_id, admin, voters }: {
         round_id: u128;
         admin: string;
-        voter: string;
+        voters: Array<string>;
     }, options?: {
         /**
          * The fee to pay for the transaction. Default: BASE_FEE
@@ -1173,12 +1223,12 @@ export interface Client {
         simulate?: boolean;
     }) => Promise<AssembledTransaction<null>>;
     /**
-     * Construct and simulate a add_whitelist transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     * Construct and simulate a add_whitelists transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    add_whitelist: ({ round_id, caller, address }: {
+    add_whitelists: ({ round_id, caller, users }: {
         round_id: u128;
         caller: string;
-        address: string;
+        users: Array<string>;
     }, options?: {
         /**
          * The fee to pay for the transaction. Default: BASE_FEE
@@ -1194,12 +1244,12 @@ export interface Client {
         simulate?: boolean;
     }) => Promise<AssembledTransaction<null>>;
     /**
-     * Construct and simulate a remove_from_whitelist transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     * Construct and simulate a remove_from_whitelists transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    remove_from_whitelist: ({ round_id, caller, address }: {
+    remove_from_whitelists: ({ round_id, caller, users }: {
         round_id: u128;
         caller: string;
-        address: string;
+        users: Array<string>;
     }, options?: {
         /**
          * The fee to pay for the transaction. Default: BASE_FEE
@@ -1396,9 +1446,9 @@ export interface Client {
         simulate?: boolean;
     }) => Promise<AssembledTransaction<RoundApplication>>;
     /**
-     * Construct and simulate a change_allow_applications transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     * Construct and simulate a set_applications_config transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    change_allow_applications: ({ round_id, caller, allow_applications, start_ms, end_ms }: {
+    set_applications_config: ({ round_id, caller, allow_applications, start_ms, end_ms }: {
         round_id: u128;
         caller: string;
         allow_applications: boolean;
@@ -1800,6 +1850,8 @@ export declare class Client extends ContractClient {
         upgrade: (json: string) => AssembledTransaction<null>;
         transfer_ownership: (json: string) => AssembledTransaction<null>;
         get_config: (json: string) => AssembledTransaction<Config>;
+        owner_set_default_page_size: (json: string) => AssembledTransaction<null>;
+        owner_set_protocol_fee_config: (json: string) => AssembledTransaction<null>;
         change_voting_period: (json: string) => AssembledTransaction<null>;
         change_application_period: (json: string) => AssembledTransaction<null>;
         change_expected_amount: (json: string) => AssembledTransaction<null>;
@@ -1814,8 +1866,8 @@ export declare class Client extends ContractClient {
         deposit_to_round: (json: string) => AssembledTransaction<null>;
         vote: (json: string) => AssembledTransaction<null>;
         get_pairs_to_vote: (json: string) => AssembledTransaction<Pair[]>;
-        flag_voter: (json: string) => AssembledTransaction<null>;
-        unflag_voter: (json: string) => AssembledTransaction<null>;
+        flag_voters: (json: string) => AssembledTransaction<null>;
+        unflag_voters: (json: string) => AssembledTransaction<null>;
         get_results_for_round: (json: string) => AssembledTransaction<ProjectVotingResult[]>;
         process_payouts: (json: string) => AssembledTransaction<null>;
         get_all_voters: (json: string) => AssembledTransaction<VotingResult[]>;
@@ -1830,8 +1882,8 @@ export declare class Client extends ContractClient {
         total_funding: (json: string) => AssembledTransaction<bigint>;
         add_approved_project: (json: string) => AssembledTransaction<null>;
         remove_approved_project: (json: string) => AssembledTransaction<null>;
-        add_whitelist: (json: string) => AssembledTransaction<null>;
-        remove_from_whitelist: (json: string) => AssembledTransaction<null>;
+        add_whitelists: (json: string) => AssembledTransaction<null>;
+        remove_from_whitelists: (json: string) => AssembledTransaction<null>;
         whitelist_status: (json: string) => AssembledTransaction<boolean>;
         blacklist_status: (json: string) => AssembledTransaction<boolean>;
         get_all_pairs_for_round: (json: string) => AssembledTransaction<Pair[]>;
@@ -1841,7 +1893,7 @@ export declare class Client extends ContractClient {
         admins: (json: string) => AssembledTransaction<string[]>;
         unapply_from_round: (json: string) => AssembledTransaction<RoundApplication>;
         update_applicant_note: (json: string) => AssembledTransaction<RoundApplication>;
-        change_allow_applications: (json: string) => AssembledTransaction<RoundDetail>;
+        set_applications_config: (json: string) => AssembledTransaction<RoundDetail>;
         update_round: (json: string) => AssembledTransaction<RoundDetail>;
         delete_round: (json: string) => AssembledTransaction<RoundDetail>;
         apply_to_round_batch: (json: string) => AssembledTransaction<RoundApplication[]>;

@@ -1,7 +1,13 @@
 use core::default;
 
 use crate::{
-    approval_writer::read_approved_projects, data_type::{Pair, RoundDetail}, page_writer::read_default_page_size, round_writer::read_round_info, storage::has_store_key, storage_key::ContractKey, utils::{count_total_available_pairs, get_arithmetic_index}
+    approval_writer::read_approved_projects,
+    data_type::{Pair, RoundDetail},
+    page_writer::read_default_page_size,
+    round_writer::read_round_info,
+    storage::has_store_key,
+    storage_key::ContractKey,
+    utils::{count_total_available_pairs, get_arithmetic_index},
 };
 use soroban_sdk::{Env, Vec};
 

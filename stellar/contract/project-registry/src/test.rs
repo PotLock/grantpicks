@@ -82,7 +82,12 @@ fn test_apply() {
     assert_eq!(project.payout_address, bob);
 
     let result = contract.get_project_from_applicant(&bob);
-    assert_eq!(result.is_some(), true);
+    assert_eq!(result.name, project.name);
+    assert_eq!(result.overview, project.overview);
+    assert_eq!(result.image_url, project.image_url);
+    assert_eq!(result.video_url, project.video_url);
+    assert_eq!(result.payout_address, project.payout_address);
+    assert_eq!(result.contacts.len(), 1);
 }
 
 #[test]

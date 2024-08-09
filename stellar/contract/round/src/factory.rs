@@ -10,7 +10,7 @@ pub trait RoundCreator {
         registry_address: Address,
         protocol_fee_basis_points: Option<u32>,
         protocol_fee_recipient: Option<Address>,
-        default_page_size: Option<u64>
+        default_page_size: Option<u64>,
     );
     fn create_round(env: &Env, caller: Address, params: CreateRoundParams) -> RoundDetail;
     fn get_rounds(env: &Env, from_index: Option<u64>, limit: Option<u64>) -> Vec<RoundDetail>;

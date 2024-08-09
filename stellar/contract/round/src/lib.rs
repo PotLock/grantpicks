@@ -8,12 +8,14 @@ mod calculation;
 mod core;
 mod data_type;
 mod deposit_writer;
+mod error;
 mod events;
 mod external;
 mod factory;
 mod fee_writer;
 mod internal;
 mod owner_writer;
+mod page_writer;
 mod pair;
 mod payout_writer;
 mod project_registry_writer;
@@ -25,8 +27,6 @@ mod utils;
 mod validation;
 mod voter_writer;
 mod voting_writer;
-mod page_writer;
-mod error;
 
 mod test;
 

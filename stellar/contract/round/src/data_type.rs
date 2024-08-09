@@ -1,7 +1,11 @@
 use soroban_sdk::{panic_with_error, Env};
 
 use crate::{
-    admin_writer::is_admin, error::{Error, RoundError}, payout_writer::read_payout_challenges, soroban_sdk::{self, contracttype, Address, String, Vec}, utils::get_ledger_second_as_millis
+    admin_writer::is_admin,
+    error::{Error, RoundError},
+    payout_writer::read_payout_challenges,
+    soroban_sdk::{self, contracttype, Address, String, Vec},
+    utils::get_ledger_second_as_millis,
 };
 
 #[contracttype]
@@ -242,14 +246,14 @@ impl RoundDetail {
 
     pub fn assert_cooldown_period_in_process(&self, env: &Env) {
         if self.cooldown_period_ms.is_some() {
-           if self.cooldown_end_ms.unwrap_or(0) < get_ledger_second_as_millis(env){
-              panic_with_error!(env, RoundError::CooldownPeriodNotInProcess);
-           }
+            if self.cooldown_end_ms.unwrap_or(0) < get_ledger_second_as_millis(env) {
+                panic_with_error!(env, RoundError::CooldownPeriodNotInProcess);
+            }
         }
     }
 
     pub fn assert_compliance_period_complete(&self, env: &Env) {
-        if  self.compliance_end_ms.unwrap_or(0) > get_ledger_second_as_millis(env){
+        if self.compliance_end_ms.unwrap_or(0) > get_ledger_second_as_millis(env) {
             panic_with_error!(env, RoundError::CompliancePeriodNotStarted);
         }
     }

@@ -1,102 +1,109 @@
 use crate::{
-    admin_writer::is_admin, approval_writer::{is_project_approved, read_approved_projects}, data_type::{CreateRoundParams, RoundDetail, UpdateRoundParams}, error::{ApplicationError, Error, RoundError, VoteError}, external::ProjectRegistryClient, project_registry_writer::read_project_contract, utils::get_ledger_second_as_millis, voter_writer::{is_blacklisted, is_whitelisted}, voting_writer::get_voting_state
+    admin_writer::is_admin,
+    approval_writer::{is_project_approved, read_approved_projects},
+    data_type::{CreateRoundParams, RoundDetail, UpdateRoundParams},
+    error::{ApplicationError, Error, RoundError, VoteError},
+    external::ProjectRegistryClient,
+    project_registry_writer::read_project_contract,
+    utils::get_ledger_second_as_millis,
+    voter_writer::{is_blacklisted, is_whitelisted},
+    voting_writer::get_voting_state,
 };
 use soroban_sdk::{panic_with_error, Address, Env, String, Vec};
 
 pub fn validate_round_detail(env: &Env, round_detail: &CreateRoundParams) {
-    if round_detail.voting_start_ms > round_detail.voting_end_ms{
-      panic_with_error!(env, RoundError::VotingStartGreaterThanVotingEnd);
+    if round_detail.voting_start_ms > round_detail.voting_end_ms {
+        panic_with_error!(env, RoundError::VotingStartGreaterThanVotingEnd);
     }
 
-    if round_detail.application_start_ms.unwrap() > round_detail.application_end_ms.unwrap(){
-      panic_with_error!(env, RoundError::ApplicationStartGreaterThanApplicationEnd);
+    if round_detail.application_start_ms.unwrap() > round_detail.application_end_ms.unwrap() {
+        panic_with_error!(env, RoundError::ApplicationStartGreaterThanApplicationEnd);
     }
 
-    if round_detail.voting_start_ms < round_detail.application_end_ms.unwrap(){
-      panic_with_error!(env, RoundError::VotingStartLessThanApplicationEnd);
+    if round_detail.voting_start_ms < round_detail.application_end_ms.unwrap() {
+        panic_with_error!(env, RoundError::VotingStartLessThanApplicationEnd);
     }
 
-    if round_detail.expected_amount == 0{
-      panic_with_error!(env, RoundError::AmountMustBeGreaterThanZero);
+    if round_detail.expected_amount == 0 {
+        panic_with_error!(env, RoundError::AmountMustBeGreaterThanZero);
     }
 
-    if round_detail.contacts.len() >= 10{
-      panic_with_error!(env, RoundError::ContactMustBeLessThanTen);
+    if round_detail.contacts.len() >= 10 {
+        panic_with_error!(env, RoundError::ContactMustBeLessThanTen);
     }
 }
 
-pub fn validate_round_detail_update(env: &Env,round_detail: &UpdateRoundParams) {
-  if round_detail.voting_start_ms > round_detail.voting_end_ms{
-    panic_with_error!(env, RoundError::VotingStartGreaterThanVotingEnd);
-  }
+pub fn validate_round_detail_update(env: &Env, round_detail: &UpdateRoundParams) {
+    if round_detail.voting_start_ms > round_detail.voting_end_ms {
+        panic_with_error!(env, RoundError::VotingStartGreaterThanVotingEnd);
+    }
 
-  if round_detail.application_start_ms.unwrap() > round_detail.application_end_ms.unwrap(){
-    panic_with_error!(env, RoundError::ApplicationStartGreaterThanApplicationEnd);
-  }
+    if round_detail.application_start_ms.unwrap() > round_detail.application_end_ms.unwrap() {
+        panic_with_error!(env, RoundError::ApplicationStartGreaterThanApplicationEnd);
+    }
 
-  if round_detail.voting_start_ms < round_detail.application_end_ms.unwrap(){
-    panic_with_error!(env, RoundError::VotingStartLessThanApplicationEnd);
-  }
+    if round_detail.voting_start_ms < round_detail.application_end_ms.unwrap() {
+        panic_with_error!(env, RoundError::VotingStartLessThanApplicationEnd);
+    }
 
-  if round_detail.expected_amount == 0{
-    panic_with_error!(env, RoundError::AmountMustBeGreaterThanZero);
-  }
+    if round_detail.expected_amount == 0 {
+        panic_with_error!(env, RoundError::AmountMustBeGreaterThanZero);
+    }
 
-  if round_detail.contacts.len() >= 10{
-    panic_with_error!(env, RoundError::ContactMustBeLessThanTen);
-  }
+    if round_detail.contacts.len() >= 10 {
+        panic_with_error!(env, RoundError::ContactMustBeLessThanTen);
+    }
 }
 
 pub fn validate_owner_or_admin(env: &Env, admin: &Address, round: &RoundDetail) {
     if round.owner != admin.clone() {
-       if !is_admin(env, round.id, admin){
-          panic_with_error!(env, Error::OwnerOrAdminOnly);
-       }
+        if !is_admin(env, round.id, admin) {
+            panic_with_error!(env, Error::OwnerOrAdminOnly);
+        }
     }
 }
 
 pub fn validate_can_payout(env: &Env, round: &RoundDetail) {
     let current_time = get_ledger_second_as_millis(env);
-   
-    if round.voting_start_ms > current_time{
+
+    if round.voting_start_ms > current_time {
         panic_with_error!(env, VoteError::VotingPeriodNotStarted);
     }
 
-    if round.voting_end_ms > current_time{
-      panic_with_error!(env, VoteError::VotingPeriodNotEnded);
+    if round.voting_end_ms > current_time {
+        panic_with_error!(env, VoteError::VotingPeriodNotEnded);
     }
 }
 
 pub fn validate_vault_fund(env: &Env, round: &RoundDetail) {
     let vault_fund = round.current_vault_balance;
-    
-    if vault_fund == 0{
-      panic_with_error!(env, RoundError::InvalidVaultBalance);
+
+    if vault_fund == 0 {
+        panic_with_error!(env, RoundError::InvalidVaultBalance);
     }
 }
 
 pub fn validate_voting_period(env: &Env, round: &RoundDetail) {
     let current_time = get_ledger_second_as_millis(env);
-    
-    if current_time < round.voting_start_ms{
-      panic_with_error!(env, VoteError::VotingPeriodNotStarted);
+
+    if current_time < round.voting_start_ms {
+        panic_with_error!(env, VoteError::VotingPeriodNotStarted);
     }
 
-
-    if current_time > round.voting_end_ms{
-      panic_with_error!(env, VoteError::VotingPeriodEnded);
+    if current_time > round.voting_end_ms {
+        panic_with_error!(env, VoteError::VotingPeriodEnded);
     }
 }
 
 pub fn validate_application_period(env: &Env, round: &RoundDetail) {
     let current_time = get_ledger_second_as_millis(env);
 
-    if current_time < round.application_start_ms.unwrap(){
-      panic_with_error!(env, ApplicationError::ApplicationPeriodNotStarted);
+    if current_time < round.application_start_ms.unwrap() {
+        panic_with_error!(env, ApplicationError::ApplicationPeriodNotStarted);
     }
 
-    if current_time > round.application_end_ms.unwrap(){
-      panic_with_error!(env, ApplicationError::ApplicationPeriodEnded);
+    if current_time > round.application_end_ms.unwrap() {
+        panic_with_error!(env, ApplicationError::ApplicationPeriodEnded);
     }
 }
 
@@ -110,17 +117,17 @@ pub fn validate_voting_not_started(env: &Env, round: &RoundDetail) {
 
 pub fn validate_approved_projects(env: &Env, round_id: u128, project_id: u128) {
     let already_approved = is_project_approved(env, round_id, project_id);
-    
-    if !already_approved{
-      panic_with_error!(env, ApplicationError::ProjectNotApproved);
+
+    if !already_approved {
+        panic_with_error!(env, ApplicationError::ProjectNotApproved);
     }
 }
 
 pub fn validate_not_approved_projects(env: &Env, round_id: u128, project_id: u128) {
     let already_approved = is_project_approved(env, round_id, project_id);
-   
-    if already_approved{
-      panic_with_error!(env, ApplicationError::ProjectAlreadyApproved);
+
+    if already_approved {
+        panic_with_error!(env, ApplicationError::ProjectAlreadyApproved);
     }
 }
 
@@ -130,8 +137,8 @@ pub fn validate_project_to_approve(env: &Env, round_id: u128, project_ids: &Vec<
     let total_projects: u128 = project_client.get_total_projects().into();
 
     project_ids.iter().for_each(|project_id| {
-        if project_id > total_projects{
-          panic_with_error!(env, ApplicationError::ProjectNotFoundInRegistry);
+        if project_id > total_projects {
+            panic_with_error!(env, ApplicationError::ProjectNotFoundInRegistry);
         }
 
         validate_not_approved_projects(env, round_id, project_id);
@@ -140,84 +147,84 @@ pub fn validate_project_to_approve(env: &Env, round_id: u128, project_ids: &Vec<
 
 pub fn validate_max_participants(env: &Env, round: &RoundDetail, project_ids: &Vec<u128>) {
     let approved_project = read_approved_projects(env, round.id);
-    
-    if approved_project.len() + project_ids.len() > round.max_participants{
-      panic_with_error!(env, ApplicationError::MaxParticipantsReached);
+
+    if approved_project.len() + project_ids.len() > round.max_participants {
+        panic_with_error!(env, ApplicationError::MaxParticipantsReached);
     }
 }
 
 pub fn validate_max_participant(env: &Env, round: &RoundDetail) {
     let approved_project = read_approved_projects(env, round.id);
-    
-    if approved_project.len() >= round.max_participants{
-      panic_with_error!(env, ApplicationError::MaxParticipantsReached);
+
+    if approved_project.len() >= round.max_participants {
+        panic_with_error!(env, ApplicationError::MaxParticipantsReached);
     }
 }
 
 pub fn validate_has_voted(env: &Env, round_id: u128, voter: &Address) {
     let state = get_voting_state(env, round_id, voter.clone());
-    
-    if state{
-      panic_with_error!(env, VoteError::AlreadyVoted);
+
+    if state {
+        panic_with_error!(env, VoteError::AlreadyVoted);
     }
 }
 
 pub fn validate_number_of_votes(env: &Env, required: u32, voted: u32) {
-    if required != voted{
-      panic_with_error!(env, VoteError::NotVoteAllPairs);
+    if required != voted {
+        panic_with_error!(env, VoteError::NotVoteAllPairs);
     }
 }
 
 pub fn validate_blacklist(env: &Env, round_id: u128, voter: &Address) {
     let is_blacklisted = is_blacklisted(env, round_id, voter.clone());
-    
-    if is_blacklisted{
-      panic_with_error!(env, RoundError::UserBlacklisted);
+
+    if is_blacklisted {
+        panic_with_error!(env, RoundError::UserBlacklisted);
     }
 }
 
 pub fn validate_blacklist_already(env: &Env, round_id: u128, voter: &Address) {
     let is_blacklisted = is_blacklisted(env, round_id, voter.clone());
-    
-    if !is_blacklisted{
-      panic_with_error!(env, RoundError::UserAlreadyBlacklisted);
+
+    if !is_blacklisted {
+        panic_with_error!(env, RoundError::UserAlreadyBlacklisted);
     }
 }
 
 pub fn validate_not_blacklist(env: &Env, round_id: u128, voter: &Address) {
     let is_blacklisted = is_blacklisted(env, round_id, voter.clone());
-    
-    if !is_blacklisted{
-      panic_with_error!(env, RoundError::BlacklistNotFound);
+
+    if !is_blacklisted {
+        panic_with_error!(env, RoundError::BlacklistNotFound);
     }
 }
 
 pub fn validate_whitelist(env: &Env, round_id: u128, voter: &Address) {
     let is_whitelisted = is_whitelisted(env, round_id, voter.clone());
-   
-    if !is_whitelisted{
-      panic_with_error!(env, RoundError::UserNotWhitelisted);
+
+    if !is_whitelisted {
+        panic_with_error!(env, RoundError::UserNotWhitelisted);
     }
 }
 
 pub fn validate_review_notes(env: &Env, notes: &String) {
-    if notes.len() > 300{
-      panic_with_error!(env, RoundError::ReviewNotTooLong);
+    if notes.len() > 300 {
+        panic_with_error!(env, RoundError::ReviewNotTooLong);
     }
 }
 
 pub fn validate_pick_per_votes(env: &Env, num_picks_per_voter: u32) {
-    if num_picks_per_voter < 1{
-      panic_with_error!(env, VoteError::EmptyVote);
+    if num_picks_per_voter < 1 {
+        panic_with_error!(env, VoteError::EmptyVote);
     }
-    
-    if num_picks_per_voter > 10{
-      panic_with_error!(env, VoteError::TooManyVotes);
+
+    if num_picks_per_voter > 10 {
+        panic_with_error!(env, VoteError::TooManyVotes);
     }
 }
 
-pub fn validate_specify_applicant(env: &Env,is_owner_or_admin: bool) {
-    if !is_owner_or_admin{
-      panic_with_error!(env, Error::OwnerOrAdminOnly);
+pub fn validate_specify_applicant(env: &Env, is_owner_or_admin: bool) {
+    if !is_owner_or_admin {
+        panic_with_error!(env, Error::OwnerOrAdminOnly);
     }
 }

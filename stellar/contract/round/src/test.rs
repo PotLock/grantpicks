@@ -117,7 +117,7 @@ fn create_token<'a>(env: &Env, admin: &Address) -> (TokenClient<'a>, StellarAsse
     )
 }
 /*
-Test case: 
+Test case:
 1. Create a round
 2. Get the round and admins
 */
@@ -305,7 +305,7 @@ fn test_review_application() {
         &project_contract.address,
         &None,
         &None,
-        &None
+        &None,
     );
 
     let created_round = round.create_round(&admin, &round_detail);
@@ -450,7 +450,7 @@ fn test_whitelist_voters() {
         &project_contract.address,
         &None,
         &None,
-        &None
+        &None,
     );
 
     let created_round = round.create_round(&admin, &round_detail);
@@ -555,13 +555,13 @@ fn test_blacklist() {
     );
 
     round.apply_to_round(
-      &created_round.id,
-      &projects.get(1).unwrap().owner,
-      &None,
-      &None,
-      &None,
+        &created_round.id,
+        &projects.get(1).unwrap().owner,
+        &None,
+        &None,
+        &None,
     );
-    
+
     round.review_application(
         &created_round.id,
         &admin,
@@ -581,7 +581,7 @@ fn test_blacklist() {
     let voter = Address::generate(&env);
     let pairs_to_vote = round.get_pairs_to_vote(&created_round.id);
     let mut picks: Vec<PickedPair> = Vec::new(&env);
-   
+
     pairs_to_vote.iter().for_each(|pair| {
         picks.push_back(PickedPair {
             pair_id: pair.pair_id,
@@ -594,7 +594,6 @@ fn test_blacklist() {
     round.flag_voters(&created_round.id, &admin, &blacklist_voters);
 
     round.vote(&created_round.id, &voter, &picks);
-    
 }
 /*
 Test case:
@@ -957,7 +956,7 @@ fn test_voting_deposit_and_payout() {
  * posibilities = (num_of_projects * (num_of_projects - 1))/num_of_project_per_pair
  * expected_generated_pairs_per_project = num_of_projects - 1
  * to allow duplicate pairs eg. A B and B A, we need to change the logic of the test
- * 
+ *
  * Test case:
  * 1. Create a round
  * 2. Add approved projects
@@ -1588,37 +1587,36 @@ Test case:
 2. Change round contract config
 */
 #[test]
-fn test_change_round_contract_config(){
-  let env = Env::default();
-  env.mock_all_auths();
-  let admin = Address::generate(&env);
-  let treasury = Address::generate(&env);
-  let round = deploy_contract(&env, &admin);
-  let (token_contract, token_admin) = create_token(&env, &admin);
-  let project_contract = deploy_registry_contract(&env, &admin);
+fn test_change_round_contract_config() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let admin = Address::generate(&env);
+    let treasury = Address::generate(&env);
+    let round = deploy_contract(&env, &admin);
+    let (token_contract, token_admin) = create_token(&env, &admin);
+    let project_contract = deploy_registry_contract(&env, &admin);
 
-  round.initialize(
-      &admin,
-      &token_contract.address,
-      &project_contract.address,
-      &None,
-      &None,
-      &None,
-  );
+    round.initialize(
+        &admin,
+        &token_contract.address,
+        &project_contract.address,
+        &None,
+        &None,
+        &None,
+    );
 
+    let prev_config = round.get_config();
 
-  let prev_config = round.get_config();
+    round.owner_set_default_page_size(&5);
+    round.owner_set_protocol_fee_config(&Some(treasury.clone()), &Some(2000));
 
-  round.owner_set_default_page_size(&5);
-  round.owner_set_protocol_fee_config(&Some(treasury.clone()), &Some(2000));
+    let new_config = round.get_config();
 
-  let new_config = round.get_config();
+    assert_eq!(prev_config.default_page_size, 10);
+    assert_eq!(prev_config.protocol_fee_basis_points, 0);
+    assert_eq!(prev_config.protocol_fee_recipient, admin);
 
-  assert_eq!(prev_config.default_page_size, 10);
-  assert_eq!(prev_config.protocol_fee_basis_points, 0);
-  assert_eq!(prev_config.protocol_fee_recipient, admin);
-
-  assert_eq!(new_config.default_page_size, 5);
-  assert_eq!(new_config.protocol_fee_basis_points, 2000);
-  assert_eq!(new_config.protocol_fee_recipient, treasury);
+    assert_eq!(new_config.default_page_size, 5);
+    assert_eq!(new_config.protocol_fee_basis_points, 2000);
+    assert_eq!(new_config.protocol_fee_recipient, treasury);
 }

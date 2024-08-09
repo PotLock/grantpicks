@@ -1,3 +1,4 @@
+/// <reference types="node" resolution-mode="require"/>
 import { Buffer } from "buffer";
 import { AssembledTransaction, Client as ContractClient, ClientOptions as ContractClientOptions } from '@stellar/stellar-sdk/contract';
 import type { u32, u64, u128, i128, Option } from '@stellar/stellar-sdk/contract';
@@ -302,8 +303,9 @@ export declare const Errors: {
     38: {
         message: string;
     };
-};
-export declare const Errors: {
+    52: {
+        message: string;
+    };
     0: {
         message: string;
     };
@@ -391,8 +393,6 @@ export declare const Errors: {
     51: {
         message: string;
     };
-};
-export declare const Errors: {
     6: {
         message: string;
     };
@@ -420,8 +420,6 @@ export declare const Errors: {
     33: {
         message: string;
     };
-};
-export declare const Errors: {
     10: {
         message: string;
     };
@@ -1121,7 +1119,7 @@ export interface Client {
          * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
          */
         simulate?: boolean;
-    }) => Promise<AssembledTransaction<Option<RoundApplication>>>;
+    }) => Promise<AssembledTransaction<RoundApplication>>;
     /**
      * Construct and simulate a is_payout_done transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
@@ -1876,7 +1874,7 @@ export declare class Client extends ContractClient {
         is_voting_live: (json: string) => AssembledTransaction<boolean>;
         is_application_live: (json: string) => AssembledTransaction<boolean>;
         get_applications_for_round: (json: string) => AssembledTransaction<RoundApplication[]>;
-        get_application: (json: string) => AssembledTransaction<Option<RoundApplication>>;
+        get_application: (json: string) => AssembledTransaction<RoundApplication>;
         is_payout_done: (json: string) => AssembledTransaction<boolean>;
         user_has_vote: (json: string) => AssembledTransaction<boolean>;
         total_funding: (json: string) => AssembledTransaction<bigint>;

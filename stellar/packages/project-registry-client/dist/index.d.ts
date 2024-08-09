@@ -34,7 +34,7 @@ export interface Project {
     updated_ms: Option<u64>;
     video_url: string;
 }
-export interface ProjectParams {
+export interface CreateProjectParams {
     admins: Array<string>;
     contacts: Array<ProjectContact>;
     contracts: Array<ProjectContract>;
@@ -123,6 +123,9 @@ export declare const Errors: {
     9: {
         message: string;
     };
+    10: {
+        message: string;
+    };
 };
 export interface Client {
     /**
@@ -149,7 +152,7 @@ export interface Client {
      */
     apply: ({ applicant, project_params }: {
         applicant: string;
-        project_params: ProjectParams;
+        project_params: CreateProjectParams;
     }, options?: {
         /**
          * The fee to pay for the transaction. Default: BASE_FEE
@@ -361,7 +364,7 @@ export interface Client {
          * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
          */
         simulate?: boolean;
-    }) => Promise<AssembledTransaction<Option<Project>>>;
+    }) => Promise<AssembledTransaction<Project>>;
 }
 export declare class Client extends ContractClient {
     readonly options: ContractClientOptions;
@@ -378,6 +381,6 @@ export declare class Client extends ContractClient {
         get_project_admins: (json: string) => AssembledTransaction<string[]>;
         get_total_projects: (json: string) => AssembledTransaction<number>;
         upgrade: (json: string) => AssembledTransaction<null>;
-        get_project_from_applicant: (json: string) => AssembledTransaction<Option<Project>>;
+        get_project_from_applicant: (json: string) => AssembledTransaction<Project>;
     };
 }

@@ -1,7 +1,8 @@
-use soroban_sdk::BytesN;
+use soroban_sdk::{panic_with_error, BytesN};
 
 use crate::admin::{read_contract_owner, write_contract_owner};
-use crate::data_type::{Project, CreateProjectParams, ProjectStatus, UpdateProjectParams};
+use crate::data_type::{CreateProjectParams, Project, ProjectStatus, UpdateProjectParams};
+use crate::error::Error;
 use crate::events::{log_create_project_event, log_update_project_event};
 use crate::methods::ProjectRegistryTrait;
 use crate::project_writer::{
@@ -190,17 +191,21 @@ impl ProjectRegistryTrait for ProjectRegistry {
         extend_instance(env);
     }
 
-    fn get_project_from_applicant(env: &Env, applicant: Address) -> Option<Project> {
+    fn get_project_from_applicant(env: &Env, applicant: Address) -> Project {
         let project_id = get_applicant_project_id(env, &applicant);
 
         extend_instance(env);
 
         if project_id.is_none() {
-            return None;
+            panic_with_error!(env, Error::DataNotFound);
         }
 
         let project = get_project(env, project_id.unwrap());
 
-        project
+        if project.is_none() {
+            panic_with_error!(env, Error::DataNotFound);
+        }
+
+        project.unwrap()
     }
 }

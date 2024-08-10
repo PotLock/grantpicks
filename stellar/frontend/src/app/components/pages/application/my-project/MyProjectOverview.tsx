@@ -1,25 +1,108 @@
+import { useMyProject } from '@/app/application/my-project/page'
 import Button from '@/app/components/commons/Button'
 import InputText from '@/app/components/commons/InputText'
 import InputTextArea from '@/app/components/commons/InputTextArea'
+import { useGlobalContext } from '@/app/providers/GlobalProvider'
+import { useWallet } from '@/app/providers/WalletProvider'
+import { DEFAULT_IMAGE_URL } from '@/constants/project'
+import { toastOptions } from '@/constants/style'
+import Contracts from '@/lib/contracts'
+import CMDWallet from '@/lib/wallet'
+import {
+	IUpdateProjectParams,
+	updateProject,
+} from '@/services/on-chain/project-registry'
 import { CreateProjectStep1Data } from '@/types/form'
-import React from 'react'
-import { useForm } from 'react-hook-form'
+import { Network } from '@/types/on-chain'
+import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
+import React, { useEffect } from 'react'
+import { SubmitHandler, useForm } from 'react-hook-form'
+import toast from 'react-hot-toast'
 
 const MyProjectOverview = () => {
+	const { projectData, fetchProjectApplicant } = useMyProject()
+	const { stellarPubKey, stellarKit } = useWallet()
+	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const {
 		register,
 		handleSubmit,
+		setValue,
 		formState: { errors },
 	} = useForm<CreateProjectStep1Data>({
 		defaultValues: {
-			title: '',
-			project_id: '',
-			description: '',
-			considering_desc: '',
+			title: projectData?.name,
+			project_id: projectData?.id.toString(),
+			description: projectData?.overview,
+			considering_desc: projectData?.overview,
 		},
 	})
 
-	const onSaveChanges = () => {}
+	const setDefaultData = () => {
+		if (projectData) {
+			setValue('title', projectData.name)
+			setValue('project_id', projectData.id.toString())
+			setValue('description', projectData.overview)
+			setValue('considering_desc', projectData.overview)
+		}
+	}
+
+	useEffect(() => {
+		if (projectData) {
+			setDefaultData()
+		}
+	}, [projectData])
+
+	const onSaveChanges: SubmitHandler<CreateProjectStep1Data> = async (data) => {
+		try {
+			openPageLoading()
+			let cmdWallet = new CMDWallet({
+				stellarPubKey: stellarPubKey,
+			})
+			const contracts = new Contracts(
+				process.env.NETWORK_ENV as Network,
+				cmdWallet,
+			)
+			const params: IUpdateProjectParams = {
+				...projectData,
+				name: data.title,
+				overview: data.description,
+				fundings: [],
+				contacts: projectData?.contacts || [],
+				contracts: projectData?.contracts || [],
+				image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
+				payout_address: projectData?.payout_address || '',
+				repositories: projectData?.repositories || [],
+				team_members: projectData?.team_members || [],
+				video_url: projectData?.video_url || 'https://video.com/asdfgh',
+			}
+			const txUpdateProject = await updateProject(
+				stellarPubKey,
+				projectData?.id as bigint,
+				params,
+				contracts,
+			)
+			const txHashUpdateProject = await contracts.signAndSendTx(
+				stellarKit as StellarWalletsKit,
+				txUpdateProject,
+				stellarPubKey,
+			)
+			if (txHashUpdateProject) {
+				dismissPageLoading()
+				setTimeout(async () => {
+					await fetchProjectApplicant()
+				}, 2000)
+				toast.success(`Update project overview is succeed`, {
+					style: toastOptions.success.style,
+				})
+			}
+		} catch (error: any) {
+			dismissPageLoading()
+			toast.error(`Update project overview is failed`, {
+				style: toastOptions.error.style,
+			})
+			console.log('error to update overview project', error)
+		}
+	}
 
 	return (
 		<div className="w-full lg:w-[70%] border border-black/10 bg-white rounded-xl text-grantpicks-black-950">
@@ -42,6 +125,7 @@ const MyProjectOverview = () => {
 					/>
 					<InputText
 						required
+						disabled
 						customLabel={
 							<p className="text-sm font-semibold text-grantpicks-black-950 mb-2">
 								Project ID{' '}
@@ -85,7 +169,7 @@ const MyProjectOverview = () => {
 					<Button
 						color="white"
 						isFullWidth
-						onClick={() => {}}
+						onClick={() => setDefaultData()}
 						className="!py-3 !border !border-grantpicks-black-400"
 					>
 						Discard

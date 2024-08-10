@@ -15,3 +15,5 @@ export const DEFAULT_CREATE_PROJECT_DATA = {
 		file: undefined,
 	},
 }
+
+export const DEFAULT_IMAGE_URL = 'https://example.com/image.png'

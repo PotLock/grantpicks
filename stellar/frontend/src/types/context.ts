@@ -147,3 +147,9 @@ export interface IGlobalContext {
 	openPageLoading: () => void
 	livepeer: Livepeer | null
 }
+
+export interface IMyProjectContext {
+	projectData?: Project
+	projectDataModel?: Project
+	fetchProjectApplicant: () => Promise<void>
+}

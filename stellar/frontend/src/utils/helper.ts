@@ -5,6 +5,7 @@ import {
 	SOROBAN_RPC_URL,
 } from '@/constants/on-chain'
 import { ENetworkEnv, Networks, SubmitTxProps } from '@/types/on-chain'
+import axios from 'axios'
 import { Horizon, SorobanRpc, TransactionBuilder } from 'round-client'
 
 export const prettyTruncate = (str = '', len = 8, type?: string) => {
@@ -101,4 +102,12 @@ export const submitTx = async ({
 		const sendResponse = await server.submitTransaction(tx)
 		return sendResponse.hash
 	}
+}
+
+export const onFetchingBlobToFile = async (url: string, filename: string) => {
+	try {
+		const res = await axios.get(url, { responseType: 'blob' })
+		const newFile = new File([res.data], filename)
+		return newFile
+	} catch (error: any) {}
 }

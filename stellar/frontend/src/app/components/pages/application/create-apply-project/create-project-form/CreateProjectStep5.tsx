@@ -80,10 +80,7 @@ const CreateProjectStep5 = () => {
 					const closePoolingAsset = setInterval(async () => {
 						setLoadingFlow('Finishing')
 						assetResult = await retrieveAsset(livepeer, resLivepeer)
-						if (
-							assetResult?.asset?.status?.phase.includes('ready') ||
-							assetResult?.asset?.playbackUrl
-						) {
+						if (assetResult?.asset?.status?.phase.includes('ready')) {
 							const playbackInfo = await livepeer?.playback.get(
 								assetResult.asset.playbackId as string,
 							)

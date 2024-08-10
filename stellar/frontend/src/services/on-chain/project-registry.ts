@@ -38,6 +38,19 @@ export interface ICreateProjectParams {
 	video_url: string
 }
 
+export interface IUpdateProjectParams {
+	contacts: ProjectContact[]
+	contracts: ProjectContract[]
+	fundings: ProjectFundingHistory[]
+	image_url: string
+	name: string
+	overview: string
+	payout_address: string
+	repositories: ProjectRepository[]
+	team_members: ProjectTeamMember[]
+	video_url: string
+}
+
 export interface IChangeProjectStatusParams {
 	contract_owner: string
 	project_id: u128
@@ -128,6 +141,25 @@ export const createProject: (
 	let project = await contract.project_contract.apply({
 		applicant,
 		project_params: params,
+	})
+	return project
+}
+
+export const updateProject: (
+	admin: string,
+	project_id: u128,
+	params: IUpdateProjectParams,
+	contract: Contracts,
+) => Promise<AssembledTransaction<null>> = async (
+	admin: string,
+	project_id: u128,
+	params: IUpdateProjectParams,
+	contract: Contracts,
+) => {
+	let project = await contract.project_contract.update_project({
+		admin,
+		project_id,
+		new_project_params: params,
 	})
 	return project
 }

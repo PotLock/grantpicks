@@ -10,6 +10,7 @@ import {
 	u64,
 } from '@stellar/stellar-sdk/contract'
 import {
+	ApplicationStatus,
 	Contact,
 	Pair,
 	PickedPair,
@@ -26,6 +27,11 @@ interface GetRoundApplicationsParams {
 	round_id: bigint
 	skip: number
 	limit: number
+}
+
+interface GetRoundApplicationParams {
+	round_id: bigint
+	applicant: string
 }
 
 interface GetRoundAdmins {
@@ -65,6 +71,14 @@ export interface CreateRoundParams {
 	use_whitelist: boolean
 	voting_end_ms: u64
 	voting_start_ms: u64
+}
+
+export interface ReviewApplicationParams {
+	round_id: u128
+	caller: string
+	applicant: string
+	status: ApplicationStatus
+	note?: string
 }
 
 export interface VoteRoundParams {
@@ -159,6 +173,20 @@ export const getRoundApplications: (
 		round_id: BigInt(params.round_id),
 		from_index: BigInt(skip),
 		limit: BigInt(limit),
+	})
+	return rounds.result
+}
+
+export const getRoundApplication: (
+	params: GetRoundApplicationParams,
+	contract: Contracts,
+) => Promise<RoundApplication> = async (
+	params: GetRoundApplicationParams,
+	contract: Contracts,
+) => {
+	let rounds = await contract.round_contract.get_application({
+		round_id: BigInt(params.round_id),
+		applicant: params.applicant,
 	})
 	return rounds.result
 }
@@ -268,17 +296,36 @@ export const depositFundRound: (
 
 export const applyProjectToRound: (
 	params: ApplyProjectToRoundParams,
+	is_owner_round: boolean,
 	contract: Contracts,
 ) => Promise<AssembledTransaction<RoundApplication>> = async (
 	params: ApplyProjectToRoundParams,
+	is_owner_round: boolean,
 	contract: Contracts,
 ) => {
 	let res = await contract.round_contract.apply_to_round({
 		round_id: params.round_id,
 		caller: params.caller,
-		applicant: params.applicant,
+		applicant: is_owner_round ? undefined : params.applicant,
 		note: params.note,
 		review_note: params.review_note,
+	})
+	return res
+}
+
+export const reviewApplicationRound: (
+	params: ReviewApplicationParams,
+	contract: Contracts,
+) => Promise<AssembledTransaction<RoundApplication>> = async (
+	params: ReviewApplicationParams,
+	contract: Contracts,
+) => {
+	let res = await contract.round_contract.review_application({
+		round_id: params.round_id,
+		caller: params.caller,
+		applicant: params.applicant,
+		note: params.note,
+		status: params.status,
 	})
 	return res
 }

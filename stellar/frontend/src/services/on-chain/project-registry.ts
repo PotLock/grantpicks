@@ -59,11 +59,12 @@ export interface ProjectRepository {
 	url: string
 }
 
-export type ProjectStatus =
-	| { tag: 'New'; values: void }
-	| { tag: 'Approved'; values: void }
-	| { tag: 'Rejected'; values: void }
-	| { tag: 'Completed'; values: void }
+export enum ProjectStatus {
+	New = 0,
+	Approved = 1,
+	Rejected = 2,
+	Completed = 3,
+}
 
 export interface ProjectTeamMember {
 	name: string

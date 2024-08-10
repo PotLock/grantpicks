@@ -17,18 +17,21 @@ import {
 	IGetRoundsResponse,
 	Network,
 } from '@/types/on-chain'
-import { getRoundApplications } from '@/services/on-chain/round'
+import {
+	getRoundApplications,
+	ReviewApplicationParams,
+	reviewApplicationRound,
+} from '@/services/on-chain/round'
 import InfiniteScroll from 'react-infinite-scroll-component'
 import IconLoading from '../../svgs/IconLoading'
 import moment from 'moment'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
-import {
-	changeProjectStatus,
-	IChangeProjectStatusParams,
-} from '@/services/on-chain/project-registry'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
+import { prettyTruncate } from '@/utils/helper'
+import ApplicationAcceptModal from './ApplicationAcceptModal'
+import ApplicationRejectModal from './ApplicationRejectModal'
 
 interface ApplicationsDrawerProps extends IDrawerProps {
 	doc: IGetRoundsResponse
@@ -41,7 +44,7 @@ const ApplicationItem = ({
 	roundData,
 	mutate,
 }: {
-	type: 'Pending' | 'Approved' | 'Rejected'
+	type: 'Pending' | 'Approved' | 'Rejected' | 'Blacklisted'
 	index: number
 	item: IGetRoundApplicationsResponse
 	roundData: IGetRoundsResponse
@@ -49,8 +52,10 @@ const ApplicationItem = ({
 }) => {
 	const { stellarPubKey, stellarKit } = useWallet()
 	const { dismissPageLoading, openPageLoading } = useGlobalContext()
+	const [openAcceptModal, setOpenAcceptModal] = useState<boolean>(false)
+	const [openRejectModal, setOpenRejectModal] = useState<boolean>(false)
 
-	const onAcceptReject = async (type: 'accept' | 'reject') => {
+	const onAcceptReject = async (type: 'accept' | 'reject', note: string) => {
 		try {
 			openPageLoading()
 			let cmdWallet = new CMDWallet({
@@ -60,15 +65,20 @@ const ApplicationItem = ({
 				process.env.NETWORK_ENV as Network,
 				cmdWallet,
 			)
-			const params: IChangeProjectStatusParams = {
-				contract_owner: item.applicant_id,
-				project_id: item.project_id,
-				new_status: {
+			const params: ReviewApplicationParams = {
+				round_id: roundData.id,
+				caller: stellarPubKey,
+				applicant: item.applicant_id,
+				status: {
 					tag: type === 'accept' ? 'Approved' : 'Rejected',
 					values: void 0,
 				},
+				note,
 			}
-			const txChangeProjectStatus = await changeProjectStatus(params, contracts)
+			const txChangeProjectStatus = await reviewApplicationRound(
+				params,
+				contracts,
+			)
 			const txHash = await contracts.signAndSendTx(
 				stellarKit as StellarWalletsKit,
 				txChangeProjectStatus,
@@ -86,6 +96,7 @@ const ApplicationItem = ({
 			toast.error(`Change status to ${type} is failed`, {
 				style: toastOptions.error.style,
 			})
+			type === 'accept' ? setOpenAcceptModal(false) : setOpenRejectModal(false)
 			console.log(`error ${type} application`, error)
 		}
 	}
@@ -103,13 +114,13 @@ const ApplicationItem = ({
 					{roundData.owner === stellarPubKey && (
 						<div className="flex items-center space-x-2">
 							<button
-								onClick={() => onAcceptReject('accept')}
+								onClick={() => setOpenAcceptModal(true)}
 								className="text-grantpicks-green-600 text-sm font-semibold cursor-pointer transition hover:opacity-70"
 							>
 								ACCEPT
 							</button>
 							<button
-								onClick={() => onAcceptReject('reject')}
+								onClick={() => setOpenRejectModal(true)}
 								className="text-grantpicks-black-500 text-sm font-semibold cursor-pointer transition hover:opacity-70"
 							>
 								REJECT
@@ -155,11 +166,8 @@ const ApplicationItem = ({
 				<div className="bg-grantpicks-black-200 rounded-full w-6 h-6" />
 				<p>
 					<span className="text-base font-bold text-grantpicks-black-950 mr-1">
-						{item.applicant_id}
+						{prettyTruncate(item.applicant_id, 20, 'address')}
 					</span>
-					{/* <span className="text-base font-normal text-grantpicks-black-600">
-						@magicbuild.near
-					</span> */}
 				</p>
 			</div>
 			<div className=" px-3 md:px-4 py-2">
@@ -171,7 +179,8 @@ const ApplicationItem = ({
 				<div className="px-3 md:px-4 pt-2 pb-4">
 					<div className="border border-grantpicks-black-200 rounded-xl p-3 bg-white">
 						<p className="text-sm font-semibold text-grantpicks-black-950">
-							Reviewer
+							admin@
+							{prettyTruncate(roundData.owner, 10, 'address') || 'Reviewer'}
 						</p>
 						<p className="text-sm font-normal text-grantpicks-black-600">
 							{item.review_note || ''}
@@ -179,6 +188,20 @@ const ApplicationItem = ({
 					</div>
 				</div>
 			)}
+			<ApplicationAcceptModal
+				isOpen={openAcceptModal}
+				onClose={() => setOpenAcceptModal(false)}
+				roundData={roundData}
+				applicationData={item}
+				onConfirm={(note) => onAcceptReject('accept', note)}
+			/>
+			<ApplicationRejectModal
+				isOpen={openRejectModal}
+				onClose={() => setOpenRejectModal(false)}
+				roundData={roundData}
+				applicationData={item}
+				onConfirm={(note) => onAcceptReject('reject', note)}
+			/>
 		</div>
 	)
 }

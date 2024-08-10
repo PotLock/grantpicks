@@ -1,4 +1,5 @@
-import { Buffer } from 'buffer';
+/// <reference types="node" resolution-mode="require"/>
+import { Buffer } from "buffer";
 import { AssembledTransaction, Client as ContractClient, ClientOptions as ContractClientOptions } from '@stellar/stellar-sdk/contract';
 import type { u32, u64, u128, Option } from '@stellar/stellar-sdk/contract';
 export * from '@stellar/stellar-sdk';
@@ -7,22 +8,15 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CCAVVRHJ77XX5ZTAQEMAGIONVI42GGOTOMSQPWCMRTHPIW7N5NDKEUT2";
+        readonly contractId: "CCHZZ2O77YYGOCZH32OBNOMH766KBK4KW2Q2IAFTA5LY6K7XF6PTMXUL";
     };
 };
-export type ProjectStatus = {
-    tag: 'New';
-    values: void;
-} | {
-    tag: 'Approved';
-    values: void;
-} | {
-    tag: 'Rejected';
-    values: void;
-} | {
-    tag: 'Completed';
-    values: void;
-};
+export declare enum ProjectStatus {
+    New = 0,
+    Approved = 1,
+    Rejected = 2,
+    Completed = 3
+}
 export interface Project {
     admins: Array<string>;
     contacts: Array<ProjectContact>;
@@ -40,7 +34,7 @@ export interface Project {
     updated_ms: Option<u64>;
     video_url: string;
 }
-export interface ProjectParams {
+export interface CreateProjectParams {
     admins: Array<string>;
     contacts: Array<ProjectContact>;
     contracts: Array<ProjectContract>;
@@ -89,19 +83,50 @@ export interface ProjectFundingHistory {
     source: string;
 }
 export type ContractKey = {
-    tag: 'NumOfProjects';
+    tag: "NumOfProjects";
     values: void;
 } | {
-    tag: 'Projects';
+    tag: "Projects";
     values: void;
 } | {
-    tag: 'RegistryAdmin';
+    tag: "RegistryAdmin";
     values: void;
 } | {
-    tag: 'ApplicantToProjectID';
+    tag: "ApplicantToProjectID";
     values: void;
 };
-export declare const Errors: {};
+export declare const Errors: {
+    1: {
+        message: string;
+    };
+    2: {
+        message: string;
+    };
+    3: {
+        message: string;
+    };
+    4: {
+        message: string;
+    };
+    5: {
+        message: string;
+    };
+    6: {
+        message: string;
+    };
+    7: {
+        message: string;
+    };
+    8: {
+        message: string;
+    };
+    9: {
+        message: string;
+    };
+    10: {
+        message: string;
+    };
+};
 export interface Client {
     /**
      * Construct and simulate a initialize transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
@@ -125,9 +150,9 @@ export interface Client {
     /**
      * Construct and simulate a apply transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    apply: ({ applicant, project_params, }: {
+    apply: ({ applicant, project_params }: {
         applicant: string;
-        project_params: ProjectParams;
+        project_params: CreateProjectParams;
     }, options?: {
         /**
          * The fee to pay for the transaction. Default: BASE_FEE
@@ -145,7 +170,7 @@ export interface Client {
     /**
      * Construct and simulate a change_project_status transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    change_project_status: ({ contract_owner, project_id, new_status, }: {
+    change_project_status: ({ contract_owner, project_id, new_status }: {
         contract_owner: string;
         project_id: u128;
         new_status: ProjectStatus;
@@ -166,7 +191,7 @@ export interface Client {
     /**
      * Construct and simulate a update_project transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    update_project: ({ admin, project_id, new_project_params, }: {
+    update_project: ({ admin, project_id, new_project_params }: {
         admin: string;
         project_id: u128;
         new_project_params: UpdateProjectParams;
@@ -187,7 +212,7 @@ export interface Client {
     /**
      * Construct and simulate a add_admin transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    add_admin: ({ admin, project_id, new_admin, }: {
+    add_admin: ({ admin, project_id, new_admin }: {
         admin: string;
         project_id: u128;
         new_admin: string;
@@ -208,7 +233,7 @@ export interface Client {
     /**
      * Construct and simulate a remove_admin transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    remove_admin: ({ admin, project_id, admin_to_remove, }: {
+    remove_admin: ({ admin, project_id, admin_to_remove }: {
         admin: string;
         project_id: u128;
         admin_to_remove: string;
@@ -339,7 +364,7 @@ export interface Client {
          * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
          */
         simulate?: boolean;
-    }) => Promise<AssembledTransaction<Option<Project>>>;
+    }) => Promise<AssembledTransaction<Project>>;
 }
 export declare class Client extends ContractClient {
     readonly options: ContractClientOptions;
@@ -356,6 +381,6 @@ export declare class Client extends ContractClient {
         get_project_admins: (json: string) => AssembledTransaction<string[]>;
         get_total_projects: (json: string) => AssembledTransaction<number>;
         upgrade: (json: string) => AssembledTransaction<null>;
-        get_project_from_applicant: (json: string) => AssembledTransaction<Option<Project>>;
+        get_project_from_applicant: (json: string) => AssembledTransaction<Project>;
     };
 }

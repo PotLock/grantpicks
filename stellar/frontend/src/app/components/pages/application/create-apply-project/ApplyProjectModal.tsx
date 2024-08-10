@@ -52,8 +52,10 @@ const ApplyProjectModal = ({
 				cmdWallet,
 			)
 			const res = await getProjectApplicant(stellarPubKey, contracts)
-			setProjectData(res)
-			console.log('res project applicant', res)
+			//@ts-ignore
+			if (!res?.error) setProjectData(res)
+			//@ts-ignore
+			console.log('res project applicant', res, res?.error)
 		} catch (error: any) {
 			console.log('error fetch project applicant', error)
 		}
@@ -76,7 +78,11 @@ const ApplyProjectModal = ({
 				note: applyNote,
 				review_note: '',
 			}
-			const txApplyProject = await applyProjectToRound(applyParams, contracts)
+			const txApplyProject = await applyProjectToRound(
+				applyParams,
+				roundData?.owner === stellarPubKey ? true : false,
+				contracts,
+			)
 			const txHashApplyProject = await contracts.signAndSendTx(
 				stellarKit as StellarWalletsKit,
 				txApplyProject,
@@ -87,7 +93,7 @@ const ApplyProjectModal = ({
 				setSuccessApplyProjectInitProps((prev) => ({
 					...prev,
 					isOpen: true,
-					createProjectRes: txApplyProject.result,
+					applyProjectRes: txApplyProject.result,
 					txHash: txHashApplyProject,
 					roundData,
 				}))
@@ -116,7 +122,10 @@ const ApplyProjectModal = ({
 				<IconClose
 					size={24}
 					className="fill-grantpicks-black-600 absolute top-5 right-5 cursor-pointer hover:opacity-70 transition"
-					onClick={onClose}
+					onClick={() => {
+						setProjectData(undefined)
+						onClose()
+					}}
 				/>
 				<p className="text-base md:text-lg lg:text-xl font-semibold text-grantpicks-black-950 text-center">
 					Apply to Web3 Education & Skill Development
@@ -213,7 +222,14 @@ const ApplyProjectModal = ({
 						>
 							<p className="text-sm font-semibold text-white">Apply</p>
 						</Button>
-						<Button color="transparent" onClick={() => onClose()} isFullWidth>
+						<Button
+							color="transparent"
+							onClick={() => {
+								setProjectData(undefined)
+								onClose()
+							}}
+							isFullWidth
+						>
 							Cancel
 						</Button>
 					</div>

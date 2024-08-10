@@ -1,4 +1,9 @@
-export type TSelectedRoundType = 'on-going' | 'upcoming' | 'ended'
+export type TSelectedRoundType =
+	| 'on-going'
+	| 'upcoming'
+	| 'upcoming-open'
+	| 'upcoming-closed'
+	| 'ended'
 
 export interface IRoundPeriodData {
 	selected: string | null

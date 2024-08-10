@@ -57,7 +57,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 			const params: ICreateProjectParams = {
 				name: dataForm.title,
 				overview: dataForm.description,
-				admins: [stellarPubKey],
+				admins: dataForm.team_member.map((mem) => mem),
 				contacts: dataForm.contacts.map((c) => ({
 					name: c.platform,
 					value: c.link_url,
@@ -73,7 +73,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 					amount: parseToStroop(f.amount),
 					funded_ms: BigInt(f.date.getTime() as number),
 				})),
-				image_url: '',
+				image_url: 'https://example.com/image.png',
 				payout_address: stellarPubKey,
 				repositories: dataForm.github_urls.map((g) => ({
 					label: 'github',
@@ -94,6 +94,11 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 				stellarKit as StellarWalletsKit,
 				txCreateProject,
 				stellarPubKey,
+			)
+			console.log(
+				'res txHashCreateProject',
+				txCreateProject,
+				txHashCreateProject,
 			)
 			if (txHashCreateProject) {
 				setSuccessCreateProjectModalProps((prev) => ({

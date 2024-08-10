@@ -10,10 +10,10 @@ import IconCheck from '@/app/components/svgs/IconCheck'
 import Button from '@/app/components/commons/Button'
 import IconEye from '@/app/components/svgs/IconEye'
 import IconExternalLink from '@/app/components/svgs/IconExternalLink'
-import { Project } from 'round-client'
+import { Project, RoundApplication } from 'round-client'
 
 interface SuccessApplyProjectModalProps extends BaseModalProps {
-	applyProjectRes?: Project
+	applyProjectRes?: RoundApplication
 	roundData?: IGetRoundsResponse
 	txHash?: string
 }

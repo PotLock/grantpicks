@@ -14,7 +14,7 @@ import RoundDetailDrawer from './RoundDetailDrawer'
 import ApplicationsDrawer from './ApplicationsDrawer'
 import FundRoundModal from './FundRoundModal'
 import { useModalContext } from '@/app/providers/ModalProvider'
-import { getRounds } from '@/services/on-chain/round'
+import { getRoundApplication, getRounds } from '@/services/on-chain/round'
 import Contracts from '@/lib/contracts'
 import CMDWallet from '@/lib/wallet'
 import { useWallet } from '@/app/providers/WalletProvider'
@@ -42,7 +42,56 @@ const ApplicationRoundsItem = ({
 	const [showFundRoundModal, setShowFundRoundModal] = useState<boolean>(false)
 	const { setApplyProjectInitProps, setVoteConfirmationProps } =
 		useModalContext()
-	const { connectedWallet } = useWallet()
+	const { connectedWallet, stellarPubKey } = useWallet()
+	const [isUserApplied, setIsUserApplied] = useState<boolean>(false)
+
+	const fetchRoundApplication = async () => {
+		try {
+			let cmdWallet = new CMDWallet({
+				stellarPubKey: stellarPubKey,
+			})
+			const contracts = new Contracts(
+				process.env.NETWORK_ENV as Network,
+				cmdWallet,
+			)
+			const res = await getRoundApplication(
+				{ round_id: doc.id as bigint, applicant: stellarPubKey },
+				contracts,
+			)
+			//@ts-ignore
+			if (!res?.error) {
+				setIsUserApplied(true)
+			}
+		} catch (error: any) {
+			console.log('error fetch project applicant', error)
+		}
+	}
+
+	const getSpecificTime = () => {
+		if (selectedRoundType === 'upcoming') {
+			if (new Date().getTime() < Number(doc.application_start_ms)) {
+				return `upcoming`
+			} else if (
+				Number(doc.application_start_ms) <= new Date().getTime() &&
+				new Date().getTime() < Number(doc.application_end_ms)
+			) {
+				return `upcoming-open`
+			} else if (
+				Number(doc.application_end_ms) <= new Date().getTime() &&
+				new Date().getTime() < Number(doc.voting_start_ms)
+			) {
+				return `upcoming-closed`
+			}
+		} else if (selectedRoundType === 'on-going') {
+			return `on-going`
+		} else {
+			return `ended`
+		}
+	}
+
+	useEffect(() => {
+		fetchRoundApplication()
+	}, [])
 
 	return (
 		<div className="p-4 md:p-5 rounded-xl border border-black/10">
@@ -58,29 +107,41 @@ const ApplicationRoundsItem = ({
 					<div
 						className={clsx(
 							`px-5 py-2 border text-xs font-semibold flex items-center justify-center space-x-2 rounded-full`,
-							selectedRoundType === 'on-going' ||
-								selectedRoundType === 'upcoming'
+							getSpecificTime() === 'upcoming-open' ||
+								getSpecificTime() === 'on-going'
 								? `border-grantpicks-green-400 text-grantpicks-green-700 bg-grantpicks-green-50`
-								: `border-grantpicks-amber-400 text-grantpicks-amber-700 bg-grantpicks-amber-50`,
+								: getSpecificTime() === 'upcoming' ||
+									  getSpecificTime() === 'upcoming-closed'
+									? `border-grantpicks-black-400 text-grantpicks-black-950 bg-grantpicks-black-50`
+									: `border-grantpicks-amber-400 text-grantpicks-amber-700 bg-grantpicks-amber-50`,
 						)}
 					>
 						{selectedRoundType === 'on-going' ? (
 							<IconCube size={18} className="fill-grantpicks-green-400" />
-						) : selectedRoundType === 'upcoming' ? (
+						) : getSpecificTime() === 'upcoming-open' ? (
 							<IconProject size={18} className="fill-grantpicks-green-400" />
+						) : getSpecificTime() === 'upcoming' ||
+						  getSpecificTime() === 'upcoming-closed' ? (
+							<IconProject size={18} className="fill-grantpicks-black-950" />
 						) : (
 							<IconDollar size={18} className="fill-grantpicks-amber-400" />
 						)}
 						<p className="uppercase">
-							{selectedRoundType === 'on-going'
+							{getSpecificTime() === 'on-going'
 								? `voting open`
-								: selectedRoundType === 'upcoming'
-									? `application open`
-									: `payout pending`}
+								: getSpecificTime() === 'upcoming'
+									? `application closed`
+									: getSpecificTime() === 'upcoming-open'
+										? `application open`
+										: getSpecificTime() === 'upcoming-closed'
+											? `application closed`
+											: `payout pending`}
 						</p>
 					</div>
-					{(selectedRoundType === 'on-going' ||
-						selectedRoundType === 'upcoming') && (
+					{(getSpecificTime() === 'on-going' ||
+						getSpecificTime() === 'upcoming' ||
+						getSpecificTime() === 'upcoming-open' ||
+						getSpecificTime() === 'upcoming-closed') && (
 						<div className="relative">
 							<IconMoreVert
 								size={24}
@@ -146,15 +207,38 @@ const ApplicationRoundsItem = ({
 						</p>
 					</div>
 				) : selectedRoundType === 'upcoming' ? (
-					<div className="flex items-center space-x-1">
-						<IconClock size={18} className="fill-grantpicks-black-400" />
-						<p className="text-sm font-normal text-grantpicks-black-950">
-							Closes{' '}
-							{moment(
-								new Date(Number(doc.application_start_ms) as number),
-							).fromNow()}
-						</p>
-					</div>
+					<>
+						{getSpecificTime() === 'upcoming' && (
+							<div className="flex items-center space-x-1">
+								<IconClock size={18} className="fill-grantpicks-black-400" />
+								<p className="text-sm font-normal text-grantpicks-black-950">
+									Open{' '}
+									{moment(
+										new Date(Number(doc.application_start_ms) as number),
+									).fromNow()}
+								</p>
+							</div>
+						)}
+						{getSpecificTime() === 'upcoming-open' && (
+							<div className="flex items-center space-x-1">
+								<IconClock size={18} className="fill-grantpicks-black-400" />
+								<p className="text-sm font-normal text-grantpicks-black-950">
+									Closed{' '}
+									{moment(
+										new Date(Number(doc.application_end_ms) as number),
+									).fromNow()}
+								</p>
+							</div>
+						)}
+						{getSpecificTime() === 'upcoming-closed' && (
+							<div className="flex items-center space-x-1">
+								<IconClock size={18} className="fill-grantpicks-black-400" />
+								<p className="text-sm font-normal text-grantpicks-black-950">
+									Closed{' '}
+								</p>
+							</div>
+						)}
+					</>
 				) : (
 					<p className="text-lg md:text-xl font-normal text-grantpicks-black-950">
 						{formatStroopToXlm(doc.expected_amount)}{' '}
@@ -173,25 +257,38 @@ const ApplicationRoundsItem = ({
 								isOpen: true,
 								doc: doc,
 							}))
-						} else if (selectedRoundType === 'upcoming') {
+						} else if (
+							selectedRoundType === 'upcoming' &&
+							getSpecificTime() === 'upcoming-open'
+						) {
 							setApplyProjectInitProps((prev) => ({
 								...prev,
 								isOpen: true,
 								round_id: doc.id,
 								roundData: doc,
 							}))
-						} else {
 						}
 					}}
 					isFullWidth
 					className="!border !border-grantpicks-black-200 !py-2"
 					color="white"
+					isDisabled={
+						getSpecificTime() === 'upcoming' ||
+						getSpecificTime() === 'upcoming-closed' ||
+						isUserApplied
+					}
 				>
-					{selectedRoundType === 'on-going'
-						? 'Vote'
-						: selectedRoundType === 'upcoming'
-							? 'Apply'
-							: 'View Result'}
+					{isUserApplied
+						? `You're already a part of this round.`
+						: getSpecificTime() === 'on-going'
+							? 'Vote'
+							: getSpecificTime() === 'upcoming'
+								? 'No application allowed'
+								: getSpecificTime() === 'upcoming-open'
+									? 'Apply'
+									: getSpecificTime() === 'upcoming-closed'
+										? 'Application Closed'
+										: 'View Result'}
 				</Button>
 			</div>
 			<RoundDetailDrawer
@@ -273,17 +370,17 @@ const ApplicationRounds = () => {
 			let temp = [...rounds]
 			if (selectedRoundType === 'upcoming') {
 				temp = temp.filter(
-					(t) => Number(t.application_start_ms) > new Date().getTime(),
+					(t) => new Date().getTime() < Number(t.voting_start_ms),
 				)
 			} else if (selectedRoundType === 'on-going') {
 				temp = temp.filter(
 					(t) =>
-						Number(t.application_start_ms) <= new Date().getTime() &&
-						Number(t.application_end_ms) > new Date().getTime(),
+						Number(t.voting_start_ms) <= new Date().getTime() &&
+						new Date().getTime() < Number(t.voting_end_ms),
 				)
 			} else if (selectedRoundType === 'ended') {
 				temp = temp.filter(
-					(t) => Number(t.application_end_ms) <= new Date().getTime(),
+					(t) => Number(t.voting_end_ms) <= new Date().getTime(),
 				)
 			}
 			setRoundsData(temp)

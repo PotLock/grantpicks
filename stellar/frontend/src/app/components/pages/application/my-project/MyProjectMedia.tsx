@@ -1,4 +1,3 @@
-import { useMyProject } from '@/app/application/my-project/page'
 import Button from '@/app/components/commons/Button'
 import InputText from '@/app/components/commons/InputText'
 import InputTextArea from '@/app/components/commons/InputTextArea'
@@ -36,6 +35,7 @@ import {
 import { DEFAULT_IMAGE_URL } from '@/constants/project'
 import Contracts from '@/lib/contracts'
 import { Network } from '@/types/on-chain'
+import { useMyProject } from './MyProjectProvider'
 
 const MyProjectMedia = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()

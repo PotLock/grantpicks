@@ -1,4 +1,3 @@
-import { useMyProject } from '@/app/application/my-project/page'
 import Button from '@/app/components/commons/Button'
 import Checkbox from '@/app/components/commons/CheckBox'
 import InputText from '@/app/components/commons/InputText'
@@ -30,6 +29,7 @@ import {
 	useForm,
 } from 'react-hook-form'
 import toast from 'react-hot-toast'
+import { useMyProject } from './MyProjectProvider'
 
 const MyProjectFundingRaised = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()

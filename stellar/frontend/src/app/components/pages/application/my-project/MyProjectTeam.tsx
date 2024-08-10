@@ -1,4 +1,3 @@
-import { useMyProject } from '@/app/application/my-project/page'
 import Button from '@/app/components/commons/Button'
 import InputText from '@/app/components/commons/InputText'
 import InputTextArea from '@/app/components/commons/InputTextArea'
@@ -20,6 +19,7 @@ import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import React, { useEffect, useState } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
+import { useMyProject } from './MyProjectProvider'
 
 const MyProjectTeam = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()

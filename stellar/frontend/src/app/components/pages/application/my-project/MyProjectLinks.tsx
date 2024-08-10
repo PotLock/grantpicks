@@ -1,4 +1,3 @@
-import { useMyProject } from '@/app/application/my-project/page'
 import Button from '@/app/components/commons/Button'
 import Checkbox from '@/app/components/commons/CheckBox'
 import InputText from '@/app/components/commons/InputText'
@@ -22,6 +21,7 @@ import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import React, { useEffect, useState } from 'react'
 import { SubmitHandler, useFieldArray, useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
+import { useMyProject } from './MyProjectProvider'
 
 const MyProjectLinks = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()

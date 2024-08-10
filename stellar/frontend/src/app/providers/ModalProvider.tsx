@@ -153,6 +153,7 @@ const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 				isOpen={successApplyProjectToRoundProps.isOpen}
 				applyProjectRes={successApplyProjectToRoundProps.applyProjectRes}
 				roundData={successApplyProjectToRoundProps.roundData}
+				txHash={successApplyProjectToRoundProps.txHash}
 				onClose={() =>
 					setSuccessApplyProjectToRoundProps((prev) => ({
 						...prev,

@@ -80,7 +80,7 @@ const ApplyProjectModal = ({
 			}
 			const txApplyProject = await applyProjectToRound(
 				applyParams,
-				roundData?.owner === stellarPubKey ? true : false,
+				true,
 				contracts,
 			)
 			const txHashApplyProject = await contracts.signAndSendTx(
@@ -97,7 +97,7 @@ const ApplyProjectModal = ({
 					txHash: txHashApplyProject,
 					roundData,
 				}))
-				onClose
+				onClose()
 			}
 		} catch (error: any) {
 			dismissPageLoading()

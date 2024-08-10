@@ -24,7 +24,7 @@ import * as tus from 'tus-js-client'
 import { Src } from '@livepeer/react'
 
 const CreateProjectStep5 = () => {
-	const { setStep, onProceedApply } = useCreateProject()
+	const { setStep, onProceedApply, setData } = useCreateProject()
 	const { livepeer } = useGlobalContext()
 	const [showPrevConfirm, setShowPrevConfirm] = useState<boolean>(false)
 	const {
@@ -55,48 +55,59 @@ const CreateProjectStep5 = () => {
 			})
 			return
 		}
-		setLoadingFlow('Preparing')
-		setAccFiles((prev) => [...prev, acceptedFiles[0]])
-		const objectUrl = URL.createObjectURL(acceptedFiles[0])
-		setAccFileUrls((prev) => [...prev, objectUrl])
-		const resLivepeer = await requestUpload(livepeer, acceptedFiles[0].name)
-		await uploadFile(
-			acceptedFiles[0],
-			setUploadResult,
-			(percentage) => {
-				setLoadingFlow('Uploading')
-				//@ts-ignore
-				setUploadResult((prev) => ({ ...prev, percentage }))
-			},
-			async (uploadedUrl) => {
-				setUploadResult((prev) => ({
-					...prev,
-					uploadedUrl: uploadedUrl,
-					percentage: ``,
-				}))
-				let assetResult: GetAssetResponse | undefined = undefined
-				assetResult = await retrieveAsset(livepeer, resLivepeer)
-				const closePoolingAsset = setInterval(async () => {
-					setLoadingFlow('Finishing')
+		try {
+			setLoadingFlow('Preparing')
+			setAccFiles((prev) => [...prev, acceptedFiles[0]])
+			const objectUrl = URL.createObjectURL(acceptedFiles[0])
+			setAccFileUrls((prev) => [...prev, objectUrl])
+			const resLivepeer = await requestUpload(livepeer, acceptedFiles[0].name)
+			await uploadFile(
+				acceptedFiles[0],
+				setUploadResult,
+				(percentage) => {
+					setLoadingFlow('Uploading')
+					//@ts-ignore
+					setUploadResult((prev) => ({ ...prev, percentage }))
+				},
+				async (uploadedUrl) => {
+					setUploadResult((prev) => ({
+						...prev,
+						uploadedUrl: uploadedUrl,
+						percentage: ``,
+					}))
+					let assetResult: GetAssetResponse | undefined = undefined
 					assetResult = await retrieveAsset(livepeer, resLivepeer)
-					if (assetResult?.asset?.status?.phase.includes('ready')) {
-						const playbackInfo = await livepeer?.playback.get(
-							assetResult.asset.playbackId as string,
-						)
-						const src = getSrc(playbackInfo?.playbackInfo)
-						setValue('video', {
-							url: src?.[0].src || '',
-							file: acceptedFiles[0],
-						})
-						setPlaybackSrc(src)
-						setLoadingFlow(null)
-						clearInterval(closePoolingAsset)
-						return
-					}
-				}, 1000)
-			},
-			resLivepeer,
-		)
+					const closePoolingAsset = setInterval(async () => {
+						setLoadingFlow('Finishing')
+						assetResult = await retrieveAsset(livepeer, resLivepeer)
+						if (assetResult?.asset?.status?.phase.includes('ready')) {
+							const playbackInfo = await livepeer?.playback.get(
+								assetResult.asset.playbackId as string,
+							)
+							const src = getSrc(playbackInfo?.playbackInfo)
+							setValue('video', {
+								url: src?.[0].src || '',
+								file: acceptedFiles[0],
+							})
+							setData((prev) => ({
+								...prev,
+								video: { file: acceptedFiles[0], url: src?.[0].src as string },
+							}))
+							setPlaybackSrc(src)
+							setLoadingFlow(null)
+							clearInterval(closePoolingAsset)
+							return
+						}
+					}, 1000)
+				},
+				resLivepeer,
+			)
+		} catch (error: any) {
+			setAccFiles([])
+			setAccFileUrls([])
+			setLoadingFlow(null)
+			console.log('error uploading', error)
+		}
 	}, [])
 
 	const { getRootProps, getInputProps } = useDropzone({

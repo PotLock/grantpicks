@@ -17,10 +17,21 @@ import {
 	IGetRoundsResponse,
 	Network,
 } from '@/types/on-chain'
-import { getRoundApplications } from '@/services/on-chain/round'
+import {
+	getRoundApplications,
+	ReviewApplicationParams,
+	reviewApplicationRound,
+} from '@/services/on-chain/round'
 import InfiniteScroll from 'react-infinite-scroll-component'
 import IconLoading from '../../svgs/IconLoading'
 import moment from 'moment'
+import { useGlobalContext } from '@/app/providers/GlobalProvider'
+import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
+import toast from 'react-hot-toast'
+import { toastOptions } from '@/constants/style'
+import { prettyTruncate } from '@/utils/helper'
+import ApplicationAcceptModal from './ApplicationAcceptModal'
+import ApplicationRejectModal from './ApplicationRejectModal'
 
 interface ApplicationsDrawerProps extends IDrawerProps {
 	doc: IGetRoundsResponse
@@ -29,12 +40,67 @@ interface ApplicationsDrawerProps extends IDrawerProps {
 const ApplicationItem = ({
 	type,
 	index,
-	doc,
+	item,
+	roundData,
+	mutate,
 }: {
-	type: 'Pending' | 'Approved' | 'Rejected'
+	type: 'Pending' | 'Approved' | 'Rejected' | 'Blacklisted'
 	index: number
-	doc: IGetRoundApplicationsResponse
+	item: IGetRoundApplicationsResponse
+	roundData: IGetRoundsResponse
+	mutate: any
 }) => {
+	const { stellarPubKey, stellarKit } = useWallet()
+	const { dismissPageLoading, openPageLoading } = useGlobalContext()
+	const [openAcceptModal, setOpenAcceptModal] = useState<boolean>(false)
+	const [openRejectModal, setOpenRejectModal] = useState<boolean>(false)
+
+	const onAcceptReject = async (type: 'accept' | 'reject', note: string) => {
+		try {
+			openPageLoading()
+			let cmdWallet = new CMDWallet({
+				stellarPubKey: stellarPubKey,
+			})
+			const contracts = new Contracts(
+				process.env.NETWORK_ENV as Network,
+				cmdWallet,
+			)
+			const params: ReviewApplicationParams = {
+				round_id: roundData.id,
+				caller: stellarPubKey,
+				applicant: item.applicant_id,
+				status: {
+					tag: type === 'accept' ? 'Approved' : 'Rejected',
+					values: void 0,
+				},
+				note,
+			}
+			const txChangeProjectStatus = await reviewApplicationRound(
+				params,
+				contracts,
+			)
+			const txHash = await contracts.signAndSendTx(
+				stellarKit as StellarWalletsKit,
+				txChangeProjectStatus,
+				stellarPubKey,
+			)
+			if (txHash) {
+				dismissPageLoading()
+				toast.success(`Change status to ${type} is succeed`, {
+					style: toastOptions.success.style,
+				})
+				await mutate()
+			}
+		} catch (error: any) {
+			dismissPageLoading()
+			toast.error(`Change status to ${type} is failed`, {
+				style: toastOptions.error.style,
+			})
+			type === 'accept' ? setOpenAcceptModal(false) : setOpenRejectModal(false)
+			console.log(`error ${type} application`, error)
+		}
+	}
+
 	return (
 		<div className="bg-grantpicks-black-50 rounded-xl border border-grantpicks-black-200">
 			{type === 'Pending' ? (
@@ -42,17 +108,25 @@ const ApplicationItem = ({
 					<div className="flex items-center space-x-1 py-1">
 						<IconCalendar size={18} className="fill-grantpicks-black-400" />
 						<p className="text-sm font-normal text-grantpicks-black-950">
-							Applied {moment(new Date(Number(doc.submited_ms))).fromNow()}
+							Applied {moment(new Date(Number(item.submited_ms))).fromNow()}
 						</p>
 					</div>
-					<div className="flex items-center space-x-2">
-						<p className="text-grantpicks-green-600 text-sm font-semibold cursor-pointer transition hover:opacity-70">
-							ACCEPT
-						</p>
-						<p className="text-grantpicks-black-500 text-sm font-semibold cursor-pointer transition hover:opacity-70">
-							REJECT
-						</p>
-					</div>
+					{roundData.owner === stellarPubKey && (
+						<div className="flex items-center space-x-2">
+							<button
+								onClick={() => setOpenAcceptModal(true)}
+								className="text-grantpicks-green-600 text-sm font-semibold cursor-pointer transition hover:opacity-70"
+							>
+								ACCEPT
+							</button>
+							<button
+								onClick={() => setOpenRejectModal(true)}
+								className="text-grantpicks-black-500 text-sm font-semibold cursor-pointer transition hover:opacity-70"
+							>
+								REJECT
+							</button>
+						</div>
+					)}
 				</div>
 			) : (
 				<div className="flex items-center justify-between px-3 md:px-4 py-2">
@@ -84,7 +158,7 @@ const ApplicationItem = ({
 						</p>
 					</div>
 					<p className="text-sm font-normal text-grantpicks-black-950">
-						{moment(new Date(Number(doc.submited_ms))).fromNow()}
+						{moment(new Date(Number(item.submited_ms))).fromNow()}
 					</p>
 				</div>
 			)}
@@ -92,30 +166,42 @@ const ApplicationItem = ({
 				<div className="bg-grantpicks-black-200 rounded-full w-6 h-6" />
 				<p>
 					<span className="text-base font-bold text-grantpicks-black-950 mr-1">
-						{doc.applicant_id}
+						{prettyTruncate(item.applicant_id, 20, 'address')}
 					</span>
-					{/* <span className="text-base font-normal text-grantpicks-black-600">
-						@magicbuild.near
-					</span> */}
 				</p>
 			</div>
 			<div className=" px-3 md:px-4 py-2">
 				<p className="text-base font-normal text-grantpicks-black-600">
-					{doc.applicant_note}
+					{item.applicant_note}
 				</p>
 			</div>
-			{doc.review_note && (
+			{item.review_note && (
 				<div className="px-3 md:px-4 pt-2 pb-4">
 					<div className="border border-grantpicks-black-200 rounded-xl p-3 bg-white">
 						<p className="text-sm font-semibold text-grantpicks-black-950">
-							Reviewer
+							admin@
+							{prettyTruncate(roundData.owner, 10, 'address') || 'Reviewer'}
 						</p>
 						<p className="text-sm font-normal text-grantpicks-black-600">
-							{doc.review_note || ''}
+							{item.review_note || ''}
 						</p>
 					</div>
 				</div>
 			)}
+			<ApplicationAcceptModal
+				isOpen={openAcceptModal}
+				onClose={() => setOpenAcceptModal(false)}
+				roundData={roundData}
+				applicationData={item}
+				onConfirm={(note) => onAcceptReject('accept', note)}
+			/>
+			<ApplicationRejectModal
+				isOpen={openRejectModal}
+				onClose={() => setOpenRejectModal(false)}
+				roundData={roundData}
+				applicationData={item}
+				onConfirm={(note) => onAcceptReject('reject', note)}
+			/>
 		</div>
 	)
 }
@@ -163,13 +249,10 @@ const ApplicationsDrawer = ({
 			limit: LIMIT_SIZE,
 		}
 	}
-	const { data, size, setSize, isValidating, isLoading } = useSWRInfinite(
-		getKey,
-		async (key) => await onFetchRoundApplications(key),
-		{
+	const { data, size, setSize, isValidating, isLoading, mutate } =
+		useSWRInfinite(getKey, async (key) => await onFetchRoundApplications(key), {
 			revalidateFirstPage: false,
-		},
-	)
+		})
 	const applications = data
 		? ([] as IGetRoundApplicationsResponse[]).concat(...data)
 		: []
@@ -273,45 +356,53 @@ const ApplicationsDrawer = ({
 					>
 						<div className="overflow-y-auto h-full flex flex-col space-y-6">
 							{tab === 'all' &&
-								roundAppsData?.map((doc, idx) => (
+								roundAppsData?.map((item, idx) => (
 									<ApplicationItem
 										key={idx}
-										type={doc.status.tag}
+										type={item.status.tag}
 										index={idx}
-										doc={doc}
+										item={item}
+										roundData={doc}
+										mutate={mutate}
 									/>
 								))}
 							{tab === 'pending' &&
 								roundAppsData
 									?.filter((app) => app.status.tag === 'Pending')
-									.map((doc, idx) => (
+									.map((item, idx) => (
 										<ApplicationItem
 											key={idx}
 											type="Pending"
 											index={idx}
-											doc={doc}
+											item={item}
+											roundData={doc}
+											mutate={mutate}
 										/>
 									))}
 							{tab === 'approved' &&
 								roundAppsData
 									?.filter((app) => app.status.tag === 'Approved')
-									.map((doc, idx) => (
+									.map((item, idx) => (
 										<ApplicationItem
 											key={idx}
 											type="Approved"
 											index={idx}
-											doc={doc}
+											item={item}
+											roundData={doc}
+											mutate={mutate}
 										/>
 									))}
 							{tab === 'rejected' &&
 								roundAppsData
 									?.filter((app) => app.status.tag === 'Rejected')
-									.map((doc, idx) => (
+									.map((item, idx) => (
 										<ApplicationItem
 											key={idx}
 											type="Rejected"
 											index={idx}
-											doc={doc}
+											item={item}
+											roundData={doc}
+											mutate={mutate}
 										/>
 									))}
 						</div>

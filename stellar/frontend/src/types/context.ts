@@ -11,7 +11,7 @@ import { WalletSelectorModal } from '@near-wallet-selector/modal-ui'
 import { Dispatch, SetStateAction } from 'react'
 import { IGetRoundsResponse } from './on-chain'
 import { Livepeer } from 'livepeer'
-import { Project } from 'round-client'
+import { Project, RoundApplication } from 'round-client'
 
 export interface IWalletContext {
 	connectedWallet: 'near' | 'stellar' | null
@@ -37,6 +37,10 @@ export interface IVoteConfirmationModalContextProps extends IModalContextProps {
 	doc?: IGetRoundsResponse
 }
 
+export interface IVideoPlayerModalProps extends IModalContextProps {
+	videoUrl?: string
+}
+
 export interface ISuccessCreateRoundModalProps extends IModalContextProps {
 	createRoundRes: IGetRoundsResponse | undefined
 	txHash?: string
@@ -58,6 +62,18 @@ export interface ISuccessFundRoundModalProps extends IModalContextProps {
 	amount: string
 }
 
+export interface IApplyProjectToRoundModalProps extends IModalContextProps {
+	round_id: bigint | undefined
+	roundData: IGetRoundsResponse | undefined
+}
+
+export interface ISuccessAppplyProjectToRoundModalProps
+	extends IModalContextProps {
+	applyProjectRes: RoundApplication | undefined
+	roundData?: IGetRoundsResponse
+	txHash?: string
+}
+
 export interface IModalContext {
 	successFundRoundModalProps: ISuccessFundRoundModalProps
 	setSuccessCreateRoundModalProps: Dispatch<
@@ -72,11 +88,17 @@ export interface IModalContext {
 	setSuccessFundRoundModalProps: Dispatch<
 		SetStateAction<ISuccessFundRoundModalProps>
 	>
-	setApplyProjectInitProps: Dispatch<SetStateAction<IModalContextProps>>
+	setApplyProjectInitProps: Dispatch<
+		SetStateAction<IApplyProjectToRoundModalProps>
+	>
+	setSuccessApplyProjectInitProps: Dispatch<
+		SetStateAction<ISuccessAppplyProjectToRoundModalProps>
+	>
 	setVoteConfirmationProps: Dispatch<
 		SetStateAction<IVoteConfirmationModalContextProps>
 	>
 	setCreateProjectFormMainProps: Dispatch<SetStateAction<IModalContextProps>>
+	setVideoPlayerProps: Dispatch<SetStateAction<IVideoPlayerModalProps>>
 }
 
 export interface ICreateProjectForm {
@@ -124,4 +146,10 @@ export interface IGlobalContext {
 	dismissPageLoading: () => void
 	openPageLoading: () => void
 	livepeer: Livepeer | null
+}
+
+export interface IMyProjectContext {
+	projectData?: Project
+	projectDataModel?: Project
+	fetchProjectApplicant: () => Promise<void>
 }

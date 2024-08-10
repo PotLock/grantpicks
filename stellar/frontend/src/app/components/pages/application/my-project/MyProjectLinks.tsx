@@ -5,11 +5,28 @@ import Menu from '@/app/components/commons/Menu'
 import IconAdd from '@/app/components/svgs/IconAdd'
 import IconTrash from '@/app/components/svgs/IconTrash'
 import IconUnfoldMore from '@/app/components/svgs/IconUnfoldMore'
+import { useGlobalContext } from '@/app/providers/GlobalProvider'
+import { useWallet } from '@/app/providers/WalletProvider'
+import { DEFAULT_IMAGE_URL } from '@/constants/project'
+import { toastOptions } from '@/constants/style'
+import Contracts from '@/lib/contracts'
+import CMDWallet from '@/lib/wallet'
+import {
+	IUpdateProjectParams,
+	updateProject,
+} from '@/services/on-chain/project-registry'
 import { CreateProjectStep3Data } from '@/types/form'
-import React, { useState } from 'react'
-import { useFieldArray, useForm } from 'react-hook-form'
+import { Network } from '@/types/on-chain'
+import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
+import React, { useEffect, useState } from 'react'
+import { SubmitHandler, useFieldArray, useForm } from 'react-hook-form'
+import toast from 'react-hot-toast'
+import { useMyProject } from './MyProjectProvider'
 
 const MyProjectLinks = () => {
+	const { projectData, fetchProjectApplicant } = useMyProject()
+	const { stellarPubKey, stellarKit } = useWallet()
+	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const [showContractMenu, setShowContractMenu] = useState<boolean[]>([])
 	const [showContactMenu, setShowContactMenu] = useState<boolean[]>([])
 	const {
@@ -22,26 +39,7 @@ const MyProjectLinks = () => {
 		formState: { errors },
 	} = useForm<CreateProjectStep3Data>({
 		defaultValues: {
-			smart_contracts: [
-				{
-					id: '',
-					chain: '',
-					address: '',
-				},
-			],
-			contacts: [
-				{
-					id: '',
-					platform: '',
-					link_url: '',
-				},
-			],
-			github_urls: [
-				{
-					id: '',
-					github_url: '',
-				},
-			],
+			is_open_source: true,
 		},
 	})
 	const {
@@ -69,7 +67,101 @@ const MyProjectLinks = () => {
 		name: 'contacts',
 	})
 
-	const onSaveChanges = () => {}
+	const setDefaultData = () => {
+		if (projectData) {
+			setValue(
+				'smart_contracts',
+				projectData?.contracts.map((contract) => ({
+					id: '',
+					chain: contract.name,
+					address: contract.contract_address,
+				})),
+			)
+			setValue(
+				'contacts',
+				projectData?.contacts.map((contact) => ({
+					id: '',
+					platform: contact.name,
+					link_url: contact.value,
+				})),
+			)
+			setValue(
+				'github_urls',
+				projectData?.repositories.map((repo) => ({
+					id: '',
+					github_url: repo.url,
+				})),
+			)
+		}
+	}
+
+	const onSaveChanges: SubmitHandler<CreateProjectStep3Data> = async (data) => {
+		try {
+			openPageLoading()
+			let cmdWallet = new CMDWallet({
+				stellarPubKey: stellarPubKey,
+			})
+			const contracts = new Contracts(
+				process.env.NETWORK_ENV as Network,
+				cmdWallet,
+			)
+			const params: IUpdateProjectParams = {
+				...projectData,
+				name: projectData?.name || '',
+				overview: projectData?.overview || '',
+				fundings: [],
+				contacts: data.contacts.map((c) => ({
+					name: c.platform,
+					value: c.link_url,
+				})),
+				contracts: data.smart_contracts.map((contract) => ({
+					name: contract.chain,
+					contract_address: contract.address,
+				})),
+				image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
+				payout_address: projectData?.payout_address || '',
+				repositories:
+					data.github_urls.map((repo) => ({
+						label: repo.id,
+						url: repo.github_url,
+					})) || [],
+				team_members: projectData?.team_members || [],
+				video_url: projectData?.video_url || 'https://video.com/asdfgh',
+			}
+			const txUpdateProject = await updateProject(
+				stellarPubKey,
+				projectData?.id as bigint,
+				params,
+				contracts,
+			)
+			const txHashUpdateProject = await contracts.signAndSendTx(
+				stellarKit as StellarWalletsKit,
+				txUpdateProject,
+				stellarPubKey,
+			)
+			if (txHashUpdateProject) {
+				dismissPageLoading()
+				setTimeout(async () => {
+					await fetchProjectApplicant()
+				}, 2000)
+				toast.success(`Update project overview is succeed`, {
+					style: toastOptions.success.style,
+				})
+			}
+		} catch (error: any) {
+			dismissPageLoading()
+			toast.error(`Update project overview is failed`, {
+				style: toastOptions.error.style,
+			})
+			console.log('error to update overview project', error)
+		}
+	}
+
+	useEffect(() => {
+		if (projectData) {
+			setDefaultData()
+		}
+	}, [projectData])
 
 	return (
 		<div className="w-full lg:w-[70%] border border-black/10 bg-white rounded-xl text-grantpicks-black-950">

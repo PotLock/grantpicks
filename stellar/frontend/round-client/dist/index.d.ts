@@ -1,3 +1,4 @@
+/// <reference types="node" resolution-mode="require"/>
 import { Buffer } from "buffer";
 import { AssembledTransaction, Client as ContractClient, ClientOptions as ContractClientOptions } from '@stellar/stellar-sdk/contract';
 import type { u32, u64, u128, i128, Option } from '@stellar/stellar-sdk/contract';
@@ -7,7 +8,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CBCQSWY5QP43OM4OFEJIQMFFTAJUSNENSK5ZBKSQ2D3HD46A3NR5TBHV";
+        readonly contractId: "CATEJJKRI2JQBZW3JVFCMZF7H6HWAWOHNC2DCY6WLZJE7JUY4XPXNZTP";
     };
 };
 export type ApplicationStatus = {
@@ -18,6 +19,9 @@ export type ApplicationStatus = {
     values: void;
 } | {
     tag: "Rejected";
+    values: void;
+} | {
+    tag: "Blacklisted";
     values: void;
 };
 export interface Config {
@@ -124,7 +128,6 @@ export interface VotingResult {
     voter: string;
 }
 export interface ProjectVotingResult {
-    allocation: u128;
     project_id: u128;
     voting_count: u128;
 }
@@ -164,19 +167,173 @@ export interface Deposit {
     round_id: u128;
     total_amount: i128;
 }
-export type ProjectStatus = {
-    tag: "New";
-    values: void;
-} | {
-    tag: "Approved";
-    values: void;
-} | {
-    tag: "Rejected";
-    values: void;
-} | {
-    tag: "Completed";
-    values: void;
+export declare const Errors: {
+    5: {
+        message: string;
+    };
+    26: {
+        message: string;
+    };
+    31: {
+        message: string;
+    };
+    32: {
+        message: string;
+    };
+    38: {
+        message: string;
+    };
+    52: {
+        message: string;
+    };
+    0: {
+        message: string;
+    };
+    1: {
+        message: string;
+    };
+    2: {
+        message: string;
+    };
+    3: {
+        message: string;
+    };
+    4: {
+        message: string;
+    };
+    8: {
+        message: string;
+    };
+    19: {
+        message: string;
+    };
+    20: {
+        message: string;
+    };
+    21: {
+        message: string;
+    };
+    22: {
+        message: string;
+    };
+    23: {
+        message: string;
+    };
+    27: {
+        message: string;
+    };
+    28: {
+        message: string;
+    };
+    29: {
+        message: string;
+    };
+    34: {
+        message: string;
+    };
+    35: {
+        message: string;
+    };
+    36: {
+        message: string;
+    };
+    37: {
+        message: string;
+    };
+    39: {
+        message: string;
+    };
+    40: {
+        message: string;
+    };
+    41: {
+        message: string;
+    };
+    44: {
+        message: string;
+    };
+    45: {
+        message: string;
+    };
+    46: {
+        message: string;
+    };
+    47: {
+        message: string;
+    };
+    48: {
+        message: string;
+    };
+    49: {
+        message: string;
+    };
+    50: {
+        message: string;
+    };
+    51: {
+        message: string;
+    };
+    6: {
+        message: string;
+    };
+    7: {
+        message: string;
+    };
+    9: {
+        message: string;
+    };
+    12: {
+        message: string;
+    };
+    17: {
+        message: string;
+    };
+    18: {
+        message: string;
+    };
+    24: {
+        message: string;
+    };
+    25: {
+        message: string;
+    };
+    33: {
+        message: string;
+    };
+    10: {
+        message: string;
+    };
+    11: {
+        message: string;
+    };
+    13: {
+        message: string;
+    };
+    14: {
+        message: string;
+    };
+    15: {
+        message: string;
+    };
+    16: {
+        message: string;
+    };
+    30: {
+        message: string;
+    };
+    42: {
+        message: string;
+    };
+    43: {
+        message: string;
+    };
 };
+export declare enum ProjectStatus {
+    New = 0,
+    Approved = 1,
+    Rejected = 2,
+    Completed = 3
+}
 export interface Project {
     admins: Array<string>;
     contacts: Array<ProjectContact>;
@@ -224,6 +381,9 @@ export type ContractKey = {
     tag: "ProtocolFee";
     values: void;
 } | {
+    tag: "DefaultPageSize";
+    values: void;
+} | {
     tag: "FactoryOwner";
     values: void;
 } | {
@@ -254,7 +414,10 @@ export type ContractKey = {
     tag: "DepositInfo";
     values: void;
 } | {
-    tag: "WhitelistAndBlacklist";
+    tag: "WhiteList";
+    values: readonly [u128];
+} | {
+    tag: "BlackList";
     values: readonly [u128];
 } | {
     tag: "ProjectApplicants";
@@ -284,17 +447,17 @@ export type ContractKey = {
     tag: "Deposit";
     values: readonly [u128];
 };
-export declare const Errors: {};
 export interface Client {
     /**
      * Construct and simulate a initialize transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    initialize: ({ caller, token_address, registry_address, fee_basis_points, fee_address }: {
+    initialize: ({ caller, token_address, registry_address, protocol_fee_basis_points, protocol_fee_recipient, default_page_size }: {
         caller: string;
         token_address: string;
         registry_address: string;
-        fee_basis_points: Option<u32>;
-        fee_address: Option<string>;
+        protocol_fee_basis_points: Option<u32>;
+        protocol_fee_recipient: Option<string>;
+        default_page_size: Option<u64>;
     }, options?: {
         /**
          * The fee to pay for the transaction. Default: BASE_FEE
@@ -404,6 +567,45 @@ export interface Client {
          */
         simulate?: boolean;
     }) => Promise<AssembledTransaction<Config>>;
+    /**
+     * Construct and simulate a owner_set_default_page_size transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     */
+    owner_set_default_page_size: ({ default_page_size }: {
+        default_page_size: u64;
+    }, options?: {
+        /**
+         * The fee to pay for the transaction. Default: BASE_FEE
+         */
+        fee?: number;
+        /**
+         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+         */
+        timeoutInSeconds?: number;
+        /**
+         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+         */
+        simulate?: boolean;
+    }) => Promise<AssembledTransaction<null>>;
+    /**
+     * Construct and simulate a owner_set_protocol_fee_config transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     */
+    owner_set_protocol_fee_config: ({ protocol_fee_recipient, protocol_fee_basis_points }: {
+        protocol_fee_recipient: Option<string>;
+        protocol_fee_basis_points: Option<u32>;
+    }, options?: {
+        /**
+         * The fee to pay for the transaction. Default: BASE_FEE
+         */
+        fee?: number;
+        /**
+         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+         */
+        timeoutInSeconds?: number;
+        /**
+         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+         */
+        simulate?: boolean;
+    }) => Promise<AssembledTransaction<null>>;
     /**
      * Construct and simulate a change_voting_period transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
@@ -698,12 +900,12 @@ export interface Client {
         simulate?: boolean;
     }) => Promise<AssembledTransaction<Array<Pair>>>;
     /**
-     * Construct and simulate a flag_voter transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     * Construct and simulate a flag_voters transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    flag_voter: ({ round_id, admin, voter }: {
+    flag_voters: ({ round_id, admin, voters }: {
         round_id: u128;
         admin: string;
-        voter: string;
+        voters: Array<string>;
     }, options?: {
         /**
          * The fee to pay for the transaction. Default: BASE_FEE
@@ -719,12 +921,12 @@ export interface Client {
         simulate?: boolean;
     }) => Promise<AssembledTransaction<null>>;
     /**
-     * Construct and simulate a unflag_voter transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     * Construct and simulate a unflag_voters transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    unflag_voter: ({ round_id, admin, voter }: {
+    unflag_voters: ({ round_id, admin, voters }: {
         round_id: u128;
         admin: string;
-        voter: string;
+        voters: Array<string>;
     }, options?: {
         /**
          * The fee to pay for the transaction. Default: BASE_FEE
@@ -740,9 +942,9 @@ export interface Client {
         simulate?: boolean;
     }) => Promise<AssembledTransaction<null>>;
     /**
-     * Construct and simulate a get_results_for_round transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     * Construct and simulate a get_voting_results_for_round transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    get_results_for_round: ({ round_id }: {
+    get_voting_results_for_round: ({ round_id }: {
         round_id: u128;
     }, options?: {
         /**
@@ -779,9 +981,9 @@ export interface Client {
         simulate?: boolean;
     }) => Promise<AssembledTransaction<null>>;
     /**
-     * Construct and simulate a get_all_voters transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     * Construct and simulate a get_votes_for_round transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    get_all_voters: ({ round_id, skip, limit }: {
+    get_votes_for_round: ({ round_id, skip, limit }: {
         round_id: u128;
         skip: Option<u64>;
         limit: Option<u64>;
@@ -916,7 +1118,7 @@ export interface Client {
          * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
          */
         simulate?: boolean;
-    }) => Promise<AssembledTransaction<Option<RoundApplication>>>;
+    }) => Promise<AssembledTransaction<RoundApplication>>;
     /**
      * Construct and simulate a is_payout_done transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
@@ -1018,12 +1220,12 @@ export interface Client {
         simulate?: boolean;
     }) => Promise<AssembledTransaction<null>>;
     /**
-     * Construct and simulate a add_white_list transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     * Construct and simulate a add_whitelists transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    add_white_list: ({ round_id, admin, address }: {
+    add_whitelists: ({ round_id, caller, users }: {
         round_id: u128;
-        admin: string;
-        address: string;
+        caller: string;
+        users: Array<string>;
     }, options?: {
         /**
          * The fee to pay for the transaction. Default: BASE_FEE
@@ -1039,12 +1241,12 @@ export interface Client {
         simulate?: boolean;
     }) => Promise<AssembledTransaction<null>>;
     /**
-     * Construct and simulate a remove_from_white_list transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     * Construct and simulate a remove_from_whitelists transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    remove_from_white_list: ({ round_id, admin, address }: {
+    remove_from_whitelists: ({ round_id, caller, users }: {
         round_id: u128;
-        admin: string;
-        address: string;
+        caller: string;
+        users: Array<string>;
     }, options?: {
         /**
          * The fee to pay for the transaction. Default: BASE_FEE
@@ -1241,9 +1443,9 @@ export interface Client {
         simulate?: boolean;
     }) => Promise<AssembledTransaction<RoundApplication>>;
     /**
-     * Construct and simulate a change_allow_applications transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     * Construct and simulate a set_applications_config transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    change_allow_applications: ({ round_id, caller, allow_applications, start_ms, end_ms }: {
+    set_applications_config: ({ round_id, caller, allow_applications, start_ms, end_ms }: {
         round_id: u128;
         caller: string;
         allow_applications: boolean;
@@ -1596,6 +1798,66 @@ export interface Client {
          */
         simulate?: boolean;
     }) => Promise<AssembledTransaction<RoundDetail>>;
+    /**
+     * Construct and simulate a blacklisted_voters transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     */
+    blacklisted_voters: ({ round_id }: {
+        round_id: u128;
+    }, options?: {
+        /**
+         * The fee to pay for the transaction. Default: BASE_FEE
+         */
+        fee?: number;
+        /**
+         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+         */
+        timeoutInSeconds?: number;
+        /**
+         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+         */
+        simulate?: boolean;
+    }) => Promise<AssembledTransaction<Array<string>>>;
+    /**
+     * Construct and simulate a whitelisted_voters transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     */
+    whitelisted_voters: ({ round_id }: {
+        round_id: u128;
+    }, options?: {
+        /**
+         * The fee to pay for the transaction. Default: BASE_FEE
+         */
+        fee?: number;
+        /**
+         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+         */
+        timeoutInSeconds?: number;
+        /**
+         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+         */
+        simulate?: boolean;
+    }) => Promise<AssembledTransaction<Array<string>>>;
+    /**
+     * Construct and simulate a set_redistribution_config transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     */
+    set_redistribution_config: ({ round_id, caller, allow_remaining_dist, remaining_dist_address }: {
+        round_id: u128;
+        caller: string;
+        allow_remaining_dist: boolean;
+        remaining_dist_address: Option<string>;
+    }, options?: {
+        /**
+         * The fee to pay for the transaction. Default: BASE_FEE
+         */
+        fee?: number;
+        /**
+         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+         */
+        timeoutInSeconds?: number;
+        /**
+         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+         */
+        simulate?: boolean;
+    }) => Promise<AssembledTransaction<RoundDetail>>;
 }
 export declare class Client extends ContractClient {
     readonly options: ContractClientOptions;
@@ -1607,6 +1869,8 @@ export declare class Client extends ContractClient {
         upgrade: (json: string) => AssembledTransaction<null>;
         transfer_ownership: (json: string) => AssembledTransaction<null>;
         get_config: (json: string) => AssembledTransaction<Config>;
+        owner_set_default_page_size: (json: string) => AssembledTransaction<null>;
+        owner_set_protocol_fee_config: (json: string) => AssembledTransaction<null>;
         change_voting_period: (json: string) => AssembledTransaction<null>;
         change_application_period: (json: string) => AssembledTransaction<null>;
         change_expected_amount: (json: string) => AssembledTransaction<null>;
@@ -1621,24 +1885,24 @@ export declare class Client extends ContractClient {
         deposit_to_round: (json: string) => AssembledTransaction<null>;
         vote: (json: string) => AssembledTransaction<null>;
         get_pairs_to_vote: (json: string) => AssembledTransaction<Pair[]>;
-        flag_voter: (json: string) => AssembledTransaction<null>;
-        unflag_voter: (json: string) => AssembledTransaction<null>;
-        get_results_for_round: (json: string) => AssembledTransaction<ProjectVotingResult[]>;
+        flag_voters: (json: string) => AssembledTransaction<null>;
+        unflag_voters: (json: string) => AssembledTransaction<null>;
+        get_voting_results_for_round: (json: string) => AssembledTransaction<ProjectVotingResult[]>;
         process_payouts: (json: string) => AssembledTransaction<null>;
-        get_all_voters: (json: string) => AssembledTransaction<VotingResult[]>;
+        get_votes_for_round: (json: string) => AssembledTransaction<VotingResult[]>;
         can_vote: (json: string) => AssembledTransaction<boolean>;
         get_round: (json: string) => AssembledTransaction<RoundDetail>;
         is_voting_live: (json: string) => AssembledTransaction<boolean>;
         is_application_live: (json: string) => AssembledTransaction<boolean>;
         get_applications_for_round: (json: string) => AssembledTransaction<RoundApplication[]>;
-        get_application: (json: string) => AssembledTransaction<Option<RoundApplication>>;
+        get_application: (json: string) => AssembledTransaction<RoundApplication>;
         is_payout_done: (json: string) => AssembledTransaction<boolean>;
         user_has_vote: (json: string) => AssembledTransaction<boolean>;
         total_funding: (json: string) => AssembledTransaction<bigint>;
         add_approved_project: (json: string) => AssembledTransaction<null>;
         remove_approved_project: (json: string) => AssembledTransaction<null>;
-        add_white_list: (json: string) => AssembledTransaction<null>;
-        remove_from_white_list: (json: string) => AssembledTransaction<null>;
+        add_whitelists: (json: string) => AssembledTransaction<null>;
+        remove_from_whitelists: (json: string) => AssembledTransaction<null>;
         whitelist_status: (json: string) => AssembledTransaction<boolean>;
         blacklist_status: (json: string) => AssembledTransaction<boolean>;
         get_all_pairs_for_round: (json: string) => AssembledTransaction<Pair[]>;
@@ -1648,7 +1912,7 @@ export declare class Client extends ContractClient {
         admins: (json: string) => AssembledTransaction<string[]>;
         unapply_from_round: (json: string) => AssembledTransaction<RoundApplication>;
         update_applicant_note: (json: string) => AssembledTransaction<RoundApplication>;
-        change_allow_applications: (json: string) => AssembledTransaction<RoundDetail>;
+        set_applications_config: (json: string) => AssembledTransaction<RoundDetail>;
         update_round: (json: string) => AssembledTransaction<RoundDetail>;
         delete_round: (json: string) => AssembledTransaction<RoundDetail>;
         apply_to_round_batch: (json: string) => AssembledTransaction<RoundApplication[]>;
@@ -1665,5 +1929,8 @@ export declare class Client extends ContractClient {
         get_deposits_for_round: (json: string) => AssembledTransaction<Deposit[]>;
         set_cooldown_config: (json: string) => AssembledTransaction<RoundDetail>;
         set_compliance_config: (json: string) => AssembledTransaction<RoundDetail>;
+        blacklisted_voters: (json: string) => AssembledTransaction<string[]>;
+        whitelisted_voters: (json: string) => AssembledTransaction<string[]>;
+        set_redistribution_config: (json: string) => AssembledTransaction<RoundDetail>;
     };
 }

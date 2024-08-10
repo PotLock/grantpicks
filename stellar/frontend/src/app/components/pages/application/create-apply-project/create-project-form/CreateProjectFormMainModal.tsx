@@ -9,7 +9,10 @@ import CreateProjectStep2 from './CreateProjectStep2'
 import CreateProjectStep3 from './CreateProjectStep3'
 import CreateProjectStep4 from './CreateProjectStep4'
 import CreateProjectStep5 from './CreateProjectStep5'
-import { DEFAULT_CREATE_PROJECT_DATA } from '@/constants/project'
+import {
+	DEFAULT_CREATE_PROJECT_DATA,
+	DEFAULT_IMAGE_URL,
+} from '@/constants/project'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
@@ -57,7 +60,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 			const params: ICreateProjectParams = {
 				name: dataForm.title,
 				overview: dataForm.description,
-				admins: [stellarPubKey],
+				admins: dataForm.team_member.map((mem) => mem),
 				contacts: dataForm.contacts.map((c) => ({
 					name: c.platform,
 					value: c.link_url,
@@ -73,7 +76,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 					amount: parseToStroop(f.amount),
 					funded_ms: BigInt(f.date.getTime() as number),
 				})),
-				image_url: '',
+				image_url: DEFAULT_IMAGE_URL,
 				payout_address: stellarPubKey,
 				repositories: dataForm.github_urls.map((g) => ({
 					label: 'github',

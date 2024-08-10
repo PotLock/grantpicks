@@ -9,7 +9,14 @@ import {
 	u32,
 	u64,
 } from '@stellar/stellar-sdk/contract'
-import { Contact, RoundDetail } from 'round-client'
+import {
+	ApplicationStatus,
+	Contact,
+	Pair,
+	PickedPair,
+	RoundApplication,
+	RoundDetail,
+} from 'round-client'
 
 interface GetRoundsParams {
 	skip: number
@@ -20,6 +27,11 @@ interface GetRoundApplicationsParams {
 	round_id: bigint
 	skip: number
 	limit: number
+}
+
+interface GetRoundApplicationParams {
+	round_id: bigint
+	applicant: string
 }
 
 interface GetRoundAdmins {
@@ -54,11 +66,35 @@ export interface CreateRoundParams {
 	name: string
 	num_picks_per_voter: u32
 	owner: string
-	referrer_fee_basis_points: u32
+	referrer_fee_basis_points: u32 | null
 	remaining_dist_address: string
 	use_whitelist: boolean
 	voting_end_ms: u64
 	voting_start_ms: u64
+}
+
+export interface ReviewApplicationParams {
+	round_id: u128
+	caller: string
+	applicant: string
+	status: ApplicationStatus
+	note?: string
+}
+
+export interface VoteRoundParams {
+	round_id: u128
+	voter: string
+	picks: PickedPair[]
+}
+
+export interface AvailableVoteRoundParams {
+	round_id: u128
+	voter: string
+}
+
+export interface HasVotedRoundParams {
+	round_id: u128
+	voter: string
 }
 
 export interface UpdateRoundParams {
@@ -83,6 +119,14 @@ export interface DepositFundRoundParams {
 	amount: u128
 	memo?: string
 	referrer_id: string
+}
+
+export interface ApplyProjectToRoundParams {
+	round_id: u128
+	caller: string
+	applicant?: string
+	note?: string
+	review_note?: string
 }
 
 export const getRounds: (
@@ -133,6 +177,20 @@ export const getRoundApplications: (
 	return rounds.result
 }
 
+export const getRoundApplication: (
+	params: GetRoundApplicationParams,
+	contract: Contracts,
+) => Promise<RoundApplication> = async (
+	params: GetRoundApplicationParams,
+	contract: Contracts,
+) => {
+	let rounds = await contract.round_contract.get_application({
+		round_id: BigInt(params.round_id),
+		applicant: params.applicant,
+	})
+	return rounds.result
+}
+
 export const getRoundInfo: (
 	params: GetRoundInfoParams,
 	contract: Contracts,
@@ -157,7 +215,10 @@ export const createRound: (
 ) => {
 	let round = await contract.round_contract.create_round({
 		caller,
-		round_detail: params,
+		round_detail: {
+			...params,
+			referrer_fee_basis_points: params.referrer_fee_basis_points as number,
+		},
 	})
 	return round
 }
@@ -231,4 +292,93 @@ export const depositFundRound: (
 		referrer_id: params.referrer_id,
 	})
 	return res
+}
+
+export const applyProjectToRound: (
+	params: ApplyProjectToRoundParams,
+	is_owner_round: boolean,
+	contract: Contracts,
+) => Promise<AssembledTransaction<RoundApplication>> = async (
+	params: ApplyProjectToRoundParams,
+	is_owner_round: boolean,
+	contract: Contracts,
+) => {
+	let res = await contract.round_contract.apply_to_round({
+		round_id: params.round_id,
+		caller: params.caller,
+		applicant: is_owner_round ? undefined : params.applicant,
+		note: params.note,
+		review_note: params.review_note,
+	})
+	return res
+}
+
+export const reviewApplicationRound: (
+	params: ReviewApplicationParams,
+	contract: Contracts,
+) => Promise<AssembledTransaction<RoundApplication>> = async (
+	params: ReviewApplicationParams,
+	contract: Contracts,
+) => {
+	let res = await contract.round_contract.review_application({
+		round_id: params.round_id,
+		caller: params.caller,
+		applicant: params.applicant,
+		note: params.note,
+		status: params.status,
+	})
+	return res
+}
+
+export const voteRound: (
+	params: VoteRoundParams,
+	contract: Contracts,
+) => Promise<AssembledTransaction<null>> = async (
+	params: VoteRoundParams,
+	contract: Contracts,
+) => {
+	let round = await contract.round_contract.vote({
+		round_id: params.round_id,
+		voter: params.voter,
+		picks: params.picks,
+	})
+	return round
+}
+
+export const getPairsRound: (
+	round_id: u128,
+	contract: Contracts,
+) => Promise<Array<Pair>> = async (round_id: u128, contract: Contracts) => {
+	let round = await contract.round_contract.get_pairs_to_vote({
+		round_id,
+	})
+	return round.result
+}
+
+export const isAvailableVoteRound: (
+	params: AvailableVoteRoundParams,
+	contract: Contracts,
+) => Promise<boolean> = async (
+	params: AvailableVoteRoundParams,
+	contract: Contracts,
+) => {
+	let round = await contract.round_contract.can_vote({
+		round_id: params.round_id,
+		voter: params.voter,
+	})
+	return round.result
+}
+
+export const isHasVotedRound: (
+	params: HasVotedRoundParams,
+	contract: Contracts,
+) => Promise<boolean> = async (
+	params: HasVotedRoundParams,
+	contract: Contracts,
+) => {
+	let round = await contract.round_contract.user_has_vote({
+		round_id: params.round_id,
+		voter: params.voter,
+	})
+	return round.result
 }

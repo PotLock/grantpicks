@@ -1,3 +1,5 @@
+use core::fmt::write;
+
 use soroban_sdk::{
     self, contract, contractimpl, panic_with_error, token::TokenClient, Address, BytesN, Env, Map,
     String, Vec,
@@ -61,8 +63,7 @@ use crate::{
         read_all_whitelist, remove_from_blacklist, remove_from_whitelist,
     },
     voting_writer::{
-        add_voting_result, find_voting_result, get_voting_state, read_voting_count,
-        read_voting_state, set_voting_state, write_voting_count,
+        find_voting_result, get_voting_state, get_voting_state_done, read_voting_count, read_voting_results, read_voting_state, set_voting_state, write_voting_count, write_voting_results
     },
 };
 
@@ -655,6 +656,8 @@ impl IsRound for RoundContract {
         let total_available_pairs = count_total_available_pairs(projects.len());
         let projects = read_approved_projects(env, round_id);
         let mut voting_count = read_voting_count(env, round_id);
+        let mut voting_results = read_voting_results(env, round_id);
+  
         picks.iter().for_each(|picked_pair| {
             let picked_index = picked_pair.pair_id;
 
@@ -685,9 +688,11 @@ impl IsRound for RoundContract {
             voted_ms: current_ms,
         };
 
+        voting_results.push_back(voting_result.clone());
+
         write_voting_count(env, round_id, &voting_count);
-        add_voting_result(env, round_id, voting_result.clone());
-        set_voting_state(env, round_id, voter, true);
+        write_voting_results(env, round_id, &voting_results);
+        set_voting_state(env, round_id, voter, voting_results.len()-1);
         extend_instance(env);
         extend_round(env, round_id);
         log_create_vote(env, round.id, voting_result);
@@ -904,7 +909,7 @@ impl IsRound for RoundContract {
     }
 
     fn user_has_vote(env: &Env, round_id: u128, voter: Address) -> bool {
-        let state = get_voting_state(env, round_id, voter);
+        let state = get_voting_state_done(env, round_id, voter);
         extend_instance(env);
 
         state
@@ -1714,5 +1719,25 @@ impl IsRound for RoundContract {
       extend_instance(env);
 
       round.clone()
+    }
+
+    fn get_my_vote_for_round(env: &Env, round_id: u128, voter: Address) -> VotingResult{
+      let voting_results = read_voting_results(env, round_id);
+      let index = get_voting_state(env, round_id, voter);
+
+      if index.is_none() {
+        panic_with_error!(env, Error::DataNotFound);
+      }
+
+      let result = voting_results.get(index.unwrap());
+
+      if result.is_none() {
+        panic_with_error!(env, Error::DataNotFound);
+      }
+
+      extend_instance(env);
+      extend_round(env, round_id);
+
+      result.unwrap()
     }
 }

@@ -13,7 +13,7 @@ echo "deployer address: $my_address"
 
 stellar contract invoke --source alice --network testnet --id ${lists_contract_id} -- initialize --owner ${my_address} 
 stellar contract invoke --source alice --network testnet --id ${registry_contract_id} -- initialize --contract_owner ${my_address} 
-stellar contract invoke --source alice --network testnet --id ${round_contract_id} -- initialize --registry_address ${registry_contract_id} --caller ${my_address} --token_address ${native_token} --fee_basis_points 1000 --fee_address ${my_address}
+stellar contract invoke --source alice --network testnet --id ${round_contract_id} -- initialize --registry_address ${registry_contract_id} --caller ${my_address} --token_address ${native_token} --protocol_fee_basis_points 1000 --protocol_fee_recipient ${my_address} --default_page_size 5
 
 rm -rf ./packages/*-client
 

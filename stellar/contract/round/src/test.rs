@@ -737,6 +737,8 @@ fn test_voting() {
             assert_eq!(result.voting_count, 0);
         }
     });
+
+    round.get_my_vote_for_round(&created_round.id, &voter);
 }
 
 /*

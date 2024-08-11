@@ -12,7 +12,7 @@ interface GetProjectsParams {
 	limit: number
 }
 
-interface GetProjectParams {
+export interface GetProjectParams {
 	project_id: bigint
 }
 

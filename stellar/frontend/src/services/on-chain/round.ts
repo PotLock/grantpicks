@@ -16,6 +16,7 @@ import {
 	PickedPair,
 	RoundApplication,
 	RoundDetail,
+	VotingResult,
 } from 'round-client'
 
 interface GetRoundsParams {
@@ -93,6 +94,11 @@ export interface AvailableVoteRoundParams {
 }
 
 export interface HasVotedRoundParams {
+	round_id: u128
+	voter: string
+}
+
+export interface GetResultVoteParams {
 	round_id: u128
 	voter: string
 }
@@ -349,7 +355,8 @@ export const getPairsRound: (
 	round_id: u128,
 	contract: Contracts,
 ) => Promise<Array<Pair>> = async (round_id: u128, contract: Contracts) => {
-	let round = await contract.round_contract.get_pairs_to_vote({
+	console.log('debug', round_id)
+	let round = await contract.round_contract.get_all_pairs_for_round({
 		round_id,
 	})
 	return round.result
@@ -377,6 +384,20 @@ export const isHasVotedRound: (
 	contract: Contracts,
 ) => {
 	let round = await contract.round_contract.user_has_vote({
+		round_id: params.round_id,
+		voter: params.voter,
+	})
+	return round.result
+}
+
+export const getResultVoteRound: (
+	params: GetResultVoteParams,
+	contract: Contracts,
+) => Promise<VotingResult> = async (
+	params: GetResultVoteParams,
+	contract: Contracts,
+) => {
+	let round = await contract.round_contract.get_my_vote_for_round({
 		round_id: params.round_id,
 		voter: params.voter,
 	})

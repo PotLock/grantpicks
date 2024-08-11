@@ -1,4 +1,5 @@
-import { Buffer } from 'buffer';
+/// <reference types="node" resolution-mode="require"/>
+import { Buffer } from "buffer";
 import { AssembledTransaction, Client as ContractClient, ClientOptions as ContractClientOptions } from '@stellar/stellar-sdk/contract';
 import type { u32, u64, u128, Option } from '@stellar/stellar-sdk/contract';
 export * from '@stellar/stellar-sdk';
@@ -7,7 +8,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CCG67USY6YW7O3WIAW2JGNYKN4GJTUJFRETNLAF33BOQKFQSSC2CR7TL";
+        readonly contractId: "CCWDFOWHCOQNU4I76IPA4ORAKLGRBT6HLXTEUFMZJEBGPBSLPUMB2ZUC";
     };
 };
 export declare enum ProjectStatus {
@@ -81,19 +82,6 @@ export interface ProjectFundingHistory {
     funded_ms: u64;
     source: string;
 }
-export type ContractKey = {
-    tag: 'NumOfProjects';
-    values: void;
-} | {
-    tag: 'Projects';
-    values: void;
-} | {
-    tag: 'RegistryAdmin';
-    values: void;
-} | {
-    tag: 'ApplicantToProjectID';
-    values: void;
-};
 export declare const Errors: {
     1: {
         message: string;
@@ -126,6 +114,19 @@ export declare const Errors: {
         message: string;
     };
 };
+export type ContractKey = {
+    tag: "NumOfProjects";
+    values: void;
+} | {
+    tag: "Projects";
+    values: void;
+} | {
+    tag: "RegistryAdmin";
+    values: void;
+} | {
+    tag: "ApplicantToProjectID";
+    values: void;
+};
 export interface Client {
     /**
      * Construct and simulate a initialize transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
@@ -149,7 +150,7 @@ export interface Client {
     /**
      * Construct and simulate a apply transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    apply: ({ applicant, project_params, }: {
+    apply: ({ applicant, project_params }: {
         applicant: string;
         project_params: CreateProjectParams;
     }, options?: {
@@ -169,7 +170,7 @@ export interface Client {
     /**
      * Construct and simulate a change_project_status transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    change_project_status: ({ contract_owner, project_id, new_status, }: {
+    change_project_status: ({ contract_owner, project_id, new_status }: {
         contract_owner: string;
         project_id: u128;
         new_status: ProjectStatus;
@@ -190,7 +191,7 @@ export interface Client {
     /**
      * Construct and simulate a update_project transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    update_project: ({ admin, project_id, new_project_params, }: {
+    update_project: ({ admin, project_id, new_project_params }: {
         admin: string;
         project_id: u128;
         new_project_params: UpdateProjectParams;
@@ -211,7 +212,7 @@ export interface Client {
     /**
      * Construct and simulate a add_admin transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    add_admin: ({ admin, project_id, new_admin, }: {
+    add_admin: ({ admin, project_id, new_admin }: {
         admin: string;
         project_id: u128;
         new_admin: string;
@@ -232,7 +233,7 @@ export interface Client {
     /**
      * Construct and simulate a remove_admin transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    remove_admin: ({ admin, project_id, admin_to_remove, }: {
+    remove_admin: ({ admin, project_id, admin_to_remove }: {
         admin: string;
         project_id: u128;
         admin_to_remove: string;
@@ -268,7 +269,7 @@ export interface Client {
          * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
          */
         simulate?: boolean;
-    }) => Promise<AssembledTransaction<Option<Project>>>;
+    }) => Promise<AssembledTransaction<Project>>;
     /**
      * Construct and simulate a get_projects transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
@@ -375,7 +376,7 @@ export declare class Client extends ContractClient {
         update_project: (json: string) => AssembledTransaction<null>;
         add_admin: (json: string) => AssembledTransaction<null>;
         remove_admin: (json: string) => AssembledTransaction<null>;
-        get_project_by_id: (json: string) => AssembledTransaction<Option<Project>>;
+        get_project_by_id: (json: string) => AssembledTransaction<Project>;
         get_projects: (json: string) => AssembledTransaction<Project[]>;
         get_project_admins: (json: string) => AssembledTransaction<string[]>;
         get_total_projects: (json: string) => AssembledTransaction<number>;

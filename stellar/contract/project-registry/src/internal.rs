@@ -152,11 +152,14 @@ impl ProjectRegistryTrait for ProjectRegistry {
         extend_instance(env);
     }
 
-    fn get_project_by_id(env: &Env, project_id: u128) -> Option<Project> {
+    fn get_project_by_id(env: &Env, project_id: u128) -> Project {
         let project = get_project(env, project_id);
         extend_instance(env);
+        if project.is_none() {
+            panic_with_error!(env, Error::DataNotFound);
+        }
 
-        project
+        project.unwrap()
     }
 
     fn get_projects(env: &Env, skip: Option<u64>, limit: Option<u64>) -> Vec<Project> {

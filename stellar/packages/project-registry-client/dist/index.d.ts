@@ -8,7 +8,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CCHZZ2O77YYGOCZH32OBNOMH766KBK4KW2Q2IAFTA5LY6K7XF6PTMXUL";
+        readonly contractId: "CCG67USY6YW7O3WIAW2JGNYKN4GJTUJFRETNLAF33BOQKFQSSC2CR7TL";
     };
 };
 export declare enum ProjectStatus {
@@ -82,19 +82,6 @@ export interface ProjectFundingHistory {
     funded_ms: u64;
     source: string;
 }
-export type ContractKey = {
-    tag: "NumOfProjects";
-    values: void;
-} | {
-    tag: "Projects";
-    values: void;
-} | {
-    tag: "RegistryAdmin";
-    values: void;
-} | {
-    tag: "ApplicantToProjectID";
-    values: void;
-};
 export declare const Errors: {
     1: {
         message: string;
@@ -126,6 +113,19 @@ export declare const Errors: {
     10: {
         message: string;
     };
+};
+export type ContractKey = {
+    tag: "NumOfProjects";
+    values: void;
+} | {
+    tag: "Projects";
+    values: void;
+} | {
+    tag: "RegistryAdmin";
+    values: void;
+} | {
+    tag: "ApplicantToProjectID";
+    values: void;
 };
 export interface Client {
     /**
@@ -269,7 +269,7 @@ export interface Client {
          * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
          */
         simulate?: boolean;
-    }) => Promise<AssembledTransaction<Option<Project>>>;
+    }) => Promise<AssembledTransaction<Project>>;
     /**
      * Construct and simulate a get_projects transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
@@ -376,7 +376,7 @@ export declare class Client extends ContractClient {
         update_project: (json: string) => AssembledTransaction<null>;
         add_admin: (json: string) => AssembledTransaction<null>;
         remove_admin: (json: string) => AssembledTransaction<null>;
-        get_project_by_id: (json: string) => AssembledTransaction<Option<Project>>;
+        get_project_by_id: (json: string) => AssembledTransaction<Project>;
         get_projects: (json: string) => AssembledTransaction<Project[]>;
         get_project_admins: (json: string) => AssembledTransaction<string[]>;
         get_total_projects: (json: string) => AssembledTransaction<number>;

@@ -19,7 +19,7 @@ pub trait ProjectRegistryTrait {
     );
     fn add_admin(env: &Env, admin: Address, project_id: u128, new_admin: Address);
     fn remove_admin(env: &Env, admin: Address, project_id: u128, admin_to_remove: Address);
-    fn get_project_by_id(env: &Env, project_id: u128) -> Option<Project>;
+    fn get_project_by_id(env: &Env, project_id: u128) -> Project;
     fn get_projects(env: &Env, skip: Option<u64>, limit: Option<u64>) -> Vec<Project>;
     fn get_project_admins(env: &Env, project_id: u128) -> Vec<Address>;
     fn get_total_projects(env: &Env) -> u32;

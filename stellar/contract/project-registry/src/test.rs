@@ -155,7 +155,7 @@ fn test_change_project_status() {
 
     contract.change_project_status(&alice, &project.id, &ProjectStatus::Approved);
 
-    let project = contract.get_project_by_id(&project.id).unwrap();
+    let project = contract.get_project_by_id(&project.id);
 
     assert_eq!(project.status, ProjectStatus::Approved);
 }
@@ -226,7 +226,7 @@ fn test_add_admin() {
 
     contract.add_admin(&bob, &project.id, &charlie);
 
-    let project = contract.get_project_by_id(&project.id).unwrap();
+    let project = contract.get_project_by_id(&project.id);
 
     assert_eq!(project.admins.len(), 2);
     assert_eq!(project.admins.get(1).unwrap(), charlie);
@@ -298,14 +298,14 @@ fn test_remove_admin() {
 
     contract.add_admin(&bob, &project.id, &charlie);
 
-    let project = contract.get_project_by_id(&project.id).unwrap();
+    let project = contract.get_project_by_id(&project.id);
 
     assert_eq!(project.admins.len(), 2);
     assert_eq!(project.admins.get(1).unwrap(), charlie);
 
     contract.remove_admin(&bob, &project.id, &charlie);
 
-    let project = contract.get_project_by_id(&project.id).unwrap();
+    let project = contract.get_project_by_id(&project.id);
 
     assert_eq!(project.admins.len(), 1);
 }
@@ -514,7 +514,7 @@ fn test_get_project_by_id() {
         },
     );
 
-    let project = contract.get_project_by_id(&project.id).unwrap();
+    let project = contract.get_project_by_id(&project.id);
 
     assert_eq!(project.payout_address, bob);
     assert_eq!(project.admins.len(), 1);
@@ -634,7 +634,7 @@ fn test_update_project() {
         },
     );
 
-    let project = contract.get_project_by_id(&project.id).unwrap();
+    let project = contract.get_project_by_id(&project.id);
 
     assert_eq!(project.image_url, String::from_str(&env, "image url 2"));
     assert_eq!(project.name, String::from_str(&env, "name 2"));

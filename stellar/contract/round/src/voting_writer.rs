@@ -2,7 +2,7 @@ use soroban_sdk::{Address, Env, Map, Vec};
 
 use crate::{data_type::VotingResult, storage_key::ContractKey};
 
-pub fn read_voting_state(env: &Env, round_id: u128) -> Map<Address, bool> {
+pub fn read_voting_state(env: &Env, round_id: u128) -> Map<Address, u32> {
     let key = ContractKey::VotingState(round_id);
     match env.storage().persistent().get(&key) {
         Some(value) => value,
@@ -10,20 +10,25 @@ pub fn read_voting_state(env: &Env, round_id: u128) -> Map<Address, bool> {
     }
 }
 
-pub fn write_voting_state(env: &Env, round_id: u128, voting_state: &Map<Address, bool>) {
+pub fn write_voting_state(env: &Env, round_id: u128, voting_state: &Map<Address, u32>) {
     let key = ContractKey::VotingState(round_id);
     env.storage().persistent().set(&key, voting_state);
 }
 
-pub fn set_voting_state(env: &Env, round_id: u128, voter: Address, state: bool) {
+pub fn set_voting_state(env: &Env, round_id: u128, voter: Address, state: u32) {
     let mut voting_state = read_voting_state(env, round_id);
     voting_state.set(voter, state);
     write_voting_state(env, round_id, &voting_state);
 }
 
-pub fn get_voting_state(env: &Env, round_id: u128, voter: Address) -> bool {
+pub fn get_voting_state_done(env: &Env, round_id: u128, voter: Address) -> bool {
     let voting_state = read_voting_state(env, round_id);
-    voting_state.get(voter).unwrap_or(false)
+    voting_state.contains_key(voter)
+}
+
+pub fn get_voting_state(env: &Env, round_id: u128, voter: Address) -> Option<u32> {
+  let voting_state = read_voting_state(env, round_id);
+  voting_state.get(voter)
 }
 
 pub fn read_voting_results(env: &Env, round_id: u128) -> Vec<VotingResult> {
@@ -50,7 +55,7 @@ pub fn find_voting_result(
     let limit: usize = limit.unwrap_or(10).try_into().unwrap();
     assert!(limit <= 20, "limit should be less than or equal to 20");
     let mut results: Vec<VotingResult> = Vec::new(env);
-
+  
     voting_results
         .iter()
         .skip(skip)
@@ -62,11 +67,11 @@ pub fn find_voting_result(
     results
 }
 
-pub fn add_voting_result(env: &Env, round_id: u128, voting_result: VotingResult) {
-    let mut voting_results = read_voting_results(env, round_id);
-    voting_results.push_back(voting_result);
-    write_voting_results(env, round_id, &voting_results);
-}
+// pub fn add_voting_result(env: &Env, round_id: u128, voting_result: VotingResult) {
+//     let mut voting_results = read_voting_results(env, round_id);
+//     voting_results.push_back(voting_result);
+//     write_voting_results(env, round_id, &voting_results);
+// }
 
 pub fn read_voting_count(env: &Env, round_id: u128) -> Map<u128, u128> {
     let key = ContractKey::ProjectVotingCount(round_id);

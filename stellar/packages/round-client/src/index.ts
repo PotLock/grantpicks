@@ -33,7 +33,7 @@ if (typeof window !== 'undefined') {
 export const networks = {
   testnet: {
     networkPassphrase: "Test SDF Network ; September 2015",
-    contractId: "CATEJJKRI2JQBZW3JVFCMZF7H6HWAWOHNC2DCY6WLZJE7JUY4XPXNZTP",
+    contractId: "CCIBKU2IGSZ67WY3MWMXLY42FJ4BZ6AFLJAIPHEAS4HRS3SD255HWH2C",
   }
 } as const
 
@@ -1762,6 +1762,26 @@ export interface Client {
     simulate?: boolean;
   }) => Promise<AssembledTransaction<RoundDetail>>
 
+  /**
+   * Construct and simulate a get_my_vote_for_round transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+   */
+  get_my_vote_for_round: ({round_id, voter}: {round_id: u128, voter: string}, options?: {
+    /**
+     * The fee to pay for the transaction. Default: BASE_FEE
+     */
+    fee?: number;
+
+    /**
+     * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+     */
+    timeoutInSeconds?: number;
+
+    /**
+     * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+     */
+    simulate?: boolean;
+  }) => Promise<AssembledTransaction<VotingResult>>
+
 }
 export class Client extends ContractClient {
   constructor(public readonly options: ContractClientOptions) {
@@ -1862,6 +1882,7 @@ export class Client extends ContractClient {
         "AAAAAAAAAAAAAAASYmxhY2tsaXN0ZWRfdm90ZXJzAAAAAAABAAAAAAAAAAhyb3VuZF9pZAAAAAoAAAABAAAD6gAAABM=",
         "AAAAAAAAAAAAAAASd2hpdGVsaXN0ZWRfdm90ZXJzAAAAAAABAAAAAAAAAAhyb3VuZF9pZAAAAAoAAAABAAAD6gAAABM=",
         "AAAAAAAAAAAAAAAZc2V0X3JlZGlzdHJpYnV0aW9uX2NvbmZpZwAAAAAAAAQAAAAAAAAACHJvdW5kX2lkAAAACgAAAAAAAAAGY2FsbGVyAAAAAAATAAAAAAAAABRhbGxvd19yZW1haW5pbmdfZGlzdAAAAAEAAAAAAAAAFnJlbWFpbmluZ19kaXN0X2FkZHJlc3MAAAAAA+gAAAATAAAAAQAAB9AAAAALUm91bmREZXRhaWwA",
+        "AAAAAAAAAAAAAAAVZ2V0X215X3ZvdGVfZm9yX3JvdW5kAAAAAAAAAgAAAAAAAAAIcm91bmRfaWQAAAAKAAAAAAAAAAV2b3RlcgAAAAAAABMAAAABAAAH0AAAAAxWb3RpbmdSZXN1bHQ=",
         "AAAAAgAAAAAAAAAAAAAAC0NvbnRyYWN0S2V5AAAAABgAAAAAAAAAAAAAABRQcm90b2NvbEZlZVJlY2VwaWVudAAAAAAAAAAAAAAAC1Byb3RvY29sRmVlAAAAAAAAAAAAAAAAD0RlZmF1bHRQYWdlU2l6ZQAAAAAAAAAAAAAAAAxGYWN0b3J5T3duZXIAAAAAAAAAAAAAAAtOZXh0Um91bmRJZAAAAAAAAAAAAAAAAAxOZXh0UGF5b3V0SWQAAAAAAAAAAAAAAA1OZXh0RGVwb3NpdElkAAAAAAAAAAAAAAAAAAAQUHJvamVjdFBheW91dElkcwAAAAAAAAAAAAAADVRva2VuQ29udHJhY3QAAAAAAAAAAAAAAAAAAA9Qcm9qZWN0Q29udHJhY3QAAAAAAQAAAAAAAAAJUm91bmRJbmZvAAAAAAAAAQAAAAoAAAAAAAAAAAAAAApQYXlvdXRJbmZvAAAAAAAAAAAAAAAAAAtEZXBvc2l0SW5mbwAAAAABAAAAAAAAAAlXaGl0ZUxpc3QAAAAAAAABAAAACgAAAAEAAAAAAAAACUJsYWNrTGlzdAAAAAAAAAEAAAAKAAAAAQAAAAAAAAARUHJvamVjdEFwcGxpY2FudHMAAAAAAAABAAAACgAAAAEAAAAAAAAAEEFwcHJvdmVkUHJvamVjdHMAAAABAAAACgAAAAEAAAAAAAAAB1BheW91dHMAAAAAAQAAAAoAAAABAAAAAAAAABBQYXlvdXRDaGFsbGVuZ2VzAAAAAQAAAAoAAAABAAAAAAAAAAtWb3RpbmdTdGF0ZQAAAAABAAAACgAAAAEAAAAAAAAABVZvdGVzAAAAAAAAAQAAAAoAAAABAAAAAAAAABJQcm9qZWN0Vm90aW5nQ291bnQAAAAAAAEAAAAKAAAAAQAAAAAAAAAFQWRtaW4AAAAAAAABAAAACgAAAAEAAAAAAAAAB0RlcG9zaXQAAAAAAQAAAAo=" ]),
       options
     )
@@ -1935,6 +1956,7 @@ export class Client extends ContractClient {
         set_compliance_config: this.txFromJSON<RoundDetail>,
         blacklisted_voters: this.txFromJSON<Array<string>>,
         whitelisted_voters: this.txFromJSON<Array<string>>,
-        set_redistribution_config: this.txFromJSON<RoundDetail>
+        set_redistribution_config: this.txFromJSON<RoundDetail>,
+        get_my_vote_for_round: this.txFromJSON<VotingResult>
   }
 }

@@ -7,7 +7,7 @@ use crate::{
     project_registry_writer::read_project_contract,
     utils::get_ledger_second_as_millis,
     voter_writer::{is_blacklisted, is_whitelisted},
-    voting_writer::get_voting_state,
+    voting_writer::{get_voting_state_done},
 };
 use soroban_sdk::{panic_with_error, Address, Env, String, Vec};
 
@@ -162,7 +162,7 @@ pub fn validate_max_participant(env: &Env, round: &RoundDetail) {
 }
 
 pub fn validate_has_voted(env: &Env, round_id: u128, voter: &Address) {
-    let state = get_voting_state(env, round_id, voter.clone());
+    let state = get_voting_state_done(env, round_id, voter.clone());
 
     if state {
         panic_with_error!(env, VoteError::AlreadyVoted);

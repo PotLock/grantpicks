@@ -8,7 +8,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CATEJJKRI2JQBZW3JVFCMZF7H6HWAWOHNC2DCY6WLZJE7JUY4XPXNZTP";
+        readonly contractId: "CCIBKU2IGSZ67WY3MWMXLY42FJ4BZ6AFLJAIPHEAS4HRS3SD255HWH2C";
     };
 };
 export type ApplicationStatus = {
@@ -1858,6 +1858,26 @@ export interface Client {
          */
         simulate?: boolean;
     }) => Promise<AssembledTransaction<RoundDetail>>;
+    /**
+     * Construct and simulate a get_my_vote_for_round transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     */
+    get_my_vote_for_round: ({ round_id, voter }: {
+        round_id: u128;
+        voter: string;
+    }, options?: {
+        /**
+         * The fee to pay for the transaction. Default: BASE_FEE
+         */
+        fee?: number;
+        /**
+         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+         */
+        timeoutInSeconds?: number;
+        /**
+         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+         */
+        simulate?: boolean;
+    }) => Promise<AssembledTransaction<VotingResult>>;
 }
 export declare class Client extends ContractClient {
     readonly options: ContractClientOptions;
@@ -1932,5 +1952,6 @@ export declare class Client extends ContractClient {
         blacklisted_voters: (json: string) => AssembledTransaction<string[]>;
         whitelisted_voters: (json: string) => AssembledTransaction<string[]>;
         set_redistribution_config: (json: string) => AssembledTransaction<RoundDetail>;
+        get_my_vote_for_round: (json: string) => AssembledTransaction<VotingResult>;
     };
 }

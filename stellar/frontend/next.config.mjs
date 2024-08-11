@@ -13,6 +13,14 @@ const nextConfig = {
 		ROUND_CONTRACT_ID: process.env.ROUND_CONTRACT_ID,
 		ROUND_WASM_HASH: process.env.ROUND_WASM_HASH,
 	},
+	images: {
+		remotePatterns: [
+			{
+				protocol: 'https',
+				hostname: '**',
+			},
+		],
+	},
 }
 
 export default nextConfig

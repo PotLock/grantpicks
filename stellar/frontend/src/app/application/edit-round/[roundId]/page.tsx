@@ -199,10 +199,6 @@ const EditRoundPage = () => {
 			console.log('res round info', resRoundInfo)
 			const resRoundAdmins = await onFetchAdmins()
 			console.log('res round admins', resRoundAdmins)
-			// const resRoundApps = await onFetchRoundApplications()
-			// console.log('res round apps', resRoundApps)
-			// const resProjects = await onFetchProjectsByApplication(resRoundApps)
-			// console.log('res round projects', resProjects)
 			if (resRoundInfo) {
 				setValue('title', resRoundInfo?.name)
 				setValue('description', resRoundInfo?.description)

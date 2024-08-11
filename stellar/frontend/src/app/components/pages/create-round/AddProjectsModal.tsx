@@ -21,6 +21,7 @@ import InfiniteScroll from 'react-infinite-scroll-component'
 import IconLoading from '../../svgs/IconLoading'
 import { UseFieldArrayAppend, UseFieldArrayRemove } from 'react-hook-form'
 import { CreateRoundData } from '@/types/form'
+import { prettyTruncate } from '@/utils/helper'
 
 interface AddProjectsModalProps extends BaseModalProps {
 	selectedProjects: IGetProjectsResponse[]
@@ -130,7 +131,9 @@ const AddProjectsModal = ({
 											width={24}
 											height={24}
 										/>
-										<p className="text-base font-normal">{selected.name}</p>
+										<p className="text-base font-normal">
+											{prettyTruncate(selected.name, 20, 'address')}
+										</p>
 									</div>
 									<IconTrash
 										size={24}
@@ -205,7 +208,9 @@ const AddProjectsModal = ({
 											width={24}
 											height={24}
 										/>
-										<p className="text-base font-normal">{project.name}</p>
+										<p className="text-base font-normal">
+											{prettyTruncate(project.name, 20, 'address')}
+										</p>
 									</div>
 								))}
 							</InfiniteScroll>

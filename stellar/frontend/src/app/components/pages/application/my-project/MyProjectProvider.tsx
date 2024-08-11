@@ -33,7 +33,6 @@ const MyProjectProvider = () => {
 				cmdWallet,
 			)
 			const res = await getProjectApplicant(stellarPubKey, contracts)
-			console.log('res my prject', res)
 			//@ts-ignore
 			if (!res?.error) {
 				setProjectData(res)

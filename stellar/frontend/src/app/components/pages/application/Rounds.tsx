@@ -60,7 +60,7 @@ const ApplicationRoundsItem = ({
 			)
 			//@ts-ignore
 			if (!res?.error) {
-				setIsUserApplied(true)
+				if (selectedRoundType === 'upcoming') setIsUserApplied(true)
 			}
 		} catch (error: any) {
 			console.log('error fetch project applicant', error)

@@ -44,7 +44,8 @@ const MoreVertMenu = ({
 						</p>
 					</div>
 				)}
-				{selectedRoundType === 'upcoming' && (
+				{(selectedRoundType === 'upcoming' ||
+					selectedRoundType === 'on-going') && (
 					<div
 						className="p-2 flex items-center space-x-2 cursor-pointer hover:opacity-70 transition"
 						onClick={onViewApps}
@@ -56,8 +57,12 @@ const MoreVertMenu = ({
 					</div>
 				)}
 				{selectedRoundType === 'upcoming' && data.owner === stellarPubKey && (
-					// && data.owner === stellarPubKey
-					<div className="p-2 flex items-center space-x-2 cursor-pointer hover:opacity-70 transition">
+					<div
+						className="p-2 flex items-center space-x-2 cursor-pointer hover:opacity-70 transition"
+						onClick={() =>
+							router.push(`/application/edit-round/${data.id.toString()}`)
+						}
+					>
 						<IconEdit size={18} className="fill-grantpicks-black-400" />
 						<p className="text-sm font-normal text-grantpicks-black-950">
 							Edit Round

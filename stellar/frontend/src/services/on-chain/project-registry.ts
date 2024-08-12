@@ -12,7 +12,7 @@ interface GetProjectsParams {
 	limit: number
 }
 
-interface GetProjectParams {
+export interface GetProjectParams {
 	project_id: bigint
 }
 
@@ -160,21 +160,6 @@ export const updateProject: (
 		admin,
 		project_id,
 		new_project_params: params,
-	})
-	return project
-}
-
-export const changeProjectStatus: (
-	params: IChangeProjectStatusParams,
-	contract: Contracts,
-) => Promise<AssembledTransaction<null>> = async (
-	params: IChangeProjectStatusParams,
-	contract: Contracts,
-) => {
-	let project = await contract.project_contract.change_project_status({
-		contract_owner: params.contract_owner,
-		project_id: params.project_id,
-		new_status: params.new_status,
 	})
 	return project
 }

@@ -291,6 +291,34 @@ const ApplicationRoundsItem = ({
 										: 'View Result'}
 				</Button>
 			</div>
+			{/* <div className="w-full mt-4">
+				<Button
+					isFullWidth
+					className="!border !border-grantpicks-black-200 !py-2"
+					color="white"
+					onClick={async () => {
+						let cmdWallet = new CMDWallet({
+							stellarPubKey: stellarPubKey,
+						})
+						const contracts = new Contracts(
+							process.env.NETWORK_ENV as Network,
+							cmdWallet,
+						)
+						const startVoteTx =
+							await contracts.round_contract.start_voting_period({
+								round_id: doc.id,
+								caller: stellarPubKey,
+							})
+						const txhash = await contracts.signAndSendTx(
+							stellarKit as StellarWalletsKit,
+							startVoteTx,
+							stellarPubKey,
+						)
+					}}
+				>
+					Force Start vote
+				</Button>
+			</div> */}
 			<RoundDetailDrawer
 				isOpen={showDetailDrawer}
 				onClose={() => setShowDetailDrawer(false)}

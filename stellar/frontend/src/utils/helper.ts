@@ -111,3 +111,14 @@ export const onFetchingBlobToFile = async (url: string, filename: string) => {
 		return newFile
 	} catch (error: any) {}
 }
+
+export const fetchYoutubeIframe = async (
+	linkUrl: string,
+	width: number,
+	height?: number,
+) => {
+	const ytRes = await axios.get(
+		`https://www.youtube.com/oembed?url=${linkUrl}&format=json&maxwidth=${width - 50}&maxheight=${height || (9 / 6) * width}`,
+	)
+	return ytRes?.data
+}

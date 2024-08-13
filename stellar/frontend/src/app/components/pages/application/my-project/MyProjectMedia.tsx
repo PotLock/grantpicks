@@ -16,7 +16,7 @@ import {
 	CreateProjectStep2Data,
 	CreateProjectStep5Data,
 } from '@/types/form'
-import { onFetchingBlobToFile } from '@/utils/helper'
+import { fetchYoutubeIframe, onFetchingBlobToFile } from '@/utils/helper'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { SubmitHandler, useForm } from 'react-hook-form'
@@ -63,6 +63,8 @@ const MyProjectMedia = () => {
 		| undefined
 	>(undefined)
 	const [playbackSrc, setPlaybackSrc] = useState<Src[] | null>(null)
+	const [ytIframe, setYtIframe] = useState<string>('')
+	const embededYtHtmlRef = useRef<HTMLDivElement>(null)
 
 	const onDrop = useCallback(async (acceptedFiles: File[]) => {
 		if (acceptedFiles[0].size / 10 ** 6 > 25) {
@@ -185,14 +187,22 @@ const MyProjectMedia = () => {
 	}
 	const setDefaultData = async () => {
 		if (projectData) {
-			const blobRes = await onFetchingBlobToFile(
-				projectData.video_url,
-				projectData.name,
-			)
-			setAccFiles((prev) => [...prev, blobRes as File])
-			setAccFileUrls((prev) => [...prev, projectData.video_url])
-			setValue('video.file', blobRes)
-			setValue('video.url', projectData.video_url)
+			if (projectData.video_url.includes('youtube')) {
+				const res = await fetchYoutubeIframe(
+					projectData.video_url || '',
+					embededYtHtmlRef.current?.clientWidth || 0,
+				)
+				setYtIframe(res?.html)
+			} else {
+				const blobRes = await onFetchingBlobToFile(
+					projectData.video_url,
+					projectData.name,
+				)
+				setAccFiles((prev) => [...prev, blobRes as File])
+				setAccFileUrls((prev) => [...prev, projectData.video_url])
+				setValue('video.file', blobRes)
+				setValue('video.url', projectData.video_url)
+			}
 		}
 	}
 
@@ -203,7 +213,10 @@ const MyProjectMedia = () => {
 	}, [projectData])
 
 	return (
-		<div className="w-full lg:w-[70%] border border-black/10 bg-white rounded-xl text-grantpicks-black-950">
+		<div
+			ref={embededYtHtmlRef}
+			className="w-full lg:w-[70%] border border-black/10 bg-white rounded-xl text-grantpicks-black-950"
+		>
 			<div className="p-3 md:p-5">
 				<p className="text-lg md:text-xl lg:text-2xl font-semibold text-grantpicks-black-950 mb-6">
 					Media
@@ -219,7 +232,7 @@ const MyProjectMedia = () => {
 							</p>
 						</div>
 					</div>
-				) : accFiles.length === 0 ? (
+				) : accFiles.length === 0 && !ytIframe ? (
 					<div className="bg-white rounded-xl p-4 md:p-6 border border-black/10 w-full">
 						<div
 							{...getRootProps()}
@@ -274,57 +287,68 @@ const MyProjectMedia = () => {
 					<div className="rounded-xl relative bg-white w-full border border-black/10">
 						<div className="flex items-center justify-between px-4 py-3">
 							<p className="text-sm font-semibold text-grantpicks-black-950">
-								{accFiles[0].name}
+								{accFiles[0] ? accFiles[0].name : ''}
 							</p>
 							<IconTrash
 								size={24}
 								className="fill-grantpicks-black-400 cursor-pointer hover:opacity-70 transition"
 								onClick={() => {
-									console.log('hahaha')
-									let temp = [...accFiles]
-									temp.splice(0, 1)
-									setAccFiles(temp)
-									let temp2 = [...accFileUrls]
-									temp2.splice(0, 1)
-									setAccFileUrls(temp2)
+									if (accFiles.length > 0) {
+										console.log('hahaha')
+										let temp = [...accFiles]
+										temp.splice(0, 1)
+										setAccFiles(temp)
+										let temp2 = [...accFileUrls]
+										temp2.splice(0, 1)
+										setAccFileUrls(temp2)
+									} else {
+										setValue('video', {
+											url: '',
+											file: undefined,
+										})
+										setYtIframe('')
+									}
 								}}
 							/>
 						</div>
-						<div className="relative">
-							<video
-								ref={videoRef}
-								src={playbackSrc?.[0].src || ''}
-								autoPlay={false}
-								controls={false}
-								className="w-[80%] mx-auto aspect-video"
-							></video>
-							<div className="flex items-center justify-center absolute inset-0 z-20">
-								<button
-									onClick={async () => {
-										if (!videoPlayed) {
-											setVideoPlayed(true)
-											await videoRef.current?.play()
-										} else {
-											setVideoPlayed(false)
-											videoRef.current?.pause()
-										}
-									}}
-									className="w-10 h-10 flex items-center justify-center rounded-full bg-grantpicks-black-950 cursor-pointer hover:opacity-70 transition"
-								>
-									{videoPlayed ? (
-										<IconPause
-											size={28}
-											className="fill-grantpicks-black-400"
-										/>
-									) : (
-										<IconPlay
-											size={28}
-											className="stroke-grantpicks-black-400"
-										/>
-									)}
-								</button>
+						{accFiles.length > 0 && (
+							<div className="relative">
+								<video
+									ref={videoRef}
+									src={watch().video.url || playbackSrc?.[0].src || ''}
+									autoPlay={false}
+									controls={false}
+									className="w-[80%] mx-auto aspect-video"
+								></video>
+								<div className="flex items-center justify-center absolute inset-0 z-20">
+									<button
+										onClick={async () => {
+											if (!videoPlayed) {
+												setVideoPlayed(true)
+												await videoRef.current?.play()
+											} else {
+												setVideoPlayed(false)
+												videoRef.current?.pause()
+											}
+										}}
+										className="w-10 h-10 flex items-center justify-center rounded-full bg-grantpicks-black-950 cursor-pointer hover:opacity-70 transition"
+									>
+										{videoPlayed ? (
+											<IconPause
+												size={28}
+												className="fill-grantpicks-black-400"
+											/>
+										) : (
+											<IconPlay
+												size={28}
+												className="stroke-grantpicks-black-400"
+											/>
+										)}
+									</button>
+								</div>
 							</div>
-						</div>
+						)}
+						{ytIframe && <div dangerouslySetInnerHTML={{ __html: ytIframe }} />}
 					</div>
 				)}
 			</div>

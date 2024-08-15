@@ -152,7 +152,7 @@ const CreateRoundPage = () => {
 					round_id: roundId,
 					amount: BigInt(parseToStroop(watch().amount)),
 					memo: '',
-					referrer_id: '',
+					referrer_id: undefined,
 				},
 				contracts,
 			)
@@ -211,10 +211,10 @@ const CreateRoundPage = () => {
 				allow_remaining_dist: true,
 				compliance_req_desc: data.compliance_req_desc,
 				compliance_end_ms: BigInt(
-					BigInt(data.voting_duration_end?.getTime() as number),
+					BigInt(data.voting_duration_end?.getTime() || 0),
 				),
-				compliance_period_ms: BigInt(data.compliance_period_ms as number),
-				cooldown_end_ms: BigInt(data.voting_duration_end?.getTime() as number),
+				compliance_period_ms: BigInt(data.compliance_period_ms || 0),
+				cooldown_end_ms: BigInt(data.voting_duration_end?.getTime() || 0),
 				cooldown_period_ms: BigInt(0),
 				remaining_dist_address: data.remaining_dist_address || stellarPubKey,
 				referrer_fee_basis_points: 0,
@@ -767,6 +767,13 @@ const CreateRoundPage = () => {
 										)}
 									</div>
 								}
+								errorMessage={
+									errors.cooldown_end_ms?.type === 'required' ? (
+										<p className="text-red-500 text-xs mt-1 ml-2">
+											Cooldown deadline is required
+										</p>
+									) : undefined
+								}
 							/>
 						</div>
 					</div>
@@ -863,6 +870,13 @@ const CreateRoundPage = () => {
 										)}
 									</div>
 								}
+								errorMessage={
+									errors.compliance_period_ms?.type === 'required' ? (
+										<p className="text-red-500 text-xs mt-1 ml-2">
+											Compliance deadline is required
+										</p>
+									) : undefined
+								}
 							/>
 						</div>
 					</div>
@@ -907,7 +921,9 @@ const CreateRoundPage = () => {
 								{...register('remaining_dist_address', {
 									required: watch().allow_remaining_dist === true,
 									validate: (value, formValues) =>
-										StrKey.isValidEd25519PublicKey(value),
+										watch().allow_remaining_dist
+											? StrKey.isValidEd25519PublicKey(value)
+											: true,
 								})}
 								errorMessage={
 									errors.remaining_dist_address?.type === 'validate' ? (

@@ -100,7 +100,10 @@ const UserMenu = ({
 							My Project
 						</p>
 					</div>
-					<div className="flex items-center space-x-3 cursor-pointer hover:opacity-70 transition">
+					<div
+						onClick={() => router.push(`/application/my-votes`)}
+						className="flex items-center space-x-3 cursor-pointer hover:opacity-70 transition"
+					>
 						<IconCheckCircle size={24} className="fill-grantpicks-black-400" />
 						<p className="text-sm font-normal text-grantpicks-black-950">
 							My Votes

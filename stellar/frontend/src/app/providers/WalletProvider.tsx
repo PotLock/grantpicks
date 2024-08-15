@@ -23,7 +23,8 @@ import {
 	SignMessageMethod,
 } from '@near-wallet-selector/core/src/lib/wallet'
 import {
-	allowAllModules,
+	xBullModule,
+	FreighterModule,
 	ISupportedWallet,
 	StellarWalletsKit,
 	WalletNetwork,
@@ -81,7 +82,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 						? WalletNetwork.TESTNET
 						: WalletNetwork.FUTURENET,
 				selectedWalletId: 'xbull',
-				modules: allowAllModules(),
+				modules: [new FreighterModule(), new xBullModule()],
 			})
 			setStellarKit(kit)
 			if (kit) {

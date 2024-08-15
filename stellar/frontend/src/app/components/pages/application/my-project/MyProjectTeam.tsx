@@ -155,7 +155,7 @@ const MyProjectTeam = () => {
 					<Button
 						color="white"
 						isFullWidth
-						onClick={() => {}}
+						onClick={() => setDefaultData()}
 						className="!py-3 !border !border-grantpicks-black-400"
 					>
 						Discard

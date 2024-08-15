@@ -30,7 +30,7 @@ const Footer = ({ isWhiteBgColor = true }: { isWhiteBgColor?: boolean }) => {
 						className="cursor-pointer hover:opacity-80 transition fill-grantpicks-black-400"
 					/>
 				</Link>
-				<Link href={`https://t.me/potlock_`} target="_blank">
+				<Link href={`https://t.me/+27V0rWUiq5liZmIx`} target="_blank">
 					<IconTelegram
 						size={24}
 						className="cursor-pointer hover:opacity-80 transition fill-grantpicks-black-400"

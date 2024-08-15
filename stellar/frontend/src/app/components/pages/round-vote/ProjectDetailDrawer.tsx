@@ -1,11 +1,11 @@
 import { IDrawerProps } from '@/types/dialog'
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import Drawer from '../../commons/Drawer'
 import { Project } from 'round-client'
 import IconPause from '../../svgs/IconPause'
 import IconPlay from '../../svgs/IconPlay'
 import { useModalContext } from '@/app/providers/ModalProvider'
-import { prettyTruncate } from '@/utils/helper'
+import { fetchYoutubeIframe, prettyTruncate } from '@/utils/helper'
 import Button from '../../commons/Button'
 import IconArrowOutward from '../../svgs/IconArrowOutward'
 import Link from 'next/link'
@@ -23,45 +23,73 @@ const ProjectDetailDrawer = ({
 	const videoRef = useRef<HTMLVideoElement>(null)
 	const { setVideoPlayerProps } = useModalContext()
 	const [copied, setCopied] = useState<boolean>(false)
+	const [ytIframe, setYtIframe] = useState<string>('')
+	const embededYtHtmlRef = useRef<HTMLDivElement>(null)
+
+	useEffect(() => {
+		const fetchIframe = async () => {
+			const res = await fetchYoutubeIframe(
+				projectData?.video_url || '',
+				embededYtHtmlRef.current?.clientWidth || 0,
+			)
+			setYtIframe(res?.html)
+		}
+		if (
+			isOpen &&
+			projectData?.video_url &&
+			projectData?.video_url.includes('youtube')
+		) {
+			fetchIframe()
+		}
+	}, [isOpen])
 
 	return (
 		<Drawer onClose={onClose} isOpen={isOpen}>
 			<div className="bg-white flex flex-col w-full h-full overflow-y-auto text-grantpicks-black-950">
-				<div className="bg-grantpicks-black-50 flex items-center justify-center pt-10 md:pt-12 px-3 md:px-5 pb-6">
+				<div className="bg-grantpicks-black-50 flex flex-col items-center justify-center pt-10 md:pt-12 px-3 md:px-5 pb-6">
 					<div className="w-14 h-14 rounded-full bg-grantpicks-black-400 mb-2 md:mb-3" />
 					<p className="text-[25px] font-semibold text-center">
 						{projectData?.name}
 					</p>
 				</div>
-				<div className="px-3 md:px-5 py-6">
-					<div className="relative mb-6 md:mb-8">
-						<video
-							ref={videoRef}
-							src={projectData?.video_url || `/assets/videos/video-2.mp4`}
-							autoPlay={false}
-							controls={false}
-							className="w-full mx-auto aspect-video"
-						></video>
-						<div className="flex items-center justify-center absolute inset-0 z-20">
-							<button
-								onClick={async () => {
-									setVideoPlayerProps((prev) => ({
-										...prev,
-										isOpen: true,
-										videoUrl:
-											projectData?.video_url || `/assets/videos/video-2.mp4`,
-									}))
-								}}
-								className="w-10 h-10 flex items-center justify-center rounded-full bg-grantpicks-black-950 cursor-pointer hover:opacity-70 transition"
-							>
-								{videoPlayed ? (
-									<IconPause size={28} className="fill-grantpicks-black-400" />
-								) : (
-									<IconPlay size={28} className="stroke-grantpicks-black-400" />
-								)}
-							</button>
+				<div ref={embededYtHtmlRef} className="px-3 md:px-5 py-6">
+					{!ytIframe && (
+						<div className="relative mb-6 md:mb-8">
+							<video
+								ref={videoRef}
+								src={projectData?.video_url || `/assets/videos/video-2.mp4`}
+								autoPlay={false}
+								controls={false}
+								className="w-full mx-auto aspect-video"
+							></video>
+							<div className="flex items-center justify-center absolute inset-0 z-20">
+								<button
+									onClick={async () => {
+										setVideoPlayerProps((prev) => ({
+											...prev,
+											isOpen: true,
+											videoUrl:
+												projectData?.video_url || `/assets/videos/video-2.mp4`,
+										}))
+									}}
+									className="w-10 h-10 flex items-center justify-center rounded-full bg-grantpicks-black-950 cursor-pointer hover:opacity-70 transition"
+								>
+									{videoPlayed ? (
+										<IconPause
+											size={28}
+											className="fill-grantpicks-black-400"
+										/>
+									) : (
+										<IconPlay
+											size={28}
+											className="stroke-grantpicks-black-400"
+										/>
+									)}
+								</button>
+							</div>
 						</div>
-					</div>
+					)}
+					{ytIframe && <div dangerouslySetInnerHTML={{ __html: ytIframe }} />}
 					<div className="mb-6 md:mb-8">
 						<p className="text-base md:text-xl font-semibold mb-3">Overview</p>
 						<p className="text-sm md:text-base text-grantpicks-black-600">

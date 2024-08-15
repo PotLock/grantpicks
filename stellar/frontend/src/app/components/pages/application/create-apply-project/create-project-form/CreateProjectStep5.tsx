@@ -22,6 +22,7 @@ import { GetAssetResponse } from 'livepeer/models/operations'
 import { requestUpload, retrieveAsset, uploadFile } from '@/services/upload'
 import * as tus from 'tus-js-client'
 import { Src } from '@livepeer/react'
+import { fetchYoutubeIframe } from '@/utils/helper'
 
 const CreateProjectStep5 = () => {
 	const { setStep, onProceedApply, setData } = useCreateProject()
@@ -36,6 +37,8 @@ const CreateProjectStep5 = () => {
 	const [accFiles, setAccFiles] = useState<File[]>([])
 	const [accFileUrls, setAccFileUrls] = useState<string[]>([])
 	const [linkInput, setLinkInput] = useState<string>('')
+	const [embededYtHtml, setEmbededYtHtml] = useState<string>('')
+	const embededYtHtmlRef = useRef<HTMLDivElement>(null)
 	const [isDirtyInput, setIsDirtyInput] = useState<boolean>(false)
 	const videoRef = useRef<HTMLVideoElement>(null)
 	const [videoPlayed, setVideoPlayed] = useState<boolean>(false)
@@ -123,7 +126,10 @@ const CreateProjectStep5 = () => {
 	}
 
 	return (
-		<div className="bg-grantpicks-black-50 rounded-b-xl w-full relative overflow-y-auto max-h-[80vh]">
+		<div
+			ref={embededYtHtmlRef}
+			className="bg-grantpicks-black-50 rounded-b-xl w-full relative overflow-y-auto max-h-[80vh]"
+		>
 			<div className="pt-10 pb-6 px-4 md:px-6 border-b border-black/10">
 				<div className="flex items-center space-x-2 mb-4">
 					<IconCheckCircle size={18} className="fill-grantpicks-green-600" />
@@ -154,7 +160,7 @@ const CreateProjectStep5 = () => {
 							</p>
 						</div>
 					</div>
-				) : accFiles.length === 0 ? (
+				) : accFiles.length === 0 && !embededYtHtml ? (
 					<div className="bg-white rounded-xl p-4 md:p-6 border border-black/10">
 						<div
 							{...getRootProps()}
@@ -184,10 +190,26 @@ const CreateProjectStep5 = () => {
 								<InputText
 									value={linkInput}
 									onChange={(e) => setLinkInput(e.target.value)}
-									onKeyDown={(e) => {
+									onKeyDown={async (e) => {
 										if (e.key === 'Enter') {
-											console.log('asaksa')
 											setIsDirtyInput(true)
+											if (!YOUTUBE_URL_REGEX.test(linkInput)) {
+												setEmbededYtHtml('')
+												return
+											}
+											const ytRes = await fetchYoutubeIframe(
+												linkInput,
+												embededYtHtmlRef.current?.clientWidth || 0,
+											)
+											setEmbededYtHtml(ytRes?.html)
+											setValue('video', {
+												url: linkInput || '',
+												file: undefined,
+											})
+											setData((prev) => ({
+												...prev,
+												video: { file: undefined, url: linkInput || '' },
+											}))
 										}
 									}}
 									placeholder="Paste video link here"
@@ -209,57 +231,74 @@ const CreateProjectStep5 = () => {
 					<div className="rounded-xl relative bg-white w-full border border-black/10">
 						<div className="flex items-center justify-between px-4 py-3">
 							<p className="text-sm font-semibold text-grantpicks-black-950">
-								{accFiles[0].name}
+								{accFiles.length > 0 ? accFiles[0].name : ''}
 							</p>
 							<IconTrash
 								size={24}
 								className="fill-grantpicks-black-400 cursor-pointer hover:opacity-70 transition"
 								onClick={() => {
-									console.log('hahaha')
-									let temp = [...accFiles]
-									temp.splice(0, 1)
-									setAccFiles(temp)
-									let temp2 = [...accFileUrls]
-									temp2.splice(0, 1)
-									setAccFileUrls(temp2)
+									if (accFiles.length > 0) {
+										console.log('hahaha')
+										let temp = [...accFiles]
+										temp.splice(0, 1)
+										setAccFiles(temp)
+										let temp2 = [...accFileUrls]
+										temp2.splice(0, 1)
+										setAccFileUrls(temp2)
+									} else {
+										setValue('video', {
+											url: '',
+											file: undefined,
+										})
+										setData((prev) => ({
+											...prev,
+											video: { file: undefined, url: '' },
+										}))
+										setEmbededYtHtml('')
+									}
 								}}
 							/>
 						</div>
-						<div className="relative">
-							<video
-								ref={videoRef}
-								src={playbackSrc?.[0].src || ''}
-								autoPlay={false}
-								controls={false}
-								className="w-[80%] mx-auto aspect-video"
-							></video>
-							<div className="flex items-center justify-center absolute inset-0 z-20">
-								<button
-									onClick={async () => {
-										if (!videoPlayed) {
-											setVideoPlayed(true)
-											await videoRef.current?.play()
-										} else {
-											setVideoPlayed(false)
-											videoRef.current?.pause()
-										}
-									}}
-									className="w-10 h-10 flex items-center justify-center rounded-full bg-grantpicks-black-950 cursor-pointer hover:opacity-70 transition"
-								>
-									{videoPlayed ? (
-										<IconPause
-											size={28}
-											className="fill-grantpicks-black-400"
-										/>
-									) : (
-										<IconPlay
-											size={28}
-											className="stroke-grantpicks-black-400"
-										/>
-									)}
-								</button>
+						{accFiles.length > 0 && (
+							<div className="relative">
+								<video
+									ref={videoRef}
+									src={playbackSrc?.[0].src}
+									autoPlay={false}
+									controls={false}
+									className="w-[80%] mx-auto aspect-video"
+								></video>
+								<div className="flex items-center justify-center absolute inset-0 z-20">
+									<button
+										onClick={async () => {
+											if (!videoPlayed) {
+												setVideoPlayed(true)
+												await videoRef.current?.play()
+											} else {
+												setVideoPlayed(false)
+												videoRef.current?.pause()
+											}
+										}}
+										className="w-10 h-10 flex items-center justify-center rounded-full bg-grantpicks-black-950 cursor-pointer hover:opacity-70 transition"
+									>
+										{videoPlayed ? (
+											<IconPause
+												size={28}
+												className="fill-grantpicks-black-400"
+											/>
+										) : (
+											<IconPlay
+												size={28}
+												className="stroke-grantpicks-black-400"
+											/>
+										)}
+									</button>
+								</div>
 							</div>
-						</div>
+						)}
+						{embededYtHtml && (
+							<div dangerouslySetInnerHTML={{ __html: embededYtHtml }} />
+						)}
 					</div>
 				)}
 			</div>
@@ -276,9 +315,11 @@ const CreateProjectStep5 = () => {
 				</div>
 				<div className="flex-1">
 					<Button
-						color={accFiles.length === 0 ? `disabled` : `black-950`}
+						color={
+							accFiles.length === 0 && !embededYtHtml ? `disabled` : `black-950`
+						}
 						isFullWidth
-						isDisabled={accFiles.length === 0}
+						isDisabled={accFiles.length === 0 && !embededYtHtml}
 						onClick={handleSubmit(onProceed)}
 						className="!py-3"
 					>

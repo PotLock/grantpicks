@@ -60,6 +60,7 @@ const ApplicationRoundsItem = ({
 			)
 			//@ts-ignore
 			if (!res?.error) {
+				console.log('debug res', res)
 				if (selectedRoundType === 'upcoming') setIsUserApplied(true)
 			}
 		} catch (error: any) {

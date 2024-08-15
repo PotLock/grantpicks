@@ -25,6 +25,9 @@ import {
 import {
 	xBullModule,
 	FreighterModule,
+	RabetModule,
+	LobstrModule,
+	HanaModule,
 	ISupportedWallet,
 	StellarWalletsKit,
 	WalletNetwork,
@@ -82,7 +85,13 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 						? WalletNetwork.TESTNET
 						: WalletNetwork.FUTURENET,
 				selectedWalletId: 'xbull',
-				modules: [new FreighterModule(), new xBullModule()],
+				modules: [
+					new FreighterModule(),
+					new xBullModule(),
+					new RabetModule(),
+					new LobstrModule(),
+					new HanaModule(),
+				],
 			})
 			setStellarKit(kit)
 			if (kit) {

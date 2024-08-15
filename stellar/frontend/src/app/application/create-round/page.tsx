@@ -51,6 +51,7 @@ import { PERIODS } from '@/constants/round'
 import moment from 'moment'
 import { IRoundPeriodData } from '@/types/round'
 import { subDays } from 'date-fns'
+import { StrKey } from 'round-client'
 
 const CreateRoundPage = () => {
 	const router = useRouter()
@@ -80,6 +81,7 @@ const CreateRoundPage = () => {
 			max_participants: 0,
 			voting_duration_start: null,
 			voting_duration_end: null,
+			open_funding: true,
 		},
 	})
 	const { append: appendProject, remove: removeProject } = useFieldArray({
@@ -166,7 +168,6 @@ const CreateRoundPage = () => {
 	}
 
 	const onCreateRound: SubmitHandler<CreateRoundData> = async (data) => {
-		console.log('final data', data, cooldownPeriodData, compliancePeriodData)
 		try {
 			openPageLoading()
 			let cmdWallet = new CMDWallet({
@@ -195,7 +196,7 @@ const CreateRoundPage = () => {
 				expected_amount: parseToStroop(data.expected_amount),
 				max_participants: data.max_participants,
 				num_picks_per_voter: data.vote_per_person,
-				use_whitelist: data.open_funding,
+				use_whitelist: false,
 				is_video_required: data.video_required,
 				allow_applications: data.allow_application,
 				voting_start_ms: BigInt(
@@ -546,6 +547,7 @@ const CreateRoundPage = () => {
 						</div>
 						<div className="flex items-center">
 							<Checkbox
+								disabled
 								label="Open Funding Pool"
 								checked={watch().open_funding}
 								onChange={(e) => setValue('open_funding', e.target.checked)}
@@ -898,7 +900,16 @@ const CreateRoundPage = () => {
 								required
 								{...register('remaining_dist_address', {
 									required: watch().allow_remaining_dist === true,
+									validate: (value, formValues) =>
+										StrKey.isValidEd25519PublicKey(value),
 								})}
+								errorMessage={
+									errors.remaining_dist_address?.type === 'validate' ? (
+										<p className="text-red-500 text-xs mt-1 ml-2">
+											Address is invalid
+										</p>
+									) : undefined
+								}
 							/>
 						</div>
 					</div>

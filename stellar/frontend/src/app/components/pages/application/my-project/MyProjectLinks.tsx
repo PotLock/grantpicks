@@ -22,6 +22,7 @@ import React, { useEffect, useState } from 'react'
 import { SubmitHandler, useFieldArray, useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { useMyProject } from './MyProjectProvider'
+import { StrKey } from 'round-client'
 
 const MyProjectLinks = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()
@@ -267,6 +268,8 @@ const MyProjectLinks = () => {
 											required
 											{...register(`smart_contracts.${index}.address`, {
 												required: true,
+												validate: (value, formValues) =>
+													StrKey.isValidEd25519PublicKey(value),
 											})}
 										/>
 									</div>
@@ -284,9 +287,14 @@ const MyProjectLinks = () => {
 									</div>
 								</div>
 								{errors?.smart_contracts?.[index]?.address?.type ===
-								'required' ? (
-									<p className="text-red-500 text-xs ml-2">
-										Smart contract is required
+								'validate' ? (
+									<p className="text-red-500 text-xs mt-1 ml-2">
+										Address is invalid
+									</p>
+								) : errors.smart_contracts?.[index]?.address?.type ===
+								  'required' ? (
+									<p className="text-red-500 text-xs mt-1 ml-2">
+										Address is required
 									</p>
 								) : undefined}
 							</div>

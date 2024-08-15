@@ -1,7 +1,7 @@
 import { IconProps } from '@/types/icon'
 import React from 'react'
 
-const IconCopy = ({ size, className }: IconProps) => {
+const IconCopy = ({ size, className, onClick }: IconProps) => {
 	return (
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
@@ -13,6 +13,7 @@ const IconCopy = ({ size, className }: IconProps) => {
 			fill="none"
 			strokeLinecap="round"
 			strokeLinejoin="round"
+			onClick={onClick}
 		>
 			<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 			<path d="M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z" />

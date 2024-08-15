@@ -12,6 +12,7 @@ import Menu from '@/app/components/commons/Menu'
 import IconAdd from '@/app/components/svgs/IconAdd'
 import Checkbox from '@/app/components/commons/CheckBox'
 import PreviousConfirmationModal from './PreviousConfirmationModal'
+import { StrKey } from 'round-client'
 
 const CreateProjectStep3 = () => {
 	const [showContractMenu, setShowContractMenu] = useState<boolean[]>([])
@@ -228,6 +229,8 @@ const CreateProjectStep3 = () => {
 											required
 											{...register(`smart_contracts.${index}.address`, {
 												required: true,
+												validate: (value, formValues) =>
+													StrKey.isValidEd25519PublicKey(value),
 											})}
 										/>
 									</div>
@@ -245,9 +248,14 @@ const CreateProjectStep3 = () => {
 									</div>
 								</div>
 								{errors?.smart_contracts?.[index]?.address?.type ===
-								'required' ? (
-									<p className="text-red-500 text-xs ml-2">
-										Smart contract is required
+								'validate' ? (
+									<p className="text-red-500 text-xs mt-1 ml-2">
+										Address is invalid
+									</p>
+								) : errors.smart_contracts?.[index]?.address?.type ===
+								  'required' ? (
+									<p className="text-red-500 text-xs mt-1 ml-2">
+										Address is required
 									</p>
 								) : undefined}
 							</div>

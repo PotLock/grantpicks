@@ -69,7 +69,7 @@ const MoreVertMenu = ({
 						</p>
 					</div>
 				)}
-				{selectedRoundType === 'upcoming' && (
+				{selectedRoundType === 'upcoming' && data.use_vault && (
 					<div
 						className="p-2 flex items-center space-x-2 cursor-pointer hover:opacity-70 transition"
 						onClick={onFundRound}

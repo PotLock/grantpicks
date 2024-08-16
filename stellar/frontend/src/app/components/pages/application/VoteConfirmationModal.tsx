@@ -55,7 +55,9 @@ const VoteConfirmationModal = ({
 					contracts,
 				)
 				if (newRes.length < LIMIT_SIZE) {
-					foldRes = [...foldRes, ...newRes]
+					for (const item of newRes) {
+						if (!foldRes.includes(item)) foldRes.push(item)
+					}
 					setAppsRound(foldRes)
 					clearInterval(stopLooping)
 					return

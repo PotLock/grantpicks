@@ -26,8 +26,10 @@ pub fn validate_round_detail(env: &Env, round_detail: &CreateRoundParams) {
       }
     }
 
-    if round_detail.voting_start_ms < round_detail.application_end_ms.unwrap() {
+    if round_detail.application_end_ms.is_none(){
+      if round_detail.voting_start_ms < round_detail.application_end_ms.unwrap() {
         panic_with_error!(env, RoundError::VotingStartLessThanApplicationEnd);
+      }
     }
 
     if round_detail.expected_amount == 0 {
@@ -44,12 +46,20 @@ pub fn validate_round_detail_update(env: &Env, round_detail: &UpdateRoundParams)
         panic_with_error!(env, RoundError::VotingStartGreaterThanVotingEnd);
     }
 
-    if round_detail.application_start_ms.unwrap() > round_detail.application_end_ms.unwrap() {
-        panic_with_error!(env, RoundError::ApplicationStartGreaterThanApplicationEnd);
+    if round_detail.allow_applications {
+      if round_detail.application_start_ms.is_some() && round_detail.application_end_ms.is_some() {
+        if round_detail.application_start_ms.unwrap() > round_detail.application_end_ms.unwrap() {
+          panic_with_error!(env, RoundError::ApplicationStartGreaterThanApplicationEnd);
+        }
+      }else{
+        panic_with_error!(env, RoundError::ApplicationPeriodNotSet);
+      }
     }
 
-    if round_detail.voting_start_ms < round_detail.application_end_ms.unwrap() {
+    if round_detail.application_end_ms.is_none(){
+      if round_detail.voting_start_ms < round_detail.application_end_ms.unwrap() {
         panic_with_error!(env, RoundError::VotingStartLessThanApplicationEnd);
+      }
     }
 
     if round_detail.expected_amount == 0 {

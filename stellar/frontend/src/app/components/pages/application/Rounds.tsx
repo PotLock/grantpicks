@@ -448,26 +448,7 @@ const ApplicationRounds = () => {
 					Round results
 				</button>
 			</div>
-			{roundsData.length === 0 ? (
-				<div>
-					<div className="mt-8 flex items-center justify-center">
-						<Image
-							src="/assets/images/empty-state.png"
-							alt=""
-							className="object-fill animate-bounce duration-1000"
-							width={100}
-							height={100}
-						/>
-					</div>
-					<p className="text-base font-bold text-grantpicks-black-950 text-center">
-						There are no Rounds yet.
-					</p>
-				</div>
-			) : isLoading || isValidating ? (
-				<div className="h-52 flex items-center justify-center w-full">
-					<IconLoading size={40} className="fill-grantpicks-black-600" />
-				</div>
-			) : (
+			<div className="min-h-96">
 				<InfiniteScroll
 					dataLength={rounds.length}
 					next={() => !isValidating && setSize(size + 1)}
@@ -479,17 +460,38 @@ const ApplicationRounds = () => {
 						</div>
 					}
 				>
-					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
-						{roundsData?.map((doc, idx) => (
-							<ApplicationRoundsItem
-								key={idx}
-								doc={doc}
-								mutateRounds={mutate}
-							/>
-						))}
-					</div>
+					{isLoading ? (
+						<div className="h-52 flex items-center justify-center w-full">
+							<IconLoading size={40} className="fill-grantpicks-black-600" />
+						</div>
+					) : roundsData.length === 0 ? (
+						<div>
+							<div className="mt-8 flex items-center justify-center">
+								<Image
+									src="/assets/images/empty-state.png"
+									alt=""
+									className="object-fill animate-bounce duration-1000"
+									width={100}
+									height={100}
+								/>
+							</div>
+							<p className="text-base font-bold text-grantpicks-black-950 text-center">
+								There are no Rounds yet.
+							</p>
+						</div>
+					) : (
+						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
+							{roundsData?.map((doc, idx) => (
+								<ApplicationRoundsItem
+									key={idx}
+									doc={doc}
+									mutateRounds={mutate}
+								/>
+							))}
+						</div>
+					)}
 				</InfiniteScroll>
-			)}
+			</div>
 		</div>
 	)
 }

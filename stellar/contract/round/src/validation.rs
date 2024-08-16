@@ -26,7 +26,7 @@ pub fn validate_round_detail(env: &Env, round_detail: &CreateRoundParams) {
       }
     }
 
-    if round_detail.application_end_ms.is_none(){
+    if round_detail.application_end_ms.is_some(){
       if round_detail.voting_start_ms < round_detail.application_end_ms.unwrap() {
         panic_with_error!(env, RoundError::VotingStartLessThanApplicationEnd);
       }
@@ -56,7 +56,7 @@ pub fn validate_round_detail_update(env: &Env, round_detail: &UpdateRoundParams)
       }
     }
 
-    if round_detail.application_end_ms.is_none(){
+    if round_detail.application_end_ms.is_some(){
       if round_detail.voting_start_ms < round_detail.application_end_ms.unwrap() {
         panic_with_error!(env, RoundError::VotingStartLessThanApplicationEnd);
       }

@@ -124,7 +124,7 @@ export interface DepositFundRoundParams {
 	caller: string
 	amount: u128
 	memo?: string
-	referrer_id: string
+	referrer_id?: string
 }
 
 export interface ApplyProjectToRoundParams {

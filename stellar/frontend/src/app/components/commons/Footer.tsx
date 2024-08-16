@@ -2,6 +2,7 @@ import React from 'react'
 import IconTwitter from '../svgs/IconTwitter'
 import IconTelegram from '../svgs/IconTelegram'
 import clsx from 'clsx'
+import Link from 'next/link'
 
 const Footer = ({ isWhiteBgColor = true }: { isWhiteBgColor?: boolean }) => {
 	return (
@@ -23,14 +24,18 @@ const Footer = ({ isWhiteBgColor = true }: { isWhiteBgColor?: boolean }) => {
 				<p className="text-sm font-semibold text-grantpicks-black-600">
 					FOLLOW US ON
 				</p>
-				<IconTwitter
-					size={24}
-					className="cursor-pointer hover:opacity-80 transition fill-grantpicks-black-400"
-				/>
-				<IconTelegram
-					size={24}
-					className="cursor-pointer hover:opacity-80 transition fill-grantpicks-black-400"
-				/>
+				<Link href={`https://x.com/potlock_`} target="_blank">
+					<IconTwitter
+						size={24}
+						className="cursor-pointer hover:opacity-80 transition fill-grantpicks-black-400"
+					/>
+				</Link>
+				<Link href={`https://t.me/+27V0rWUiq5liZmIx`} target="_blank">
+					<IconTelegram
+						size={24}
+						className="cursor-pointer hover:opacity-80 transition fill-grantpicks-black-400"
+					/>
+				</Link>
 			</div>
 			<p className="text-sm font-semibold text-grantpicks-black-600 z-10">
 				INSPIRED BY COLONY.IO & DORG.TECH

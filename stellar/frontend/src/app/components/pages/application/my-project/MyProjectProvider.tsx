@@ -9,6 +9,8 @@ import Contracts from '@/lib/contracts'
 import CMDWallet from '@/lib/wallet'
 import { getProjectApplicant } from '@/services/on-chain/project-registry'
 import { Network } from '@/types/on-chain'
+import Button from '@/app/components/commons/Button'
+import { useRouter } from 'next/navigation'
 
 const MyProjectContext = createContext<IMyProjectContext>({
 	projectData: undefined,
@@ -18,10 +20,12 @@ const MyProjectContext = createContext<IMyProjectContext>({
 
 const MyProjectProvider = () => {
 	const { stellarPubKey } = useWallet()
+	const router = useRouter()
 	const [projectData, setProjectData] = useState<Project | undefined>(undefined)
 	const [projectDataModel, setProjectDataModel] = useState<Project | undefined>(
 		undefined,
 	)
+	const [noProject, setNoProject] = useState<boolean>(false)
 
 	const fetchProjectApplicant = async () => {
 		try {
@@ -37,9 +41,10 @@ const MyProjectProvider = () => {
 			if (!res?.error) {
 				setProjectData(res)
 				setProjectDataModel(res)
+			} else {
+				setNoProject(true)
 			}
 			//@ts-ignore
-			console.log('res my project', res, res?.error)
 		} catch (error: any) {
 			console.log('error fetch project applicant', error)
 		}
@@ -60,8 +65,26 @@ const MyProjectProvider = () => {
 			}}
 		>
 			<MyProjectLayout>
-				<MyProjectHeader />
-				<MyProjectSection />
+				{noProject ? (
+					<div className="fixed z-20 inset-0 backdrop-blur flex items-center justify-center">
+						<div className="rounded-2xl bg-white p-3 md:p-6 flex flex-col items-center">
+							<p className="text-base font-semibold text-grantpicks-black-950 mb-4">
+								You don&apos;t have any project now
+							</p>
+							<Button
+								color="black-950"
+								onClick={() => router.push(`/application`)}
+							>
+								Back to Explore
+							</Button>
+						</div>
+					</div>
+				) : (
+					<>
+						<MyProjectHeader />
+						<MyProjectSection />
+					</>
+				)}
 			</MyProjectLayout>
 		</MyProjectContext.Provider>
 	)

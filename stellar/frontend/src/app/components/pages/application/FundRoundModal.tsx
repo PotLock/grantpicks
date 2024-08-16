@@ -50,7 +50,7 @@ const FundRoundModal = ({
 					caller: stellarPubKey,
 					amount: BigInt(parseToStroop(amount)),
 					memo: '',
-					referrer_id: '',
+					referrer_id: undefined,
 				},
 				contracts,
 			)

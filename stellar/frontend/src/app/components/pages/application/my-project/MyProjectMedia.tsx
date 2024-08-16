@@ -357,7 +357,7 @@ const MyProjectMedia = () => {
 					<Button
 						color="white"
 						isFullWidth
-						onClick={() => {}}
+						onClick={async () => await setDefaultData()}
 						className="!py-3 !border !border-grantpicks-black-400"
 					>
 						Discard

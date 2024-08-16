@@ -463,6 +463,7 @@ const EditRoundPage = () => {
 						/>
 						<InputTextArea
 							label="Round Description"
+							required
 							{...register('description', { required: true })}
 							errorMessage={
 								errors.description?.type === 'required' ? (
@@ -480,14 +481,10 @@ const EditRoundPage = () => {
 								</p>
 								<div className="flex items-center space-x-4">
 									<Button
-										isDisabled={watch().vote_per_person <= 5}
+										isDisabled={watch().vote_per_person <= 0}
 										color="transparent"
 										onClick={() => {
-											setValue(
-												'vote_per_person',
-												watch().vote_per_person -
-													(watch().vote_per_person === 5 ? 0 : 1),
-											)
+											setValue('vote_per_person', watch().vote_per_person - 1)
 										}}
 									>
 										<IconRemove
@@ -501,11 +498,7 @@ const EditRoundPage = () => {
 									<Button
 										color="transparent"
 										onClick={() => {
-											setValue(
-												'vote_per_person',
-												watch().vote_per_person +
-													(watch().vote_per_person === 0 ? 5 : 1),
-											)
+											setValue('vote_per_person', watch().vote_per_person + 1)
 										}}
 									>
 										<IconAdd size={24} className="fill-grantpicks-black-600" />
@@ -513,7 +506,7 @@ const EditRoundPage = () => {
 								</div>
 							</div>
 							<p className="text-xs font-normal text-grantpicks-black-600">
-								You must have a minimum of 5 Votes.
+								You must have a minimum of 1 Vote.
 							</p>
 						</div>
 

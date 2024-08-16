@@ -1,32 +1,40 @@
-import useRoundStore from '@/stores/zustand/useRoundStore'
-import clsx from 'clsx'
-import React, { useEffect, useMemo, useState } from 'react'
-import IconNear from '../../svgs/IconNear'
-import IconCube from '../../svgs/IconCube'
-import IconProject from '../../svgs/IconProject'
-import IconDollar from '../../svgs/IconDollar'
-import IconGroup from '../../svgs/IconGroup'
-import IconClock from '../../svgs/IconClock'
-import Button from '../../commons/Button'
-import IconMoreVert from '../../svgs/IconMoreVert'
-import MoreVertMenu from './MoreVertMenu'
-import RoundDetailDrawer from './RoundDetailDrawer'
-import ApplicationsDrawer from './ApplicationsDrawer'
-import FundRoundModal from './FundRoundModal'
+'use client'
+
+import Button from '@/app/components/commons/Button'
+import ApplicationsDrawer from '@/app/components/pages/application/ApplicationsDrawer'
+import FundRoundModal from '@/app/components/pages/application/FundRoundModal'
+import MoreVertMenu from '@/app/components/pages/application/MoreVertMenu'
+import MyVotesLayout from '@/app/components/pages/application/my-vote/MyVotesLayout'
+import RoundDetailDrawer from '@/app/components/pages/application/RoundDetailDrawer'
+import IconClock from '@/app/components/svgs/IconClock'
+import IconCube from '@/app/components/svgs/IconCube'
+import IconDollar from '@/app/components/svgs/IconDollar'
+import IconGroup from '@/app/components/svgs/IconGroup'
+import IconLoading from '@/app/components/svgs/IconLoading'
+import IconMoreVert from '@/app/components/svgs/IconMoreVert'
+import IconNear from '@/app/components/svgs/IconNear'
+import IconProject from '@/app/components/svgs/IconProject'
+import IconStellar from '@/app/components/svgs/IconStellar'
 import { useModalContext } from '@/app/providers/ModalProvider'
-import { getRoundApplication, getRounds } from '@/services/on-chain/round'
+import { useWallet } from '@/app/providers/WalletProvider'
+import { LIMIT_SIZE } from '@/constants/query'
 import Contracts from '@/lib/contracts'
 import CMDWallet from '@/lib/wallet'
-import { useWallet } from '@/app/providers/WalletProvider'
+import {
+	getRoundApplication,
+	getRounds,
+	HasVotedRoundParams,
+	isHasVotedRound,
+} from '@/services/on-chain/round'
+import useRoundStore from '@/stores/zustand/useRoundStore'
 import { IGetRoundsResponse, Network } from '@/types/on-chain'
-import useSWRInfinite from 'swr/infinite'
-import InfiniteScroll from 'react-infinite-scroll-component'
-import { LIMIT_SIZE } from '@/constants/query'
-import IconLoading from '../../svgs/IconLoading'
-import Image from 'next/image'
-import moment from 'moment'
 import { formatStroopToXlm } from '@/utils/helper'
-import IconStellar from '../../svgs/IconStellar'
+import clsx from 'clsx'
+import moment from 'moment'
+import Image from 'next/image'
+import React, { useEffect, useState } from 'react'
+import InfiniteScroll from 'react-infinite-scroll-component'
+import useSWRInfinite from 'swr/infinite'
 
 const ApplicationRoundsItem = ({
 	doc,
@@ -44,6 +52,7 @@ const ApplicationRoundsItem = ({
 		useModalContext()
 	const { connectedWallet, stellarPubKey } = useWallet()
 	const [isUserApplied, setIsUserApplied] = useState<boolean>(false)
+	const [hasVoted, setHasVoted] = useState<boolean>(false)
 
 	const fetchRoundApplication = async () => {
 		try {
@@ -89,12 +98,33 @@ const ApplicationRoundsItem = ({
 		}
 	}
 
+	const checkVoterHasVoted = async () => {
+		try {
+			if (!stellarPubKey) return
+			let cmdWallet = new CMDWallet({
+				stellarPubKey: stellarPubKey,
+			})
+			const contracts = new Contracts(
+				process.env.NETWORK_ENV as Network,
+				cmdWallet,
+			)
+			const txParams: HasVotedRoundParams = {
+				round_id: BigInt(doc.id),
+				voter: stellarPubKey,
+			}
+			const isHasVotedRes = await isHasVotedRound(txParams, contracts)
+			setHasVoted(isHasVotedRes)
+		} catch (error: any) {
+			console.log('error check has voted', error)
+		}
+	}
+
 	useEffect(() => {
 		fetchRoundApplication()
 	}, [])
 
 	return (
-		<div className="p-4 md:p-5 rounded-xl border border-black/10">
+		<div className="p-4 md:p-5 rounded-2xl border border-black/10 bg-white">
 			<div className="flex items-center justify-between mb-4 md:mb-6">
 				<div className="border border-black/10 rounded-full p-3 flex items-center justify-center">
 					{connectedWallet === 'near' ? (
@@ -291,34 +321,6 @@ const ApplicationRoundsItem = ({
 										: 'View Result'}
 				</Button>
 			</div>
-			{/* <div className="w-full mt-4">
-				<Button
-					isFullWidth
-					className="!border !border-grantpicks-black-200 !py-2"
-					color="white"
-					onClick={async () => {
-						let cmdWallet = new CMDWallet({
-							stellarPubKey: stellarPubKey,
-						})
-						const contracts = new Contracts(
-							process.env.NETWORK_ENV as Network,
-							cmdWallet,
-						)
-						const startVoteTx =
-							await contracts.round_contract.start_voting_period({
-								round_id: doc.id,
-								caller: stellarPubKey,
-							})
-						const txhash = await contracts.signAndSendTx(
-							stellarKit as StellarWalletsKit,
-							startVoteTx,
-							stellarPubKey,
-						)
-					}}
-				>
-					Force Start vote
-				</Button>
-			</div> */}
 			<RoundDetailDrawer
 				isOpen={showDetailDrawer}
 				onClose={() => setShowDetailDrawer(false)}
@@ -353,8 +355,7 @@ const ApplicationRoundsItem = ({
 	)
 }
 
-const ApplicationRounds = () => {
-	const { selectedRoundType, setSelectedRoundType } = useRoundStore()
+const MyVotesPage = () => {
 	const { stellarPubKey, connectedWallet } = useWallet()
 	const [roundsData, setRoundsData] = useState<IGetRoundsResponse[]>([])
 
@@ -393,109 +394,57 @@ const ApplicationRounds = () => {
 	const rounds = data ? ([] as IGetRoundsResponse[]).concat(...data) : []
 	const hasMore = data ? data[data.length - 1].length >= LIMIT_SIZE : false
 
-	useEffect(() => {
-		if (data) {
-			let temp = [...rounds]
-			if (selectedRoundType === 'upcoming') {
-				temp = temp.filter(
-					(t) => new Date().getTime() < Number(t.voting_start_ms),
-				)
-			} else if (selectedRoundType === 'on-going') {
-				temp = temp.filter(
-					(t) =>
-						Number(t.voting_start_ms) <= new Date().getTime() &&
-						new Date().getTime() < Number(t.voting_end_ms),
-				)
-			} else if (selectedRoundType === 'ended') {
-				temp = temp.filter(
-					(t) => Number(t.voting_end_ms) <= new Date().getTime(),
-				)
-			}
-			setRoundsData(temp)
-		}
-	}, [selectedRoundType, data])
-
 	return (
-		<div>
-			<div className="flex items-center md:justify-center md:space-x-4 space-x-2 overflow-x-auto mb-6 md:mb-7 lg:mb-8">
-				<button
-					onClick={() => setSelectedRoundType('on-going')}
-					className={clsx(
-						`rounded-full px-6 py-3 flex-shrink-0 md:flex-shrink text-sm font-semibold cursor-pointer transition hover:opacity-70`,
-						selectedRoundType === 'on-going'
-							? `bg-grantpicks-black-950 text-white`
-							: `bg-grantpicks-black-50 text-grantpicks-black-950`,
-					)}
-				>
-					Ongoing rounds
-				</button>
-				<button
-					onClick={() => setSelectedRoundType('upcoming')}
-					className={clsx(
-						`rounded-full px-6 py-3 flex-shrink-0 md:flex-shrink text-sm font-semibold cursor-pointer transition hover:opacity-70`,
-						selectedRoundType === 'upcoming'
-							? `bg-grantpicks-black-950 text-white`
-							: `bg-grantpicks-black-50 text-grantpicks-black-950`,
-					)}
-				>
-					Upcoming rounds
-				</button>
-				<button
-					onClick={() => setSelectedRoundType('ended')}
-					className={clsx(
-						`rounded-full px-6 py-3 flex-shrink-0 md:flex-shrink text-sm font-semibold cursor-pointer transition hover:opacity-70`,
-						selectedRoundType === 'ended'
-							? `bg-grantpicks-black-950 text-white`
-							: `bg-grantpicks-black-50 text-grantpicks-black-950`,
-					)}
-				>
-					Round results
-				</button>
-			</div>
-			{!connectedWallet || roundsData.length === 0 ? (
-				<div>
-					<div className="mt-8 flex items-center justify-center">
-						<Image
-							src="/assets/images/empty-state.png"
-							alt=""
-							className="object-fill animate-bounce duration-1000"
-							width={100}
-							height={100}
-						/>
-					</div>
-					<p className="text-base font-bold text-grantpicks-black-950 text-center">
-						There are no Rounds yet.
-					</p>
-				</div>
-			) : isLoading || isValidating ? (
-				<div className="h-52 flex items-center justify-center w-full">
-					<IconLoading size={40} className="fill-grantpicks-black-600" />
-				</div>
-			) : (
-				<InfiniteScroll
-					dataLength={rounds.length}
-					next={() => !isValidating && setSize(size + 1)}
-					hasMore={hasMore}
-					style={{ display: 'flex', flexDirection: 'column' }}
-					loader={
-						<div className="my-2 flex items-center justify-center">
-							<IconLoading size={24} className="fill-grantpicks-black-600" />
-						</div>
-					}
-				>
-					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
-						{roundsData?.map((doc, idx) => (
-							<ApplicationRoundsItem
-								key={idx}
-								doc={doc}
-								mutateRounds={mutate}
+		<MyVotesLayout>
+			<div className="flex flex-col">
+				<p className="text-[44px] md:text-[50px] lg:text-[62px] font-black text-grantpicks-black-950 uppercase mb-8 md:mb-10 lg:mb-12">
+					My Votes
+				</p>
+				{!connectedWallet || rounds.length === 0 ? (
+					<div>
+						<div className="mt-8 flex items-center justify-center">
+							<Image
+								src="/assets/images/empty-state.png"
+								alt=""
+								className="object-fill animate-bounce duration-1000"
+								width={100}
+								height={100}
 							/>
-						))}
+						</div>
+						<p className="text-base font-bold text-grantpicks-black-950 text-center">
+							There are no Votes yet.
+						</p>
 					</div>
-				</InfiniteScroll>
-			)}
-		</div>
+				) : isLoading || isValidating ? (
+					<div className="h-52 flex items-center justify-center w-full">
+						<IconLoading size={40} className="fill-grantpicks-black-600" />
+					</div>
+				) : (
+					<InfiniteScroll
+						dataLength={rounds.length}
+						next={() => !isValidating && setSize(size + 1)}
+						hasMore={hasMore}
+						style={{ display: 'flex', flexDirection: 'column' }}
+						loader={
+							<div className="my-2 flex items-center justify-center">
+								<IconLoading size={24} className="fill-grantpicks-black-600" />
+							</div>
+						}
+					>
+						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
+							{rounds.map((doc, idx) => (
+								<ApplicationRoundsItem
+									key={idx}
+									doc={doc}
+									mutateRounds={mutate}
+								/>
+							))}
+						</div>
+					</InfiniteScroll>
+				)}
+			</div>
+		</MyVotesLayout>
 	)
 }
 
-export default ApplicationRounds
+export default MyVotesPage

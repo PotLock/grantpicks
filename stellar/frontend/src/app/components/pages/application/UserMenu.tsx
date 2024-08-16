@@ -9,6 +9,9 @@ import IconCheckCircle from '../../svgs/IconCheckCircle'
 import { prettyTruncate } from '@/utils/helper'
 import Menu from '../../commons/Menu'
 import { useRouter } from 'next/navigation'
+import IconCopy from '../../svgs/IconCopy'
+import toast from 'react-hot-toast'
+import { toastOptions } from '@/constants/style'
 
 const UserMenu = ({
 	onShowChooseWallet,
@@ -31,11 +34,23 @@ const UserMenu = ({
 					<div className="flex items-center space-x-2">
 						<div className="bg-grantpicks-black-200 rounded-full w-10 h-10" />
 						<div>
-							<p className="text-sm font-semibold text-grantpicks-black-950">
-								{connectedWallet === 'near'
-									? nearAccounts[0]?.accountId
-									: prettyTruncate(stellarPubKey, 10, 'address')}
-							</p>
+							<div className="flex items-center space-x-2">
+								<p className="text-sm font-semibold text-grantpicks-black-950">
+									{connectedWallet === 'near'
+										? nearAccounts[0]?.accountId
+										: prettyTruncate(stellarPubKey, 10, 'address')}
+								</p>
+								<IconCopy
+									size={16}
+									className="stroke-grantpicks-black-600 cursor-pointer hover:opacity-70 transition"
+									onClick={async () => {
+										await navigator.clipboard.writeText(stellarPubKey)
+										toast.success('Addess is copied', {
+											style: toastOptions.success.style,
+										})
+									}}
+								/>
+							</div>
 							<p className="text-sm font-normal text-grantpicks-black-600">
 								@
 								{connectedWallet === 'near'
@@ -85,7 +100,10 @@ const UserMenu = ({
 							My Project
 						</p>
 					</div>
-					<div className="flex items-center space-x-3 cursor-pointer hover:opacity-70 transition">
+					<div
+						onClick={() => router.push(`/application/my-votes`)}
+						className="flex items-center space-x-3 cursor-pointer hover:opacity-70 transition"
+					>
 						<IconCheckCircle size={24} className="fill-grantpicks-black-400" />
 						<p className="text-sm font-normal text-grantpicks-black-950">
 							My Votes

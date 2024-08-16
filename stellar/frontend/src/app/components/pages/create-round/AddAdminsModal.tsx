@@ -17,6 +17,10 @@ import {
 	UseFormSetValue,
 } from 'react-hook-form'
 import { CreateRoundData } from '@/types/form'
+import { StrKey } from 'round-client'
+import { useWallet } from '@/app/providers/WalletProvider'
+import toast from 'react-hot-toast'
+import { toastOptions } from '@/constants/style'
 
 interface AddAdminsModalProps extends BaseModalProps {
 	selectedAdmins: string[]
@@ -34,15 +38,15 @@ const AddAdminsModal = ({
 	remove,
 }: AddAdminsModalProps) => {
 	const [searchAdmin, setSearchAdmin] = useState<string>('')
+	const { stellarPubKey } = useWallet()
 
 	const onAddAdmin = async () => {
+		if (!StrKey.isValidEd25519PublicKey(searchAdmin)) {
+			toast.error('Address is not valid', { style: toastOptions.error.style })
+			return
+		}
 		append({ admin_id: searchAdmin })
 		setSelectedAdmins((prev) => [...prev, searchAdmin])
-		// try{
-		// 	const res = await getRoundAdmins({round_id: })
-		// }catch(error:any){
-		// 	console.log("error", error)
-		// }
 	}
 
 	return (

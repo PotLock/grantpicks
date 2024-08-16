@@ -48,9 +48,11 @@ import IconStellar from '@/app/components/svgs/IconStellar'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import { useRouter } from 'next/navigation'
 import { PERIODS } from '@/constants/round'
-import moment from 'moment'
 import { IRoundPeriodData } from '@/types/round'
 import { subDays } from 'date-fns'
+import { StrKey } from 'round-client'
+import IconInfoCircle from '@/app/components/svgs/IconInfoCircle'
+import { Tooltip } from 'react-tooltip'
 
 const CreateRoundPage = () => {
 	const router = useRouter()
@@ -80,6 +82,7 @@ const CreateRoundPage = () => {
 			max_participants: 0,
 			voting_duration_start: null,
 			voting_duration_end: null,
+			open_funding: true,
 		},
 	})
 	const { append: appendProject, remove: removeProject } = useFieldArray({
@@ -149,7 +152,7 @@ const CreateRoundPage = () => {
 					round_id: roundId,
 					amount: BigInt(parseToStroop(watch().amount)),
 					memo: '',
-					referrer_id: '',
+					referrer_id: undefined,
 				},
 				contracts,
 			)
@@ -166,7 +169,6 @@ const CreateRoundPage = () => {
 	}
 
 	const onCreateRound: SubmitHandler<CreateRoundData> = async (data) => {
-		console.log('final data', data, cooldownPeriodData, compliancePeriodData)
 		try {
 			openPageLoading()
 			let cmdWallet = new CMDWallet({
@@ -195,7 +197,7 @@ const CreateRoundPage = () => {
 				expected_amount: parseToStroop(data.expected_amount),
 				max_participants: data.max_participants,
 				num_picks_per_voter: data.vote_per_person,
-				use_whitelist: data.open_funding,
+				use_whitelist: false,
 				is_video_required: data.video_required,
 				allow_applications: data.allow_application,
 				voting_start_ms: BigInt(
@@ -209,10 +211,10 @@ const CreateRoundPage = () => {
 				allow_remaining_dist: true,
 				compliance_req_desc: data.compliance_req_desc,
 				compliance_end_ms: BigInt(
-					BigInt(data.voting_duration_end?.getTime() as number),
+					BigInt(data.voting_duration_end?.getTime() || 0),
 				),
-				compliance_period_ms: BigInt(data.compliance_period_ms as number),
-				cooldown_end_ms: BigInt(data.voting_duration_end?.getTime() as number),
+				compliance_period_ms: BigInt(data.compliance_period_ms || 0),
+				cooldown_end_ms: BigInt(data.voting_duration_end?.getTime() || 0),
 				cooldown_period_ms: BigInt(0),
 				remaining_dist_address: data.remaining_dist_address || stellarPubKey,
 				referrer_fee_basis_points: 0,
@@ -293,6 +295,7 @@ const CreateRoundPage = () => {
 						/>
 						<InputTextArea
 							label="Round Description"
+							required
 							{...register('description', { required: true })}
 							errorMessage={
 								errors.description?.type === 'required' ? (
@@ -352,14 +355,10 @@ const CreateRoundPage = () => {
 								</p>
 								<div className="flex items-center space-x-4">
 									<Button
-										isDisabled={watch().vote_per_person <= 5}
+										isDisabled={watch().vote_per_person <= 0}
 										color="transparent"
 										onClick={() => {
-											setValue(
-												'vote_per_person',
-												watch().vote_per_person -
-													(watch().vote_per_person === 5 ? 0 : 1),
-											)
+											setValue('vote_per_person', watch().vote_per_person - 1)
 										}}
 									>
 										<IconRemove
@@ -373,11 +372,7 @@ const CreateRoundPage = () => {
 									<Button
 										color="transparent"
 										onClick={() => {
-											setValue(
-												'vote_per_person',
-												watch().vote_per_person +
-													(watch().vote_per_person === 0 ? 5 : 1),
-											)
+											setValue('vote_per_person', watch().vote_per_person + 1)
 										}}
 									>
 										<IconAdd size={24} className="fill-grantpicks-black-600" />
@@ -385,7 +380,7 @@ const CreateRoundPage = () => {
 								</div>
 							</div>
 							<p className="text-xs font-normal text-grantpicks-black-600">
-								You must have a minimum of 5 Votes.
+								You must have a minimum of 1 Vote.
 							</p>
 						</div>
 
@@ -546,6 +541,7 @@ const CreateRoundPage = () => {
 						</div>
 						<div className="flex items-center">
 							<Checkbox
+								disabled
 								label="Open Funding Pool"
 								checked={watch().open_funding}
 								onChange={(e) => setValue('open_funding', e.target.checked)}
@@ -771,6 +767,13 @@ const CreateRoundPage = () => {
 										)}
 									</div>
 								}
+								errorMessage={
+									errors.cooldown_end_ms?.type === 'required' ? (
+										<p className="text-red-500 text-xs mt-1 ml-2">
+											Cooldown deadline is required
+										</p>
+									) : undefined
+								}
 							/>
 						</div>
 					</div>
@@ -867,15 +870,34 @@ const CreateRoundPage = () => {
 										)}
 									</div>
 								}
+								errorMessage={
+									errors.compliance_period_ms?.type === 'required' ? (
+										<p className="text-red-500 text-xs mt-1 ml-2">
+											Compliance deadline is required
+										</p>
+									) : undefined
+								}
 							/>
 						</div>
 					</div>
 
 					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
 						<div className="flex items-center justify-between pb-4 border-b border-black/10">
-							<p className="text-base font-semibold">
-								Remaining Funds Redistribution
-							</p>
+							<div className="flex items-center space-x-2">
+								<p className="text-base font-semibold">
+									Remaining Funds Redistribution
+								</p>
+								<a
+									data-tooltip-id="remaining_funds_tooltip"
+									data-tooltip-html="Remaining funds for those who haven’t done their compliance<br />check get sent to this address after compliance period is over"
+								>
+									<IconInfoCircle
+										size={16}
+										className="stroke-grantpicks-black-600"
+									/>
+								</a>
+								<Tooltip id="remaining_funds_tooltip" place="right" />
+							</div>
 							<Switch
 								checked={watch().allow_remaining_dist}
 								onChange={async (checked: boolean) => {
@@ -898,7 +920,18 @@ const CreateRoundPage = () => {
 								required
 								{...register('remaining_dist_address', {
 									required: watch().allow_remaining_dist === true,
+									validate: (value, formValues) =>
+										watch().allow_remaining_dist
+											? StrKey.isValidEd25519PublicKey(value)
+											: true,
 								})}
+								errorMessage={
+									errors.remaining_dist_address?.type === 'validate' ? (
+										<p className="text-red-500 text-xs mt-1 ml-2">
+											Address is invalid
+										</p>
+									) : undefined
+								}
 							/>
 						</div>
 					</div>

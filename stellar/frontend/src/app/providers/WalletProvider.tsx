@@ -25,7 +25,6 @@ import {
 import {
 	xBullModule,
 	FreighterModule,
-	RabetModule,
 	LobstrModule,
 	HanaModule,
 	ISupportedWallet,
@@ -91,7 +90,6 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 				modules: [
 					new FreighterModule(),
 					new xBullModule(),
-					new RabetModule(),
 					new LobstrModule(),
 					new HanaModule(),
 				],

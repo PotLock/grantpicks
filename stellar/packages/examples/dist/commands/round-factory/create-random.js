@@ -25,6 +25,7 @@ export default async function createRandomRounds(params, app) {
             allow_remaining_dist: false,
             remaining_dist_address: app.wallet.account.publicKey,
             referrer_fee_basis_points: 0,
+            use_vault: true,
         },
     });
     return (await tx.signAndSend()).result;

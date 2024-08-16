@@ -1,5 +1,5 @@
 use crate::storage_key::ContractKey;
-use soroban_sdk::{Address, Env, Map};
+use soroban_sdk::{Address, Env, Map, Vec};
 
 pub fn read_all_whitelist(env: &Env, round_id: u128) -> Map<Address, bool> {
     let key = ContractKey::WhiteList(round_id);
@@ -65,4 +65,31 @@ pub fn is_blacklisted(env: &Env, round_id: u128, voter: Address) -> bool {
     } else {
         false
     }
+}
+
+pub fn read_voted_rounds(env: &Env) -> Map<Address, Vec<u128>> {
+    let key = ContractKey::VotedRoundIds;
+    match env.storage().persistent().get(&key) {
+        Some(rounds) => rounds,
+        None => Map::new(env),
+    }
+}
+
+pub fn write_voted_rounds(env: &Env, rounds: &Map<Address, Vec<u128>>) {
+    let key = ContractKey::VotedRoundIds;
+    env.storage().persistent().set(&key, rounds);
+}
+
+pub fn add_voted_round(env: &Env, voter: Address, round_id: u128) {
+    let mut rounds = read_voted_rounds(env);
+    let voter_rounds = rounds.get(voter.clone()).unwrap_or(Vec::new(env));
+    let mut voter_rounds = voter_rounds.clone();
+    voter_rounds.push_back(round_id);
+    rounds.set(voter, voter_rounds);
+    write_voted_rounds(env, &rounds);
+}
+
+pub fn get_voted_rounds_for_voter(env: &Env, voter: Address) -> Vec<u128> {
+    let rounds = read_voted_rounds(env);
+    rounds.get(voter).unwrap_or(Vec::new(env))
 }

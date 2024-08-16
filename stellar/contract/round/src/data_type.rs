@@ -2,7 +2,7 @@ use soroban_sdk::{panic_with_error, Env};
 
 use crate::{
     admin_writer::is_admin,
-    error::{Error, RoundError},
+    error::RoundError,
     payout_writer::read_payout_challenges,
     soroban_sdk::{self, contracttype, Address, String, Vec},
     utils::get_ledger_second_as_millis,
@@ -43,6 +43,7 @@ pub struct RoundDetail {
     pub current_vault_balance: u128,
     pub vault_total_deposits: u128,
     pub use_whitelist: bool,
+    pub use_vault: Option<bool>,
     pub num_picks_per_voter: u32,
     pub max_participants: u32,
     pub allow_applications: bool,
@@ -75,6 +76,7 @@ pub struct CreateRoundParams {
     pub expected_amount: u128,
     pub admins: Vec<Address>,
     pub use_whitelist: Option<bool>,
+    pub use_vault: Option<bool>,
     pub num_picks_per_voter: Option<u32>,
     pub max_participants: Option<u32>,
     pub allow_applications: bool,
@@ -101,6 +103,7 @@ pub struct UpdateRoundParams {
     pub application_end_ms: Option<u64>,
     pub expected_amount: u128,
     pub use_whitelist: Option<bool>,
+    pub use_vault: Option<bool>,
     pub num_picks_per_voter: Option<u32>,
     pub max_participants: Option<u32>,
     pub allow_applications: bool,

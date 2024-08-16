@@ -12,7 +12,7 @@ use crate::{internal::RoundContract, internal::RoundContractClient};
 
 mod project_registry {
     soroban_sdk::contractimport!(
-        file = "../../target/wasm32-unknown-unknown/release/project_registry.wasm",
+        file = "../build/project_registry.wasm",
     );
 }
 
@@ -156,6 +156,7 @@ fn test_round_create() {
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
+        use_vault: None,
     };
 
     round.initialize(
@@ -225,6 +226,7 @@ fn test_apply_applications() {
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
+        use_vault: None,
     };
 
     round.initialize(
@@ -297,6 +299,7 @@ fn test_review_application() {
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
+        use_vault: None,
     };
 
     round.initialize(
@@ -376,6 +379,7 @@ fn test_whitelist_applicant() {
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
+        use_vault: None,
     };
 
     round.initialize(
@@ -440,8 +444,8 @@ fn test_whitelist_voters() {
         compliance_end_ms: Some(1000),
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
-
         referrer_fee_basis_points: None,
+        use_vault: None,
     };
 
     round.initialize(
@@ -534,6 +538,7 @@ fn test_blacklist() {
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
+        use_vault: None,
     };
 
     round.initialize(
@@ -638,6 +643,7 @@ fn test_voting() {
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
+        use_vault: None,
     };
 
     round.initialize(
@@ -739,6 +745,12 @@ fn test_voting() {
     });
 
     round.get_my_vote_for_round(&created_round.id, &voter);
+
+    let all_votes = round.get_votes_for_round(&created_round.id, &None, &None);
+    assert_eq!(all_votes.len(), 1);
+
+    let my_voted_rounds = round.get_voted_rounds(&voter, &None, &None);
+    assert_eq!(my_voted_rounds.len(), 1);
 }
 
 /*
@@ -781,6 +793,7 @@ fn test_add_remove_admin() {
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
+        use_vault: None,
     };
 
     round.initialize(
@@ -856,6 +869,7 @@ fn test_voting_deposit_and_payout() {
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
+        use_vault: Some(true),
     };
 
     round.initialize(
@@ -1002,6 +1016,7 @@ fn test_get_all_pairs() {
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
+        use_vault: None,
     };
 
     round.initialize(
@@ -1100,6 +1115,7 @@ fn test_change_number_of_votes() {
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
+        use_vault: None,
     };
 
     round.initialize(
@@ -1159,6 +1175,7 @@ fn test_change_amount() {
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
+        use_vault: None,
     };
 
     round.initialize(
@@ -1218,6 +1235,7 @@ fn test_change_voting_period() {
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
+        use_vault: None,
     };
 
     round.initialize(
@@ -1279,6 +1297,7 @@ fn test_application_period() {
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
+        use_vault: None,
     };
 
     round.initialize(
@@ -1351,6 +1370,7 @@ fn test_update_round() {
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
+        use_vault: None,
     };
 
     round.initialize(
@@ -1374,6 +1394,7 @@ fn test_update_round() {
         application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
         expected_amount: 1000000,
         use_whitelist: Some(false),
+        use_vault: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(100),
         allow_applications: true,
@@ -1426,6 +1447,7 @@ fn test_change_allow_applications() {
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
+        use_vault: None,
     };
 
     round.initialize(
@@ -1494,6 +1516,7 @@ fn test_unapply_from_round() {
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
+        use_vault: None,
     };
 
     round.initialize(
@@ -1561,6 +1584,7 @@ fn test_apply_to_round_batch() {
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
+        use_vault: None,
     };
 
     round.initialize(

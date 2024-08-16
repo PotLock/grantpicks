@@ -1,5 +1,3 @@
-use core::fmt::write;
-
 use soroban_sdk::{
     self, contract, contractimpl, panic_with_error, token::TokenClient, Address, BytesN, Env, Map,
     String, Vec,
@@ -51,7 +49,7 @@ use crate::{
     utils::{calculate_protocol_fee, count_total_available_pairs, get_ledger_second_as_millis},
     validation::{
         validate_application_period, validate_approved_projects, validate_blacklist,
-        validate_blacklist_already, validate_can_payout, validate_has_voted,
+        validate_can_payout, validate_has_voted,
         validate_max_participant, validate_max_participants, validate_not_blacklist,
         validate_number_of_votes, validate_owner_or_admin, validate_pick_per_votes,
         validate_project_to_approve, validate_review_notes, validate_round_detail,
@@ -59,8 +57,7 @@ use crate::{
         validate_voting_not_started, validate_voting_period, validate_whitelist,
     },
     voter_writer::{
-        add_to_blacklist, add_to_whitelist, is_blacklisted, is_whitelisted, read_all_blacklist,
-        read_all_whitelist, remove_from_blacklist, remove_from_whitelist,
+        add_to_blacklist, add_to_whitelist, add_voted_round, get_voted_rounds_for_voter, is_blacklisted, is_whitelisted, read_all_blacklist, read_all_whitelist, remove_from_blacklist, remove_from_whitelist
     },
     voting_writer::{
         find_voting_result, get_voting_state, get_voting_state_done, read_voting_count, read_voting_results, read_voting_state, set_voting_state, write_voting_count, write_voting_results
@@ -156,6 +153,7 @@ impl RoundCreator for RoundContract {
             remaining_dist_by: round_detail.owner.clone(),
             referrer_fee_basis_points: round_detail.referrer_fee_basis_points,
             round_complete_ms: None,
+            use_vault: round_detail.use_vault,
         };
 
         write_round_info(env, round_id, &round_info);
@@ -448,14 +446,8 @@ impl IsRound for RoundContract {
         let project_client = ProjectRegistryClient::new(env, &project_contract);
         let project = project_client.get_project_from_applicant(&applicant);
 
-        if project.is_none() {
-            panic_with_error!(env, ApplicationError::ProjectNotFoundInRegistry);
-        }
-
-        let uwrap_project = project.unwrap();
-
         if round.is_video_required {
-            if uwrap_project.video_url.is_empty() {
+            if project.video_url.is_empty() {
                 panic_with_error!(env, ApplicationError::VideoUrlNotValid);
             }
         }
@@ -479,7 +471,7 @@ impl IsRound for RoundContract {
 
         let mut applications = read_application(env, round_id);
         let application = RoundApplication {
-            project_id: uwrap_project.id,
+            project_id: project.id,
             applicant_id: applicant,
             status: ApplicationStatus::Pending,
             submited_ms: current_ms,
@@ -566,6 +558,15 @@ impl IsRound for RoundContract {
         caller.require_auth();
 
         let round = read_round_info(env, round_id);
+
+        if round.use_vault.is_none() {
+            panic_with_error!(env, RoundError::RoundDoesNotUseVault);
+        }else{
+            if !round.use_vault.unwrap() {
+                panic_with_error!(env, RoundError::RoundDoesNotUseVault);
+            }
+        }
+
         let token_contract = read_token_address(env);
         let token_client = TokenClient::new(env, &token_contract);
 
@@ -692,7 +693,8 @@ impl IsRound for RoundContract {
 
         write_voting_count(env, round_id, &voting_count);
         write_voting_results(env, round_id, &voting_results);
-        set_voting_state(env, round_id, voter, voting_results.len()-1);
+        set_voting_state(env, round_id, voter.clone(), voting_results.len()-1);
+        add_voted_round(env, voter, round_id);
         extend_instance(env);
         extend_round(env, round_id);
         log_create_vote(env, round.id, voting_result);
@@ -751,6 +753,14 @@ impl IsRound for RoundContract {
         caller.require_auth();
 
         let round = read_round_info(env, round_id);
+
+        if round.use_vault.is_none() {
+            panic_with_error!(env, RoundError::RoundDoesNotUseVault);
+        }else{
+            if !round.use_vault.unwrap() {
+                panic_with_error!(env, RoundError::RoundDoesNotUseVault);
+            }
+        }
 
         validate_owner_or_admin(env, &caller, &round);
         validate_can_payout(env, &round);
@@ -1016,7 +1026,6 @@ impl IsRound for RoundContract {
         is_blacklisted(env, round_id, address)
     }
 
-    // get_pairs is test only & protected and check correctness of pairs generated. use get_pair_to_vote for users
     fn get_all_pairs_for_round(env: &Env, round_id: u128) -> Vec<Pair> {
         let pairs = get_all_pairs(env, round_id);
         extend_instance(env);
@@ -1257,14 +1266,8 @@ impl IsRound for RoundContract {
         applicants.iter().for_each(|applicant| {
             let project = project_client.get_project_from_applicant(&applicant);
 
-            if project.is_none() {
-                panic_with_error!(env, ApplicationError::ProjectNotFoundInRegistry);
-            }
-
-            let uwrap_project = project.unwrap();
-
             if round.is_video_required {
-                if uwrap_project.video_url.is_empty() {
+                if project.video_url.is_empty() {
                     panic_with_error!(env, ApplicationError::VideoUrlNotValid);
                 }
             }
@@ -1283,7 +1286,7 @@ impl IsRound for RoundContract {
             }
 
             let application = RoundApplication {
-                project_id: uwrap_project.id,
+                project_id: project.id,
                 applicant_id: applicant.clone(),
                 status: ApplicationStatus::Pending,
                 submited_ms: current_ms,
@@ -1739,5 +1742,26 @@ impl IsRound for RoundContract {
       extend_round(env, round_id);
 
       result.unwrap()
+    }
+
+    fn get_voted_rounds(env: &Env, voter: Address, from_index: Option<u64>, limit: Option<u64>) -> Vec<RoundDetail>{
+      let default_page_size = read_default_page_size(env);
+      let limit_internal: u64 = limit.unwrap_or(default_page_size);
+      let from_index_internal: u64 = from_index.unwrap_or(0);
+      let rounds = get_voted_rounds_for_voter(env, voter);
+      extend_instance(env);
+
+      let mut rounds_external: Vec<RoundDetail> = Vec::new(env);
+
+      rounds
+        .iter()
+        .skip(from_index_internal as usize)
+        .take(limit_internal as usize)
+        .for_each(|round_id| {
+          let round = read_round_info(env, round_id);
+          rounds_external.push_back(round.clone());
+        });
+
+      rounds_external
     }
 }

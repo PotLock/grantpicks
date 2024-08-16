@@ -186,10 +186,12 @@ const CreateRoundPage = () => {
 				owner: stellarPubKey,
 				name: data.title,
 				description: data.description,
-				application_start_ms:
-					BigInt(data.apply_duration_start?.getTime() as number) || undefined,
-				application_end_ms:
-					BigInt(data.apply_duration_end?.getTime() as number) || undefined,
+				application_start_ms: data.apply_duration_start
+					? BigInt(data.apply_duration_start?.getTime() as number)
+					: undefined,
+				application_end_ms: data.apply_duration_end
+					? BigInt(data.apply_duration_end?.getTime() as number)
+					: undefined,
 				contacts: [
 					{
 						name: data.contact_type,
@@ -212,13 +214,15 @@ const CreateRoundPage = () => {
 						: [],
 				allow_remaining_dist: true,
 				compliance_req_desc: data.compliance_req_desc,
-				compliance_end_ms:
-					BigInt(BigInt(data.voting_duration_end?.getTime() as number)) ||
-					undefined,
-				compliance_period_ms:
-					BigInt(data.compliance_period_ms as number) || undefined,
-				cooldown_end_ms:
-					BigInt(data.voting_duration_end?.getTime() as number) || undefined,
+				compliance_end_ms: data.voting_duration_end
+					? BigInt(data.voting_duration_end?.getTime() as number)
+					: undefined,
+				compliance_period_ms: data.compliance_period_ms
+					? BigInt(data.compliance_period_ms as number)
+					: undefined,
+				cooldown_end_ms: data.voting_duration_end
+					? BigInt(data.voting_duration_end?.getTime() as number)
+					: undefined,
 				cooldown_period_ms: undefined,
 				remaining_dist_address: data.remaining_dist_address || stellarPubKey,
 				referrer_fee_basis_points: 0,
@@ -255,7 +259,7 @@ const CreateRoundPage = () => {
 				router.push(`/application`)
 			}
 		} catch (error: any) {
-			console.error('error', error?.message)
+			console.error(error)
 			toast.error(error?.message || 'Something went wrong', {
 				style: toastOptions.error.style,
 			})

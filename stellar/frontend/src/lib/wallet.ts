@@ -12,6 +12,7 @@ class CMDWallet {
 	public static Wallet: CMDWallet
 	constructor({ stellarPubKey }: WalletProps) {
 		this.network = envVarConfigs.NETWORK_ENV
+		if (!stellarPubKey) throw new Error('Please connect wallet')
 		this.keypair = Keypair.fromPublicKey(stellarPubKey)
 		this.pubKey = this.keypair.publicKey()
 		if (this.network === 'testnet') {

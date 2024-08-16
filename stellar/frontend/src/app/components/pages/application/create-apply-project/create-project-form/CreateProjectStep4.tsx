@@ -69,7 +69,6 @@ const CreateProjectStep4 = () => {
 		setStep(5)
 	}
 
-	console.log('githubs', watch(), errors)
 	return (
 		<div className="bg-grantpicks-black-50 rounded-b-xl w-full relative overflow-y-auto h-[70vh]">
 			<div className="pt-10 px-4 md:px-6 border-b border-black/10">

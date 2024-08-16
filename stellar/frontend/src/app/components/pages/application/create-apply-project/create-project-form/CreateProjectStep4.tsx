@@ -164,6 +164,7 @@ const CreateProjectStep4 = () => {
 									}
 								/>
 								<InputText
+									type="number"
 									required
 									label="Amount"
 									{...register(`funding_histories.${index}.amount`, {

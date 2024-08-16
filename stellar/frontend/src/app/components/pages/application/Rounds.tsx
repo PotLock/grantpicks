@@ -204,9 +204,7 @@ const ApplicationRoundsItem = ({
 						<IconClock size={18} className="fill-grantpicks-black-400" />
 						<p className="text-sm font-normal text-grantpicks-black-950">
 							Ends{` `}
-							{moment(
-								new Date(Number(doc.application_end_ms) as number),
-							).fromNow()}
+							{moment(new Date(Number(doc.voting_end_ms) as number)).fromNow()}
 						</p>
 					</div>
 				) : selectedRoundType === 'upcoming' ? (

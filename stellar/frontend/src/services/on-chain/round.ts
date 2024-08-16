@@ -52,24 +52,24 @@ export interface CreateRoundParams {
 	admins: string[]
 	allow_applications: boolean
 	allow_remaining_dist: boolean
-	application_end_ms: u64
-	application_start_ms: u64
-	compliance_end_ms: u64
-	compliance_period_ms: u64
+	application_end_ms?: u64
+	application_start_ms?: u64
+	compliance_end_ms?: u64
+	compliance_period_ms?: u64
 	compliance_req_desc: string
 	contacts: Contact[]
-	cooldown_end_ms: u64
-	cooldown_period_ms: u64
+	cooldown_end_ms?: u64
+	cooldown_period_ms?: u64
 	description: string
 	expected_amount: u128
 	is_video_required: boolean
-	max_participants: u32
+	max_participants?: u32
 	name: string
-	num_picks_per_voter: u32
+	num_picks_per_voter?: u32
 	owner: string
-	referrer_fee_basis_points: u32 | null
+	referrer_fee_basis_points?: u32
 	remaining_dist_address: string
-	use_whitelist: boolean
+	use_whitelist?: boolean
 	voting_end_ms: u64
 	voting_start_ms: u64
 }
@@ -223,6 +223,15 @@ export const createRound: (
 		caller,
 		round_detail: {
 			...params,
+			application_end_ms: params.application_end_ms || undefined,
+			application_start_ms: params.application_start_ms || undefined,
+			cooldown_period_ms: params.cooldown_period_ms || undefined,
+			cooldown_end_ms: params.cooldown_end_ms || undefined,
+			compliance_end_ms: params.compliance_end_ms || undefined,
+			compliance_period_ms: params.compliance_period_ms || undefined,
+			max_participants: params.max_participants || undefined,
+			num_picks_per_voter: params.num_picks_per_voter || undefined,
+			use_whitelist: params.use_whitelist || undefined,
 			referrer_fee_basis_points: params.referrer_fee_basis_points as number,
 		},
 	})

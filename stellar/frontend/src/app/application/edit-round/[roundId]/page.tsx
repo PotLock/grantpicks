@@ -697,11 +697,12 @@ const EditRoundPage = () => {
 									<div className="flex space-x-4 mb-2">
 										<div className="w-[35%] space-y-1">
 											<InputText
+												disabled={!watch().allow_application}
 												label="Max Participants"
 												placeholder="0"
 												required
 												{...register('max_participants', {
-													required: true,
+													required: watch().allow_application === true,
 													onChange: (e) => {
 														setValue(
 															'max_participants',
@@ -758,9 +759,10 @@ const EditRoundPage = () => {
 											<Controller
 												name="apply_duration_start"
 												control={control}
-												rules={{ required: true }}
+												rules={{ required: watch().allow_application }}
 												render={({ field }) => (
 													<DatePicker
+														disabled={!watch().allow_application}
 														showIcon
 														selectsRange={true}
 														icon={

@@ -69,7 +69,7 @@ const CreateProjectStep4 = () => {
 		setStep(5)
 	}
 
-	console.log('githubs', watch())
+	console.log('githubs', watch(), errors)
 	return (
 		<div className="bg-grantpicks-black-50 rounded-b-xl w-full relative overflow-y-auto h-[70vh]">
 			<div className="pt-10 px-4 md:px-6 border-b border-black/10">
@@ -169,12 +169,18 @@ const CreateProjectStep4 = () => {
 									label="Amount"
 									{...register(`funding_histories.${index}.amount`, {
 										required: true,
+										pattern: /^(0|[1-9]\d*)(\.\d+)?$/,
 									})}
 									errorMessage={
 										errors?.funding_histories?.[index]?.amount?.type ===
 										'required' ? (
 											<p className="text-red-500 text-xs mt-1 ml-2">
 												Amount is required
+											</p>
+										) : errors?.funding_histories?.[index]?.amount?.type ===
+										  'valueAsNumber' ? (
+											<p className="text-red-500 text-xs mt-1 ml-2">
+												Amount only allow number
 											</p>
 										) : undefined
 									}

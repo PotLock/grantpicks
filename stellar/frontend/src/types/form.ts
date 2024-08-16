@@ -68,7 +68,6 @@ export type CreateRoundData = {
 	contact_address: string
 	amount: string
 	expected_amount: string
-	open_funding: boolean
 	allow_application: boolean
 	max_participants: number
 	apply_duration_start: Date | null
@@ -88,6 +87,8 @@ export type CreateRoundData = {
 	cooldown_period_ms: number | null
 	remaining_dist_address: string
 	referrer_fee_basis_points: number
+	use_vault: boolean
+	is_video_required: boolean
 }
 
 export type UpdateRoundData = {
@@ -98,7 +99,6 @@ export type UpdateRoundData = {
 	contact_address: string
 	amount: string
 	expected_amount: string
-	open_funding: boolean
 	allow_application: boolean
 	max_participants: number
 	apply_duration_start: Date | null
@@ -118,6 +118,8 @@ export type UpdateRoundData = {
 	cooldown_period_ms: number | null
 	remaining_dist_address: string
 	referrer_fee_basis_points: number
+	use_vault: boolean
+	is_video_required: boolean
 }
 
 export type CreateProjectStep1Data = {

@@ -8,7 +8,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CCIBKU2IGSZ67WY3MWMXLY42FJ4BZ6AFLJAIPHEAS4HRS3SD255HWH2C";
+        readonly contractId: "CA7DK6V6HIZO63PXGD43ZAC34UCE5ZR3TVPKQ576VGDM6YNNXWM3SMZQ";
     };
 };
 export type ApplicationStatus = {
@@ -56,6 +56,7 @@ export interface RoundDetail {
     remaining_dist_by: string;
     remaining_dist_memo: string;
     round_complete_ms: Option<u64>;
+    use_vault: Option<boolean>;
     use_whitelist: boolean;
     vault_total_deposits: u128;
     voting_end_ms: u64;
@@ -82,6 +83,7 @@ export interface CreateRoundParams {
     owner: string;
     referrer_fee_basis_points: Option<u32>;
     remaining_dist_address: string;
+    use_vault: Option<boolean>;
     use_whitelist: Option<boolean>;
     voting_end_ms: u64;
     voting_start_ms: u64;
@@ -97,6 +99,7 @@ export interface UpdateRoundParams {
     max_participants: Option<u32>;
     name: string;
     num_picks_per_voter: Option<u32>;
+    use_vault: Option<boolean>;
     use_whitelist: Option<boolean>;
     voting_end_ms: u64;
     voting_start_ms: u64;
@@ -273,6 +276,9 @@ export declare const Errors: {
     51: {
         message: string;
     };
+    53: {
+        message: string;
+    };
     6: {
         message: string;
     };
@@ -325,6 +331,9 @@ export declare const Errors: {
         message: string;
     };
     43: {
+        message: string;
+    };
+    54: {
         message: string;
     };
 };
@@ -403,6 +412,9 @@ export type ContractKey = {
     values: void;
 } | {
     tag: "ProjectContract";
+    values: void;
+} | {
+    tag: "VotedRoundIds";
     values: void;
 } | {
     tag: "RoundInfo";
@@ -1878,6 +1890,27 @@ export interface Client {
          */
         simulate?: boolean;
     }) => Promise<AssembledTransaction<VotingResult>>;
+    /**
+     * Construct and simulate a get_voted_rounds transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     */
+    get_voted_rounds: ({ voter, from_index, limit }: {
+        voter: string;
+        from_index: Option<u64>;
+        limit: Option<u64>;
+    }, options?: {
+        /**
+         * The fee to pay for the transaction. Default: BASE_FEE
+         */
+        fee?: number;
+        /**
+         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+         */
+        timeoutInSeconds?: number;
+        /**
+         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+         */
+        simulate?: boolean;
+    }) => Promise<AssembledTransaction<Array<RoundDetail>>>;
 }
 export declare class Client extends ContractClient {
     readonly options: ContractClientOptions;
@@ -1953,5 +1986,6 @@ export declare class Client extends ContractClient {
         whitelisted_voters: (json: string) => AssembledTransaction<string[]>;
         set_redistribution_config: (json: string) => AssembledTransaction<RoundDetail>;
         get_my_vote_for_round: (json: string) => AssembledTransaction<VotingResult>;
+        get_voted_rounds: (json: string) => AssembledTransaction<RoundDetail[]>;
     };
 }

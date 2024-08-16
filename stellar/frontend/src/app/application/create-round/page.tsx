@@ -86,7 +86,7 @@ const CreateRoundPage = () => {
 			max_participants: 0,
 			voting_duration_start: null,
 			voting_duration_end: null,
-			open_funding: true,
+			use_vault: false,
 		},
 	})
 	const { append: appendProject, remove: removeProject } = useFieldArray({
@@ -478,6 +478,7 @@ const CreateRoundPage = () => {
 						<div className="flex items-center space-x-4 w-full mb-4">
 							<div className="flex-1">
 								<InputText
+									disabled={!watch().use_vault}
 									label="Initial Deposit"
 									placeholder="Enter amount..."
 									onChange={async (e) => {
@@ -546,10 +547,9 @@ const CreateRoundPage = () => {
 						</div>
 						<div className="flex items-center">
 							<Checkbox
-								disabled
 								label="Open Funding Pool"
-								checked={watch().open_funding}
-								onChange={(e) => setValue('open_funding', e.target.checked)}
+								checked={watch().use_vault}
+								onChange={(e) => setValue('use_vault', e.target.checked)}
 							/>
 						</div>
 					</div>
@@ -686,10 +686,12 @@ const CreateRoundPage = () => {
 						</div>
 						<div className="flex items-center mb-4">
 							<Checkbox
-								disabled={!watch().allow_application}
+								disabled={!watch().is_video_required}
 								label="Video Required"
 								checked={watch().video_required}
-								onChange={(e) => setValue('video_required', e.target.checked)}
+								onChange={(e) =>
+									setValue('is_video_required', e.target.checked)
+								}
 							/>
 						</div>
 					</div>

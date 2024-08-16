@@ -87,6 +87,9 @@ const CreateRoundPage = () => {
 			voting_duration_start: null,
 			voting_duration_end: null,
 			use_vault: false,
+			is_video_required: false,
+			allow_application: false,
+			compliance_req_desc: '',
 		},
 	})
 	const { append: appendProject, remove: removeProject } = useFieldArray({

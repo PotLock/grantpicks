@@ -238,7 +238,6 @@ const CreateProjectStep5 = () => {
 								className="fill-grantpicks-black-400 cursor-pointer hover:opacity-70 transition"
 								onClick={() => {
 									if (accFiles.length > 0) {
-										console.log('hahaha')
 										let temp = [...accFiles]
 										temp.splice(0, 1)
 										setAccFiles(temp)

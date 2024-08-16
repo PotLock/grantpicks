@@ -209,6 +209,7 @@ const CreateRoundPage = () => {
 				use_whitelist: false,
 				is_video_required: data.is_video_required,
 				allow_applications: data.allow_application,
+				use_vault: data.use_vault,
 				voting_start_ms: BigInt(
 					data.voting_duration_start?.getTime() as number,
 				),

@@ -109,7 +109,7 @@ const IsNotVotedSection = ({
 	return (
 		<div className="flex flex-col items-center text-grantpicks-black-950">
 			<p className="text-xl md:text-[26px] lg:text-[32px] font-black text-grantpicks-black-300 mb-5 md:mb-8">
-				PAIR {currBoxing + 1} OF 5
+				PAIR {currBoxing + 1} OF {pairsData.length}
 			</p>
 			<p className="text-3xl md:text-4xl lg:text-[50px] font-black text-center mb-5 w-96 leading-[50px]">
 				WHICH ONE DO YOU CHOOSE?

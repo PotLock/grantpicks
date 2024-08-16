@@ -104,6 +104,12 @@ export interface GetResultVoteParams {
 	voter: string
 }
 
+export interface GetMyVotedRoundsParams {
+	voter: string
+	from_index?: number
+	limit?: number
+}
+
 export interface UpdateRoundParams {
 	allow_applications: boolean
 	application_end_ms?: u64
@@ -438,6 +444,21 @@ export const getResultVoteRound: (
 ) => {
 	let round = await contract.round_contract.get_my_vote_for_round({
 		round_id: params.round_id,
+		voter: params.voter,
+	})
+	return round.result
+}
+
+export const getMyVotedRounds: (
+	params: GetMyVotedRoundsParams,
+	contract: Contracts,
+) => Promise<Array<RoundDetail>> = async (
+	params: GetMyVotedRoundsParams,
+	contract: Contracts,
+) => {
+	let round = await contract.round_contract.get_voted_rounds({
+		from_index: BigInt(params.from_index || 0),
+		limit: BigInt(params.limit || 10),
 		voter: params.voter,
 	})
 	return round.result

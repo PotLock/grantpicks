@@ -974,7 +974,7 @@ const CreateRoundPage = () => {
 									<div className="flex items-center space-x-2">
 										<div className="bg-grantpicks-black-400 rounded-full w-6 h-6" />
 										<p className="text-sm font-semibold text-grantpicks-black-950">
-											{selected.name}
+											{prettyTruncate(selected.name)}
 										</p>
 									</div>
 									<IconClose

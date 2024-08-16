@@ -48,6 +48,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 	//stellar
 	const [stellarKit, setStellarKit] = useState<StellarWalletsKit | null>(null)
 	const [stellarPubKey, setStellarPubKey] = useState<string>('')
+	const [isInit, setIsInit] = useState<boolean>(true)
 
 	const onInitNear = async () => {
 		try {
@@ -84,7 +85,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 					envVarConfigs.NETWORK_ENV === 'testnet'
 						? WalletNetwork.TESTNET
 						: WalletNetwork.FUTURENET,
-				selectedWalletId: 'xbull',
+				selectedWalletId: 'freighter',
 				modules: [
 					new FreighterModule(),
 					new xBullModule(),
@@ -185,8 +186,13 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 	}
 
 	useEffect(() => {
-		onInitNear()
-		onInitStellar()
+		const initialization = async () => {
+			setIsInit(true)
+			onInitNear()
+			onInitStellar()
+			setIsInit(false)
+		}
+		initialization()
 	}, [])
 
 	useEffect(() => {
@@ -217,25 +223,27 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 		}
 	}, [nearSelector])
 
-	return (
-		<WalletContext.Provider
-			value={{
-				nearSelector,
-				nearModal,
-				connectedWallet,
-				nearWallet,
-				nearAccounts,
-				onOpenNearWallet,
-				onSignOut,
-				onCheckConnected,
-				stellarKit,
-				stellarPubKey,
-				onOpenStellarWallet,
-			}}
-		>
-			{children}
-		</WalletContext.Provider>
-	)
+	if (!isInit) {
+		return (
+			<WalletContext.Provider
+				value={{
+					nearSelector,
+					nearModal,
+					connectedWallet,
+					nearWallet,
+					nearAccounts,
+					onOpenNearWallet,
+					onSignOut,
+					onCheckConnected,
+					stellarKit,
+					stellarPubKey,
+					onOpenStellarWallet,
+				}}
+			>
+				{children}
+			</WalletContext.Provider>
+		)
+	}
 }
 
 export const useWallet = () => {

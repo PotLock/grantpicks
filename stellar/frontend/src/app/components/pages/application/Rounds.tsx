@@ -363,12 +363,9 @@ const ApplicationRounds = () => {
 		skip: number
 		limit: number
 	}) => {
-		let cmdWallet = new CMDWallet({
-			stellarPubKey: stellarPubKey,
-		})
 		const contracts = new Contracts(
 			process.env.NETWORK_ENV as Network,
-			cmdWallet,
+			undefined,
 		)
 		const res = await getRounds({ skip: key.skip, limit: key.limit }, contracts)
 		return res
@@ -378,7 +375,6 @@ const ApplicationRounds = () => {
 		pageIndex: number,
 		previousPageData: IGetRoundsResponse[],
 	) => {
-		if (!connectedWallet) return null
 		if (previousPageData && !previousPageData.length) return null
 		return {
 			url: `get-rounds`,
@@ -452,7 +448,7 @@ const ApplicationRounds = () => {
 					Round results
 				</button>
 			</div>
-			{!connectedWallet || roundsData.length === 0 ? (
+			{roundsData.length === 0 ? (
 				<div>
 					<div className="mt-8 flex items-center justify-center">
 						<Image

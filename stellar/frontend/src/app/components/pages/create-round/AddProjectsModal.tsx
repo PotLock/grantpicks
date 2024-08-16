@@ -44,12 +44,9 @@ const AddProjectsModal = ({
 	>([])
 	const [searchProject, setSearchProject] = useState<string>('')
 	const onFetchProjects = async (key: { skip: number; limit: number }) => {
-		let cmdWallet = new CMDWallet({
-			stellarPubKey: stellarPubKey,
-		})
 		const contracts = new Contracts(
 			process.env.NETWORK_ENV as Network,
-			cmdWallet,
+			undefined,
 		)
 		const resProjects = await getProjects(
 			{

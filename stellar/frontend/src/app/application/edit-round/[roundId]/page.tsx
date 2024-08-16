@@ -121,12 +121,9 @@ const EditRoundPage = () => {
 		})
 
 	const onFetchAdmins = async () => {
-		let cmdWallet = new CMDWallet({
-			stellarPubKey: stellarPubKey,
-		})
 		const contracts = new Contracts(
 			process.env.NETWORK_ENV as Network,
-			cmdWallet,
+			undefined,
 		)
 		const res = await getRoundAdmins(
 			{ round_id: BigInt(params.roundId) },
@@ -136,12 +133,9 @@ const EditRoundPage = () => {
 	}
 
 	const onFetchRoundInfo = async () => {
-		let cmdWallet = new CMDWallet({
-			stellarPubKey: stellarPubKey,
-		})
 		const contracts = new Contracts(
 			process.env.NETWORK_ENV as Network,
-			cmdWallet,
+			undefined,
 		)
 		const resRoundInfo = await getRoundInfo(
 			{ round_id: BigInt(params.roundId) },
@@ -151,12 +145,9 @@ const EditRoundPage = () => {
 	}
 
 	const onFetchRoundApplications = async () => {
-		let cmdWallet = new CMDWallet({
-			stellarPubKey: stellarPubKey,
-		})
 		const contracts = new Contracts(
 			process.env.NETWORK_ENV as Network,
-			cmdWallet,
+			undefined,
 		)
 		let resRoundApps: IGetRoundApplicationsResponse[] = []
 		let currData: IGetRoundApplicationsResponse[]
@@ -175,12 +166,9 @@ const EditRoundPage = () => {
 	const onFetchProjectsByApplication = async (
 		roundApps: IGetRoundApplicationsResponse[],
 	) => {
-		let cmdWallet = new CMDWallet({
-			stellarPubKey: stellarPubKey,
-		})
 		const contracts = new Contracts(
 			process.env.NETWORK_ENV as Network,
-			cmdWallet,
+			undefined,
 		)
 		console.log('project id from round apps', roundApps)
 		let resProjects: IGetProjectsResponse[] = []

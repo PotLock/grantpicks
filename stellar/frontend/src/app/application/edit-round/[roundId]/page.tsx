@@ -286,7 +286,7 @@ const EditRoundPage = () => {
 						'voting_duration_end',
 						new Date(Number(resRoundInfo.voting_end_ms)),
 					)
-					setValue('video_required', resRoundInfo?.is_video_required)
+					setValue('is_video_required', resRoundInfo?.is_video_required)
 				}
 				// if (resProjects.length > 0) {
 				// 	setValue(`projects`, resProjects)
@@ -388,7 +388,7 @@ const EditRoundPage = () => {
 				max_participants: data.max_participants,
 				num_picks_per_voter: data.vote_per_person,
 				use_whitelist: false,
-				is_video_required: data.video_required,
+				is_video_required: data.is_video_required,
 				allow_applications: data.allow_application,
 				voting_start_ms: BigInt(
 					data.voting_duration_start?.getTime() as number,
@@ -432,7 +432,7 @@ const EditRoundPage = () => {
 				router.push(`/application`)
 			}
 		} catch (error: any) {
-			console.log('error', error?.message)
+			console.error('error', error)
 			toast.error(error?.message || 'Something went wrong', {
 				style: toastOptions.error.style,
 			})
@@ -808,7 +808,7 @@ const EditRoundPage = () => {
 										label="Video Required"
 										checked={watch().is_video_required}
 										onChange={(e) =>
-											setValue('video_required', e.target.checked)
+											setValue('is_video_required', e.target.checked)
 										}
 									/>
 								</div>

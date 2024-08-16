@@ -101,6 +101,7 @@ const FundRoundModal = ({
 				</div>
 				<div className="flex-1 mb-4 md:mb-6">
 					<InputText
+						type="number"
 						value={amount}
 						placeholder="0.00"
 						onChange={(e) => {

@@ -420,14 +420,14 @@ export type ContractKey = {
     tag: "VotedRoundIds";
     values: void;
 } | {
-    tag: "RoundInfo";
-    values: readonly [u128];
-} | {
     tag: "PayoutInfo";
     values: void;
 } | {
     tag: "DepositInfo";
     values: void;
+} | {
+    tag: "RoundInfo";
+    values: readonly [u128];
 } | {
     tag: "WhiteList";
     values: readonly [u128];
@@ -439,6 +439,9 @@ export type ContractKey = {
     values: readonly [u128];
 } | {
     tag: "ApprovedProjects";
+    values: readonly [u128];
+} | {
+    tag: "FlaggedProjects";
     values: readonly [u128];
 } | {
     tag: "Payouts";
@@ -1914,6 +1917,27 @@ export interface Client {
          */
         simulate?: boolean;
     }) => Promise<AssembledTransaction<Array<RoundDetail>>>;
+    /**
+     * Construct and simulate a get_challenges_payout transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     */
+    get_challenges_payout: ({ round_id, from_index, limit }: {
+        round_id: u128;
+        from_index: Option<u64>;
+        limit: Option<u64>;
+    }, options?: {
+        /**
+         * The fee to pay for the transaction. Default: BASE_FEE
+         */
+        fee?: number;
+        /**
+         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+         */
+        timeoutInSeconds?: number;
+        /**
+         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+         */
+        simulate?: boolean;
+    }) => Promise<AssembledTransaction<Array<PayoutsChallenge>>>;
 }
 export declare class Client extends ContractClient {
     readonly options: ContractClientOptions;
@@ -1990,5 +2014,6 @@ export declare class Client extends ContractClient {
         set_redistribution_config: (json: string) => AssembledTransaction<RoundDetail>;
         get_my_vote_for_round: (json: string) => AssembledTransaction<VotingResult>;
         get_voted_rounds: (json: string) => AssembledTransaction<RoundDetail[]>;
+        get_challenges_payout: (json: string) => AssembledTransaction<PayoutsChallenge[]>;
     };
 }

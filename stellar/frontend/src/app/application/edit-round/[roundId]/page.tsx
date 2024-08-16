@@ -90,6 +90,8 @@ const EditRoundPage = () => {
 			max_participants: 0,
 			voting_duration_start: new Date(),
 			voting_duration_end: new Date(),
+			use_vault: false,
+			is_video_required: false,
 		},
 	})
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
@@ -216,7 +218,8 @@ const EditRoundPage = () => {
 					parseFloat(formatStroopToXlm(resRoundInfo?.expected_amount) || '0') *
 					stellarPrice
 				setExpectAmountUsd(`${calculation.toFixed(3)}`)
-				setValue('open_funding', true)
+				setValue('use_vault', resRoundInfo.use_vault || false)
+				setValue('is_video_required', resRoundInfo.is_video_required || false)
 				if (resRoundInfo.compliance_end_ms) {
 					setValue(
 						'allow_compliance',
@@ -384,13 +387,14 @@ const EditRoundPage = () => {
 				expected_amount: parseToStroop(data.expected_amount),
 				max_participants: data.max_participants,
 				num_picks_per_voter: data.vote_per_person,
-				use_whitelist: data.open_funding,
+				use_whitelist: false,
 				is_video_required: data.video_required,
 				allow_applications: data.allow_application,
 				voting_start_ms: BigInt(
 					data.voting_duration_start?.getTime() as number,
 				),
 				voting_end_ms: BigInt(data.voting_duration_end?.getTime() as number),
+				use_vault: data.use_vault,
 			}
 			console.log('update round params', udpateRoundParams)
 			const txUpdateRound = await editRound(
@@ -599,6 +603,7 @@ const EditRoundPage = () => {
 						<div className="flex items-center space-x-4 w-full mb-4">
 							<div className="flex-1">
 								<InputText
+									disabled={!watch().use_vault}
 									label="Amount"
 									placeholder="Enter amount..."
 									onChange={async (e) => {
@@ -668,8 +673,8 @@ const EditRoundPage = () => {
 						<div className="flex items-center">
 							<Checkbox
 								label="Open Funding Pool"
-								checked={watch().open_funding}
-								onChange={(e) => setValue('open_funding', e.target.checked)}
+								checked={watch().use_vault}
+								onChange={(e) => setValue('use_vault', e.target.checked)}
 							/>
 						</div>
 					</div>
@@ -697,11 +702,12 @@ const EditRoundPage = () => {
 									<div className="flex space-x-4 mb-2">
 										<div className="w-[35%] space-y-1">
 											<InputText
+												disabled={!watch().allow_application}
 												label="Max Participants"
 												placeholder="0"
 												required
 												{...register('max_participants', {
-													required: true,
+													required: watch().allow_application === true,
 													onChange: (e) => {
 														setValue(
 															'max_participants',
@@ -758,9 +764,10 @@ const EditRoundPage = () => {
 											<Controller
 												name="apply_duration_start"
 												control={control}
-												rules={{ required: true }}
+												rules={{ required: watch().allow_application }}
 												render={({ field }) => (
 													<DatePicker
+														disabled={!watch().allow_application}
 														showIcon
 														selectsRange={true}
 														icon={
@@ -799,7 +806,7 @@ const EditRoundPage = () => {
 								<div className="flex items-center mb-4">
 									<Checkbox
 										label="Video Required"
-										checked={watch().open_funding}
+										checked={watch().is_video_required}
 										onChange={(e) =>
 											setValue('video_required', e.target.checked)
 										}

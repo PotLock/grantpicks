@@ -77,12 +77,16 @@ const CreateRoundPage = () => {
 	} = useForm<CreateRoundData>({
 		defaultValues: {
 			vote_per_person: 0,
-			apply_duration_start: null,
-			apply_duration_end: null,
+			apply_duration_start: undefined,
+			apply_duration_end: undefined,
+			compliance_period_ms: undefined,
+			compliance_end_ms: undefined,
+			cooldown_period_ms: undefined,
+			cooldown_end_ms: undefined,
 			max_participants: 0,
 			voting_duration_start: null,
 			voting_duration_end: null,
-			open_funding: true,
+			use_vault: false,
 		},
 	})
 	const { append: appendProject, remove: removeProject } = useFieldArray({
@@ -182,12 +186,10 @@ const CreateRoundPage = () => {
 				owner: stellarPubKey,
 				name: data.title,
 				description: data.description,
-				application_start_ms: BigInt(
-					data.apply_duration_start?.getTime() as number,
-				),
-				application_end_ms: BigInt(
-					data.apply_duration_end?.getTime() as number,
-				),
+				application_start_ms:
+					BigInt(data.apply_duration_start?.getTime() as number) || undefined,
+				application_end_ms:
+					BigInt(data.apply_duration_end?.getTime() as number) || undefined,
 				contacts: [
 					{
 						name: data.contact_type,
@@ -210,15 +212,18 @@ const CreateRoundPage = () => {
 						: [],
 				allow_remaining_dist: true,
 				compliance_req_desc: data.compliance_req_desc,
-				compliance_end_ms: BigInt(
-					BigInt(data.voting_duration_end?.getTime() || 0),
-				),
-				compliance_period_ms: BigInt(data.compliance_period_ms || 0),
-				cooldown_end_ms: BigInt(data.voting_duration_end?.getTime() || 0),
-				cooldown_period_ms: BigInt(0),
+				compliance_end_ms:
+					BigInt(BigInt(data.voting_duration_end?.getTime() as number)) ||
+					undefined,
+				compliance_period_ms:
+					BigInt(data.compliance_period_ms as number) || undefined,
+				cooldown_end_ms:
+					BigInt(data.voting_duration_end?.getTime() as number) || undefined,
+				cooldown_period_ms: undefined,
 				remaining_dist_address: data.remaining_dist_address || stellarPubKey,
 				referrer_fee_basis_points: 0,
 			}
+			console.log('debug params', createRoundParams)
 			const txCreateRound = await createRound(
 				stellarPubKey,
 				createRoundParams,
@@ -473,6 +478,7 @@ const CreateRoundPage = () => {
 						<div className="flex items-center space-x-4 w-full mb-4">
 							<div className="flex-1">
 								<InputText
+									disabled={!watch().use_vault}
 									label="Initial Deposit"
 									placeholder="Enter amount..."
 									onChange={async (e) => {
@@ -541,10 +547,9 @@ const CreateRoundPage = () => {
 						</div>
 						<div className="flex items-center">
 							<Checkbox
-								disabled
 								label="Open Funding Pool"
-								checked={watch().open_funding}
-								onChange={(e) => setValue('open_funding', e.target.checked)}
+								checked={watch().use_vault}
+								onChange={(e) => setValue('use_vault', e.target.checked)}
 							/>
 						</div>
 					</div>
@@ -575,7 +580,7 @@ const CreateRoundPage = () => {
 										placeholder="0"
 										required
 										{...register('max_participants', {
-											required: true,
+											required: watch().allow_application === true,
 											onChange: (e) => {
 												setValue('max_participants', parseInt(e.target.value))
 											},
@@ -636,7 +641,7 @@ const CreateRoundPage = () => {
 									<Controller
 										name="apply_duration_start"
 										control={control}
-										rules={{ required: true }}
+										rules={{ required: watch().allow_application }}
 										render={({ field }) => (
 											<DatePicker
 												disabled={!watch().allow_application}
@@ -681,10 +686,12 @@ const CreateRoundPage = () => {
 						</div>
 						<div className="flex items-center mb-4">
 							<Checkbox
-								disabled={!watch().allow_application}
+								disabled={!watch().is_video_required}
 								label="Video Required"
 								checked={watch().video_required}
-								onChange={(e) => setValue('video_required', e.target.checked)}
+								onChange={(e) =>
+									setValue('is_video_required', e.target.checked)
+								}
 							/>
 						</div>
 					</div>
@@ -800,7 +807,7 @@ const CreateRoundPage = () => {
 								disabled={!watch().allow_compliance}
 								label="Description"
 								{...register('compliance_req_desc', {
-									required: watch().allow_compliance,
+									required: watch().allow_compliance === true,
 								})}
 								errorMessage={
 									errors.compliance_req_desc?.type === 'required' ? (
@@ -967,7 +974,7 @@ const CreateRoundPage = () => {
 									<div className="flex items-center space-x-2">
 										<div className="bg-grantpicks-black-400 rounded-full w-6 h-6" />
 										<p className="text-sm font-semibold text-grantpicks-black-950">
-											{selected.name}
+											{prettyTruncate(selected.name)}
 										</p>
 									</div>
 									<IconClose

@@ -21,6 +21,7 @@ import { LIMIT_SIZE } from '@/constants/query'
 import Contracts from '@/lib/contracts'
 import CMDWallet from '@/lib/wallet'
 import {
+	getMyVotedRounds,
 	getRoundApplication,
 	getRounds,
 	HasVotedRoundParams,
@@ -54,27 +55,27 @@ const ApplicationRoundsItem = ({
 	const [isUserApplied, setIsUserApplied] = useState<boolean>(false)
 	const [hasVoted, setHasVoted] = useState<boolean>(false)
 
-	const fetchRoundApplication = async () => {
-		try {
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
-			const res = await getRoundApplication(
-				{ round_id: doc.id as bigint, applicant: stellarPubKey },
-				contracts,
-			)
-			//@ts-ignore
-			if (!res?.error) {
-				if (selectedRoundType === 'upcoming') setIsUserApplied(true)
-			}
-		} catch (error: any) {
-			console.log('error fetch project applicant', error)
-		}
-	}
+	// const fetchRoundApplication = async () => {
+	// 	try {
+	// 		let cmdWallet = new CMDWallet({
+	// 			stellarPubKey: stellarPubKey,
+	// 		})
+	// 		const contracts = new Contracts(
+	// 			process.env.NETWORK_ENV as Network,
+	// 			cmdWallet,
+	// 		)
+	// 		const res = await getRoundApplication(
+	// 			{ round_id: doc.id as bigint, applicant: stellarPubKey },
+	// 			contracts,
+	// 		)
+	// 		//@ts-ignore
+	// 		if (!res?.error) {
+	// 			if (selectedRoundType === 'upcoming') setIsUserApplied(true)
+	// 		}
+	// 	} catch (error: any) {
+	// 		console.log('error fetch project applicant', error)
+	// 	}
+	// }
 
 	const getSpecificTime = () => {
 		if (selectedRoundType === 'upcoming') {
@@ -98,30 +99,30 @@ const ApplicationRoundsItem = ({
 		}
 	}
 
-	const checkVoterHasVoted = async () => {
-		try {
-			if (!stellarPubKey) return
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
-			const txParams: HasVotedRoundParams = {
-				round_id: BigInt(doc.id),
-				voter: stellarPubKey,
-			}
-			const isHasVotedRes = await isHasVotedRound(txParams, contracts)
-			setHasVoted(isHasVotedRes)
-		} catch (error: any) {
-			console.log('error check has voted', error)
-		}
-	}
+	// const checkVoterHasVoted = async () => {
+	// 	try {
+	// 		if (!stellarPubKey) return
+	// 		let cmdWallet = new CMDWallet({
+	// 			stellarPubKey: stellarPubKey,
+	// 		})
+	// 		const contracts = new Contracts(
+	// 			process.env.NETWORK_ENV as Network,
+	// 			cmdWallet,
+	// 		)
+	// 		const txParams: HasVotedRoundParams = {
+	// 			round_id: BigInt(doc.id),
+	// 			voter: stellarPubKey,
+	// 		}
+	// 		const isHasVotedRes = await isHasVotedRound(txParams, contracts)
+	// 		setHasVoted(isHasVotedRes)
+	// 	} catch (error: any) {
+	// 		console.log('error check has voted', error)
+	// 	}
+	// }
 
-	useEffect(() => {
-		fetchRoundApplication()
-	}, [])
+	// useEffect(() => {
+	// 	fetchRoundApplication()
+	// }, [])
 
 	return (
 		<div className="p-4 md:p-5 rounded-2xl border border-black/10 bg-white">
@@ -359,7 +360,7 @@ const MyVotesPage = () => {
 	const { stellarPubKey, connectedWallet } = useWallet()
 	const [roundsData, setRoundsData] = useState<IGetRoundsResponse[]>([])
 
-	const onFetchRounds = async (key: {
+	const onFetchMyVotedRounds = async (key: {
 		url: string
 		skip: number
 		limit: number
@@ -371,7 +372,10 @@ const MyVotesPage = () => {
 			process.env.NETWORK_ENV as Network,
 			cmdWallet,
 		)
-		const res = await getRounds({ skip: key.skip, limit: key.limit }, contracts)
+		const res = await getMyVotedRounds(
+			{ from_index: key.skip, limit: key.limit, voter: stellarPubKey },
+			contracts,
+		)
 		return res
 	}
 
@@ -382,13 +386,13 @@ const MyVotesPage = () => {
 		if (!connectedWallet) return null
 		if (previousPageData && !previousPageData.length) return null
 		return {
-			url: `get-rounds`,
+			url: `get-my-voted-rounds`,
 			skip: pageIndex,
 			limit: LIMIT_SIZE,
 		}
 	}
 	const { data, size, setSize, isValidating, isLoading, mutate } =
-		useSWRInfinite(getKey, async (key) => await onFetchRounds(key), {
+		useSWRInfinite(getKey, async (key) => await onFetchMyVotedRounds(key), {
 			revalidateFirstPage: false,
 		})
 	const rounds = data ? ([] as IGetRoundsResponse[]).concat(...data) : []

@@ -13,6 +13,7 @@ pub enum ContractKey {
     ProjectPayoutIds,
     TokenContract,
     ProjectContract,
+    VotedRoundIds,
     RoundInfo(u128),
     PayoutInfo,
     DepositInfo,

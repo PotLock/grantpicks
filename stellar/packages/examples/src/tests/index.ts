@@ -56,6 +56,7 @@ export async function generateFakeRound() {
 			allow_remaining_dist: false,
 			remaining_dist_address: adminPublicKey,
 			referrer_fee_basis_points: 0,
+      use_vault: true,
 		},
 	})
 

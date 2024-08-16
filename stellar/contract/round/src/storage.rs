@@ -17,6 +17,7 @@ pub fn extend_instance(env: &Env) {
     extend_persistent(env, &ContractKey::TokenContract);
     extend_persistent(env, &ContractKey::ProjectContract);
     extend_persistent(env, &ContractKey::ProjectPayoutIds);
+    extend_persistent(env, &ContractKey::VotedRoundIds);
     extend_persistent(env, &ContractKey::PayoutInfo);
     extend_persistent(env, &ContractKey::DepositInfo);
 }

@@ -68,4 +68,5 @@ pub trait IsRound {
     fn blacklisted_voters(env: &Env, round_id: u128) -> Vec<Address>;
     fn whitelisted_voters(env: &Env, round_id: u128) -> Vec<Address>;
     fn get_my_vote_for_round(env: &Env, round_id: u128, voter: Address) -> VotingResult;
+    fn get_voted_rounds(env: &Env, voter: Address, from_index: Option<u64>, limit: Option<u64>) -> Vec<RoundDetail>;
 }

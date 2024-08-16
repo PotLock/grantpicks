@@ -98,12 +98,16 @@ pub fn validate_voting_period(env: &Env, round: &RoundDetail) {
 pub fn validate_application_period(env: &Env, round: &RoundDetail) {
     let current_time = get_ledger_second_as_millis(env);
 
-    if current_time < round.application_start_ms.unwrap() {
-        panic_with_error!(env, ApplicationError::ApplicationPeriodNotStarted);
-    }
+    if round.allow_applications {
+        if current_time < round.application_start_ms.unwrap() {
+            panic_with_error!(env, ApplicationError::ApplicationPeriodNotStarted);
+        }
 
-    if current_time > round.application_end_ms.unwrap() {
-        panic_with_error!(env, ApplicationError::ApplicationPeriodEnded);
+        if current_time > round.application_end_ms.unwrap() {
+            panic_with_error!(env, ApplicationError::ApplicationPeriodEnded);
+        }
+    }else{
+        panic_with_error!(env, ApplicationError::ApplicationNotAllowed);
     }
 }
 

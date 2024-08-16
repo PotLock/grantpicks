@@ -47,6 +47,7 @@ pub enum RoundError {
     CompliancePeriodNotStarted = 49,
     CooldownPeriodNotInProcess = 50,
     NotSolveAllPayoutChallenge = 51,
+    RoundDoesNotUseVault = 53,
 }
 
 #[allow(clippy::module_name_repetitions)]
@@ -79,4 +80,5 @@ pub enum ApplicationError {
     ApplicationNotFound = 30,
     VideoUrlNotValid = 42,
     ProjectAlreadyApplied = 43,
+    ApplicationNotAllowed = 54,
 }

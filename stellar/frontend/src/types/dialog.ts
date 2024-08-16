@@ -16,6 +16,7 @@ export interface IDrawerProps extends DialogProps {
 	closeOnBgClick?: boolean
 	closeOnEscape?: boolean
 	className?: string
+	showClose?: boolean
 }
 
 export interface BaseModalProps {

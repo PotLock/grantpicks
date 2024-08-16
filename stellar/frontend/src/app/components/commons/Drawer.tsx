@@ -10,6 +10,7 @@ const Drawer = ({
 	closeOnEscape = true,
 	onClose,
 	children,
+	showClose = true,
 }: IDrawerProps) => {
 	const drawerRef = useRef<HTMLDivElement>(null)
 	useEffect(() => {
@@ -48,11 +49,13 @@ const Drawer = ({
 					className,
 				)}
 			>
-				<IconClose
-					size={24}
-					className="fill-grantpicks-black-600 absolute top-5 right-5 cursor-pointer hover:opacity-70 transition"
-					onClick={onClose}
-				/>
+				{showClose && (
+					<IconClose
+						size={24}
+						className="fill-grantpicks-black-600 absolute top-5 right-5 cursor-pointer hover:opacity-70 transition"
+						onClick={onClose}
+					/>
+				)}
 				{children}
 			</div>
 		</>

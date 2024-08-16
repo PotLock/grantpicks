@@ -200,7 +200,7 @@ const CreateRoundPage = () => {
 				max_participants: data.max_participants,
 				num_picks_per_voter: data.vote_per_person,
 				use_whitelist: false,
-				is_video_required: data.video_required,
+				is_video_required: data.is_video_required,
 				allow_applications: data.allow_application,
 				voting_start_ms: BigInt(
 					data.voting_duration_start?.getTime() as number,
@@ -686,9 +686,9 @@ const CreateRoundPage = () => {
 						</div>
 						<div className="flex items-center mb-4">
 							<Checkbox
-								disabled={!watch().is_video_required}
+								disabled={!watch().allow_application}
 								label="Video Required"
-								checked={watch().video_required}
+								checked={watch().is_video_required}
 								onChange={(e) =>
 									setValue('is_video_required', e.target.checked)
 								}

@@ -13,6 +13,7 @@ import IconAdd from '@/app/components/svgs/IconAdd'
 import Checkbox from '@/app/components/commons/CheckBox'
 import PreviousConfirmationModal from './PreviousConfirmationModal'
 import { StrKey } from 'round-client'
+import { capitalizeFirstLetter } from '@/utils/helper'
 
 const CreateProjectStep3 = () => {
 	const [showContractMenu, setShowContractMenu] = useState<boolean[]>([])
@@ -149,7 +150,9 @@ const CreateProjectStep3 = () => {
 											className="bg-white border border-grantpicks-black-200 rounded-xl py-3 px-3 flex items-center justify-between cursor-pointer hover:opacity-80 transition"
 										>
 											<p className="text-sm font-normal text-grantpicks-black-950">
-												{watch().smart_contracts[index].chain}
+												{capitalizeFirstLetter(
+													watch().smart_contracts[index].chain,
+												)}
 											</p>
 											<IconUnfoldMore
 												size={24}
@@ -355,7 +358,9 @@ const CreateProjectStep3 = () => {
 											className="bg-white border border-grantpicks-black-200 rounded-xl py-3 px-3 flex items-center justify-between cursor-pointer hover:opacity-80 transition"
 										>
 											<p className="text-sm font-normal text-grantpicks-black-950">
-												{watch().contacts[index].platform}
+												{capitalizeFirstLetter(
+													watch().contacts[index].platform,
+												)}
 											</p>
 											<IconUnfoldMore
 												size={24}

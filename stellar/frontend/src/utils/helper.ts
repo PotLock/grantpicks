@@ -8,6 +8,10 @@ import { ENetworkEnv, Networks, SubmitTxProps } from '@/types/on-chain'
 import axios from 'axios'
 import { Horizon, SorobanRpc, TransactionBuilder } from 'round-client'
 
+export const capitalizeFirstLetter = (str: string) => {
+	return str.charAt(0).toUpperCase() + str.slice(1)
+}
+
 export const prettyTruncate = (str = '', len = 8, type?: string) => {
 	if (str && str.length > len) {
 		if (type === 'address') {

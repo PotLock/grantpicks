@@ -252,9 +252,6 @@ const RoundDetailDrawer = ({
 											<p className="text-base font-bold text-grantpicks-black-950">
 												{prettyTruncate(adminKey, 8, 'address')}
 											</p>
-											{/* <p className="text-sm font-normal text-grantpicks-black-600">
-											@abdul.near
-										</p> */}
 										</div>
 									</div>
 								))}

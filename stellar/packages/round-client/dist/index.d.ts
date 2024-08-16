@@ -279,6 +279,9 @@ export declare const Errors: {
     53: {
         message: string;
     };
+    55: {
+        message: string;
+    };
     6: {
         message: string;
     };

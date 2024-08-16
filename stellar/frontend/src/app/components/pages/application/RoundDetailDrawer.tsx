@@ -98,12 +98,9 @@ const RoundDetailDrawer = ({
 	const { connectedWallet, stellarPubKey } = useWallet()
 
 	const onFetchRoundAdmins = async () => {
-		let cmdWallet = new CMDWallet({
-			stellarPubKey: stellarPubKey,
-		})
 		const contracts = new Contracts(
 			process.env.NETWORK_ENV as Network,
-			cmdWallet,
+			undefined,
 		)
 		const res = await getRoundAdmins({ round_id: BigInt(doc.id) }, contracts)
 		return res

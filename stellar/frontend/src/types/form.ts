@@ -72,7 +72,6 @@ export type CreateRoundData = {
 	max_participants: number
 	apply_duration_start: Date | null
 	apply_duration_end: Date | null
-	video_required: boolean
 	voting_duration_start: Date | null
 	voting_duration_end: Date | null
 	projects: IGetProjectsResponse[]
@@ -103,7 +102,6 @@ export type UpdateRoundData = {
 	max_participants: number
 	apply_duration_start: Date | null
 	apply_duration_end: Date | null
-	video_required: boolean
 	voting_duration_start: Date | null
 	voting_duration_end: Date | null
 	projects: IGetProjectsResponse[]

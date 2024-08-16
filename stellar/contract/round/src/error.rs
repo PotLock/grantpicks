@@ -48,6 +48,7 @@ pub enum RoundError {
     CooldownPeriodNotInProcess = 50,
     NotSolveAllPayoutChallenge = 51,
     RoundDoesNotUseVault = 53,
+    ApplicationPeriodNotSet = 55,
 }
 
 #[allow(clippy::module_name_repetitions)]

@@ -87,6 +87,9 @@ const CreateRoundPage = () => {
 			voting_duration_start: null,
 			voting_duration_end: null,
 			use_vault: false,
+			is_video_required: false,
+			allow_application: false,
+			compliance_req_desc: '',
 		},
 	})
 	const { append: appendProject, remove: removeProject } = useFieldArray({
@@ -186,10 +189,12 @@ const CreateRoundPage = () => {
 				owner: stellarPubKey,
 				name: data.title,
 				description: data.description,
-				application_start_ms:
-					BigInt(data.apply_duration_start?.getTime() as number) || undefined,
-				application_end_ms:
-					BigInt(data.apply_duration_end?.getTime() as number) || undefined,
+				application_start_ms: data.apply_duration_start
+					? BigInt(data.apply_duration_start?.getTime() as number)
+					: undefined,
+				application_end_ms: data.apply_duration_end
+					? BigInt(data.apply_duration_end?.getTime() as number)
+					: undefined,
 				contacts: [
 					{
 						name: data.contact_type,
@@ -201,7 +206,7 @@ const CreateRoundPage = () => {
 					data.max_participants < 10 ? 10 : data.max_participants,
 				num_picks_per_voter: data.vote_per_person,
 				use_whitelist: false,
-				is_video_required: data.video_required,
+				is_video_required: data.is_video_required,
 				allow_applications: data.allow_application,
 				voting_start_ms: BigInt(
 					data.voting_duration_start?.getTime() as number,
@@ -213,13 +218,15 @@ const CreateRoundPage = () => {
 						: [],
 				allow_remaining_dist: true,
 				compliance_req_desc: data.compliance_req_desc,
-				compliance_end_ms:
-					BigInt(BigInt(data.voting_duration_end?.getTime() as number)) ||
-					undefined,
-				compliance_period_ms:
-					BigInt(data.compliance_period_ms as number) || undefined,
-				cooldown_end_ms:
-					BigInt(data.voting_duration_end?.getTime() as number) || undefined,
+				compliance_end_ms: data.voting_duration_end
+					? BigInt(data.voting_duration_end?.getTime() as number)
+					: undefined,
+				compliance_period_ms: data.compliance_period_ms
+					? BigInt(data.compliance_period_ms as number)
+					: undefined,
+				cooldown_end_ms: data.voting_duration_end
+					? BigInt(data.voting_duration_end?.getTime() as number)
+					: undefined,
 				cooldown_period_ms: undefined,
 				remaining_dist_address: data.remaining_dist_address || stellarPubKey,
 				referrer_fee_basis_points: 0,
@@ -256,7 +263,7 @@ const CreateRoundPage = () => {
 				router.push(`/application`)
 			}
 		} catch (error: any) {
-			console.log('error', error?.message)
+			console.error(error)
 			toast.error(error?.message || 'Something went wrong', {
 				style: toastOptions.error.style,
 			})
@@ -582,7 +589,7 @@ const CreateRoundPage = () => {
 										disabled={!watch().allow_application}
 										label="Max Participants"
 										placeholder="10"
-										required
+										required={watch().allow_application}
 										{...register('max_participants', {
 											required: watch().allow_application === true,
 											onChange: (e) => {
@@ -699,7 +706,7 @@ const CreateRoundPage = () => {
 							<Checkbox
 								disabled={!watch().allow_application}
 								label="Video Required"
-								checked={watch().video_required}
+								checked={watch().is_video_required}
 								onChange={(e) =>
 									setValue('is_video_required', e.target.checked)
 								}
@@ -733,7 +740,7 @@ const CreateRoundPage = () => {
 								disabled={!watch().allow_cooldown}
 								label="Set Deadline"
 								placeholder="0"
-								required
+								required={watch().allow_cooldown}
 								{...register('cooldown_end_ms', {
 									required: watch().allow_cooldown === true,
 									onChange: (ev: ChangeEvent<HTMLInputElement>) => {
@@ -837,7 +844,7 @@ const CreateRoundPage = () => {
 								disabled={!watch().allow_compliance}
 								label="Set Deadline"
 								placeholder="0"
-								required
+								required={watch().allow_compliance}
 								{...register('compliance_period_ms', {
 									required: watch().allow_compliance === true,
 									onChange: (ev: ChangeEvent<HTMLInputElement>) => {
@@ -940,7 +947,7 @@ const CreateRoundPage = () => {
 								disabled={!watch().allow_remaining_dist}
 								label="Recipient Address"
 								placeholder="Address..."
-								required
+								required={watch().allow_remaining_dist}
 								{...register('remaining_dist_address', {
 									required: watch().allow_remaining_dist === true,
 									validate: (value, formValues) =>

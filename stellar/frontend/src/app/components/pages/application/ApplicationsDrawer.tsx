@@ -212,7 +212,6 @@ const ApplicationsDrawer = ({
 	doc,
 }: ApplicationsDrawerProps) => {
 	const [tab, setTab] = useState<TApplicationDrawerTab>('all')
-	const { stellarPubKey, connectedWallet } = useWallet()
 	const [roundAppsData, setRoundAppsData] = useState<
 		IGetRoundApplicationsResponse[]
 	>([])
@@ -223,12 +222,9 @@ const ApplicationsDrawer = ({
 		skip: number
 		limit: number
 	}) => {
-		let cmdWallet = new CMDWallet({
-			stellarPubKey: stellarPubKey,
-		})
 		const contracts = new Contracts(
 			process.env.NETWORK_ENV as Network,
-			cmdWallet,
+			undefined,
 		)
 		const res = await getRoundApplications(
 			{ round_id: BigInt(doc.id), skip: key.skip, limit: key.limit },
@@ -241,7 +237,6 @@ const ApplicationsDrawer = ({
 		pageIndex: number,
 		previousPageData: IGetRoundApplicationsResponse[],
 	) => {
-		if (!connectedWallet) return null
 		if (previousPageData && !previousPageData.length) return null
 		return {
 			url: `get-round-applications`,

@@ -16,6 +16,7 @@ export const WalletContext = createContext<IWalletContext>({
 	onSignOut: () => Promise.resolve(),
 	onCheckConnected: (selector: WalletSelector) => Promise.resolve(),
 	//stellar
+	currentBalance: null,
 	stellarKit: null,
 	stellarPubKey: '',
 	onOpenStellarWallet: (onSelected?: (option: ISupportedWallet) => void) => {},

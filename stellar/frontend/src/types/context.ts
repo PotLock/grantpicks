@@ -24,6 +24,7 @@ export interface IWalletContext {
 	onSignOut: () => Promise<void>
 	onCheckConnected: (selector: WalletSelector) => Promise<void>
 	//stellar
+	currentBalance: number | undefined | null
 	stellarKit: StellarWalletsKit | null
 	stellarPubKey: string
 	onOpenStellarWallet: (onSelected?: (option: ISupportedWallet) => void) => void

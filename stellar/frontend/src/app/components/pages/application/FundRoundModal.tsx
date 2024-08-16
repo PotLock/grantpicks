@@ -32,19 +32,8 @@ const FundRoundModal = ({
 	const { setSuccessFundRoundModalProps } = useModalContext()
 	const { stellarPrice, openPageLoading, dismissPageLoading } =
 		useGlobalContext()
-	const [currentBalance, setCurrentBalance] = useState<number | null>()
-	const { stellarPubKey, stellarKit } = useWallet()
+	const { stellarPubKey, stellarKit, currentBalance } = useWallet()
 
-	useEffect(() => {
-		const runBalance = async () => {
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			setCurrentBalance(parseInt((await cmdWallet.getBalances())[0].balance))
-		}
-
-		runBalance()
-	})
 
 	const onDepositFundRound = async () => {
 		try {

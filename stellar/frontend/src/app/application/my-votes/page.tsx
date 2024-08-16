@@ -365,12 +365,9 @@ const MyVotesPage = () => {
 		skip: number
 		limit: number
 	}) => {
-		let cmdWallet = new CMDWallet({
-			stellarPubKey: stellarPubKey,
-		})
 		const contracts = new Contracts(
 			process.env.NETWORK_ENV as Network,
-			cmdWallet,
+			undefined,
 		)
 		const res = await getMyVotedRounds(
 			{ from_index: key.skip, limit: key.limit, voter: stellarPubKey },

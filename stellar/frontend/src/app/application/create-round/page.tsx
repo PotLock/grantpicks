@@ -578,7 +578,7 @@ const CreateRoundPage = () => {
 										disabled={!watch().allow_application}
 										label="Max Participants"
 										placeholder="0"
-										required
+										required={watch().allow_application}
 										{...register('max_participants', {
 											required: watch().allow_application === true,
 											onChange: (e) => {
@@ -718,7 +718,7 @@ const CreateRoundPage = () => {
 								disabled={!watch().allow_cooldown}
 								label="Set Deadline"
 								placeholder="0"
-								required
+								required={watch().allow_cooldown}
 								{...register('cooldown_end_ms', {
 									required: watch().allow_cooldown === true,
 									onChange: (ev: ChangeEvent<HTMLInputElement>) => {
@@ -821,7 +821,7 @@ const CreateRoundPage = () => {
 								disabled={!watch().allow_compliance}
 								label="Set Deadline"
 								placeholder="0"
-								required
+								required={watch().allow_compliance}
 								{...register('compliance_period_ms', {
 									required: watch().allow_compliance === true,
 									onChange: (ev: ChangeEvent<HTMLInputElement>) => {
@@ -924,7 +924,7 @@ const CreateRoundPage = () => {
 								disabled={!watch().allow_remaining_dist}
 								label="Recipient Address"
 								placeholder="Address..."
-								required
+								required={watch().allow_remaining_dist}
 								{...register('remaining_dist_address', {
 									required: watch().allow_remaining_dist === true,
 									validate: (value, formValues) =>

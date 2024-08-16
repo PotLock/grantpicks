@@ -150,8 +150,8 @@ export const getRounds: (
 	params: GetRoundsParams,
 	contract: Contracts,
 ) => {
-	let skip = params.skip ? params.skip : 0
 	let limit = params.limit ? params.limit : 10
+	let skip = params.skip ? params.skip * limit : 0
 
 	let rounds = await contract.round_contract.get_rounds({
 		from_index: BigInt(skip),

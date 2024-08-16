@@ -19,24 +19,26 @@ class Contracts {
 	private _project_contract: ProjectClient
 	private _round_contract: RoundClient
 	private _template_config: ClientOptions
-	private _wallet: CMDWallet
-	constructor(network: Network, wallet: CMDWallet) {
+	private _wallet: CMDWallet | undefined
+	constructor(network: Network, wallet: CMDWallet | undefined) {
 		const config: ClientOptions =
 			network == 'testnet'
 				? {
 						contractId: '',
 						networkPassphrase: 'Test SDF Network ; September 2015',
 						rpcUrl: 'https://soroban-testnet.stellar.org',
-						publicKey: wallet.account.publicKey,
+						publicKey: wallet ? wallet.account.publicKey : undefined,
 					}
 				: {
 						contractId: '',
 						networkPassphrase: 'Public Global Stellar Network ; September 2015',
 						rpcUrl: 'https://soroban.stellar.org',
-						publicKey: wallet.account.publicKey,
+						publicKey: wallet ? wallet.account.publicKey : undefined,
 					}
-		config.signAuthEntry = wallet.signAuth.bind(wallet)
-		config.signTransaction = wallet.signTransaction.bind(wallet)
+		if (wallet) {
+			config.signAuthEntry = wallet.signAuth.bind(wallet)
+			config.signTransaction = wallet.signTransaction.bind(wallet)
+		}
 
 		this._template_config = config
 		this._wallet = wallet

@@ -28,7 +28,6 @@ const MoreVertMenu = ({
 	const { selectedRoundType } = useRoundStore()
 	const { stellarPubKey } = useWallet()
 	const router = useRouter()
-
 	return (
 		<Menu isOpen={isOpen} onClose={onClose} position={`right-0 top-0`}>
 			<div className="bg-white rounded-t-2xl md:rounded-2xl border border-black/10 p-2 whitespace-nowrap min-w-40 shadow-md">

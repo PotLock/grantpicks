@@ -33,6 +33,7 @@ import {
 	WalletNetwork,
 } from '@creit.tech/stellar-wallets-kit'
 import { distinctUntilChanged, map } from 'rxjs'
+import CMDWallet from '@/lib/wallet'
 
 const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 	const [connectedWallet, setConnectedWallet] = useState<
@@ -48,6 +49,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 	//stellar
 	const [stellarKit, setStellarKit] = useState<StellarWalletsKit | null>(null)
 	const [stellarPubKey, setStellarPubKey] = useState<string>('')
+	const [currentBalance, setCurrentBalance] = useState<number | null>()
 	const [isInit, setIsInit] = useState<boolean>(true)
 
 	const onInitNear = async () => {
@@ -130,6 +132,12 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 				localStorageConfigs.STELLAR_PUBLIC_KEY,
 				localStellarPubKey || pubKey,
 			)
+
+			let cmdWallet = new CMDWallet({
+				stellarPubKey: localStellarPubKey
+			})
+			const balances = parseInt((await cmdWallet.getBalances())[0].balance)
+			setCurrentBalance(balances)
 			return
 		} else {
 			setConnectedWallet(null)
@@ -238,6 +246,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 					stellarKit,
 					stellarPubKey,
 					onOpenStellarWallet,
+					currentBalance
 				}}
 			>
 				{children}

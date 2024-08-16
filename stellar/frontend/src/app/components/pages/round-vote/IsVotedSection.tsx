@@ -60,7 +60,7 @@ const IsVotedPairItem = ({
 		}
 	}
 
-	const selectedPair = votingResult?.picks.filter(
+	const selectedPair = votingResult?.picks?.filter(
 		(pick) => pick.pair_id === pair.pair_id,
 	)[0]
 
@@ -191,7 +191,7 @@ const IsVotedSection = ({
 					<div className="flex items-center space-x-2">
 						<IconCube size={18} className="fill-grantpicks-black-600" />
 						<p className="text-xs md:text-sm">
-							{votingResult?.picks.length} Matches
+							{votingResult?.picks?.length} Matches
 						</p>
 					</div>
 					<div className="flex items-center space-x-2">

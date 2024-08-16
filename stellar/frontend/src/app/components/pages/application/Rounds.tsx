@@ -27,6 +27,8 @@ import Image from 'next/image'
 import moment from 'moment'
 import { formatStroopToXlm } from '@/utils/helper'
 import IconStellar from '../../svgs/IconStellar'
+import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
+import { useRouter } from 'next/navigation'
 
 const ApplicationRoundsItem = ({
 	doc,
@@ -35,6 +37,7 @@ const ApplicationRoundsItem = ({
 	doc: IGetRoundsResponse
 	mutateRounds: any
 }) => {
+	const router = useRouter()
 	const { selectedRoundType } = useRoundStore()
 	const [showMoreVert, setShowMoreVert] = useState<boolean>(false)
 	const [showDetailDrawer, setShowDetailDrawer] = useState<boolean>(false)
@@ -42,7 +45,7 @@ const ApplicationRoundsItem = ({
 	const [showFundRoundModal, setShowFundRoundModal] = useState<boolean>(false)
 	const { setApplyProjectInitProps, setVoteConfirmationProps } =
 		useModalContext()
-	const { connectedWallet, stellarPubKey } = useWallet()
+	const { connectedWallet, stellarPubKey, stellarKit } = useWallet()
 	const [isUserApplied, setIsUserApplied] = useState<boolean>(false)
 
 	const fetchRoundApplication = async () => {
@@ -267,6 +270,8 @@ const ApplicationRoundsItem = ({
 								round_id: doc.id,
 								roundData: doc,
 							}))
+						} else {
+							router.push(`/application/round-result/${doc.id}`)
 						}
 					}}
 					isFullWidth
@@ -304,8 +309,13 @@ const ApplicationRoundsItem = ({
 							process.env.NETWORK_ENV as Network,
 							cmdWallet,
 						)
+						// const startVoteTx =
+						// 	await contracts.round_contract.start_voting_period({
+						// 		round_id: doc.id,
+						// 		caller: stellarPubKey,
+						// 	})
 						const startVoteTx =
-							await contracts.round_contract.start_voting_period({
+							await contracts.round_contract.close_voting_period({
 								round_id: doc.id,
 								caller: stellarPubKey,
 							})
@@ -316,7 +326,7 @@ const ApplicationRoundsItem = ({
 						)
 					}}
 				>
-					Force Start vote
+					Close Voting vote
 				</Button>
 			</div> */}
 			<RoundDetailDrawer

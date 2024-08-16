@@ -13,7 +13,9 @@ import {
 	ApplicationStatus,
 	Contact,
 	Pair,
+	PayoutsChallenge,
 	PickedPair,
+	ProjectVotingResult,
 	RoundApplication,
 	RoundDetail,
 	VotingResult,
@@ -141,6 +143,20 @@ export interface ApplyProjectToRoundParams {
 	applicant?: string
 	note?: string
 	review_note?: string
+}
+
+export interface ChallengePayoutParams {
+	round_id: u128
+	caller: string
+	reason: string
+}
+
+export interface UpdateChallengePayoutParams {
+	round_id: u128
+	caller: string
+	challenger_id: string
+	notes?: string
+	resolve_challenge?: boolean
 }
 
 export const getRounds: (
@@ -463,3 +479,65 @@ export const getMyVotedRounds: (
 	})
 	return round.result
 }
+
+export const getVotingResultsRound: (
+	round_id: u128,
+	contract: Contracts,
+) => Promise<Array<ProjectVotingResult>> = async (
+	round_id: u128,
+	contract: Contracts,
+) => {
+	let round = await contract.round_contract.get_voting_results_for_round({
+		round_id,
+	})
+	return round.result
+}
+
+export const challengePayoutRound: (
+	params: ChallengePayoutParams,
+	contract: Contracts,
+) => Promise<AssembledTransaction<PayoutsChallenge>> = async (
+	params: ChallengePayoutParams,
+	contract: Contracts,
+) => {
+	let round = await contract.round_contract.challenge_payouts({
+		round_id: params.round_id,
+		caller: params.caller,
+		reason: params.reason,
+	})
+	return round
+}
+
+export const updateChallengePayoutRound: (
+	params: UpdateChallengePayoutParams,
+	contract: Contracts,
+) => Promise<AssembledTransaction<PayoutsChallenge>> = async (
+	params: UpdateChallengePayoutParams,
+	contract: Contracts,
+) => {
+	let round = await contract.round_contract.update_payouts_challenge({
+		round_id: params.round_id,
+		caller: params.caller,
+		challenger_id: params.challenger_id,
+		notes: params.notes,
+		resolve_challenge: params.resolve_challenge,
+	})
+	return round
+}
+
+// export const getChallengePayoutRound: (
+// 	params: UpdateChallengePayoutParams,
+// 	contract: Contracts,
+// ) => Promise<AssembledTransaction<PayoutsChallenge>> = async (
+// 	params: UpdateChallengePayoutParams,
+// 	contract: Contracts,
+// ) => {
+// 	let round = await contract.round_contract.get_payouts({
+// 		round_id: params.round_id,
+// 		caller: params.caller,
+// 		challenger_id: params.challenger_id,
+// 		notes: params.notes,
+// 		resolve_challenge: params.resolve_challenge,
+// 	})
+// 	return round
+// }

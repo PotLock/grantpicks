@@ -51,6 +51,7 @@
 		"react-hot-toast": "^2.4.1",
 		"react-infinite-scroll-component": "^6.1.0",
 		"react-switch": "^7.0.0",
+		"react-timer-hook": "^3.0.7",
 		"react-tooltip": "^5.28.0",
 		"round-client": "./round-client",
 		"rxjs": "^7.8.1",

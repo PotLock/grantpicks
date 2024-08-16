@@ -76,7 +76,7 @@ const CreateRoundPage = () => {
 		formState: { errors },
 	} = useForm<CreateRoundData>({
 		defaultValues: {
-			vote_per_person: 0,
+			vote_per_person: 1,
 			apply_duration_start: undefined,
 			apply_duration_end: undefined,
 			compliance_period_ms: undefined,
@@ -204,7 +204,8 @@ const CreateRoundPage = () => {
 				expected_amount: parseToStroop(data.expected_amount),
 				max_participants:
 					data.max_participants < 10 ? 10 : data.max_participants,
-				num_picks_per_voter: data.vote_per_person,
+				num_picks_per_voter:
+					data.vote_per_person < 1 ? 1 : data.vote_per_person,
 				use_whitelist: false,
 				is_video_required: data.is_video_required,
 				allow_applications: data.allow_application,
@@ -368,7 +369,7 @@ const CreateRoundPage = () => {
 								</p>
 								<div className="flex items-center space-x-4">
 									<Button
-										isDisabled={watch().vote_per_person <= 0}
+										isDisabled={watch().vote_per_person <= 1}
 										color="transparent"
 										onClick={() => {
 											setValue('vote_per_person', watch().vote_per_person - 1)
@@ -380,7 +381,7 @@ const CreateRoundPage = () => {
 										/>
 									</Button>
 									<p className="text-sm font-normal text-grantpicks-black-950">
-										{watch().vote_per_person || 0}
+										{watch().vote_per_person || 1}
 									</p>
 									<Button
 										color="transparent"

@@ -196,8 +196,8 @@ export const getRoundApplications: (
 	params: GetRoundApplicationsParams,
 	contract: Contracts,
 ) => {
-	let skip = params.skip ? params.skip : 0
 	let limit = params.limit ? params.limit : 10
+	let skip = params.skip ? params.skip * limit : 0
 
 	let rounds = await contract.round_contract.get_applications_for_round({
 		round_id: BigInt(params.round_id),

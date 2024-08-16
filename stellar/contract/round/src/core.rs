@@ -1,8 +1,8 @@
 use soroban_sdk::{Address, Env, String, Vec};
 
 use crate::data_type::{
-    ApplicationStatus, Deposit, Pair, Payout, PayoutInput, PayoutsChallenge, PickedPair,
-    ProjectVotingResult, RoundApplication, RoundDetail, UpdateRoundParams, VotingResult,
+    // ApplicationStatus, Deposit, FlagDetail, Pair, Payout, PayoutInput, PayoutsChallenge, PickedPair, ProjectVotingResult, RoundApplication, RoundDetail, UpdateRoundParams, VotingResult
+    ApplicationStatus, Deposit, Pair, Payout, PayoutInput, PayoutsChallenge, PickedPair, ProjectVotingResult, RoundApplication, RoundDetail, UpdateRoundParams, VotingResult
 };
 
 pub trait IsRound {
@@ -26,11 +26,14 @@ pub trait IsRound {
     fn vote(env: &Env, round_id: u128, voter: Address, picks: Vec<PickedPair>);
     fn flag_voters(env: &Env, round_id: u128, caller: Address, voters: Vec<Address>);
     fn unflag_voters(env: &Env, round_id: u128, caller: Address, voters: Vec<Address>);
+    // fn flag_project(env: &Env, round_id: u128, caller: Address, project_id: u128, reason: String)->FlagDetail;
+    // fn unflag_project(env: &Env, round_id: u128, caller: Address, project_id: u128);
     fn add_approved_project(env: &Env, round_id: u128, caller: Address, project_ids: Vec<u128>);
     fn remove_approved_project(env: &Env, around_id: u128, caller: Address, project_ids: Vec<u128>);
     fn process_payouts(env: &Env, round_id: u128, caller: Address);
     fn set_round_complete(env: &Env, round_id: u128, caller: Address) -> RoundDetail;
     fn challenge_payouts(env: &Env, round_id: u128, caller: Address, reason: String) -> PayoutsChallenge;
+    fn get_challenges_payout(env: &Env, round_id: u128, from_index: Option<u64>, limit: Option<u64>) -> Vec<PayoutsChallenge>;
     fn remove_payouts_challenge(env: &Env, round_id: u128, caller: Address);
     fn update_payouts_challenge(env: &Env, round_id: u128, caller: Address, challenger_id: Address, notes: Option<String>, resolve_challenge: Option<bool>) -> PayoutsChallenge;
     fn remove_resolved_challenges(env: &Env, round_id: u128, caller: Address);

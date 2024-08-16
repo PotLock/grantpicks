@@ -9,13 +9,13 @@ use crate::{
         find_applications, get_application_by_applicant, read_application, update_application,
         write_application,
     },
+    // approval_writer::{is_project_approved, read_approved_projects, read_flagged_projects, write_approved_projects, write_flagged_projects},
     approval_writer::{is_project_approved, read_approved_projects, write_approved_projects},
     calculation::calculate_voting_results,
     core::IsRound,
     data_type::{
-        ApplicationStatus, Config, CreateRoundParams, Deposit, Pair, Payout, PayoutInput,
-        PayoutsChallenge, PickResult, PickedPair, ProjectVotingResult, RoundApplication,
-        RoundDetail, UpdateRoundParams, VotingResult,
+        // ApplicationStatus, Config, CreateRoundParams, Deposit, FlagDetail, Pair, Payout, PayoutInput, PayoutsChallenge, PickResult, PickedPair, ProjectVotingResult, RoundApplication, RoundDetail, UpdateRoundParams, VotingResult
+        ApplicationStatus, Config, CreateRoundParams, Deposit, Pair, Payout, PayoutInput, PayoutsChallenge, PickResult, PickedPair, ProjectVotingResult, RoundApplication, RoundDetail, UpdateRoundParams, VotingResult
     },
     deposit_writer::{
         increment_deposit_id, read_deposit, read_deposit_from_round, write_deposit,
@@ -1764,4 +1764,74 @@ impl IsRound for RoundContract {
 
       rounds_external
     }
+
+    fn get_challenges_payout(env: &Env, round_id: u128, from_index: Option<u64>, limit: Option<u64>) -> Vec<PayoutsChallenge>{
+      let default_page_size = read_default_page_size(env);
+      let limit_internal: u64 = limit.unwrap_or(default_page_size);
+      let from_index_internal: u64 = from_index.unwrap_or(0);
+      let challenges = read_payout_challenges(env, round_id);
+      extend_instance(env);
+      extend_round(env, round_id);
+
+      let mut challenges_external: Vec<PayoutsChallenge> = Vec::new(env);
+
+      challenges
+        .keys()
+        .iter()
+        .skip(from_index_internal as usize)
+        .take(limit_internal as usize)
+        .for_each(|challenger_id| {
+          let challenge = challenges.get(challenger_id.clone()).unwrap();
+          challenges_external.push_back(challenge.clone());
+        });
+
+      challenges_external
+    }
+
+
+    // fn flag_project(env: &Env, round_id: u128, caller: Address, project_id: u128, reason: String)->FlagDetail{
+    //   caller.require_auth();
+
+    //   let round = read_round_info(env, round_id);
+    //   validate_owner_or_admin(env, &caller, &round);
+    //   let mut flagged_projects = read_flagged_projects(env, round_id);
+
+    //   let project_contract = read_project_contract(env);
+    //   let project_client = ProjectRegistryClient::new(env, &project_contract);
+    //   let project = project_client.get_project_by_id(&project_id);
+
+    //   let flag = FlagDetail{
+    //     project_id: project.id,
+    //     applicant_id: project.owner,
+    //     reason,
+    //     flagged_by: caller.clone(),
+    //     flagged_ms: get_ledger_second_as_millis(env),
+    //   };
+
+    //   flagged_projects.set(project_id, flag.clone());
+
+    //   write_flagged_projects(env, round_id, &flagged_projects);
+    //   extend_instance(env);
+    //   extend_round(env, round_id);
+
+    //   flag
+    // }
+
+    // fn unflag_project(env: &Env, round_id: u128, caller: Address, project_id: u128){
+    //   caller.require_auth();
+
+    //   let round = read_round_info(env, round_id);
+    //   validate_owner_or_admin(env, &caller, &round);
+    //   let mut flagged_projects = read_flagged_projects(env, round_id);
+
+    //   if !flagged_projects.contains_key(project_id) {
+    //     panic_with_error!(env, Error::DataNotFound);
+    //   }
+
+    //   flagged_projects.remove(project_id);
+
+    //   write_flagged_projects(env, round_id, &flagged_projects);
+    //   extend_instance(env);
+    //   extend_round(env, round_id);
+    // }
 }

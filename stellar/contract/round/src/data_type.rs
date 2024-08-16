@@ -157,6 +157,7 @@ pub struct VotingResult {
 pub struct ProjectVotingResult {
     pub project_id: u128,
     pub voting_count: u128,
+    // pub is_flagged: bool,
 }
 
 #[contracttype]
@@ -210,6 +211,16 @@ pub struct Deposit {
     pub deposited_at: u64,
     pub memo: String,
 }
+
+// #[contracttype]
+// #[derive(Clone, Eq, PartialEq)]
+// pub struct FlagDetail {
+//     pub project_id: u128,
+//     pub applicant_id: Address,
+//     pub reason: String,
+//     pub flagged_by: Address,
+//     pub flagged_ms: u64,
+// }
 
 impl RoundDetail {
     pub fn is_caller_owner_or_admin(&self, env: &Env, caller: &Address) -> bool {

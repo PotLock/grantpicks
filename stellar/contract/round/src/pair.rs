@@ -83,7 +83,7 @@ pub fn get_all_rounds(env: &Env, skip: Option<u64>, limit: Option<u64>) -> Vec<R
 
     let mut results: Vec<RoundDetail> = Vec::new(env);
 
-    for i in skip..limit {
+    for i in skip..skip+limit {
         let round_id: u128 = (i + 1).into();
         let key = ContractKey::RoundInfo(round_id);
 

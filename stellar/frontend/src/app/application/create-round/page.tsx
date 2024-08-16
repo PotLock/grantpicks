@@ -83,7 +83,7 @@ const CreateRoundPage = () => {
 			compliance_end_ms: undefined,
 			cooldown_period_ms: undefined,
 			cooldown_end_ms: undefined,
-			max_participants: 0,
+			max_participants: 10,
 			voting_duration_start: null,
 			voting_duration_end: null,
 			use_vault: false,
@@ -197,7 +197,8 @@ const CreateRoundPage = () => {
 					},
 				],
 				expected_amount: parseToStroop(data.expected_amount),
-				max_participants: data.max_participants,
+				max_participants:
+					data.max_participants < 10 ? 10 : data.max_participants,
 				num_picks_per_voter: data.vote_per_person,
 				use_whitelist: false,
 				is_video_required: data.video_required,
@@ -478,6 +479,7 @@ const CreateRoundPage = () => {
 						<div className="flex items-center space-x-4 w-full mb-4">
 							<div className="flex-1">
 								<InputText
+									type="number"
 									disabled={!watch().use_vault}
 									label="Initial Deposit"
 									placeholder="Enter amount..."
@@ -508,6 +510,7 @@ const CreateRoundPage = () => {
 							</div>
 							<div className="flex-1">
 								<InputText
+									type="number"
 									label="Expected Amount"
 									required
 									placeholder="Enter amount..."
@@ -575,20 +578,24 @@ const CreateRoundPage = () => {
 							<div className="flex space-x-4 mb-2">
 								<div className="w-[35%] space-y-1">
 									<InputText
+										type="number"
 										disabled={!watch().allow_application}
 										label="Max Participants"
-										placeholder="0"
+										placeholder="10"
 										required
 										{...register('max_participants', {
 											required: watch().allow_application === true,
 											onChange: (e) => {
-												setValue('max_participants', parseInt(e.target.value))
+												setValue(
+													'max_participants',
+													parseInt(e.target.value) || 0,
+												)
 											},
 										})}
 										preffixIcon={
 											<Button
 												color="transparent"
-												isDisabled={watch().max_participants === 0}
+												isDisabled={watch().max_participants <= 10}
 												onClick={() =>
 													setValue(
 														'max_participants',
@@ -623,6 +630,10 @@ const CreateRoundPage = () => {
 									{errors.max_participants?.type === 'required' ? (
 										<p className="text-red-500 text-xs mt-1 ml-2">
 											Max Participants is required
+										</p>
+									) : watch().max_participants < 10 ? (
+										<p className="text-red-500 text-xs mt-1 ml-2">
+											Min. 10 Participants
 										</p>
 									) : undefined}
 								</div>
@@ -686,12 +697,15 @@ const CreateRoundPage = () => {
 						</div>
 						<div className="flex items-center mb-4">
 							<Checkbox
-								disabled={!watch().is_video_required}
+								disabled={!watch().allow_application}
 								label="Video Required"
 								checked={watch().video_required}
 								onChange={(e) =>
 									setValue('is_video_required', e.target.checked)
 								}
+								className={clsx(
+									!watch().allow_application && '!cursor-not-allowed',
+								)}
 							/>
 						</div>
 					</div>
@@ -715,6 +729,7 @@ const CreateRoundPage = () => {
 						</div>
 						<div className={`pt-4 mb-6`}>
 							<InputText
+								type="number"
 								disabled={!watch().allow_cooldown}
 								label="Set Deadline"
 								placeholder="0"
@@ -818,6 +833,7 @@ const CreateRoundPage = () => {
 								}
 							/>
 							<InputText
+								type="number"
 								disabled={!watch().allow_compliance}
 								label="Set Deadline"
 								placeholder="0"

@@ -298,16 +298,18 @@ const RoundDetailDrawer = ({
 						>
 							Apply
 						</Button>
-						<Button
-							color="alpha-50"
-							onClick={() => {
-								onOpenFundRound()
-								onClose()
-							}}
-							className="!py-3 flex-1"
-						>
-							Fund Round
-						</Button>
+						{doc.use_vault && (
+							<Button
+								color="alpha-50"
+								onClick={() => {
+									onOpenFundRound()
+									onClose()
+								}}
+								className="!py-3 flex-1"
+							>
+								Fund Round
+							</Button>
+						)}
 					</div>
 				)}
 				{selectedRoundType === 'on-going' && (

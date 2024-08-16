@@ -32,7 +32,19 @@ const FundRoundModal = ({
 	const { setSuccessFundRoundModalProps } = useModalContext()
 	const { stellarPrice, openPageLoading, dismissPageLoading } =
 		useGlobalContext()
+	const [currentBalance, setCurrentBalance] = useState<number | null>()
 	const { stellarPubKey, stellarKit } = useWallet()
+
+	useEffect(() => {
+		const runBalance = async () => {
+			let cmdWallet = new CMDWallet({
+				stellarPubKey: stellarPubKey,
+			})
+			setCurrentBalance(parseInt((await cmdWallet.getBalances())[0].balance))
+		}
+
+		runBalance()
+	})
 
 	const onDepositFundRound = async () => {
 		try {
@@ -95,7 +107,11 @@ const FundRoundModal = ({
 						We’ve raised XLM {formatStroopToXlm(doc.current_vault_balance)} and
 						have reached{' '}
 						<span className="font-semibold text-grantpicks-green-800">
-							80% of our expected funds.
+							{(
+								(BigInt(doc.current_vault_balance) * BigInt(100)) /
+								doc.expected_amount
+							).toString()}
+							% of our expected funds.
 						</span>
 					</p>
 				</div>
@@ -129,7 +145,7 @@ const FundRoundModal = ({
 									Amount <span className="text-grantpicks-red-600">*</span>
 								</p>
 								<p className="text-sm font-semibold text-grantpicks-black-950">
-									100 XLM{' '}
+									{currentBalance} XLM{' '}
 									<span className="ml-1 text-sm font-normal text-grantpicks-black-600">
 										available
 									</span>

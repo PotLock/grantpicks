@@ -268,8 +268,6 @@ const MyProjectLinks = () => {
 											required
 											{...register(`smart_contracts.${index}.address`, {
 												required: true,
-												validate: (value, formValues) =>
-													StrKey.isValidEd25519PublicKey(value),
 											})}
 										/>
 									</div>

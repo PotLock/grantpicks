@@ -102,9 +102,6 @@ const CreateProjectStep2 = () => {
 								<p className="text-base font-normal text-grantpicks-black-950">
 									{prettyTruncate(member, 10, 'address')}
 								</p>
-								<p className="text-xs font-normal text-grantpicks-black-600">
-									@abdul.near
-								</p>
 							</div>
 						))}
 					</div>

@@ -109,6 +109,13 @@ const MyProjectTeam = () => {
 						required
 						placeholder="Account ID, Comma separated"
 						{...register('member')}
+						onKeyDown={(e) => {
+							if (e.key == 'Enter') {
+								const member = watch('member')
+								setMembers((prev) => [...prev, member])
+								setValue('member', '')
+							}
+						}}
 						suffixIcon={
 							<button
 								onClick={() => {

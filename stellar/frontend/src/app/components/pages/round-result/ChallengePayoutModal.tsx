@@ -1,5 +1,5 @@
 import { BaseModalProps } from '@/types/dialog'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Modal from '../../commons/Modal'
 import IconClose from '../../svgs/IconClose'
 import InputTextArea from '../../commons/InputTextArea'
@@ -13,6 +13,14 @@ import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
+import { PayoutsChallenge } from 'round-client'
+import Image from 'next/image'
+import {
+	getProject,
+	GetProjectParams,
+	IGetProjectsResponse,
+} from '@/services/on-chain/project-registry'
+import moment from 'moment'
 
 interface ChallengePayoutModalProps extends BaseModalProps {
 	roundData: IGetRoundsResponse | undefined

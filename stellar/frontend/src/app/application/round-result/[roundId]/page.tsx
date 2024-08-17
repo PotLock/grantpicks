@@ -20,6 +20,7 @@ import Contracts from '@/lib/contracts'
 import CMDWallet from '@/lib/wallet'
 import { getProject } from '@/services/on-chain/project-registry'
 import {
+	getChallengesPayoutRound,
 	getRoundApplications,
 	getRoundInfo,
 	getVotingResultsRound,
@@ -32,8 +33,8 @@ import {
 import { formatStroopToXlm, parseToStroop } from '@/utils/helper'
 import clsx from 'clsx'
 import { useParams, useRouter } from 'next/navigation'
-import React, { useEffect, useState } from 'react'
-import { Project, ProjectVotingResult } from 'round-client'
+import React, { useEffect, useRef, useState } from 'react'
+import { PayoutsChallenge, Project, ProjectVotingResult } from 'round-client'
 import { useTimer } from 'react-timer-hook'
 import TimerEnd from '@/app/components/commons/TimerEnd'
 import IconEdit from '@/app/components/svgs/IconEdit'
@@ -121,6 +122,8 @@ const RoundResultPage = () => {
 	const [roundData, setRoundData] = useState<IGetRoundsResponse | undefined>(
 		undefined,
 	)
+	const [challengesData, setChallengesData] = useState<PayoutsChallenge[]>([])
+	const isFetchedChallengeRef = useRef<boolean>(false)
 	const [roundAppData, setRoundAppData] = useState<
 		IGetRoundApplicationsResponse[]
 	>([])
@@ -169,6 +172,37 @@ const RoundResultPage = () => {
 		}, 300)
 	}
 
+	const fetchChallengePayouts = async () => {
+		let cmdWallet = new CMDWallet({
+			stellarPubKey: stellarPubKey,
+		})
+		const contracts = new Contracts(
+			process.env.NETWORK_ENV as Network,
+			cmdWallet,
+		)
+		let skip: number = 0
+		let resChallenges: PayoutsChallenge[] = []
+		const stopLooping = setInterval(async () => {
+			const _resChallenges = await getChallengesPayoutRound(
+				{
+					round_id: BigInt(params.roundId),
+					from_index: BigInt(skip),
+					limit: BigInt(LIMIT_SIZE),
+				},
+				contracts,
+			)
+			console.log('debug res chall', _resChallenges)
+			resChallenges = [...resChallenges, ..._resChallenges]
+			if (_resChallenges.length < LIMIT_SIZE) {
+				setChallengesData(resChallenges)
+				clearInterval(stopLooping)
+				isFetchedChallengeRef.current = true
+				return
+			}
+			skip += LIMIT_SIZE
+		}, 2000)
+	}
+
 	const fetchVotingResultRound = async () => {
 		let cmdWallet = new CMDWallet({
 			stellarPubKey: stellarPubKey,
@@ -211,6 +245,7 @@ const RoundResultPage = () => {
 			fetchRoundInfo()
 			fetchRoundApplications()
 			fetchVotingResultRound()
+			if (!isFetchedChallengeRef.current) fetchChallengePayouts()
 		}
 	}, [stellarPubKey])
 
@@ -296,7 +331,7 @@ const RoundResultPage = () => {
 			{showCooldownChallenge && (
 				<div className="p-3 md:p-5 rounded-2xl bg-grantpicks-purple-100 w-full my-4 md:my-8">
 					<p className="text-grantpicks-purple-800 text-base font-semibold pb-4 border-b border-grantpicks-purple-200">
-						2 Payout Challenges. {` `}{' '}
+						{challengesData.length} Payout Challenges. {` `}{' '}
 						<span className="text-base font-normal">
 							There will be no payout until all Challenges are resolved.
 						</span>{' '}
@@ -317,7 +352,7 @@ const RoundResultPage = () => {
 									View Challenge
 								</Button>
 								<div className="absolute -top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full bg-grantpicks-purple-800 text-white">
-									{2}
+									{challengesData.length}
 								</div>
 							</div>
 							<Button
@@ -424,6 +459,7 @@ const RoundResultPage = () => {
 			/>
 			<ViewChallengeDrawer
 				isOpen={showViewChallengeDrawer}
+				challengesData={challengesData}
 				onClose={() => setShowViewChallengeDrawer(false)}
 				endOfChallenge={endOfChallenge}
 			/>

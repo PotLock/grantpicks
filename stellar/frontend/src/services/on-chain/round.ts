@@ -159,6 +159,12 @@ export interface UpdateChallengePayoutParams {
 	resolve_challenge?: boolean
 }
 
+export interface GetChallengesPayoutParams {
+	round_id: u128
+	from_index?: u64
+	limit?: u64
+}
+
 export const getRounds: (
 	params: GetRoundsParams,
 	contract: Contracts,
@@ -525,19 +531,17 @@ export const updateChallengePayoutRound: (
 	return round
 }
 
-// export const getChallengePayoutRound: (
-// 	params: UpdateChallengePayoutParams,
-// 	contract: Contracts,
-// ) => Promise<AssembledTransaction<PayoutsChallenge>> = async (
-// 	params: UpdateChallengePayoutParams,
-// 	contract: Contracts,
-// ) => {
-// 	let round = await contract.round_contract.get_payouts({
-// 		round_id: params.round_id,
-// 		caller: params.caller,
-// 		challenger_id: params.challenger_id,
-// 		notes: params.notes,
-// 		resolve_challenge: params.resolve_challenge,
-// 	})
-// 	return round
-// }
+export const getChallengesPayoutRound: (
+	params: GetChallengesPayoutParams,
+	contract: Contracts,
+) => Promise<Array<PayoutsChallenge>> = async (
+	params: GetChallengesPayoutParams,
+	contract: Contracts,
+) => {
+	let round = await contract.round_contract.get_challenges_payout({
+		round_id: params.round_id,
+		from_index: params.from_index,
+		limit: params.limit,
+	})
+	return round.result
+}

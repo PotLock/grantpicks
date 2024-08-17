@@ -89,6 +89,8 @@ const ApplicationItem = ({
 				toast.success(`Change status to ${type} is succeed`, {
 					style: toastOptions.success.style,
 				})
+				if (type === 'accept') setOpenAcceptModal(false)
+				else setOpenRejectModal(false)
 				await mutate()
 			}
 		} catch (error: any) {

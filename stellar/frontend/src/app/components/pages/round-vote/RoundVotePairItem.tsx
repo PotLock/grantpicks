@@ -21,7 +21,7 @@ import Contracts from '@/lib/contracts'
 import { Network } from '@/types/on-chain'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { IProjectDetailOwner } from '@/app/round-vote/[roundId]/page'
-import { fetchYoutubeIframe } from '@/utils/helper'
+import { fetchYoutubeIframe, prettyTruncate } from '@/utils/helper'
 
 interface RoundVotePairItemProps {
 	index: number
@@ -157,10 +157,10 @@ const RoundVotePairItem = ({
 					<div className="flex items-center space-x-2 mb-4">
 						<div className="rounded-full w-6 h-6 bg-grantpicks-black-400" />
 						<p className="text-lg lg:text-xl font-semibold">
-							{firstProjectData?.name}
+							{prettyTruncate(firstProjectData?.name, 24, 'address')}
 						</p>
 					</div>
-					<p className="text-base font-normal text-grantpicks-black-600 mb-6">
+					<p className="text-base font-normal text-grantpicks-black-600 mb-6 break-words text-wrap">
 						{firstProjectData?.overview}
 					</p>
 					<Button
@@ -236,10 +236,10 @@ const RoundVotePairItem = ({
 					<div className="flex items-center space-x-2 mb-4">
 						<div className="rounded-full w-6 h-6 bg-grantpicks-black-400" />
 						<p className="text-lg lg:text-xl font-semibold">
-							{secondProjectData?.name}
+							{prettyTruncate(secondProjectData?.name, 24, 'address')}
 						</p>
 					</div>
-					<p className="text-base font-normal text-grantpicks-black-600 mb-6">
+					<p className="text-base font-normal text-grantpicks-black-600 mb-6 break-words text-wrap">
 						{secondProjectData?.overview}
 					</p>
 					<Button

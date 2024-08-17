@@ -73,6 +73,11 @@ const AddAdminsModal = ({
 						onChange={(e) => setSearchAdmin(e.target.value)}
 						value={searchAdmin}
 						placeholder="Account ID, Comma separated"
+						onKeyDown={(e) => {
+							if (e.key == 'Enter') {
+								onAddAdmin()
+							}
+						}}
 						suffixIcon={
 							<button
 								onClick={onAddAdmin}

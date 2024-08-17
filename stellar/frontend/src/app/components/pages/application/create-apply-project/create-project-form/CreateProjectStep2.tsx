@@ -65,6 +65,13 @@ const CreateProjectStep2 = () => {
 							label="Team Member"
 							placeholder="Account ID, Comma separated"
 							{...register('member')}
+							onKeyDown={(e) => {
+								if (e.key == 'Enter') {
+									const member = watch('member')
+									setMembers((prev) => [...prev, member])
+									setValue('member', '')
+								}
+							}}
 							suffixIcon={
 								<button
 									onClick={() => {

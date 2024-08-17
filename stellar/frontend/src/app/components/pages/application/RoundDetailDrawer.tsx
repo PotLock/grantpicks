@@ -209,7 +209,7 @@ const RoundDetailDrawer = ({
 							<div className="flex flex-1 items-center space-x-1">
 								<IconProject size={18} className="fill-grantpicks-black-400" />
 								<p className="text-sm font-normal text-grantpicks-black-950">
-									999 Projects
+									-- Projects
 								</p>
 							</div>
 						)}

@@ -40,7 +40,7 @@ import {
 	CreateRoundParams,
 	depositFundRound,
 } from '@/services/on-chain/round'
-import { parseToStroop, prettyTruncate } from '@/utils/helper'
+import { parseToStroop, prettyTruncate, sleep } from '@/utils/helper'
 import { useModalContext } from '@/app/providers/ModalProvider'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
@@ -126,10 +126,11 @@ const CreateRoundPage = () => {
 				process.env.NETWORK_ENV as Network,
 				cmdWallet,
 			)
+			const projects = selectedProjects.map((p) => p.id)
 			const txAddProject = await addProjectsRound(
 				BigInt(roundId),
 				stellarPubKey,
-				watch().projects.map((p) => p.id),
+				projects,
 				contracts,
 			)
 			const txHash = await contracts.signAndSendTx(
@@ -185,6 +186,8 @@ const CreateRoundPage = () => {
 				process.env.NETWORK_ENV as Network,
 				cmdWallet,
 			)
+			const maxParticipants =
+				data.max_participants < 10 ? 10 : data.max_participants
 			const createRoundParams: CreateRoundParams = {
 				owner: stellarPubKey,
 				name: data.title,
@@ -203,7 +206,9 @@ const CreateRoundPage = () => {
 				],
 				expected_amount: parseToStroop(data.expected_amount),
 				max_participants:
-					data.max_participants < 10 ? 10 : data.max_participants,
+					selectedProjects.length > maxParticipants // TODO: must change "Max Participants" when adding projects
+						? selectedProjects.length
+						: maxParticipants,
 				num_picks_per_voter:
 					data.vote_per_person < 1 ? 1 : data.vote_per_person,
 				use_whitelist: false,

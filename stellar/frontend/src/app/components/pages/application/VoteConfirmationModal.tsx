@@ -16,7 +16,7 @@ import IconClock from '../../svgs/IconClock'
 import moment from 'moment'
 import { formatStroopToXlm } from '@/utils/helper'
 import Button from '../../commons/Button'
-import { getRoundApplications } from '@/services/on-chain/round'
+import { getPairsRound, getRoundApplications } from '@/services/on-chain/round'
 import { LIMIT_SIZE } from '@/constants/query'
 import CMDWallet from '@/lib/wallet'
 import Contracts from '@/lib/contracts'
@@ -34,36 +34,22 @@ const VoteConfirmationModal = ({
 	const router = useRouter()
 	const { connectedWallet, stellarPubKey } = useWallet()
 	const { selectedRoundType } = useRoundStore()
-	const [appsRound, setAppsRound] = useState<IGetRoundApplicationsResponse[]>(
-		[],
-	)
+	const [totalProjects, setTotalProjects] = useState<number>(0)
 
-	const onFetchAppsRound = async () => {
+	const onFetchTotalProjects = async () => {
 		try {
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
 			const contracts = new Contracts(
 				process.env.NETWORK_ENV as Network,
-				cmdWallet,
+				undefined,
 			)
-			let skip = 0
-			let foldRes: IGetRoundApplicationsResponse[] = []
-			const stopLooping = setInterval(async () => {
-				const newRes = await getRoundApplications(
-					{ round_id: data?.id as bigint, skip, limit: LIMIT_SIZE },
-					contracts,
-				)
-				if (newRes.length < LIMIT_SIZE) {
-					for (const item of newRes) {
-						if (!foldRes.includes(item)) foldRes.push(item)
-					}
-					setAppsRound(foldRes)
-					clearInterval(stopLooping)
-					return
-				}
-				skip += LIMIT_SIZE
-			}, 500)
+			const newRes = await getPairsRound(data?.id as bigint, contracts)
+			const uniqueProjects = new Set()
+			newRes.map(pair => {
+				uniqueProjects.add(pair.projects[0].toString())
+				uniqueProjects.add(pair.projects[1].toString())
+			})
+
+			setTotalProjects(uniqueProjects.size)
 		} catch (error: any) {
 			console.log('error', error)
 		}
@@ -71,7 +57,7 @@ const VoteConfirmationModal = ({
 
 	useEffect(() => {
 		if (isOpen) {
-			onFetchAppsRound()
+			onFetchTotalProjects()
 		}
 	}, [isOpen])
 
@@ -97,7 +83,7 @@ const VoteConfirmationModal = ({
 					<div className="flex flex-1 items-center space-x-1">
 						<IconGroup size={18} className="fill-grantpicks-black-400" />
 						<p className="text-sm font-normal text-grantpicks-black-950">
-							{appsRound.length} Projects
+							{totalProjects} Projects
 						</p>
 					</div>
 					<div className="flex flex-1 items-center space-x-1">

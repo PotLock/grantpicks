@@ -50,6 +50,7 @@ import {
 	formatStroopToXlm,
 	parseToStroop,
 	prettyTruncate,
+	sleep,
 } from '@/utils/helper'
 import { LIMIT_SIZE } from '@/constants/query'
 import {
@@ -304,10 +305,11 @@ const EditRoundPage = () => {
 				process.env.NETWORK_ENV as Network,
 				cmdWallet,
 			)
+			const projects = selectedProjects.map((p) => p.id)
 			const txAddProject = await addProjectsRound(
 				BigInt(roundId),
 				stellarPubKey,
-				watch().projects.map((p) => p.id),
+				projects,
 				contracts,
 			)
 			const txHash = await contracts.signAndSendTx(
@@ -402,7 +404,10 @@ const EditRoundPage = () => {
 					},
 				],
 				expected_amount: parseToStroop(data.expected_amount),
-				max_participants: data.max_participants,
+				max_participants:
+					selectedProjects.length > data.max_participants // TODO: must change "Max Participants" when adding projects
+						? selectedProjects.length
+						: data.max_participants,
 				num_picks_per_voter: data.vote_per_person,
 				use_whitelist: false,
 				is_video_required: data.is_video_required,

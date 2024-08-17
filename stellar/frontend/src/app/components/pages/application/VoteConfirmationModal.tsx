@@ -107,12 +107,12 @@ const VoteConfirmationModal = ({
 							{(data?.num_picks_per_voter || 0) > 1 && `s`} per person
 						</p>
 					</div>
-					<div className="flex flex-1 items-center space-x-1">
+					<div className="flex flex-1 items-center justify-end space-x-1">
 						<IconClock size={18} className="fill-grantpicks-black-400" />
 						<p className="text-sm font-normal text-grantpicks-black-950">
 							Ends{` `}
 							{moment(
-								new Date(Number(data?.application_end_ms) as number),
+								new Date(Number(data?.voting_end_ms) as number),
 							).fromNow()}
 						</p>
 					</div>

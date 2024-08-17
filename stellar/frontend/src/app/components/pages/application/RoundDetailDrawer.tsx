@@ -106,6 +106,28 @@ const RoundDetailDrawer = ({
 		return res
 	}
 
+	const getSpecificTime = () => {
+		if (selectedRoundType === 'upcoming') {
+			if (new Date().getTime() < Number(doc.application_start_ms)) {
+				return `upcoming`
+			} else if (
+				Number(doc.application_start_ms) <= new Date().getTime() &&
+				new Date().getTime() < Number(doc.application_end_ms)
+			) {
+				return `upcoming-open`
+			} else if (
+				Number(doc.application_end_ms) <= new Date().getTime() &&
+				new Date().getTime() < Number(doc.voting_start_ms)
+			) {
+				return `upcoming-closed`
+			}
+		} else if (selectedRoundType === 'on-going') {
+			return `on-going`
+		} else {
+			return `ended`
+		}
+	}
+
 	const {
 		data: admins,
 		isValidating,
@@ -119,25 +141,35 @@ const RoundDetailDrawer = ({
 					<div
 						className={clsx(
 							`px-5 py-2 border text-xs font-semibold flex items-center justify-center space-x-2 rounded-full`,
-							selectedRoundType === 'on-going' ||
-								selectedRoundType === 'upcoming'
+							getSpecificTime() === 'upcoming-open' ||
+								getSpecificTime() === 'on-going'
 								? `border-grantpicks-green-400 text-grantpicks-green-700 bg-grantpicks-green-50`
-								: `border-grantpicks-amber-400 text-grantpicks-amber-700 bg-grantpicks-amber-50`,
+								: getSpecificTime() === 'upcoming' ||
+									  getSpecificTime() === 'upcoming-closed'
+									? `border-grantpicks-black-400 text-grantpicks-black-950 bg-grantpicks-black-50`
+									: `border-grantpicks-amber-400 text-grantpicks-amber-700 bg-grantpicks-amber-50`,
 						)}
 					>
 						{selectedRoundType === 'on-going' ? (
 							<IconCube size={18} className="fill-grantpicks-green-400" />
-						) : selectedRoundType === 'upcoming' ? (
+						) : getSpecificTime() === 'upcoming-open' ? (
 							<IconProject size={18} className="fill-grantpicks-green-400" />
+						) : getSpecificTime() === 'upcoming' ||
+						  getSpecificTime() === 'upcoming-closed' ? (
+							<IconProject size={18} className="fill-grantpicks-black-950" />
 						) : (
 							<IconDollar size={18} className="fill-grantpicks-amber-400" />
 						)}
 						<p className="uppercase">
-							{selectedRoundType === 'on-going'
+							{getSpecificTime() === 'on-going'
 								? `voting open`
-								: selectedRoundType === 'upcoming'
-									? `application open`
-									: `payout pending`}
+								: getSpecificTime() === 'upcoming'
+									? `application closed`
+									: getSpecificTime() === 'upcoming-open'
+										? `application open`
+										: getSpecificTime() === 'upcoming-closed'
+											? `application closed`
+											: `payout pending`}
 						</p>
 					</div>
 				</div>
@@ -170,7 +202,7 @@ const RoundDetailDrawer = ({
 							<div className="flex flex-1 items-center space-x-1">
 								<IconGroup size={18} className="fill-grantpicks-black-400" />
 								<p className="text-sm font-normal text-grantpicks-black-950">
-									{doc.max_participants} Participating
+									Max. {doc.max_participants} applicant
 								</p>
 							</div>
 						) : (
@@ -187,7 +219,7 @@ const RoundDetailDrawer = ({
 								<p className="text-sm font-normal text-grantpicks-black-950">
 									Ends{` `}
 									{moment(
-										new Date(Number(doc.application_end_ms) as number),
+										new Date(Number(doc.voting_end_ms) as number),
 									).fromNow()}
 								</p>
 							</div>

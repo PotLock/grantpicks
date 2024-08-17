@@ -1,0 +1,28 @@
+{
+  "name": "potlock-grantpicks",
+  "version": "1.0.0",
+  "description": "GrantPicks code",
+  "repository": "git@github.com:PotLock/grantpicks-near.git",
+  "author": "Lachlan Glen <54282009+lachlanglen@users.noreply.github.com>",
+  "license": "MIT",
+  "scripts": {
+    "build": "./scripts/build.sh",
+    "dev:deploy": "./scripts/deploy.sh && yarn patch:config",
+    "dev:deploy:refresh": "rm -rf neardev && ./scripts/deploy.sh && yarn patch:config",
+    "works": "yarn build && yarn dev:deploy",
+    "works:refresh": "yarn build && yarn dev:deploy:refresh"
+  },
+  "devDependencies": {
+    "@types/bn.js": "^5.1.2",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "^20.6.0",
+    "mocha": "^10.2.0",
+    "near-api-js": "^2.1.4",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "big.js": "^6.2.1",
+    "near-cli": "^3.4.2"
+  }
+}

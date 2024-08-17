@@ -7,3 +7,8 @@ target
 .env
 .history
 .DS_Store
+#contracts
+**/target/
+**/neardev/
+/node_modules/
+

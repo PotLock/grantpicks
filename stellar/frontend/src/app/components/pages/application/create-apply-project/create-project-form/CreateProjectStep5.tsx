@@ -113,6 +113,27 @@ const CreateProjectStep5 = () => {
 		}
 	}, [])
 
+	const onProcessYoutubeInput = async () => {
+		setIsDirtyInput(true)
+		if (!YOUTUBE_URL_REGEX.test(linkInput)) {
+			setEmbededYtHtml('')
+			return
+		}
+		const ytRes = await fetchYoutubeIframe(
+			linkInput,
+			embededYtHtmlRef.current?.clientWidth || 0,
+		)
+		setEmbededYtHtml(ytRes?.html)
+		setValue('video', {
+			url: linkInput || '',
+			file: undefined,
+		})
+		setData((prev) => ({
+			...prev,
+			video: { file: undefined, url: linkInput || '' },
+		}))
+	}
+
 	const { getRootProps, getInputProps } = useDropzone({
 		onDrop,
 		accept: {
@@ -192,24 +213,7 @@ const CreateProjectStep5 = () => {
 									onChange={(e) => setLinkInput(e.target.value)}
 									onKeyDown={async (e) => {
 										if (e.key === 'Enter') {
-											setIsDirtyInput(true)
-											if (!YOUTUBE_URL_REGEX.test(linkInput)) {
-												setEmbededYtHtml('')
-												return
-											}
-											const ytRes = await fetchYoutubeIframe(
-												linkInput,
-												embededYtHtmlRef.current?.clientWidth || 0,
-											)
-											setEmbededYtHtml(ytRes?.html)
-											setValue('video', {
-												url: linkInput || '',
-												file: undefined,
-											})
-											setData((prev) => ({
-												...prev,
-												video: { file: undefined, url: linkInput || '' },
-											}))
+											await onProcessYoutubeInput()
 										}
 									}}
 									placeholder="Paste video link here"
@@ -222,6 +226,18 @@ const CreateProjectStep5 = () => {
 												Invalid link
 											</p>
 										) : undefined
+									}
+									suffixIcon={
+										<Button
+											color="transparent"
+											className="!text-sm !font-semibold !bg-white"
+											onClick={async (e) => {
+												e.stopPropagation()
+												await onProcessYoutubeInput()
+											}}
+										>
+											Add
+										</Button>
 									}
 								/>
 							</div>

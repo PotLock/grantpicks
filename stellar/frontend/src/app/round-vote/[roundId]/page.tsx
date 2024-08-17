@@ -17,7 +17,7 @@ import {
 	isHasVotedRound,
 } from '@/services/on-chain/round'
 import { Network } from '@/types/on-chain'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import React, { useEffect, useRef, useState } from 'react'
 import { Pair, Project } from 'round-client'
 
@@ -28,6 +28,7 @@ export interface IProjectDetailOwner {
 
 const RoundVotePage = () => {
 	const params = useParams<{ roundId: string }>()
+	const searchParams = useSearchParams()
 	const router = useRouter()
 	const [showEvalGuide, setShowEvalGuide] = useState<boolean>(false)
 	const [showProjectDetailDrawer, setShowProjectDetailDrawer] =
@@ -107,8 +108,13 @@ const RoundVotePage = () => {
 	}
 
 	useEffect(() => {
-		setShowEvalGuide(true)
-		checkVoterIsEligible()
+		if (!searchParams.get('is_voted')) {
+			setShowEvalGuide(true)
+			checkVoterIsEligible()
+		} else {
+			fetchPairsRound()
+			setHasVoted(true)
+		}
 	}, [stellarPubKey, params.roundId])
 
 	return (

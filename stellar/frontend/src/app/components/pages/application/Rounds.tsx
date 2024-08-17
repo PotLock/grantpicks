@@ -29,6 +29,7 @@ import { formatStroopToXlm } from '@/utils/helper'
 import IconStellar from '../../svgs/IconStellar'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import { useRouter } from 'next/navigation'
+import { useGlobalContext } from '@/app/providers/GlobalProvider'
 
 const ApplicationRoundsItem = ({
 	doc,
@@ -47,6 +48,7 @@ const ApplicationRoundsItem = ({
 		useModalContext()
 	const { connectedWallet, stellarPubKey, stellarKit } = useWallet()
 	const [isUserApplied, setIsUserApplied] = useState<boolean>(false)
+	const { setShowMenu } = useGlobalContext()
 
 	const fetchRoundApplication = async () => {
 		try {
@@ -164,6 +166,10 @@ const ApplicationRoundsItem = ({
 									setShowAppsDrawer(true)
 								}}
 								onFundRound={() => {
+									if (!connectedWallet) {
+										setShowMenu('choose-wallet')
+										return
+									}
 									setShowMoreVert(false)
 									setShowFundRoundModal(true)
 								}}
@@ -188,14 +194,14 @@ const ApplicationRoundsItem = ({
 					<div className="flex items-center space-x-1">
 						<IconGroup size={18} className="fill-grantpicks-black-400" />
 						<p className="text-sm font-normal text-grantpicks-black-950">
-							{doc.max_participants} Participating
+							Max. {doc.max_participants} applicant
 						</p>
 					</div>
 				) : (
 					<div className="flex items-center space-x-1">
 						<IconProject size={18} className="fill-grantpicks-black-400" />
 						<p className="text-sm font-normal text-grantpicks-black-950">
-							999 Projects
+							-- Projects
 						</p>
 					</div>
 				)}
@@ -252,6 +258,10 @@ const ApplicationRoundsItem = ({
 			<div className="w-full">
 				<Button
 					onClick={() => {
+						if (!connectedWallet) {
+							setShowMenu('choose-wallet')
+							return
+						}
 						if (selectedRoundType === 'on-going') {
 							setVoteConfirmationProps((prev) => ({
 								...prev,
@@ -307,16 +317,16 @@ const ApplicationRoundsItem = ({
 							process.env.NETWORK_ENV as Network,
 							cmdWallet,
 						)
-						// const startVoteTx =
-						// 	await contracts.round_contract.start_voting_period({
-						// 		round_id: doc.id,
-						// 		caller: stellarPubKey,
-						// 	})
 						const startVoteTx =
-							await contracts.round_contract.close_voting_period({
+							await contracts.round_contract.start_voting_period({
 								round_id: doc.id,
 								caller: stellarPubKey,
 							})
+						// const closeVoteTx =
+						// 	await contracts.round_contract.close_voting_period({
+						// 		round_id: doc.id,
+						// 		caller: stellarPubKey,
+						// 	})
 						const txhash = await contracts.signAndSendTx(
 							stellarKit as StellarWalletsKit,
 							startVoteTx,
@@ -324,7 +334,7 @@ const ApplicationRoundsItem = ({
 						)
 					}}
 				>
-					Close Voting vote
+					start force Voting vote
 				</Button>
 			</div> */}
 			<RoundDetailDrawer

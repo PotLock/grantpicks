@@ -33,6 +33,7 @@ import { formatStroopToXlm } from '@/utils/helper'
 import clsx from 'clsx'
 import moment from 'moment'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 import InfiniteScroll from 'react-infinite-scroll-component'
 import useSWRInfinite from 'swr/infinite'
@@ -44,6 +45,7 @@ const ApplicationRoundsItem = ({
 	doc: IGetRoundsResponse
 	mutateRounds: any
 }) => {
+	const router = useRouter()
 	const { selectedRoundType } = useRoundStore()
 	const [showMoreVert, setShowMoreVert] = useState<boolean>(false)
 	const [showDetailDrawer, setShowDetailDrawer] = useState<boolean>(false)
@@ -54,28 +56,6 @@ const ApplicationRoundsItem = ({
 	const { connectedWallet, stellarPubKey } = useWallet()
 	const [isUserApplied, setIsUserApplied] = useState<boolean>(false)
 	const [hasVoted, setHasVoted] = useState<boolean>(false)
-
-	// const fetchRoundApplication = async () => {
-	// 	try {
-	// 		let cmdWallet = new CMDWallet({
-	// 			stellarPubKey: stellarPubKey,
-	// 		})
-	// 		const contracts = new Contracts(
-	// 			process.env.NETWORK_ENV as Network,
-	// 			cmdWallet,
-	// 		)
-	// 		const res = await getRoundApplication(
-	// 			{ round_id: doc.id as bigint, applicant: stellarPubKey },
-	// 			contracts,
-	// 		)
-	// 		//@ts-ignore
-	// 		if (!res?.error) {
-	// 			if (selectedRoundType === 'upcoming') setIsUserApplied(true)
-	// 		}
-	// 	} catch (error: any) {
-	// 		console.log('error fetch project applicant', error)
-	// 	}
-	// }
 
 	const getSpecificTime = () => {
 		if (selectedRoundType === 'upcoming') {
@@ -98,31 +78,6 @@ const ApplicationRoundsItem = ({
 			return `ended`
 		}
 	}
-
-	// const checkVoterHasVoted = async () => {
-	// 	try {
-	// 		if (!stellarPubKey) return
-	// 		let cmdWallet = new CMDWallet({
-	// 			stellarPubKey: stellarPubKey,
-	// 		})
-	// 		const contracts = new Contracts(
-	// 			process.env.NETWORK_ENV as Network,
-	// 			cmdWallet,
-	// 		)
-	// 		const txParams: HasVotedRoundParams = {
-	// 			round_id: BigInt(doc.id),
-	// 			voter: stellarPubKey,
-	// 		}
-	// 		const isHasVotedRes = await isHasVotedRound(txParams, contracts)
-	// 		setHasVoted(isHasVotedRes)
-	// 	} catch (error: any) {
-	// 		console.log('error check has voted', error)
-	// 	}
-	// }
-
-	// useEffect(() => {
-	// 	fetchRoundApplication()
-	// }, [])
 
 	return (
 		<div className="p-4 md:p-5 rounded-2xl border border-black/10 bg-white">
@@ -216,14 +171,14 @@ const ApplicationRoundsItem = ({
 					<div className="flex items-center space-x-1">
 						<IconGroup size={18} className="fill-grantpicks-black-400" />
 						<p className="text-sm font-normal text-grantpicks-black-950">
-							{doc.max_participants} Participating
+							Max. {doc.max_participants} Applicant
 						</p>
 					</div>
 				) : (
 					<div className="flex items-center space-x-1">
 						<IconProject size={18} className="fill-grantpicks-black-400" />
 						<p className="text-sm font-normal text-grantpicks-black-950">
-							999 Projects
+							-- Projects
 						</p>
 					</div>
 				)}
@@ -282,44 +237,13 @@ const ApplicationRoundsItem = ({
 			<div className="w-full">
 				<Button
 					onClick={() => {
-						if (selectedRoundType === 'on-going') {
-							setVoteConfirmationProps((prev) => ({
-								...prev,
-								isOpen: true,
-								doc: doc,
-							}))
-						} else if (
-							selectedRoundType === 'upcoming' &&
-							getSpecificTime() === 'upcoming-open'
-						) {
-							setApplyProjectInitProps((prev) => ({
-								...prev,
-								isOpen: true,
-								round_id: doc.id,
-								roundData: doc,
-							}))
-						}
+						router.push(`/round-vote/${doc.id}?is_voted=true`)
 					}}
 					isFullWidth
 					className="!border !border-grantpicks-black-200 !py-2"
 					color="white"
-					isDisabled={
-						getSpecificTime() === 'upcoming' ||
-						getSpecificTime() === 'upcoming-closed' ||
-						isUserApplied
-					}
 				>
-					{isUserApplied
-						? `You're already a part of this round.`
-						: getSpecificTime() === 'on-going'
-							? 'Vote'
-							: getSpecificTime() === 'upcoming'
-								? 'No application allowed'
-								: getSpecificTime() === 'upcoming-open'
-									? 'Apply'
-									: getSpecificTime() === 'upcoming-closed'
-										? 'Application Closed'
-										: 'View Result'}
+					View Votes
 				</Button>
 			</div>
 			<RoundDetailDrawer

@@ -89,6 +89,8 @@ const ApplicationItem = ({
 				toast.success(`Change status to ${type} is succeed`, {
 					style: toastOptions.success.style,
 				})
+				if (type === 'accept') setOpenAcceptModal(false)
+				else setOpenRejectModal(false)
 				await mutate()
 			}
 		} catch (error: any) {
@@ -226,7 +228,6 @@ const ApplicationsDrawer = ({
 			process.env.NETWORK_ENV as Network,
 			undefined,
 		)
-		console.log(doc.id)
 		const res = await getRoundApplications(
 			{ round_id: BigInt(doc.id), skip: key.skip, limit: key.limit },
 			contracts,

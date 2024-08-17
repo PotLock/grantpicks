@@ -86,7 +86,9 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 					envVarConfigs.NETWORK_ENV === 'testnet'
 						? WalletNetwork.TESTNET
 						: WalletNetwork.FUTURENET,
-				selectedWalletId: 'freighter',
+				selectedWalletId:
+					localStorage.getItem(localStorageConfigs.LAST_STELLAR_WALLET_ID) ||
+					'freighter',
 				modules: [
 					new FreighterModule(),
 					new xBullModule(),
@@ -132,7 +134,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 			)
 
 			let cmdWallet = new CMDWallet({
-				stellarPubKey: localStellarPubKey
+				stellarPubKey: localStellarPubKey,
 			})
 			const balances = parseInt((await cmdWallet.getBalances())[0].balance)
 			setCurrentBalance(balances)
@@ -157,6 +159,10 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 			onWalletSelected: async (option: ISupportedWallet) => {
 				try {
 					stellarKit.setWallet(option.id)
+					localStorage.setItem(
+						localStorageConfigs.LAST_STELLAR_WALLET_ID,
+						option.id,
+					)
 					const pubKey = await stellarKit?.getPublicKey()
 					setConnectedWallet('stellar')
 					localStorage.setItem(localStorageConfigs.CONNECTED_WALLET, 'stellar')
@@ -244,7 +250,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 					stellarKit,
 					stellarPubKey,
 					onOpenStellarWallet,
-					currentBalance
+					currentBalance,
 				}}
 			>
 				{children}

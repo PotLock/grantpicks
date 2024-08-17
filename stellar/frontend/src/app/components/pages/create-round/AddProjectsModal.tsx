@@ -190,26 +190,33 @@ const AddProjectsModal = ({
 									</div>
 								}
 							>
-								{projects?.map((project, index) => (
-									<div
-										className="flex items-center space-x-2 p-2 cursor-pointer hover:bg-grantpicks-black-200 transition"
-										key={index}
-										onClick={() =>
-											setTempSelectedProjects((prev) => [...prev, project])
-										}
-									>
-										<Image
-											src={`/assets/images/ava-1.png`}
-											alt=""
-											className="rounded-full object-fill"
-											width={24}
-											height={24}
-										/>
-										<p className="text-base font-normal">
-											{prettyTruncate(project.name, 20, 'address')}
-										</p>
-									</div>
-								))}
+								{projects
+									.filter(
+										(project) =>
+											!tempSelectedProjects
+												.map((tsp) => BigInt(tsp.id).toString())
+												.includes(BigInt(project.id).toString()),
+									)
+									?.map((project, index) => (
+										<div
+											className="flex items-center space-x-2 p-2 cursor-pointer hover:bg-grantpicks-black-200 transition"
+											key={index}
+											onClick={() =>
+												setTempSelectedProjects((prev) => [project, ...prev])
+											}
+										>
+											<Image
+												src={`/assets/images/ava-1.png`}
+												alt=""
+												className="rounded-full object-fill"
+												width={24}
+												height={24}
+											/>
+											<p className="text-base font-normal">
+												{prettyTruncate(project.name, 20, 'address')}
+											</p>
+										</div>
+									))}
 							</InfiniteScroll>
 						</div>
 					)}

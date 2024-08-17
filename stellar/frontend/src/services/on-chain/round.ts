@@ -159,6 +159,11 @@ export interface UpdateChallengePayoutParams {
 	resolve_challenge?: boolean
 }
 
+export interface SetAdminsRoundParams {
+	round_id: u128
+	round_admin: string[]
+}
+
 export const getRounds: (
 	params: GetRoundsParams,
 	contract: Contracts,
@@ -521,6 +526,20 @@ export const updateChallengePayoutRound: (
 		challenger_id: params.challenger_id,
 		notes: params.notes,
 		resolve_challenge: params.resolve_challenge,
+	})
+	return round
+}
+
+export const setAdminsRound: (
+	params: SetAdminsRoundParams,
+	contract: Contracts,
+) => Promise<AssembledTransaction<null>> = async (
+	params: SetAdminsRoundParams,
+	contract: Contracts,
+) => {
+	let round = await contract.round_contract.set_admins({
+		round_id: params.round_id,
+		round_admin: params.round_admin,
 	})
 	return round
 }

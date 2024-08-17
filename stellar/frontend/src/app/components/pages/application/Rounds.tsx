@@ -201,7 +201,7 @@ const ApplicationRoundsItem = ({
 					<div className="flex items-center space-x-1">
 						<IconProject size={18} className="fill-grantpicks-black-400" />
 						<p className="text-sm font-normal text-grantpicks-black-950">
-							999 Projects
+							-- Projects
 						</p>
 					</div>
 				)}
@@ -317,16 +317,16 @@ const ApplicationRoundsItem = ({
 							process.env.NETWORK_ENV as Network,
 							cmdWallet,
 						)
-						// const startVoteTx =
-						// 	await contracts.round_contract.start_voting_period({
-						// 		round_id: doc.id,
-						// 		caller: stellarPubKey,
-						// 	})
 						const startVoteTx =
-							await contracts.round_contract.close_voting_period({
+							await contracts.round_contract.start_voting_period({
 								round_id: doc.id,
 								caller: stellarPubKey,
 							})
+						// const closeVoteTx =
+						// 	await contracts.round_contract.close_voting_period({
+						// 		round_id: doc.id,
+						// 		caller: stellarPubKey,
+						// 	})
 						const txhash = await contracts.signAndSendTx(
 							stellarKit as StellarWalletsKit,
 							startVoteTx,
@@ -334,7 +334,7 @@ const ApplicationRoundsItem = ({
 						)
 					}}
 				>
-					Close Voting vote
+					start force Voting vote
 				</Button>
 			</div> */}
 			<RoundDetailDrawer

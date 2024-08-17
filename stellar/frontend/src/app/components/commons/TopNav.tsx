@@ -7,12 +7,12 @@ import IconExpandMore from '../svgs/IconExpandMore'
 import IconExpandLess from '../svgs/IconExpandLess'
 import { prettyTruncate } from '@/utils/helper'
 import { useRouter } from 'next/navigation'
+import { useGlobalContext } from '@/app/providers/GlobalProvider'
 
 const TopNav = () => {
 	const { connectedWallet, nearAccounts, stellarPubKey } = useWallet()
-	const [showMenu, setShowMenu] = useState<'choose-wallet' | 'user' | null>(
-		null,
-	)
+	const { showMenu, setShowMenu } = useGlobalContext()
+
 	const router = useRouter()
 
 	return (

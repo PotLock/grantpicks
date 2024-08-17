@@ -13,6 +13,8 @@ const GlobalContext = createContext<IGlobalContext>({
 	dismissPageLoading: () => {},
 	openPageLoading: () => {},
 	livepeer: null,
+	showMenu: null,
+	setShowMenu: () => {},
 })
 
 const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
@@ -20,6 +22,9 @@ const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
 	const [nearPrice, setNearPrice] = useState<number>(0.0)
 	const [pageLoading, setPageLoading] = useState<boolean>(false)
 	const [livepeer, setLivepeer] = useState<Livepeer | null>(null)
+	const [showMenu, setShowMenu] = useState<'choose-wallet' | 'user' | null>(
+		null,
+	)
 
 	const dismissPageLoading = () => {
 		setPageLoading(false)
@@ -53,8 +58,10 @@ const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
 				stellarPrice,
 				nearPrice,
 				livepeer,
+				showMenu,
 				dismissPageLoading,
 				openPageLoading,
+				setShowMenu,
 			}}
 		>
 			{children}

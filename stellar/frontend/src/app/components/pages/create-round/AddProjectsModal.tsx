@@ -199,7 +199,7 @@ const AddProjectsModal = ({
 										}
 									>
 										<Image
-											src={project.image_url || `/assets/images/ava-1.png`}
+											src={`/assets/images/ava-1.png`}
 											alt=""
 											className="rounded-full object-fill"
 											width={24}

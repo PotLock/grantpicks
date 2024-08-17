@@ -721,7 +721,19 @@ const CreateRoundPage = () => {
 
 					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
 						<div className="flex items-center justify-between pb-4 border-b border-black/10">
-							<p className="text-base font-semibold">Cooldown</p>
+							<div className="flex items-center space-x-2">
+								<p className="text-base font-semibold">Cooldown</p>
+								<a
+									data-tooltip-id="require_cooldown_tooltip"
+									data-tooltip-html="Interval after voting period ends to payout period"
+								>
+									<IconInfoCircle
+										size={16}
+										className="stroke-grantpicks-black-600"
+									/>
+								</a>
+								<Tooltip id="require_cooldown_tooltip" place="right" />
+							</div>
 							<Switch
 								checked={watch().allow_cooldown}
 								onChange={async (checked: boolean) => {
@@ -812,9 +824,7 @@ const CreateRoundPage = () => {
 					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
 						<div className="flex items-center justify-between pb-4 border-b border-black/10">
 							<div className="flex items-center space-x-2">
-								<p className="text-base font-semibold">
-									Require Compliance
-								</p>
+								<p className="text-base font-semibold">Require Compliance</p>
 								<a
 									data-tooltip-id="require_compliance_tooltip"
 									data-tooltip-html="This requires grantees to do KYC process"

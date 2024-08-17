@@ -99,11 +99,23 @@ export const submitTx = async ({
 }: SubmitTxProps) => {
 	if (server instanceof SorobanRpc.Server) {
 		const tx = TransactionBuilder.fromXDR(signedXDR, networkPassphrase)
-		const sendResponse = await server.sendTransaction(tx)
+		let sendResponse
+		let getTx
+		sendResponse = await server.sendTransaction(tx)
+		getTx = await server.getTransaction(sendResponse.hash)
+
+		while (sendResponse.status == 'PENDING' && getTx.status == 'NOT_FOUND') {
+			getTx = await server.getTransaction(sendResponse.hash)
+			await sleep(200)
+		}
+
+		// TODO: Handle other sendResponse.status
+
 		return sendResponse.hash
 	} else if (server instanceof Horizon.Server) {
 		const tx = TransactionBuilder.fromXDR(signedXDR, networkPassphrase)
 		const sendResponse = await server.submitTransaction(tx)
+
 		return sendResponse.hash
 	}
 }
@@ -126,3 +138,5 @@ export const fetchYoutubeIframe = async (
 	)
 	return ytRes?.data
 }
+
+export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))

@@ -341,11 +341,14 @@ export const addProjectsRound: (
 	project_ids: u128[],
 	contract: Contracts,
 ) => {
-	let round = await contract.round_contract.add_approved_project({
-		round_id,
-		admin,
-		project_ids,
-	})
+	let round = await contract.round_contract.add_approved_project(
+		{
+			round_id,
+			admin,
+			project_ids,
+		},
+		{ simulate: true },
+	)
 	return round
 }
 

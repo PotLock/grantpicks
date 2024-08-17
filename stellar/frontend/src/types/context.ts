@@ -147,6 +147,8 @@ export interface IGlobalContext {
 	dismissPageLoading: () => void
 	openPageLoading: () => void
 	livepeer: Livepeer | null
+	showMenu: 'choose-wallet' | 'user' | null
+	setShowMenu: Dispatch<SetStateAction<'choose-wallet' | 'user' | null>>
 }
 
 export interface IMyProjectContext {

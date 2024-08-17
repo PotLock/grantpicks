@@ -29,6 +29,7 @@ import { formatStroopToXlm } from '@/utils/helper'
 import IconStellar from '../../svgs/IconStellar'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import { useRouter } from 'next/navigation'
+import { useGlobalContext } from '@/app/providers/GlobalProvider'
 
 const ApplicationRoundsItem = ({
 	doc,
@@ -47,6 +48,7 @@ const ApplicationRoundsItem = ({
 		useModalContext()
 	const { connectedWallet, stellarPubKey, stellarKit } = useWallet()
 	const [isUserApplied, setIsUserApplied] = useState<boolean>(false)
+	const { setShowMenu } = useGlobalContext()
 
 	const fetchRoundApplication = async () => {
 		try {
@@ -164,6 +166,10 @@ const ApplicationRoundsItem = ({
 									setShowAppsDrawer(true)
 								}}
 								onFundRound={() => {
+									if (!connectedWallet) {
+										setShowMenu('choose-wallet')
+										return
+									}
 									setShowMoreVert(false)
 									setShowFundRoundModal(true)
 								}}
@@ -252,6 +258,10 @@ const ApplicationRoundsItem = ({
 			<div className="w-full">
 				<Button
 					onClick={() => {
+						if (!connectedWallet) {
+							setShowMenu('choose-wallet')
+							return
+						}
 						if (selectedRoundType === 'on-going') {
 							setVoteConfirmationProps((prev) => ({
 								...prev,

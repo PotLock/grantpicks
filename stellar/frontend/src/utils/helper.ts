@@ -122,7 +122,7 @@ export const fetchYoutubeIframe = async (
 	height?: number,
 ) => {
 	const ytRes = await axios.get(
-		`https://www.youtube.com/oembed?url=${linkUrl}&format=json&maxwidth=${width - 50}&maxheight=${height || (9 / 6) * width}`,
+		`https://www.youtube.com/oembed?url=${linkUrl}&format=json&maxwidth=${width - 50}&maxheight=${Math.floor(height || (9 / 6) * width)}`,
 	)
 	return ytRes?.data
 }

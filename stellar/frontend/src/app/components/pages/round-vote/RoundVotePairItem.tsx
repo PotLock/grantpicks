@@ -21,7 +21,7 @@ import Contracts from '@/lib/contracts'
 import { Network } from '@/types/on-chain'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { IProjectDetailOwner } from '@/app/round-vote/[roundId]/page'
-import { fetchYoutubeIframe } from '@/utils/helper'
+import { fetchYoutubeIframe, prettyTruncate } from '@/utils/helper'
 
 interface RoundVotePairItemProps {
 	index: number
@@ -72,18 +72,25 @@ const RoundVotePairItem = ({
 			}
 			const firstRes = await getProject(get1stProjectParams, contracts)
 			const secondRes = await getProject(get2ndProjectParams, contracts)
+			console.log(
+				'res first second',
+				firstRes,
+				secondRes,
+				Math.floor(wrapper1Ref.current?.clientWidth || 0),
+				Math.floor(wrapper2Ref.current?.clientWidth || 0),
+			)
 			setFirstProjectData(firstRes)
 			setSecondProjectData(secondRes)
-			if (firstProjectData?.video_url.includes('youtube')) {
+			if (firstRes?.video_url.includes('youtube')) {
 				const res = await fetchYoutubeIframe(
-					firstProjectData.video_url || '',
+					firstRes.video_url || '',
 					wrapper1Ref.current?.clientWidth || 0,
 				)
 				setYtIframe1(res?.html)
 			}
-			if (secondProjectData?.video_url.includes('youtube')) {
+			if (secondRes?.video_url.includes('youtube')) {
 				const res = await fetchYoutubeIframe(
-					secondProjectData.video_url || '',
+					secondRes.video_url || '',
 					wrapper2Ref.current?.clientWidth || 0,
 				)
 				setYtIframe2(res?.html)
@@ -114,7 +121,7 @@ const RoundVotePairItem = ({
 				}}
 				ref={wrapper1Ref}
 				className={clsx(
-					`rounded-3xl transition-all duration-200 max-w-[448px] cursor-pointer`,
+					`rounded-3xl transition-all duration-200 w-[280px] md:w-[360px] lg:w-[448px] cursor-pointer`,
 					selectedPairs[index] === data.projects[0].toString()
 						? // true
 							`border-4 border-grantpicks-purple-500`
@@ -152,15 +159,20 @@ const RoundVotePairItem = ({
 						</div>
 					</div>
 				)}
-				{ytIframe1 && <div dangerouslySetInnerHTML={{ __html: ytIframe1 }} />}
+				{ytIframe1 && (
+					<div
+						className="flex items-center justify-center"
+						dangerouslySetInnerHTML={{ __html: ytIframe1 }}
+					/>
+				)}
 				<div className="md:p-4 lg:p-5">
 					<div className="flex items-center space-x-2 mb-4">
 						<div className="rounded-full w-6 h-6 bg-grantpicks-black-400" />
 						<p className="text-lg lg:text-xl font-semibold">
-							{firstProjectData?.name}
+							{prettyTruncate(firstProjectData?.name, 30)}
 						</p>
 					</div>
-					<p className="text-base font-normal text-grantpicks-black-600 mb-6">
+					<p className="text-base font-normal text-grantpicks-black-600 mb-6 line-clamp-3 whitespace-pre-wrap break-words">
 						{firstProjectData?.overview}
 					</p>
 					<Button
@@ -194,7 +206,7 @@ const RoundVotePairItem = ({
 					setSelectedPairs(temp)
 				}}
 				className={clsx(
-					`rounded-3xl transition-all duration-200 max-w-[448px] cursor-pointer`,
+					`rounded-3xl transition-all duration-200 w-[280px] md:w-[360px] lg:w-[448px] cursor-pointer`,
 					selectedPairs[index] === data.projects[1].toString()
 						? `border-4 border-grantpicks-purple-500`
 						: `border-4 border-black/10`,
@@ -231,7 +243,12 @@ const RoundVotePairItem = ({
 						</div>
 					</div>
 				)}
-				{ytIframe2 && <div dangerouslySetInnerHTML={{ __html: ytIframe2 }} />}
+				{ytIframe2 && (
+					<div
+						className="flex items-center justify-center"
+						dangerouslySetInnerHTML={{ __html: ytIframe2 }}
+					/>
+				)}
 				<div className="md:p-4 lg:p-5">
 					<div className="flex items-center space-x-2 mb-4">
 						<div className="rounded-full w-6 h-6 bg-grantpicks-black-400" />

@@ -1,3 +1,4 @@
+import CMDWallet from '@/lib/wallet';
 import {
 	Horizon,
 	RoundApplication,

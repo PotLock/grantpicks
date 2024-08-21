@@ -511,19 +511,21 @@ const CreateRoundPage = () => {
 					</div>
 
 					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
-						<div className="flex items-center space-x-4 w-full mb-4">
+						<div className="flex items-start space-x-4 w-full mb-4">
 							<div className="flex-1">
 								<InputText
 									type="number"
 									disabled={!watch().use_vault}
 									label="Initial Deposit"
 									placeholder="Enter amount..."
-									onChange={async (e) => {
-										const calculation =
-											parseFloat(e.target.value || '0') * stellarPrice
-										setAmountUsd(`${calculation.toFixed(3)}`)
-										setValue('amount', e.target.value)
-									}}
+									{...register('amount', {
+										onChange: async (e) => {
+											const calculation =
+												parseFloat(e.target.value || '0') * stellarPrice
+											setAmountUsd(`${calculation.toFixed(3)}`)
+											setValue('amount', e.target.value)
+										},
+									})}
 									preffixIcon={
 										<IconStellar
 											size={24}
@@ -578,6 +580,11 @@ const CreateRoundPage = () => {
 											<p className="text-red-500 text-xs mt-1 ml-2">
 												Expected Amount is required
 											</p>
+										) : parseFloat(watch().expected_amount) <
+										  parseFloat(watch().amount) ? (
+											<p className="text-red-500 text-xs mt-1 ml-2">
+												Expected Amount should not be less than intiial deposit
+											</p>
 										) : undefined
 									}
 								/>
@@ -587,7 +594,10 @@ const CreateRoundPage = () => {
 							<Checkbox
 								label="Open Funding Pool"
 								checked={watch().use_vault}
-								onChange={(e) => setValue('use_vault', e.target.checked)}
+								onChange={(e) => {
+									setValue('use_vault', e.target.checked)
+									setValue('amount', '')
+								}}
 							/>
 						</div>
 					</div>

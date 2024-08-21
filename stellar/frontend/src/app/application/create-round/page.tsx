@@ -354,7 +354,9 @@ const CreateRoundPage = () => {
 										isClearable={true}
 										onChange={(date) => {
 											field.onChange(date[0])
-											setValue('voting_duration_end', date[1])
+											setValue('voting_duration_end', date[1], {
+												shouldValidate: true,
+											})
 										}}
 										className="border border-grantpicks-black-200 rounded-xl w-full h-12"
 										wrapperClassName="w-full mb-1"
@@ -366,6 +368,25 @@ const CreateRoundPage = () => {
 									Start and end voting duration is required
 								</p>
 							) : undefined}
+							<Controller
+								name="voting_duration_end"
+								control={control}
+								rules={{
+									validate: {
+										validEndDate: (value) => {
+											const currentDate = new Date()
+											return (value && value >= currentDate) || false
+										},
+									},
+								}}
+								render={() => <></>}
+							/>
+							{watch('voting_duration_end') &&
+								errors.voting_duration_end?.type === 'validEndDate' && (
+									<p className="text-red-500 text-xs mt-1 ml-2">
+										Voting end date cannot be in the past
+									</p>
+								)}
 						</div>
 						<div className="space-y-2">
 							<div className="border border-grantpicks-black-200 rounded-xl py-2 px-3 flex items-center justify-between">

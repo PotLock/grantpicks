@@ -38,6 +38,7 @@ import {
 	getRoundAdmins,
 	getRoundApplications,
 	getRoundInfo,
+	setAdminsRound,
 	UpdateRoundParams,
 } from '@/services/on-chain/round'
 import { useParams, useRouter } from 'next/navigation'
@@ -321,6 +322,34 @@ const EditRoundPage = () => {
 		}
 	}
 
+	const onSetAdmins = async (roundId: bigint) => {
+		try {
+			let cmdWallet = new CMDWallet({
+				stellarPubKey: stellarPubKey,
+			})
+			const contracts = new Contracts(
+				process.env.NETWORK_ENV as Network,
+				cmdWallet,
+			)
+			const txAddAdmins = await setAdminsRound(
+				{
+					round_id: BigInt(roundId),
+					round_admin: watch().admins.map((admin) => admin.admin_id),
+				},
+				contracts,
+			)
+			const txHash = await contracts.signAndSendTx(
+				stellarKit as StellarWalletsKit,
+				txAddAdmins,
+				stellarPubKey,
+			)
+			return txHash
+		} catch (error: any) {
+			dismissPageLoading()
+			console.log('error', error)
+		}
+	}
+
 	// const onAddAdmins = async () => {
 	// 	try {
 	// 		let cmdWallet = new CMDWallet({
@@ -406,9 +435,8 @@ const EditRoundPage = () => {
 						txUpdateRound.result.id,
 					)
 				}
-				// if (selectedAdmins.length > 0) {
-				// 	txHashAddAdmins = await onAddAdmins()
-				// }
+				txHashAddProjects = await onAddApprovedProjects(txUpdateRound.result.id)
+				txHashAddAdmins = await onSetAdmins(BigInt(params.roundId))
 				setSuccessUpdateRoundModalProps((prev) => ({
 					...prev,
 					isOpen: true,

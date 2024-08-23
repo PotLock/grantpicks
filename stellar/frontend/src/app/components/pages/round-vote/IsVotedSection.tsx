@@ -70,40 +70,38 @@ const IsVotedPairItem = ({
 
 	return (
 		<div key={index} className="p-4 md:p-6 rounded-2xl bg-grantpicks-black-50">
-			<div className="relative justify-center flex items-center space-x-4 md:space-x-6 mb-4 md:mb-6">
-				<div>
-					<div
-						className={clsx(
-							`w-20 md:w-24 lg:w-28 h-20 md:h-24 lg:h-28 rounded-full bg-grantpicks-black-300 mb-4`,
-							pair.projects.map((p) => p.toString())[0] ===
-								(selectedPair?.project_id.toString() as string)
-								? `border-2 border-grantpicks-purple-500`
-								: `border-2 border-grantpicks-black-300`,
-						)}
-					></div>
-					<p className="text-grantpicks-black-950 font-semibold text-base">
-						{prettyTruncate(firstProjectData?.name, 20)}
-					</p>
-				</div>
-				<div>
-					<div
-						className={clsx(
-							`w-20 md:w-24 lg:w-28 h-20 md:h-24 lg:h-28 rounded-full bg-grantpicks-black-300 mb-4`,
-							pair.projects.map((p) => p.toString())[1] ===
-								(selectedPair?.project_id.toString() as string)
-								? `border-2 border-grantpicks-purple-500`
-								: `border-2 border-grantpicks-black-300`,
-						)}
-					></div>
-					<p className="text-grantpicks-black-950 font-semibold text-base">
-						{prettyTruncate(secondProjectData?.name, 20)}
-					</p>
-				</div>
+			<div className="relative justify-center flex items-center gap-x-4 md:gap-x-6 mb-4 md:mb-6">
+				<div
+					className={clsx(
+						`w-20 md:w-24 lg:w-28 h-20 md:h-24 lg:h-28 rounded-full bg-grantpicks-black-300 mb-4`,
+						pair.projects.map((p) => p.toString())[0] ===
+							(selectedPair?.project_id.toString() as string)
+							? `border-2 border-grantpicks-purple-500`
+							: `border-2 border-grantpicks-black-300`,
+					)}
+				></div>
+				<div
+					className={clsx(
+						`w-20 md:w-24 lg:w-28 h-20 md:h-24 lg:h-28 rounded-full bg-grantpicks-black-300 mb-4`,
+						pair.projects.map((p) => p.toString())[1] ===
+							(selectedPair?.project_id.toString() as string)
+							? `border-2 border-grantpicks-purple-500`
+							: `border-2 border-grantpicks-black-300`,
+					)}
+				></div>
 				<div className="absolute inset-0 flex items-center justify-center">
 					<div className="rounded-full w-16 h-16 bg-gradient-to-t from-grantpicks-purple-500 to-grantpicks-purple-100 flex items-center justify-center">
 						<p className="text-[32px] font-black text-white">VS</p>
 					</div>
 				</div>
+			</div>
+			<div className="relative justify-center flex items-center gap-x-4 md:gap-x-6 mb-4 md:mb-6">
+				<p className="text-grantpicks-black-950 font-semibold text-base">
+					{prettyTruncate(firstProjectData?.name, 20)}
+				</p>
+				<p className="text-grantpicks-black-950 font-semibold text-base">
+					{prettyTruncate(secondProjectData?.name, 20)}
+				</p>
 			</div>
 			<div className="flex items-center justify-center space-x-2">
 				<IconCheckCircle size={18} className="fill-grantpicks-purple-500" />

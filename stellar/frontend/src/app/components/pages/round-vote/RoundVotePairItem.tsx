@@ -253,10 +253,10 @@ const RoundVotePairItem = ({
 					<div className="flex items-center space-x-2 mb-4">
 						<div className="rounded-full w-6 h-6 bg-grantpicks-black-400" />
 						<p className="text-lg lg:text-xl font-semibold">
-							{secondProjectData?.name}
+							{prettyTruncate(secondProjectData?.name, 24, 'address')}
 						</p>
 					</div>
-					<p className="text-base font-normal text-grantpicks-black-600 mb-6">
+					<p className="text-base font-normal text-grantpicks-black-600 mb-6 break-words text-wrap">
 						{secondProjectData?.overview}
 					</p>
 					<Button

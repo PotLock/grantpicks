@@ -250,7 +250,7 @@ const ApplicationRoundsItem = ({
 					<p className="text-lg md:text-xl font-normal text-grantpicks-black-950">
 						{formatStroopToXlm(doc.expected_amount)}{' '}
 						<span className="text-sm font-normal text-grantpicks-black-600">
-							NEAR
+							{connectedWallet === 'near' ? 'NEAR' : 'XLM'}
 						</span>
 					</p>
 				)}

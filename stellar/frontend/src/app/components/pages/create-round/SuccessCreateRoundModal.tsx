@@ -65,7 +65,7 @@ const SuccessCreateRoundModal = ({
 						isFullWidth
 						onClick={() => {
 							onClose()
-							router.push(`/application`)
+							router.push(`/round-vote/${createRoundRes?.id}`)
 						}}
 					>
 						<div className="flex items-center space-x-2">

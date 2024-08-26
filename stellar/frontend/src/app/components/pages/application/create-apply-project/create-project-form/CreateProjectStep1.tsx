@@ -65,18 +65,6 @@ const CreateProjectStep1 = () => {
 							) : undefined
 						}
 					/>
-					<InputText
-						required
-						customLabel={
-							<p className="text-sm font-semibold text-grantpicks-black-950">
-								Project ID{' '}
-								<span className="text-sm font-normal text-grantpicks-black-600">
-									(For DAO Only)
-								</span>
-							</p>
-						}
-						{...register('project_id')}
-					/>
 					<InputTextArea
 						label="A brief Description"
 						required

@@ -123,19 +123,6 @@ const MyProjectOverview = () => {
 							) : undefined
 						}
 					/>
-					<InputText
-						required
-						disabled
-						customLabel={
-							<p className="text-sm font-semibold text-grantpicks-black-950 mb-2">
-								Project ID{' '}
-								<span className="text-sm font-normal text-grantpicks-black-600">
-									(For DAO Only)
-								</span>
-							</p>
-						}
-						{...register('project_id')}
-					/>
 					<InputTextArea
 						label="A brief Description"
 						required

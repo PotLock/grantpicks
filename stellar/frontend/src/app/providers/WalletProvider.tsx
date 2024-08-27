@@ -33,6 +33,7 @@ import {
 } from '@creit.tech/stellar-wallets-kit'
 import { distinctUntilChanged, map } from 'rxjs'
 import CMDWallet from '@/lib/wallet'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 
 const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 	const [connectedWallet, setConnectedWallet] = useState<
@@ -50,6 +51,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 	const [stellarPubKey, setStellarPubKey] = useState<string>('')
 	const [currentBalance, setCurrentBalance] = useState<number | null>()
 	const [isInit, setIsInit] = useState<boolean>(true)
+  const store = useAppStorage()
 
 	const onInitNear = async () => {
 		try {

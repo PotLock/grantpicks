@@ -3,6 +3,8 @@ import Drawer from '../../commons/Drawer'
 import { IDrawerProps } from '@/types/dialog'
 import IconClose from '../../svgs/IconClose'
 import TimerEnd from '../../commons/TimerEnd'
+import useAppStorage from '@/stores/zustand/useAppStorage'
+import ChallengeItem from '../../commons/ChallengeItem'
 
 interface ViewChallengeDrawerProps extends IDrawerProps {
 	endOfChallenge: number
@@ -13,6 +15,8 @@ const ViewChallengeDrawer = ({
 	onClose,
 	endOfChallenge,
 }: ViewChallengeDrawerProps) => {
+	const storage = useAppStorage()
+
 	return (
 		<Drawer onClose={onClose} isOpen={isOpen} showClose={false}>
 			<div
@@ -31,6 +35,11 @@ const ViewChallengeDrawer = ({
 						className="fill-grantpicks-black-400 cursor-pointer"
 						onClick={onClose}
 					/>
+				</div>
+				<div className="px-4 md:px-6 py-4 flex">
+					{storage.current_round_payout_challenges.map((challenge, index) => (
+						<ChallengeItem key={index} index={index} challenge={challenge} />
+					))}
 				</div>
 			</div>
 		</Drawer>

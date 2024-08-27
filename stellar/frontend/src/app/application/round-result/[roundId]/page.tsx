@@ -68,15 +68,15 @@ const RoundResultPage = () => {
 
 					storage.setIsAdminRound(isAdminOrOwner)
 
+					const isPayoutDone = (
+						await contracts.round_contract.is_payout_done({
+							round_id: roundId,
+						})
+					).result
+
+					storage.setPayoutDone(isPayoutDone)
+
 					if (isAdminOrOwner) {
-						const isPayoutDone = (
-							await contracts.round_contract.is_payout_done({
-								round_id: roundId,
-							})
-						).result
-
-						storage.setPayoutDone(isPayoutDone)
-
 						let fetch = true
 						let newPayouts: Payout[] = []
 

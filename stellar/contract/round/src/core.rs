@@ -1,8 +1,8 @@
 use soroban_sdk::{Address, Env, String, Vec};
 
 use crate::data_type::{
-    // ApplicationStatus, Deposit, FlagDetail, Pair, Payout, PayoutInput, PayoutsChallenge, PickedPair, ProjectVotingResult, RoundApplication, RoundDetail, UpdateRoundParams, VotingResult
-    ApplicationStatus, Deposit, Pair, Payout, PayoutInput, PayoutsChallenge, PickedPair, ProjectVotingResult, RoundApplication, RoundDetail, UpdateRoundParams, VotingResult
+    ApplicationStatus, Deposit, FlagDetail, Pair, Payout, PayoutInput, PayoutsChallenge, PickedPair, ProjectVotingResult, RoundApplication, RoundDetail, UpdateRoundParams, VotingResult
+    // ApplicationStatus, Deposit, Pair, Payout, PayoutInput, PayoutsChallenge, PickedPair, ProjectVotingResult, RoundApplication, RoundDetail, UpdateRoundParams, VotingResult
 };
 
 pub trait IsRound {
@@ -13,8 +13,6 @@ pub trait IsRound {
     fn change_application_period(env: &Env, round_id: u128, caller: Address, start_ms: u64, end_ms: u64);
     fn change_number_of_votes(env: &Env, round_id: u128, caller: Address, num_picks_per_voter: u32);
     fn change_expected_amount(env: &Env, round_id: u128, caller: Address, amount: u128);
-    fn close_voting_period(env: &Env, round_id: u128, caller: Address) -> RoundDetail;
-    fn start_voting_period(env: &Env, round_id: u128, caller: Address) -> RoundDetail;
     fn add_admins(env: &Env, round_id: u128, round_admin: Vec<Address>);
     fn remove_admins(env: &Env, round_id: u128, round_admin: Vec<Address>);
     fn set_admins(env: &Env, round_id: u128, round_admin: Vec<Address>);
@@ -26,8 +24,8 @@ pub trait IsRound {
     fn vote(env: &Env, round_id: u128, voter: Address, picks: Vec<PickedPair>);
     fn flag_voters(env: &Env, round_id: u128, caller: Address, voters: Vec<Address>);
     fn unflag_voters(env: &Env, round_id: u128, caller: Address, voters: Vec<Address>);
-    // fn flag_project(env: &Env, round_id: u128, caller: Address, project_id: u128, reason: String)->FlagDetail;
-    // fn unflag_project(env: &Env, round_id: u128, caller: Address, project_id: u128);
+    fn flag_project(env: &Env, round_id: u128, caller: Address, project_id: u128, reason: String)->FlagDetail;
+    fn unflag_project(env: &Env, round_id: u128, caller: Address, project_id: u128);
     fn add_approved_project(env: &Env, round_id: u128, caller: Address, project_ids: Vec<u128>);
     fn remove_approved_project(env: &Env, around_id: u128, caller: Address, project_ids: Vec<u128>);
     fn process_payouts(env: &Env, round_id: u128, caller: Address);
@@ -57,7 +55,6 @@ pub trait IsRound {
     fn get_application(env: &Env, round_id: u128, applicant: Address) -> RoundApplication;
     fn is_payout_done(env: &Env, round_id: u128) -> bool;
     fn user_has_vote(env: &Env, round_id: u128, voter: Address) -> bool;
-    fn total_funding(env: &Env, round_id: u128) -> u128;
     fn get_pairs_to_vote(env: &Env, round_id: u128) -> Vec<Pair>;
     fn whitelist_status(env: &Env, round_id: u128, address: Address) -> bool;
     fn blacklist_status(env: &Env, round_id: u128, address: Address) -> bool;

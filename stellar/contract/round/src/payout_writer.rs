@@ -18,8 +18,17 @@ pub fn write_payouts(env: &Env, round_id: u128, payouts: &Vec<u32>) {
 }
 
 pub fn has_paid(env: &Env, round_id: u128) -> bool {
-    let key = ContractKey::Payouts(round_id);
-    env.storage().persistent().has(&key)
+    let payouts = read_payouts(env, round_id);
+    let mut is_paid = false;
+    
+    payouts.iter().for_each(|payout_id| {
+        let payout = read_payout_info(env, payout_id).unwrap();
+        if payout.paid_at_ms.is_some() {
+            is_paid = true;
+        }
+    });
+
+    is_paid
 }
 
 pub fn clear_payouts(env: &Env, round_id: u128) {

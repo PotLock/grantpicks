@@ -897,7 +897,7 @@ fn test_voting_deposit_and_payout() {
     }
     round.add_approved_project(&created_round.id, &admin, &project_ids);
 
-    round.start_voting_period(&created_round.id, &admin);
+    round.change_voting_period(&created_round.id, &admin, &get_ledger_second_as_millis(&env), &(get_ledger_second_as_millis(&env)+1000));
 
     let voter = Address::generate(&env);
     let voter2 = Address::generate(&env);
@@ -944,7 +944,7 @@ fn test_voting_deposit_and_payout() {
     let results = round.get_voting_results_for_round(&created_round.id);
     assert_eq!(results.len(), 10);
 
-    round.close_voting_period(&created_round.id, &admin);
+    round.change_voting_period(&created_round.id, &admin, &0, &0);
 
     let mut payouts: Vec<PayoutInput> = Vec::new(&env);
 

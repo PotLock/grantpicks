@@ -1,7 +1,6 @@
 'use client'
 
 import Button from '@/app/components/commons/Button'
-import InputText from '@/app/components/commons/InputText'
 import ChallengePayoutModal from '@/app/components/pages/round-result/ChallengePayoutModal'
 import RoundResultLayout from '@/app/components/pages/round-result/RoundResultLayout'
 import ViewChallengeDrawer from '@/app/components/pages/round-result/ViewChallengeDrawer'
@@ -9,227 +8,298 @@ import IconArrowLeft from '@/app/components/svgs/IconArrowLeft'
 import IconDollar from '@/app/components/svgs/IconDollar'
 import IconNear from '@/app/components/svgs/IconNear'
 import IconProject from '@/app/components/svgs/IconProject'
-import IconSearch from '@/app/components/svgs/IconSearch'
-import IconStarBronze from '@/app/components/svgs/IconStarBronze'
-import IconStarGold from '@/app/components/svgs/IconStarGold'
-import IconStarSilver from '@/app/components/svgs/IconStarSilver'
 import IconStellar from '@/app/components/svgs/IconStellar'
 import { useWallet } from '@/app/providers/WalletProvider'
-import { LIMIT_SIZE } from '@/constants/query'
-import Contracts from '@/lib/contracts'
-import CMDWallet from '@/lib/wallet'
-import { getProject } from '@/services/on-chain/project-registry'
-import {
-	getRoundApplications,
-	getRoundInfo,
-	getVotingResultsRound,
-} from '@/services/on-chain/round'
-import {
-	IGetRoundApplicationsResponse,
-	IGetRoundsResponse,
-	Network,
-} from '@/types/on-chain'
-import { formatStroopToXlm, parseToStroop } from '@/utils/helper'
+import { formatStroopToXlm } from '@/utils/helper'
 import clsx from 'clsx'
 import { useParams, useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
-import { Project, ProjectVotingResult } from 'round-client'
-import { useTimer } from 'react-timer-hook'
 import TimerEnd from '@/app/components/commons/TimerEnd'
 import IconEdit from '@/app/components/svgs/IconEdit'
-
-const ResultItem = ({
-	index,
-	data,
-	roundData,
-	votingResultData,
-}: {
-	index: number
-	data: ProjectVotingResult
-	roundData?: IGetRoundsResponse
-	votingResultData?: ProjectVotingResult[]
-}) => {
-	const [projectData, setProjectData] = useState<Project | undefined>(undefined)
-	const router = useRouter()
-	const { stellarPubKey } = useWallet()
-	const fetchProjectDetail = async () => {
-		let cmdWallet = new CMDWallet({
-			stellarPubKey: stellarPubKey,
-		})
-		const contracts = new Contracts(
-			process.env.NETWORK_ENV as Network,
-			cmdWallet,
-		)
-		const projectDetail = await getProject(
-			{ project_id: data.project_id },
-			contracts,
-		)
-		setProjectData(projectDetail)
-	}
-
-	useEffect(() => {
-		fetchProjectDetail()
-	}, [])
-	return (
-		<div
-			className="flex items-center w-full px-4 py-4 cursor-pointer bg-white hover:bg-black/10 transition rounded-2xl"
-			onClick={() => {
-				router.push(
-					`/application/round-result/${roundData?.id.toString()}/project/${data.project_id.toString()}`,
-				)
-			}}
-		>
-			<div className="flex items-center w-[10%]">
-				{index === 0 && <IconStarGold size={24} />}
-				{index === 1 && <IconStarSilver size={24} />}
-				{index === 2 && <IconStarBronze size={24} />}
-			</div>
-			<div className="flex items-center w-[60%]">
-				<p className="text-xs md:text-sm font-semibold text-grantpicks-black-500">
-					{projectData?.name}
-				</p>
-			</div>
-			<div className="flex items-center w-[12%]">
-				<p className="text-xs md:text-sm font-semibold text-grantpicks-black-950 text-right mr-1">
-					{(
-						Number(formatStroopToXlm(roundData?.expected_amount || BigInt(0))) /
-						(votingResultData?.length || 0)
-					).toFixed(3)}
-				</p>
-				<IconStellar size={14} className="fill-grantpicks-black-600" />
-			</div>
-			<div className="flex items-center justify-end w-[12%]">
-				<p className="text-xs md:text-sm font-semibold text-grantpicks-black-500 text-right">
-					15%
-				</p>
-			</div>
-			<div className="flex items-center justify-end w-[12%]">
-				<p className="text-xs md:text-sm font-semibold text-grantpicks-black-500 text-right">
-					{data.voting_count.toString()}
-				</p>
-			</div>
-		</div>
-	)
-}
+import useAppStorage from '@/stores/zustand/useAppStorage'
+import ResultItem from '@/app/components/commons/ResultItem'
+import { Payout, PayoutsChallenge } from 'round-client'
+import { useGlobalContext } from '@/app/providers/GlobalProvider'
+import EditPayoutModal from '@/app/components/pages/round-result/EditPayoutModal'
+import toast from 'react-hot-toast'
+import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 
 const RoundResultPage = () => {
-	const { connectedWallet, stellarPubKey } = useWallet()
+	const { connectedWallet, stellarPubKey, stellarKit } = useWallet()
 	const [showChallengeModal, setShowChallengeModal] = useState<boolean>(false)
+	const global = useGlobalContext()
 	const [showViewChallengeDrawer, setShowViewChallengeDrawer] =
 		useState<boolean>(false)
+	const [showEditPayoutModal, setShowEditPayoutModal] = useState<boolean>(false)
 	const params = useParams<{ roundId: string }>()
-	const [roundData, setRoundData] = useState<IGetRoundsResponse | undefined>(
-		undefined,
-	)
-	const [roundAppData, setRoundAppData] = useState<
-		IGetRoundApplicationsResponse[]
-	>([])
-	const [votingResultData, setVotingResultData] = useState<
-		ProjectVotingResult[]
-	>([])
+	const storage = useAppStorage()
+	const router = useRouter()
 
 	const fetchRoundInfo = async () => {
-		let cmdWallet = new CMDWallet({
-			stellarPubKey: stellarPubKey,
-		})
-		const contracts = new Contracts(
-			process.env.NETWORK_ENV as Network,
-			cmdWallet,
-		)
-		const resRoundInfo = await getRoundInfo(
-			{ round_id: BigInt(params.roundId) },
-			contracts,
-		)
-		setRoundData(resRoundInfo)
-		return resRoundInfo
-	}
+		if (params.roundId) {
+			const roundId = BigInt(params.roundId)
+			const isExsist = storage.roundes.has(roundId.toString())
+			let isOwner = false
+			let isAdmin = false
+			if (!isExsist && storage.chainId === 'stellar') {
+				const contracts = storage.getStellarContracts()
 
-	const fetchRoundApplications = async () => {
-		let cmdWallet = new CMDWallet({
-			stellarPubKey: stellarPubKey,
-		})
-		const contracts = new Contracts(
-			process.env.NETWORK_ENV as Network,
-			cmdWallet,
-		)
-		let skip: number = 0
-		let resRoundApps: IGetRoundApplicationsResponse[] = []
-		const stopLooping = setInterval(async () => {
-			const _resRoundApps = await getRoundApplications(
-				{ round_id: BigInt(params.roundId), skip, limit: LIMIT_SIZE },
-				contracts,
-			)
-			resRoundApps = [...resRoundApps, ..._resRoundApps]
-			if (resRoundApps.length < LIMIT_SIZE) {
-				setRoundAppData(resRoundApps)
-				clearInterval(stopLooping)
-				return
+				if (!contracts) {
+					return
+				}
+
+				const roundInfo = (
+					await contracts.round_contract.get_round({ round_id: roundId })
+				).result
+
+				const admins = (
+					await contracts.round_contract.admins({
+						round_id: roundId,
+					})
+				).result
+
+				if (roundInfo) {
+					storage.setRound(roundInfo)
+					storage.roundes.set(roundId.toString(), roundInfo)
+					isOwner = roundInfo.owner === stellarPubKey
+					isAdmin = admins.includes(stellarPubKey)
+
+					const isAdminOrOwner = isAdmin || isOwner
+
+					storage.setIsAdminRound(isAdminOrOwner)
+
+					if (isAdminOrOwner) {
+						const isPayoutDone = (
+							await contracts.round_contract.is_payout_done({
+								round_id: roundId,
+							})
+						).result
+
+						storage.setPayoutDone(isPayoutDone)
+
+						let fetch = true
+						let newPayouts: Payout[] = []
+
+						while (fetch) {
+							const payouts = (
+								await contracts.round_contract.get_payouts_for_round({
+									round_id: roundId,
+									from_index: BigInt(newPayouts.length),
+									limit: BigInt(5),
+								})
+							).result
+
+							newPayouts = newPayouts.concat(payouts)
+
+							if (payouts.length < 5) {
+								fetch = false
+							}
+
+							storage.setCurrentRoundPayouts(newPayouts)
+						}
+					}
+				}
 			}
-			skip += LIMIT_SIZE
-		}, 300)
-	}
-
-	const fetchVotingResultRound = async () => {
-		let cmdWallet = new CMDWallet({
-			stellarPubKey: stellarPubKey,
-		})
-		const contracts = new Contracts(
-			process.env.NETWORK_ENV as Network,
-			cmdWallet,
-		)
-		const resVotingResultRound = await getVotingResultsRound(
-			BigInt(params.roundId),
-			contracts,
-		)
-		if (resVotingResultRound) {
-			setVotingResultData(resVotingResultRound)
 		}
 	}
 
-	const endOfChallenge =
-		new Date(Number(roundData?.cooldown_end_ms?.toString()) || 0).getTime() +
-		(roundData?.cooldown_period_ms
-			? new Date(
-					Number(roundData?.cooldown_period_ms?.toString()) || 0,
-				).getTime()
-			: 0)
+	const fetchPayoutChallenge = async () => {
+		if (params.roundId) {
+			const roundId = BigInt(params.roundId)
 
-	const endOfCompliance =
-		new Date(Number(roundData?.compliance_end_ms?.toString()) || 0).getTime() +
-		(roundData?.compliance_period_ms
-			? new Date(
-					Number(roundData?.compliance_period_ms?.toString()) || 0,
-				).getTime()
-			: 0)
+			if (storage.chainId === 'stellar') {
+				const contracts = storage.getStellarContracts()
+
+				if (!contracts) {
+					return
+				}
+
+				let challenges: PayoutsChallenge[] = []
+				let fetch = true
+
+				while (fetch) {
+					const payoutChallenges = (
+						await contracts.round_contract.get_challenges_payout({
+							round_id: roundId,
+							from_index: BigInt(challenges.length),
+							limit: BigInt(5),
+						})
+					).result
+
+					challenges = challenges.concat(payoutChallenges)
+
+					if (payoutChallenges.length < 5) {
+						fetch = false
+					}
+				}
+
+				if (challenges.length > 0) {
+					storage.setCurrentRoundPayoutChallenges(challenges)
+				}
+			}
+		}
+	}
+
+	const fetchVotingResultRound = async () => {
+		if (params.roundId) {
+			const roundId = BigInt(params.roundId)
+
+			if (storage.chainId === 'stellar') {
+				const contracts = storage.getStellarContracts()
+
+				if (!contracts) {
+					return
+				}
+
+				const votingResults = (
+					await contracts.round_contract.get_voting_results_for_round({
+						round_id: roundId,
+					})
+				).result
+
+				console.log('votingResults', votingResults)
+
+				if (votingResults) {
+					storage.setCurrentResults(votingResults)
+					const projectInfoAll = storage.projects
+					votingResults.forEach(async (votingResult) => {
+						const project = storage.projects.get(
+							votingResult.project_id.toString(),
+						)
+						if (!project) {
+							const projectInfo = (
+								await contracts.project_contract.get_project_by_id({
+									project_id: votingResult.project_id,
+								})
+							).result
+
+							if (projectInfo) {
+								projectInfoAll.set(
+									votingResult.project_id.toString(),
+									projectInfo,
+								)
+
+								storage.setProjects(projectInfoAll)
+							}
+						}
+					})
+				}
+			}
+		}
+	}
+
+	const processPayout = async () => {
+		const contract = storage.getStellarContracts()
+		if (!contract) return
+
+		try {
+			const payoutTx = await contract.round_contract.process_payouts({
+				round_id: storage.current_round?.id || BigInt(0),
+				caller: storage.my_address || '',
+			})
+
+			const txHash = await contract.signAndSendTx(
+				stellarKit as StellarWalletsKit,
+				payoutTx,
+				stellarPubKey,
+			)
+
+			if (!txHash) {
+				toast.error('Error processing payout')
+				return
+			} else {
+				toast.success('Payout processed successfully')
+				fetchRoundInfo()
+			}
+		} catch (e) {
+			console.error(e)
+			toast.error('Error processing payout')
+		}
+	}
+
+	const setRoundCompleted = async () => {
+		const contract = storage.getStellarContracts()
+		if (!contract) return
+
+		try {
+			const txRoundCompleted = await contract.round_contract.set_round_complete(
+				{
+					round_id: storage.current_round?.id || BigInt(0),
+					caller: storage.my_address || '',
+				},
+			)
+
+			const txHash = await contract.signAndSendTx(
+				stellarKit as StellarWalletsKit,
+				txRoundCompleted,
+				stellarPubKey,
+			)
+
+			if (!txHash) {
+				toast.error('Error Set Round Completed')
+				return
+			} else {
+				toast.success('Round Completed successfully')
+				fetchRoundInfo()
+			}
+		} catch (e) {
+			console.error(e)
+			toast.error('Error Set Round Completed')
+		}
+	}
+
+	const roundData = storage.current_round
+	const endOfChallenge = new Date(
+		Number(roundData?.cooldown_end_ms?.toString()) || 0,
+	).getTime()
+
+	const endOfCompliance = new Date(
+		Number(roundData?.compliance_end_ms?.toString()) || 0,
+	).getTime()
+
+	const complianceLong = (
+		(endOfCompliance - new Date().getTime()) /
+		86400000
+	).toFixed(0)
 
 	const showCooldownChallenge = endOfChallenge > new Date().getTime()
 
 	const showCompliance = endOfCompliance > new Date().getTime()
 
 	useEffect(() => {
-		if (!roundData && stellarPubKey) {
+		if (stellarPubKey) {
+			storage.setMyAddress(stellarPubKey)
 			fetchRoundInfo()
-			fetchRoundApplications()
+			fetchPayoutChallenge()
 			fetchVotingResultRound()
 		}
 	}, [stellarPubKey])
 
+	console.log('storage payouts', storage.current_round_payouts)
+
 	return (
 		<RoundResultLayout>
 			<div className="bg-white flex items-center justify-between text-grantpicks-black-950 py-4 md:py-6 px-4 md:px-0 md:my-8 lg:my-4 rounded-xl">
-				<div className="flex items-center space-x-2">
+				<div
+					className="flex items-center space-x-2"
+					onClick={() => {
+						router.push('/application')
+					}}
+				>
 					<IconArrowLeft size={18} className="fill-grantpicks-black-400" />
 					<p className="text-sm font-semibold">Round Results</p>
 				</div>
-				<div
-					className={clsx(
-						`px-5 py-2 border text-xs font-semibold flex items-center justify-center space-x-2 rounded-full`,
-						`border-grantpicks-amber-400 text-grantpicks-amber-700 bg-grantpicks-amber-50`,
-					)}
-				>
-					<IconDollar size={18} className="fill-grantpicks-amber-400" />
-					<p className="uppercase">payout pending</p>
-				</div>
+				{!storage.isPayoutDone && (
+					<div
+						className={clsx(
+							`px-5 py-2 border text-xs font-semibold flex items-center justify-center space-x-2 rounded-full`,
+							`border-grantpicks-amber-400 text-grantpicks-amber-700 bg-grantpicks-amber-50`,
+						)}
+					>
+						<IconDollar size={18} className="fill-grantpicks-amber-400" />
+						<p className="uppercase">payout pending</p>
+					</div>
+				)}
 			</div>
 
 			<div className="w-full flex flex-col items-center justify-center mb-4 md:mb-6 lg:mb-8">
@@ -240,7 +310,7 @@ const RoundResultPage = () => {
 						<IconStellar size={24} className="fill-grantpicks-black-950" />
 					)}
 				</div>
-				<p className="text-[40px] font-black">{roundData?.name}</p>
+				<p className="text-[40px] font-black">{storage.current_round?.name}</p>
 			</div>
 
 			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 lg:gap-8 mb-4 md:mb-6 lg:mb-8">
@@ -250,10 +320,10 @@ const RoundResultPage = () => {
 					</div>
 					<div>
 						<p className="text-[25px] font-normal text-grantpicks-black-950">
-							{roundAppData.length}
+							{storage.current_results.length}
 						</p>
 						<p className="text-xs font-semibold text-grantpicks-black-600">
-							ROUNDS PARTICIPATED
+							PROJECTS
 						</p>
 					</div>
 				</div>
@@ -264,11 +334,18 @@ const RoundResultPage = () => {
 					<div>
 						<p className="text-[25px] font-normal text-grantpicks-black-950">
 							{connectedWallet === 'stellar'
-								? `${formatStroopToXlm(roundData?.expected_amount || BigInt(0))} XLM`
+								? `${formatStroopToXlm(storage.current_round?.expected_amount || BigInt(0))} XLM`
 								: ''}
 							{` `}
 							<span className="text-xs md:text-base font-normal text-grantpicks-black-600">
-								~ USD
+								{(
+									Number(
+										formatStroopToXlm(
+											storage.current_round?.expected_amount || BigInt(0),
+										),
+									) * global.stellarPrice
+								).toFixed(2)}{' '}
+								USD
 							</span>
 						</p>
 						<p className="text-xs font-semibold text-grantpicks-black-600">
@@ -276,53 +353,70 @@ const RoundResultPage = () => {
 						</p>
 					</div>
 				</div>
-				<div className="p-3 md:p-4 lg:p-5 rounded-xl border border-black/10 flex items-center space-x-4 bg-white">
-					<div className="border border-black/10 p-2 rounded-full">
-						<IconStellar size={24} className="fill-grantpicks-black-400" />
+				{storage.current_round?.use_vault && (
+					<div className="p-3 md:p-4 lg:p-5 rounded-xl border border-black/10 flex items-center space-x-4 bg-white">
+						<div className="border border-black/10 p-2 rounded-full">
+							<IconStellar size={24} className="fill-grantpicks-black-400" />
+						</div>
+						<div>
+							<p className="text-[25px] font-normal text-grantpicks-black-950">
+								{connectedWallet === 'stellar'
+									? `${formatStroopToXlm(storage.current_round?.vault_total_deposits || BigInt(0))} XLM`
+									: ''}
+
+								<span className="text-xs md:text-base font-normal text-grantpicks-black-600">
+									{(
+										Number(
+											formatStroopToXlm(
+												storage.current_round?.vault_total_deposits ||
+													BigInt(0),
+											),
+										) * global.stellarPrice
+									).toFixed(2)}{' '}
+									USD
+								</span>
+							</p>
+							<p className="text-xs font-semibold text-grantpicks-black-600">
+								AVAILABLE FUNDS{' '}
+							</p>
+						</div>
 					</div>
-					<div>
-						<p className="text-[25px] font-normal text-grantpicks-black-950">
-							{connectedWallet === 'stellar'
-								? `${formatStroopToXlm(roundData?.vault_total_deposits || BigInt(0))} XLM`
-								: ''}
-						</p>
-						<p className="text-xs font-semibold text-grantpicks-black-600">
-							AVAILABLE FUNDS{' '}
-						</p>
-					</div>
-				</div>
+				)}
 			</div>
 
-			{showCooldownChallenge && (
-				<div className="p-3 md:p-5 rounded-2xl bg-grantpicks-purple-100 w-full my-4 md:my-8">
-					<p className="text-grantpicks-purple-800 text-base font-semibold pb-4 border-b border-grantpicks-purple-200">
-						2 Payout Challenges. {` `}{' '}
+			{showCooldownChallenge && !storage.isPayoutDone && (
+				<div className="p-3 md:p-5 rounded-2xl bg-grantpicks-purple-100 w-full my-4 md:my-8 flex flex-col">
+					<div className="text-grantpicks-purple-800 text-base font-semibold pb-4 border-b border-grantpicks-purple-200">
+						{storage.current_round_payout_challenges.length} Payout Challenges.{' '}
+						{` `}{' '}
 						<span className="text-base font-normal">
 							There will be no payout until all Challenges are resolved.
 						</span>{' '}
-					</p>
-					<div className="flex items-center justify-between pt-4">
-						<p className="text-grantpicks-purple-800 text-[25px] font-semibold">
+					</div>
+					<div className="md:flex">
+						<div className="text-grantpicks-purple-800 text-[25px] font-semibold w-full md:w-3/4 float-left">
 							<TimerEnd expiryTime={endOfChallenge} />
 							{` `}
 							<span className="text-sm font-normal">Left till payout</span>{' '}
-						</p>
-						<div className="flex items-center space-x-4">
-							<div className="relative">
+						</div>
+						<div className="w-full md:w-1/4 lg:w-1/4 float-left">
+							<div className="relative w-full md:w-1/2 float-left mt-2">
 								<Button
 									color="transparent"
-									className="!border !border-grantpicks-black-400"
+									className="!border !border-grantpicks-black-400 w-full"
 									onClick={() => setShowViewChallengeDrawer(true)}
 								>
-									View Challenge
+									{storage.current_round_payout_challenges.length > 0
+										? 'View Challenge'
+										: 'View Challenges'}
 								</Button>
 								<div className="absolute -top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full bg-grantpicks-purple-800 text-white">
-									{2}
+									{storage.current_round_payout_challenges.length}
 								</div>
 							</div>
 							<Button
 								color="transparent"
-								className="!border !border-grantpicks-black-400"
+								className="!border !border-grantpicks-black-400  w-full md:w-1/2 float-left mt-2"
 								onClick={() => setShowChallengeModal(true)}
 							>
 								Challenge Payout
@@ -332,25 +426,22 @@ const RoundResultPage = () => {
 				</div>
 			)}
 
-			{showCompliance && (
+			{showCompliance && !storage.isPayoutDone && (
 				<div className="p-3 md:p-5 rounded-2xl bg-grantpicks-amber-50 w-full my-4 md:my-8">
 					<p className="text-grantpicks-amber-800 text-[25px] font-semibold pb-4 border-b border-grantpicks-amber-200">
-						<TimerEnd expiryTime={endOfCompliance} />
-						{` `}
-						<span className="text-sm font-normal">
-							Left to Complete KYC
-						</span>{' '}
+						{complianceLong} days {` `}
+						<span className="text-sm font-normal">to Complete KYC</span>{' '}
 					</p>
 					<p className="text-grantpicks-black-950 text-base font-normal pt-4">
-						All Projects participating in this Round must complete KYC via
-						{` `}
-						<span className="font-bold">www.examplekyc.org</span>{' '}
+						{roundData?.compliance_req_desc}
 					</p>
 				</div>
 			)}
 
 			<div className="w-full bg-grantpicks-black-50 rounded-2xl p-4">
-				<div className="py-3 px-4">
+				{/* 
+        <!-- Search project NEED API & INDEXER-->
+        <div className="py-3 px-4">
 					<InputText
 						placeholder="Search project"
 						className="!border-none !w-full !outline-none placeholder-grantpicks-black-600 !bg-grantpicks-black-50"
@@ -358,10 +449,10 @@ const RoundResultPage = () => {
 							<IconSearch size={18} className="fill-grantpicks-black-400" />
 						}
 					/>
-				</div>
+				</div> */}
 				<div className="py-3 px-4 flex items-center w-full">
 					<div className="flex items-center w-[10%]">
-						<p className="text-xs md:text-sm font-semibold text-grantpicks-black-500">
+						<p className="text-xs md:text-sm font-semibold text-grantpicks-black-500 text-center">
 							Rank
 						</p>
 					</div>
@@ -387,45 +478,97 @@ const RoundResultPage = () => {
 					</div>
 				</div>
 				<div className="bg-white rounded-2xl flex flex-col divide-y divide-black/10">
-					{votingResultData.map((voted, index) => (
-						<ResultItem
-							key={index}
-							index={index}
-							data={voted}
-							roundData={roundData}
-							votingResultData={votingResultData}
-						/>
+					{storage.current_results.map((voted, index) => (
+						<ResultItem key={index} index={index} data={voted} />
 					))}
 				</div>
-				<div className="pt-4 flex items-center w-full justify-between">
-					<div className="flex items-center space-x-2">
-						<IconEdit size={18} className="fill-grantpicks-black-400" />
-						<p className="text-sm font-semibold text-grantpicks-black-950">
-							Set New Payout
-						</p>
+				{storage.isAdminRound && storage.current_round?.use_vault && (
+					<div className="pt-4 flex items-center w-full justify-between">
+						{!storage.isPayoutDone && (
+							<div
+								className="flex items-center space-x-2 cursor-pointer"
+								onClick={() => {
+									const pairWiseCoin = Number(
+										formatStroopToXlm(
+											storage.current_round?.current_vault_balance || BigInt(0),
+										),
+									)
+
+									const bannedAllocation =
+										storage.getBannedProjectAllocations() * pairWiseCoin
+									storage.setCurrentRemaining(bannedAllocation)
+									storage.setCurrentManagerWeight(0)
+									storage.setCurrentPairwiseWeight(100)
+									storage.setCurrentPayoutInputs(new Map())
+									setShowEditPayoutModal(true)
+								}}
+							>
+								<IconEdit size={18} className="fill-grantpicks-black-400" />
+								<p className="text-sm font-semibold text-grantpicks-black-950">
+									{storage.current_round_payouts.length > 0
+										? 'Edit Payout'
+										: 'Set New Payout'}
+								</p>
+							</div>
+						)}
+
+						{!storage.isPayoutDone && (
+							<Button
+								isDisabled={storage.current_round_payouts.length === 0}
+								color="black"
+								className="!rounded-full !px-4"
+								onClick={processPayout}
+							>
+								<div className="flex items-center space-x-2">
+									<IconDollar size={18} className="fill-white" />
+									<p className="text-sm font-semibold text-white">
+										Process Payout
+									</p>
+								</div>
+							</Button>
+						)}
+
+						{(storage.isPayoutDone || !storage.current_round?.use_vault) &&
+							!storage.current_round?.round_complete_ms && (
+								<>
+									<div className="flex items-center space-x-2"></div>
+									<Button
+										color="black"
+										className="!rounded-full !px-4"
+										onClick={setRoundCompleted}
+									>
+										<div className="flex items-center space-x-2">
+											<IconDollar size={18} className="fill-white" />
+											<p className="text-sm font-semibold text-white">
+												Set Round Completed
+											</p>
+										</div>
+									</Button>
+								</>
+							)}
 					</div>
-					<Button
-						isDisabled
-						color="black"
-						className="!rounded-full !px-4"
-						onClick={() => {}}
-					>
-						<div className="flex items-center space-x-2">
-							<IconDollar size={18} className="fill-white" />
-							<p className="text-sm font-semibold text-white">Process Payout</p>
-						</div>
-					</Button>
-				</div>
+				)}
 			</div>
-			<ChallengePayoutModal
-				isOpen={showChallengeModal}
-				onClose={() => setShowChallengeModal(false)}
-				roundData={roundData}
-			/>
+			{storage.current_round && (
+				<ChallengePayoutModal
+					isOpen={showChallengeModal}
+					onClose={() => setShowChallengeModal(false)}
+					roundData={storage.current_round}
+				/>
+			)}
+
 			<ViewChallengeDrawer
 				isOpen={showViewChallengeDrawer}
 				onClose={() => setShowViewChallengeDrawer(false)}
 				endOfChallenge={endOfChallenge}
+			/>
+
+			<EditPayoutModal
+				isOpen={showEditPayoutModal}
+				onClose={() => {
+					setShowEditPayoutModal(false)
+					fetchRoundInfo()
+				}}
 			/>
 		</RoundResultLayout>
 	)

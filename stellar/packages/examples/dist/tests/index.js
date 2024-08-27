@@ -11,6 +11,8 @@ export async function generateFakeRound() {
         dictionaries: [adjectives, colors, animals],
         separator: ' ',
     });
+    console.log('Admin', adminPublicKey);
+    console.log('Admin Secret', adminSecret);
     let faucet = await axios.get(`https://friendbot.stellar.org?addr=${adminKeyPair.publicKey()}`);
     let res = await faucet.data;
     let cmdWallet = new CMDWallet({
@@ -151,77 +153,92 @@ export async function generateFakeRound() {
         const reviewResult = (await reviewTx.signAndSend()).result;
         console.log('Review Result', reviewResult);
     }
-    // console.log('Start Voting')
-    // //admin start voting
-    // let startVotingTx = await app.round_contract.start_voting_period({
-    // 	round_id: BigInt(roundId),
-    // 	caller: adminPublicKey,
-    // })
-    // const startVotingResult = await startVotingTx.signAndSend()
-    // console.log('Start Voting Result', startVotingResult)
-    // let DEPOSIT = 1000 * 10 ** 7
-    // //admin deposit funds
-    // console.log('Deposit Funds')
-    // let depositTx = await app.round_contract.deposit_to_round({
-    // 	round_id: BigInt(roundId),
-    // 	caller: adminPublicKey,
-    // 	amount: BigInt(DEPOSIT),
-    // 	memo: 'This is a test deposit',
-    // 	referrer_id: undefined as Option<string>,
-    // })
-    // const depositResult = await depositTx.signAndSend()
-    // console.log('Deposit Result', depositResult.result)
-    // //users vote
-    // let num_of_voters = 2
-    // for (let i = 0; i < num_of_voters; i++) {
-    // 	let keypair = Keypair.random()
-    // 	let pubKey = keypair.publicKey()
-    // 	let secret = keypair.secret()
-    // 	let faucet = await axios.get(`https://friendbot.stellar.org?addr=${pubKey}`)
-    // 	let res = await faucet.data
-    // 	console.log('Generate Voter', pubKey)
-    // 	let cmdWallet = new CMDWallet({
-    // 		secret,
-    // 		network: 'testnet',
-    // 	})
-    // 	let clientApp = new App('testnet', cmdWallet)
-    // 	const pairToPick = await app.round_contract.get_pairs_to_vote({
-    // 		round_id: BigInt(roundId),
-    // 	})
-    // 	console.log('Pairs to Vote', pairToPick.result)
-    // 	let votedPairs: PickedPair[] = []
-    // 	for (let pair of pairToPick.result) {
-    // 		votedPairs.push({
-    // 			pair_id: pair.pair_id,
-    // 			voted_project_id: pair.projects[0],
-    // 		})
-    // 	}
-    // 	const voteTx = await clientApp.round_contract.vote({
-    // 		round_id: BigInt(roundId),
-    // 		voter: pubKey,
-    // 		picks: votedPairs,
-    // 	})
-    // 	const voteResult = (await voteTx.signAndSend()).result
-    // 	console.log('Vote Result', voteResult)
-    // }
-    // //admin end voting
-    // cmdWallet = new CMDWallet({
-    // 	secret: adminSecret,
-    // 	network: 'testnet',
-    // })
-    // app = new App('testnet', cmdWallet)
-    // console.log('End Voting')
-    // let endVotingTx = await app.round_contract.close_voting_period({
-    // 	round_id: BigInt(roundId),
-    // 	caller: adminPublicKey,
-    // })
-    // const endVotingResult = await endVotingTx.signAndSend()
-    // console.log('End Voting Result', endVotingResult.result)
-    // const roundResult = await app.round_contract.get_voting_results_for_round({
-    // 	round_id: BigInt(roundId),
-    // })
-    // console.log('Round Result', roundResult.result)
-    // //admin set payouts
+    console.log('Start Voting');
+    //admin start voting
+    let startVotingTx = await app.round_contract.change_voting_period({
+        round_id: BigInt(roundId),
+        caller: adminPublicKey,
+        start_ms: BigInt(new Date().getTime()),
+        end_ms: BigInt(new Date().getTime() + 1000 * 60 * 60 * 24 * 7),
+    });
+    const startVotingResult = await startVotingTx.signAndSend();
+    console.log('Start Voting Result', startVotingResult.result);
+    //change application config
+    console.log('Change Application Config');
+    let changeAppConfigTx = await app.round_contract.set_applications_config({
+        round_id: BigInt(roundId),
+        caller: adminPublicKey,
+        allow_applications: true,
+        start_ms: BigInt(new Date().getTime() - 1000 * 60 * 60 * 24 * 7),
+        end_ms: BigInt(new Date().getTime() - 1000),
+    });
+    const changeAppConfigResult = await changeAppConfigTx.signAndSend();
+    console.log('Change Application Config Result', changeAppConfigResult.result);
+    let DEPOSIT = 1000 * 10 ** 7;
+    //admin deposit funds
+    console.log('Deposit Funds');
+    let depositTx = await app.round_contract.deposit_to_round({
+        round_id: BigInt(roundId),
+        caller: adminPublicKey,
+        amount: BigInt(DEPOSIT),
+        memo: 'This is a test deposit',
+        referrer_id: undefined,
+    });
+    const depositResult = await depositTx.signAndSend();
+    console.log('Deposit Result', depositResult.result);
+    //users vote
+    let num_of_voters = 2;
+    for (let i = 0; i < num_of_voters; i++) {
+        let keypair = Keypair.random();
+        let pubKey = keypair.publicKey();
+        let secret = keypair.secret();
+        let faucet = await axios.get(`https://friendbot.stellar.org?addr=${pubKey}`);
+        let res = await faucet.data;
+        console.log('Generate Voter', pubKey);
+        let cmdWallet = new CMDWallet({
+            secret,
+            network: 'testnet',
+        });
+        let clientApp = new App('testnet', cmdWallet);
+        const pairToPick = await app.round_contract.get_pairs_to_vote({
+            round_id: BigInt(roundId),
+        });
+        console.log('Pairs to Vote', pairToPick.result);
+        let votedPairs = [];
+        for (let pair of pairToPick.result) {
+            votedPairs.push({
+                pair_id: pair.pair_id,
+                voted_project_id: pair.projects[0],
+            });
+        }
+        const voteTx = await clientApp.round_contract.vote({
+            round_id: BigInt(roundId),
+            voter: pubKey,
+            picks: votedPairs,
+        });
+        const voteResult = (await voteTx.signAndSend()).result;
+        console.log('Vote Result', voteResult);
+    }
+    //admin end voting
+    cmdWallet = new CMDWallet({
+        secret: adminSecret,
+        network: 'testnet',
+    });
+    app = new App('testnet', cmdWallet);
+    console.log('End Voting');
+    let endVotingTx = await app.round_contract.change_voting_period({
+        round_id: BigInt(roundId),
+        caller: adminPublicKey,
+        start_ms: BigInt(new Date().getTime() - 1000 * 60 * 60 * 24 * 7),
+        end_ms: BigInt(new Date().getTime() - 1000),
+    });
+    const endVotingResult = await endVotingTx.signAndSend();
+    console.log('End Voting Result', endVotingResult.result);
+    const roundResult = await app.round_contract.get_voting_results_for_round({
+        round_id: BigInt(roundId),
+    });
+    console.log('Round Result', roundResult.result);
+    //admin set payouts
     // console.log('Set Payouts')
     // let payouts: PayoutInput[] = []
     // for (let result of roundResult.result) {

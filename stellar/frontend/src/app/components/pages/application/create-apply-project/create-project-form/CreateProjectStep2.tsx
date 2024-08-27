@@ -118,6 +118,7 @@ const CreateProjectStep2 = () => {
 									</p>
 								) : undefined
 							}
+							hintLabel="You must put a valid STELLAR address that belongs to your team member(s)"
 						/>
 					</div>
 					<div className="grid grid-cols-2 md:grid-cols-3 gap-4">

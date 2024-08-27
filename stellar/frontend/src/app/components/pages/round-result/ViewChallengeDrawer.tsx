@@ -36,7 +36,7 @@ const ViewChallengeDrawer = ({
 						onClick={onClose}
 					/>
 				</div>
-				<div className="px-4 md:px-6 py-4 flex">
+				<div className="px-4 md:px-6 py-4 flex flex-col">
 					{storage.current_round_payout_challenges.map((challenge, index) => (
 						<ChallengeItem key={index} index={index} challenge={challenge} />
 					))}

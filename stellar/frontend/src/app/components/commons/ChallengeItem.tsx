@@ -96,7 +96,7 @@ const ChallengeItem = ({
 	}
 
 	return (
-		<div key={index} className="w-full">
+		<div key={index} className="w-full mt-2">
 			{!challenge.resolved && (
 				<div className="px-5 py-2 w-40 text-xs font-semibold flex items-center justify-center space-x-2 rounded-full text-grantpicks-black-700 bg-grantpicks-black-50">
 					Unresolved Challenge

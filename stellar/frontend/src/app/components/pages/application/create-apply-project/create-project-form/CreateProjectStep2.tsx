@@ -93,6 +93,7 @@ const CreateProjectStep2 = () => {
 							}}
 							suffixIcon={
 								<button
+									disabled={watch('member') === ''}
 									onClick={() => {
 										if (members.includes(watch('member'))) {
 											setSameMemberError(true)
@@ -101,7 +102,7 @@ const CreateProjectStep2 = () => {
 											setValue('member', '')
 										}
 									}}
-									className="text-sm font-semibold text-grantpicks-black-950 cursor-pointer hover:opacity-70 transition"
+									className="text-sm font-semibold text-grantpicks-black-950 cursor-pointer hover:opacity-70 transition disabled:cursor-not-allowed"
 								>
 									Add
 								</button>

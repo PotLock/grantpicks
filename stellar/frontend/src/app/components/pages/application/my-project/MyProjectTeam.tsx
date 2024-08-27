@@ -135,6 +135,7 @@ const MyProjectTeam = () => {
 						}}
 						suffixIcon={
 							<button
+								disabled={watch('member') === ''}
 								onClick={() => {
 									if (!StrKey.isValidEd25519PublicKey(watch('member'))) {
 										toast.error('Address is not valid', {
@@ -149,7 +150,7 @@ const MyProjectTeam = () => {
 										setValue('member', '')
 									}
 								}}
-								className="text-sm font-semibold text-grantpicks-black-950 cursor-pointer hover:opacity-70 transition"
+								className="text-sm font-semibold text-grantpicks-black-950 cursor-pointer hover:opacity-70 transition disabled:cursor-not-allowed"
 							>
 								Add
 							</button>

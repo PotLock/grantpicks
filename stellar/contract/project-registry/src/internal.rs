@@ -42,6 +42,7 @@ impl ProjectRegistryTrait for ProjectRegistry {
             team_members: project_params.team_members,
             repositories: project_params.repositories,
             payout_address: project_params.payout_address,
+            funding_histories: project_params.fundings,
             image_url: project_params.image_url,
             video_url: project_params.video_url,
             status: ProjectStatus::New,
@@ -108,6 +109,7 @@ impl ProjectRegistryTrait for ProjectRegistry {
         uproject.team_members = new_project_params.team_members;
         uproject.repositories = new_project_params.repositories;
         uproject.payout_address = new_project_params.payout_address;
+        uproject.funding_histories = new_project_params.fundings;
 
         log_update_project_event(env, uproject.clone());
         update_project(env, uproject);

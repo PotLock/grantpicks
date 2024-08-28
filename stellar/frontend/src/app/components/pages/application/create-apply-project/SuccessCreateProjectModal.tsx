@@ -26,7 +26,7 @@ const SuccessCreateProjectModal = ({
 }: SuccessCreateProjectModalProps) => {
 	const router = useRouter()
 	return (
-		<Modal isOpen={isOpen} onClose={onClose}>
+		<Modal isOpen={isOpen} onClose={onClose} closeOnBgClick>
 			<div className="w-11/12 md:w-[60vw] lg:w-[45vw] mx-auto bg-white rounded-xl shadow-md p-4 md:p-6">
 				<div className="flex flex-col items-center">
 					<div

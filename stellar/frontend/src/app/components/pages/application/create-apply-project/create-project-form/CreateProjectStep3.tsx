@@ -14,12 +14,14 @@ import Checkbox from '@/app/components/commons/CheckBox'
 import PreviousConfirmationModal from './PreviousConfirmationModal'
 import { StrKey } from 'round-client'
 import { capitalizeFirstLetter } from '@/utils/helper'
+import { GITHUB_URL_REGEX } from '@/constants/regex'
 
 const CreateProjectStep3 = () => {
 	const [showContractMenu, setShowContractMenu] = useState<boolean[]>([])
 	const [showContactMenu, setShowContactMenu] = useState<boolean[]>([])
 	const [showPrevConfirm, setShowPrevConfirm] = useState<boolean>(false)
 	const { setStep, step, data, setData } = useCreateProject()
+	const [errorGithubUrl, setErrorGithubUrl] = useState<boolean>(false)
 	const {
 		control,
 		register,
@@ -299,12 +301,20 @@ const CreateProjectStep3 = () => {
 										required
 										{...register(`github_urls.${index}.github_url`, {
 											required: true,
+											validate: (value) => {
+												return GITHUB_URL_REGEX.test(value)
+											},
 										})}
 										errorMessage={
 											errors?.github_urls?.[index]?.github_url?.type ===
 											'required' ? (
 												<p className="text-red-500 text-xs mt-1 ml-2">
 													Github is required
+												</p>
+											) : errors?.github_urls?.[index]?.github_url?.type ===
+											  'validate' ? (
+												<p className="text-red-500 text-xs mt-1 ml-2">
+													Please enter a valid GitHub URL
 												</p>
 											) : undefined
 										}

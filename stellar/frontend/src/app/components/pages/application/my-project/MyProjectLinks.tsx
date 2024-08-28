@@ -23,6 +23,7 @@ import { SubmitHandler, useFieldArray, useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { useMyProject } from './MyProjectProvider'
 import { StrKey } from 'round-client'
+import { GITHUB_URL_REGEX } from '@/constants/regex'
 
 const MyProjectLinks = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()
@@ -335,12 +336,20 @@ const MyProjectLinks = () => {
 										required
 										{...register(`github_urls.${index}.github_url`, {
 											required: true,
+											validate: (value) => {
+												return GITHUB_URL_REGEX.test(value)
+											},
 										})}
 										errorMessage={
 											errors?.github_urls?.[index]?.github_url?.type ===
 											'required' ? (
 												<p className="text-red-500 text-xs mt-1 ml-2">
 													Github is required
+												</p>
+											) : errors?.github_urls?.[index]?.github_url?.type ===
+											  'validate' ? (
+												<p className="text-red-500 text-xs mt-1 ml-2">
+													Please enter a valid GitHub URL
 												</p>
 											) : undefined
 										}

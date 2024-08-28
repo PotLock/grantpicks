@@ -196,7 +196,11 @@ const MyProjectTeam = () => {
 						color="white"
 						isFullWidth
 						onClick={() => setDefaultData()}
-						className="!py-3 !border !border-grantpicks-black-400"
+						className="!py-3 !border !border-grantpicks-black-400 disabled:cursor-not-allowed"
+						isDisabled={
+							projectData?.team_members.map((mem) => mem.value)?.length ===
+								members.length || members.length === 0
+						}
 					>
 						Discard
 					</Button>
@@ -206,7 +210,11 @@ const MyProjectTeam = () => {
 						isFullWidth
 						color="black-950"
 						onClick={handleSubmit(onSaveChanges)}
-						className="!py-3"
+						className="!py-3 disabled:cursor-not-allowed"
+						isDisabled={
+							projectData?.team_members.map((mem) => mem.value)?.length ===
+								members.length || members.length === 0
+						}
 					>
 						Save changes
 					</Button>

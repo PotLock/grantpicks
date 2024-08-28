@@ -355,8 +355,14 @@ const MyProjectMedia = () => {
 					<Button
 						color="white"
 						isFullWidth
-						onClick={async () => await setDefaultData()}
+						onClick={async () => {
+							await setDefaultData()
+							setLinkInput('')
+						}}
 						className="!py-3 !border !border-grantpicks-black-400"
+						isDisabled={
+							accFiles.length > 0 || Boolean(ytIframe) || linkInput === ''
+						}
 					>
 						Discard
 					</Button>
@@ -366,7 +372,8 @@ const MyProjectMedia = () => {
 						isFullWidth
 						color="black-950"
 						onClick={handleSubmit(onSaveChanges)}
-						className="!py-3"
+						className="!py-3 disabled:cursor-not-allowed"
+						isDisabled={linkInput === ''}
 					>
 						Save changes
 					</Button>

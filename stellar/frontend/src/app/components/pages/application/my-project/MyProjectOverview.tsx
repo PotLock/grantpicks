@@ -27,6 +27,7 @@ const MyProjectOverview = () => {
 		register,
 		handleSubmit,
 		setValue,
+		watch,
 		formState: { errors },
 	} = useForm<CreateProjectStep1Data>({
 		defaultValues: {
@@ -157,7 +158,12 @@ const MyProjectOverview = () => {
 						color="white"
 						isFullWidth
 						onClick={() => setDefaultData()}
-						className="!py-3 !border !border-grantpicks-black-400"
+						className="!py-3 !border !border-grantpicks-black-400 disabled:cursor-not-allowed"
+						isDisabled={
+							projectData?.name === watch().title &&
+							projectData?.overview === watch().description &&
+							projectData?.overview === watch().considering_desc
+						}
 					>
 						Discard
 					</Button>
@@ -167,7 +173,12 @@ const MyProjectOverview = () => {
 						color="black-950"
 						isFullWidth
 						onClick={handleSubmit(onSaveChanges)}
-						className="!py-3"
+						className="!py-3 disabled:cursor-not-allowed"
+						isDisabled={
+							projectData?.name === watch().title &&
+							projectData?.overview === watch().description &&
+							projectData?.overview === watch().considering_desc
+						}
 					>
 						Save changes
 					</Button>

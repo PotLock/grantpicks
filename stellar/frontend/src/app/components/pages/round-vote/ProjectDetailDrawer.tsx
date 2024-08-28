@@ -178,20 +178,21 @@ const ProjectDetailDrawer = ({
 						</div>
 						<div className="divide-y divide-black/10">
 							{projectData?.repositories.map((repo, index) => (
-								<div
-									className="flex items-center py-2 justify-between"
+								<Link
 									key={index}
+									href={repo.url || `https://github.com`}
+									target="_blank"
 								>
-									<p className="text-sm md:text-base font-normal">
-										{repo.label}
-									</p>
-									<Link href={repo.url || `https://github.com`}>
+									<div className="flex items-center py-2 justify-between">
+										<p className="text-sm md:text-base font-normal">
+											{repo.label}
+										</p>
 										<IconArrowOutward
 											size={24}
 											className="fill-grantpicks-black-400 cursor-pointer"
 										/>
-									</Link>
-								</div>
+									</div>
+								</Link>
 							))}
 						</div>
 					</div>

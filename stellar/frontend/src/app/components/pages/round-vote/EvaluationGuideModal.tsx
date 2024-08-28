@@ -56,7 +56,7 @@ const EvaluationGuideModal = ({ isOpen, onClose }: BaseModalProps) => {
 								className="fill-grantpicks-black-400"
 							/>
 							<p className="text-base font-normal">
-								Make sure you have (x amount) for the gas fees in your wallet to
+								Make sure you have 2 XLM for the gas fees in your wallet to
 								actually cast vote.
 							</p>
 						</div>

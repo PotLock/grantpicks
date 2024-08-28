@@ -1515,7 +1515,6 @@ impl IsRound for RoundContract {
 
         round.assert_cooldown_period_complete(env);
         round.assert_compliance_period_complete(env);
-
         round.assert_all_payouts_challenges_resolved(env);
 
         let mut updated_round = round.clone();

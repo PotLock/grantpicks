@@ -81,7 +81,7 @@ export async function generateFakeRound() {
                 contacts: [
                     {
                         name: 'Telegram',
-                        value: 'https://t.me/stellar',
+                        value: `https://t.me/stu`,
                     },
                 ],
                 contracts: [
@@ -90,7 +90,7 @@ export async function generateFakeRound() {
                         contract_address: 'near1.example.testnet',
                     },
                 ],
-                image_url: 'https://paras-ipfs.paras.id/bafybeievm2kozdn77e2wm6l4nzvdb4vulnu7xlyp23e6lmlu76ff2h4yb4',
+                image_url: `https://i.pravatar.cc/150?u=${pubKey}`,
                 video_url: 'https://www.youtube.com/watch?v=5o-tRub-0pQ',
                 payout_address: pubKey,
                 repositories: [
@@ -220,24 +220,24 @@ export async function generateFakeRound() {
         console.log('Vote Result', voteResult);
     }
     //admin end voting
-    cmdWallet = new CMDWallet({
-        secret: adminSecret,
-        network: 'testnet',
-    });
-    app = new App('testnet', cmdWallet);
-    console.log('End Voting');
-    let endVotingTx = await app.round_contract.change_voting_period({
-        round_id: BigInt(roundId),
-        caller: adminPublicKey,
-        start_ms: BigInt(new Date().getTime() - 1000 * 60 * 60 * 24 * 7),
-        end_ms: BigInt(new Date().getTime() - 1000),
-    });
-    const endVotingResult = await endVotingTx.signAndSend();
-    console.log('End Voting Result', endVotingResult.result);
-    const roundResult = await app.round_contract.get_voting_results_for_round({
-        round_id: BigInt(roundId),
-    });
-    console.log('Round Result', roundResult.result);
+    // cmdWallet = new CMDWallet({
+    // 	secret: adminSecret,
+    // 	network: 'testnet',
+    // })
+    // app = new App('testnet', cmdWallet)
+    // console.log('End Voting')
+    // let endVotingTx = await app.round_contract.change_voting_period({
+    // 	round_id: BigInt(roundId),
+    // 	caller: adminPublicKey,
+    // 	start_ms: BigInt(new Date().getTime() - 1000 * 60 * 60 * 24 * 7),
+    // 	end_ms: BigInt(new Date().getTime() - 1000),
+    // })
+    // const endVotingResult = await endVotingTx.signAndSend()
+    // console.log('End Voting Result', endVotingResult.result)
+    // const roundResult = await app.round_contract.get_voting_results_for_round({
+    // 	round_id: BigInt(roundId),
+    // })
+    // console.log('Round Result', roundResult.result)
     //admin set payouts
     // console.log('Set Payouts')
     // let payouts: PayoutInput[] = []

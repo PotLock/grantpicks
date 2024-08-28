@@ -37,6 +37,17 @@ const ResultItem = ({
 			(store.current_results.length || 0)
 	}
 
+	if (store.current_round_payouts.length > 0) {
+		const payout = store.current_round_payouts.find(
+			(p) => p.recipient_id === projectData?.owner,
+		)
+		if (payout) {
+			amountToDistribute = Number(formatStroopToXlm(payout.amount))
+		} else {
+			amountToDistribute = 0
+		}
+	}
+
 	return (
 		<div
 			className={clsx(
@@ -45,9 +56,12 @@ const ResultItem = ({
 				!data.is_flagged && 'bg-white hover:bg-black/10', // Add this line
 			)}
 			onClick={() => {
-				router.push(
-					`/application/round-result/${roundData?.id.toString()}/project/${data.project_id.toString()}`,
-				)
+				if (roundData)
+					[
+						router.push(
+							`/application/round-result/${roundData?.id.toString()}/project/${data.project_id.toString()}`,
+						),
+					]
 			}}
 		>
 			<div className="flex items-center w-[10%]">

@@ -162,7 +162,7 @@ const RoundResultPage = () => {
 				if (votingResults) {
 					storage.setCurrentResults(votingResults)
 					const projectInfoAll = storage.projects
-					votingResults.forEach(async (votingResult) => {
+					for (const votingResult of votingResults) {
 						const project = storage.projects.get(
 							votingResult.project_id.toString(),
 						)
@@ -182,13 +182,14 @@ const RoundResultPage = () => {
 								storage.setProjects(projectInfoAll)
 							}
 						}
-					})
+					}
 				}
 			}
 		}
 	}
 
 	const processPayout = async () => {
+		global.openPageLoading()
 		const contract = storage.getStellarContracts()
 		if (!contract) return
 
@@ -201,7 +202,7 @@ const RoundResultPage = () => {
 			const txHash = await contract.signAndSendTx(
 				stellarKit as StellarWalletsKit,
 				payoutTx,
-				stellarPubKey,
+				storage.my_address || stellarPubKey,
 			)
 
 			if (!txHash) {
@@ -209,15 +210,18 @@ const RoundResultPage = () => {
 				return
 			} else {
 				toast.success('Payout processed successfully')
-				fetchRoundInfo()
+				await fetchRoundInfo()
+				global.dismissPageLoading()
 			}
 		} catch (e) {
 			console.error(e)
 			toast.error('Error processing payout')
+			global.dismissPageLoading()
 		}
 	}
 
 	const setRoundCompleted = async () => {
+		global.openPageLoading()
 		const contract = storage.getStellarContracts()
 		if (!contract) return
 
@@ -232,7 +236,7 @@ const RoundResultPage = () => {
 			const txHash = await contract.signAndSendTx(
 				stellarKit as StellarWalletsKit,
 				txRoundCompleted,
-				stellarPubKey,
+				storage.my_address || stellarPubKey,
 			)
 
 			if (!txHash) {
@@ -240,11 +244,57 @@ const RoundResultPage = () => {
 				return
 			} else {
 				toast.success('Round Completed successfully')
-				fetchRoundInfo()
+				await fetchRoundInfo()
+				global.dismissPageLoading()
 			}
 		} catch (e) {
 			console.error(e)
 			toast.error('Error Set Round Completed')
+			global.dismissPageLoading()
+		}
+	}
+
+	const distributedRemainingFund = async () => {
+		if (!storage.current_round?.allow_remaining_dist) {
+			toast.error('Remaining Fund Distribution is disabled in this round')
+			return
+		}
+
+		if (storage.current_round?.current_vault_balance === BigInt(0)) {
+			toast.error('No Remaining Fund to distribute')
+			return
+		}
+
+		global.openPageLoading()
+		const contract = storage.getStellarContracts()
+		if (!contract) return
+
+		try {
+			const distributeRemainingTx =
+				await contract.round_contract.redistribute_vault({
+					round_id: storage.current_round?.id || BigInt(0),
+					caller: storage.my_address || stellarPubKey,
+					memo: 'Distribute Remaining Fund',
+				})
+
+			const txHash = await contract.signAndSendTx(
+				stellarKit as StellarWalletsKit,
+				distributeRemainingTx,
+				storage.my_address || stellarPubKey,
+			)
+
+			if (!txHash) {
+				toast.error('Error Distribute Remaining Fund')
+				return
+			} else {
+				toast.success('Remaining Fund Distributed successfully')
+				await fetchRoundInfo()
+				global.dismissPageLoading()
+			}
+		} catch (e) {
+			console.error(e)
+			toast.error('Error Distribute Remaining Fund')
+			global.dismissPageLoading()
 		}
 	}
 
@@ -252,9 +302,11 @@ const RoundResultPage = () => {
 		global.openPageLoading()
 		storage.clear()
 		storage.setMyAddress(stellarPubKey)
-		await fetchRoundInfo()
-		await fetchPayoutChallenge()
-		await fetchVotingResultRound()
+		await Promise.all([
+			fetchRoundInfo(),
+			fetchVotingResultRound(),
+			fetchPayoutChallenge(),
+		])
 		global.dismissPageLoading()
 	}
 
@@ -267,23 +319,25 @@ const RoundResultPage = () => {
 		Number(roundData?.compliance_end_ms?.toString()) || 0,
 	).getTime()
 
-	const complianceLong = (
-		(endOfCompliance - new Date().getTime()) /
-		86400000
-	).toFixed(0)
+	const complyPeriod = Number(roundData?.compliance_period_ms?.toString || '0')
+	const complianceLong =
+		complyPeriod > 0 ? Math.floor(complyPeriod / 86400000) : 0
 
 	const showCooldownChallenge = endOfChallenge > new Date().getTime()
-
 	const showCompliance = endOfCompliance > new Date().getTime()
+	const canRedistribute =
+		storage.current_round &&
+		storage.isPayoutDone &&
+		storage.current_round?.current_vault_balance > 0 &&
+		storage.current_round?.allow_remaining_dist
 
+	console.log('roundData', roundData)
 	useEffect(() => {
 		if (stellarPubKey) {
 			initPage()
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [stellarPubKey, params.roundId])
-
-	console.log('storage payouts', storage.current_round_payouts)
 
 	return (
 		<RoundResultLayout>
@@ -357,7 +411,7 @@ const RoundResultPage = () => {
 							</span>
 						</p>
 						<p className="text-xs font-semibold text-grantpicks-black-600">
-							EXTECTED FUNDS{' '}
+							EXPECTED FUNDS{' '}
 						</p>
 					</div>
 				</div>
@@ -522,10 +576,16 @@ const RoundResultPage = () => {
 
 						{!storage.isPayoutDone && (
 							<Button
-								isDisabled={storage.current_round_payouts.length === 0}
 								color="black"
 								className="!rounded-full !px-4"
-								onClick={processPayout}
+								onClick={() => {
+									if (storage.current_round_payouts.length === 0) {
+										toast.error('Please set payout first')
+										return
+									} else {
+										processPayout()
+									}
+								}}
 							>
 								<div className="flex items-center space-x-2">
 									<IconDollar size={18} className="fill-white" />
@@ -539,14 +599,28 @@ const RoundResultPage = () => {
 						{(storage.isPayoutDone || !storage.current_round?.use_vault) &&
 							!storage.current_round?.round_complete_ms && (
 								<>
-									<div className="flex items-center space-x-2"></div>
+									{canRedistribute && (
+										<Button
+											color="white"
+											className="!rounded-full !px-4"
+											onClick={distributedRemainingFund}
+										>
+											<div className="flex items-center space-x-2">
+												<p className="text-sm font-semibold text-black">
+													Distribute Remaining Fund
+												</p>
+											</div>
+										</Button>
+									)}
+
+									{!canRedistribute && <div className="flex w-10"></div>}
+
 									<Button
 										color="black"
 										className="!rounded-full !px-4"
 										onClick={setRoundCompleted}
 									>
 										<div className="flex items-center space-x-2">
-											<IconDollar size={18} className="fill-white" />
 											<p className="text-sm font-semibold text-white">
 												Set Round Completed
 											</p>
@@ -573,9 +647,11 @@ const RoundResultPage = () => {
 
 			<EditPayoutModal
 				isOpen={showEditPayoutModal}
-				onClose={() => {
+				onClose={async () => {
 					setShowEditPayoutModal(false)
-					fetchRoundInfo()
+					global.openPageLoading()
+					await fetchRoundInfo()
+					global.dismissPageLoading()
 				}}
 			/>
 		</RoundResultLayout>

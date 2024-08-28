@@ -1,7 +1,6 @@
 import { BaseModalProps } from '@/types/dialog'
 import React, { useEffect, useState } from 'react'
 import Modal from '../../commons/Modal'
-import IconClose from '../../svgs/IconClose'
 import InputTextArea from '../../commons/InputTextArea'
 import Button from '../../commons/Button'
 import { useWallet } from '@/app/providers/WalletProvider'
@@ -12,12 +11,11 @@ import Image from 'next/image'
 import IconNear from '../../svgs/IconNear'
 import IconStellar from '../../svgs/IconStellar'
 import { formatStroopToXlm } from '@/utils/helper'
-import InputText from '../../commons/InputText'
-import IconPause from '../../svgs/IconPause'
 import IconUnion from '../../svgs/IconUnion'
 import PayoutItem from '../../commons/PayoutItem'
 import IconInfoCircle from '../../svgs/IconInfoCircle'
 import { PayoutInput } from 'round-client'
+import IconLoading from '../../svgs/IconLoading'
 
 export type PayoutTableItem = {
 	actual_amount: number
@@ -33,6 +31,7 @@ const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 	const { stellarPubKey, stellarKit, connectedWallet } = useWallet()
 	const [managerWeight, setManagerWeight] = useState<number>(0)
 	const [pairwiseWeight, setPairwiseWeight] = useState<number>(100)
+	const [isLoading, setIsLoading] = useState<boolean>(false)
 
 	const storage = useAppStorage()
 
@@ -59,6 +58,7 @@ const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 	}
 
 	const submitPayout = async () => {
+		setIsLoading(true)
 		let payoutInputs: PayoutInput[] = []
 
 		storage.getResultNotFlagged().forEach((data) => {
@@ -94,9 +94,13 @@ const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 			if (!txHash) {
 				toast.error('Error submitting payout')
 			} else {
+				toast.success('Payout submitted successfully')
+				setIsLoading(false)
 				onClose()
 			}
 		} catch (e) {
+			console.error(e)
+			setIsLoading(false)
 			toast.error('Failed to submit payout')
 		}
 	}
@@ -179,7 +183,10 @@ const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 							color="black"
 							onClick={submitPayout}
 						>
-							Set Payout
+							{isLoading && (
+								<IconLoading size={20} className={`fill-white mr-2`} />
+							)}
+							<span>Set Payout</span>
 						</Button>
 					</div>
 					<div className="text-base md:text-md font-semibold text-grantpicks-black-400">

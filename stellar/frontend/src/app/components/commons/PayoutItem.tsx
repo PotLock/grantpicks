@@ -88,7 +88,7 @@ const PayoutItem = ({
 					type="number"
 					placeholder="0"
 					maxLength={6}
-					value={amountOverride}
+					value={amountOverride == 0 ? '' : amountOverride}
 					className="flex flex-grow text-right outline-none w-10 text-sm"
 					onChange={onChangeAmmountOverride}
 				/>

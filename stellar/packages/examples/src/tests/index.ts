@@ -104,7 +104,7 @@ export async function generateFakeRound() {
 				contacts: [
 					{
 						name: 'Telegram',
-						value: 'https://t.me/stellar',
+						value: `https://t.me/stu`,
 					},
 				] as ProjectContact[],
 				contracts: [
@@ -113,8 +113,7 @@ export async function generateFakeRound() {
 						contract_address: 'near1.example.testnet',
 					},
 				] as ProjectContract[],
-				image_url:
-					'https://paras-ipfs.paras.id/bafybeievm2kozdn77e2wm6l4nzvdb4vulnu7xlyp23e6lmlu76ff2h4yb4',
+				image_url: `https://i.pravatar.cc/150?u=${pubKey}`,
 				video_url: 'https://www.youtube.com/watch?v=5o-tRub-0pQ',
 				payout_address: pubKey,
 				repositories: [
@@ -286,8 +285,8 @@ export async function generateFakeRound() {
 	let endVotingTx = await app.round_contract.change_voting_period({
 		round_id: BigInt(roundId),
 		caller: adminPublicKey,
-    start_ms: BigInt(new Date().getTime() - 1000 * 60 * 60 * 24 * 7),
-    end_ms: BigInt(new Date().getTime() - 1000),
+		start_ms: BigInt(new Date().getTime() - 1000 * 60 * 60 * 24 * 7),
+		end_ms: BigInt(new Date().getTime() - 1000),
 	})
 
 	const endVotingResult = await endVotingTx.signAndSend()
@@ -301,46 +300,46 @@ export async function generateFakeRound() {
 
 	//admin set payouts
 	// console.log('Set Payouts')
-	// let payouts: PayoutInput[] = []
+	let payouts: PayoutInput[] = []
 
-	// for (let result of roundResult.result) {
-	// 	if (result.voting_count > 0) {
-	// 		payouts.push({
-	// 			amount: BigInt(DEPOSIT / (num_of_voters * 2)) * result.voting_count,
-	// 			memo: 'This is a test payout',
-	// 			recipient_id: project_to_owner[result.project_id.toString()],
-	// 		})
-	// 	}
-	// }
+	for (let result of roundResult.result) {
+		if (result.voting_count > 0) {
+			payouts.push({
+				amount: BigInt(DEPOSIT / (num_of_voters * 2)) * result.voting_count,
+				memo: 'This is a test payout',
+				recipient_id: project_to_owner[result.project_id.toString()],
+			})
+		}
+	}
 
-	// let setPayoutTx = await app.round_contract.set_payouts({
-	// 	round_id: BigInt(roundId),
-	// 	caller: adminPublicKey,
-	// 	payouts: payouts,
-	// 	clear_existing: false,
-	// })
+	let setPayoutTx = await app.round_contract.set_payouts({
+		round_id: BigInt(roundId),
+		caller: adminPublicKey,
+		payouts: payouts,
+		clear_existing: false,
+	})
 
-	// const setPayoutResult = (await setPayoutTx.signAndSend()).result
+	const setPayoutResult = (await setPayoutTx.signAndSend()).result
 
-	// console.log('Set Payout Result', setPayoutResult)
+	console.log('Set Payout Result', setPayoutResult)
 
-	// //admin distribute payouts
-	// console.log('Distribute Payouts')
-	// let processPayoutTxs = await app.round_contract.process_payouts({
-	// 	round_id: BigInt(roundId),
-	// 	caller: adminPublicKey,
-	// })
+	//admin distribute payouts
+	console.log('Distribute Payouts')
+	let processPayoutTxs = await app.round_contract.process_payouts({
+		round_id: BigInt(roundId),
+		caller: adminPublicKey,
+	})
 
-	// const payoutResult = await processPayoutTxs.signAndSend()
-	// console.log('Payout Result', payoutResult.result)
+	const payoutResult = await processPayoutTxs.signAndSend()
+	console.log('Payout Result', payoutResult.result)
 
-	// //admin set round completed
-	// console.log('Set Round Completed')
-	// let setRoundCompletedTx = await app.round_contract.set_round_complete({
-	// 	round_id: BigInt(roundId),
-	// 	caller: adminPublicKey,
-	// })
+	//admin set round completed
+	console.log('Set Round Completed')
+	let setRoundCompletedTx = await app.round_contract.set_round_complete({
+		round_id: BigInt(roundId),
+		caller: adminPublicKey,
+	})
 
-	// const setRoundCompletedResult = await setRoundCompletedTx.signAndSend()
-	// console.log('Set Round Completed Result', setRoundCompletedResult.result)
+	const setRoundCompletedResult = await setRoundCompletedTx.signAndSend()
+	console.log('Set Round Completed Result', setRoundCompletedResult.result)
 }

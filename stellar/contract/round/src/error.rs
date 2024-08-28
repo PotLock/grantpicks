@@ -44,11 +44,12 @@ pub enum RoundError {
     PayoutNotFound = 46,
     RedistributionNotAllowed = 47,
     RedistributionAlreadyDone = 48,
-    CompliancePeriodNotStarted = 49,
+    CompliancePeriodInProcess = 49,
     CooldownPeriodNotInProcess = 50,
     NotSolveAllPayoutChallenge = 51,
     RoundDoesNotUseVault = 53,
     ApplicationPeriodNotSet = 55,
+    CoolDownPeriodNotComplete = 56,
 }
 
 #[allow(clippy::module_name_repetitions)]

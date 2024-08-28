@@ -122,6 +122,7 @@ const RoundResultProjectDetailPage = () => {
 
 	const unflagProject = async () => {
 		try {
+			global.openPageLoading()
 			const contract = storage.getStellarContracts()
 			if (!contract) return
 
@@ -142,6 +143,7 @@ const RoundResultProjectDetailPage = () => {
 			} else {
 				fetchVotingResultRound()
 			}
+			global.dismissPageLoading()
 		} catch (e) {
 			console.error(e)
 			toast.error('Failed to unflag project')
@@ -184,7 +186,9 @@ const RoundResultProjectDetailPage = () => {
 					<IconArrowLeft
 						size={24}
 						className="fill-grantpicks-black-400 cursor-pointer hover:opacity-70"
-						onClick={() => router.back()}
+						onClick={() =>
+							(location.href = `/application/round-result/${params.roundId}`)
+						}
 					/>
 					<p className="text-base font-bold text-grantpicks-black-950">
 						{projectData?.name}
@@ -217,13 +221,9 @@ const RoundResultProjectDetailPage = () => {
 			<div className="flex flex-col md:flex-row items-center w-full justify-between my-12 md:my-16">
 				{votingData?.is_flagged && (
 					<div className="w-full my-2">
-						<div className="text-black text-4xl w-full font-bold my-4">
-							THIS PROJECT <br /> HAS BEEN FLAGGED
-						</div>
-						<div className="flex">
-							<div className="w-1/2">
-								This project is flagged. Their donations was removed when
-								calculating payouts for this Round.
+						<div className="flex justify-between items-center">
+							<div className="text-black text-4xl font-bold my-4">
+								THIS PROJECT <br /> HAS BEEN FLAGGED
 							</div>
 							{storage.isAdminRound &&
 								votingData?.is_flagged &&
@@ -231,13 +231,18 @@ const RoundResultProjectDetailPage = () => {
 									<div>
 										<Button
 											color="white"
-											className="!border !border-black/10 !rounded-full !px-8"
+											className="!border !border-black/10 !rounded-full !px-8 min-w-10"
 											onClick={unflagProject}
 										>
 											Unflag Project
 										</Button>
 									</div>
 								)}
+						</div>
+
+						<div className="w-1/2">
+							This project is flagged. Their donations was removed when
+							calculating payouts for this Round.
 						</div>
 					</div>
 				)}
@@ -336,8 +341,10 @@ const RoundResultProjectDetailPage = () => {
 			<FlagProjectModal
 				isOpen={showFlagModal}
 				onClose={() => {
+					global.openPageLoading()
 					setShowFlagModal(false)
 					fetchVotingResultRound()
+					global.dismissPageLoading()
 				}}
 			/>
 		</RoundResultLayout>

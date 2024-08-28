@@ -8,13 +8,16 @@ import { useWallet } from '@/app/providers/WalletProvider'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import toast from 'react-hot-toast'
+import IconLoading from '../../svgs/IconLoading'
 
 const FlagProjectModal = ({ isOpen, onClose }: BaseModalProps) => {
 	const [reason, setReason] = useState<string>('')
+	const [isLoading, setIsLoading] = useState<boolean>(false)
 	const { stellarPubKey, stellarKit } = useWallet()
 	const storage = useAppStorage()
 
 	const flagProject = async () => {
+		setIsLoading(true)
 		try {
 			const contract = storage.getStellarContracts()
 			if (!contract) return
@@ -37,11 +40,12 @@ const FlagProjectModal = ({ isOpen, onClose }: BaseModalProps) => {
 			}
 
 			console.log('txHash', txHash)
-
+			setIsLoading(false)
 			onClose()
 		} catch (e) {
 			console.error(e)
 			toast.error('Failed to flag project')
+			setIsLoading(false)
 		}
 	}
 
@@ -73,10 +77,11 @@ const FlagProjectModal = ({ isOpen, onClose }: BaseModalProps) => {
 				<Button
 					isFullWidth
 					color="black"
-					isDisabled={!reason}
+					isDisabled={!reason || isLoading}
 					onClick={flagProject}
 				>
-					Flag Project
+					{isLoading && <IconLoading size={20} className={`fill-white mr-2`} />}
+					<span>Flag Project</span>
 				</Button>
 			</div>
 		</Modal>

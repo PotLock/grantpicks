@@ -229,7 +229,9 @@ impl RoundDetail {
 
     pub fn assert_cooldown_period_complete(&self, env: &Env) {
         if self.cooldown_end_ms.is_some() {
-            assert!(self.cooldown_end_ms.unwrap() > get_ledger_second_as_millis(env));
+            if self.cooldown_end_ms.unwrap() > get_ledger_second_as_millis(env) {
+                panic_with_error!(env, RoundError::CoolDownPeriodNotComplete);
+            }
         }
     }
 
@@ -267,7 +269,7 @@ impl RoundDetail {
 
     pub fn assert_compliance_period_complete(&self, env: &Env) {
         if self.compliance_end_ms.unwrap_or(0) > get_ledger_second_as_millis(env) {
-            panic_with_error!(env, RoundError::CompliancePeriodNotStarted);
+            panic_with_error!(env, RoundError::CompliancePeriodInProcess);
         }
     }
 }

@@ -20,6 +20,9 @@ export async function generateFakeRound() {
 		separator: ' ',
 	})
 
+	console.log('Admin', adminPublicKey)
+	console.log('Admin Secret', adminSecret)
+
 	let faucet = await axios.get(`https://friendbot.stellar.org?addr=${adminKeyPair.publicKey()}`)
 	let res = await faucet.data
 
@@ -56,7 +59,7 @@ export async function generateFakeRound() {
 			allow_remaining_dist: false,
 			remaining_dist_address: adminPublicKey,
 			referrer_fee_basis_points: 0,
-      use_vault: true,
+			use_vault: true,
 		},
 	})
 
@@ -72,10 +75,10 @@ export async function generateFakeRound() {
 
 	const num_of_projects = 4
 	for (let i = 0; i < num_of_projects; i++) {
-    const randomProjectName = uniqueNamesGenerator({
-      dictionaries: [adjectives, colors, animals],
-      separator: ' ',
-    })
+		const randomProjectName = uniqueNamesGenerator({
+			dictionaries: [adjectives, colors, animals],
+			separator: ' ',
+		})
 		let keypair = Keypair.random()
 		let pubKey = keypair.publicKey()
 		let secret = keypair.secret()
@@ -110,13 +113,14 @@ export async function generateFakeRound() {
 						contract_address: 'near1.example.testnet',
 					},
 				] as ProjectContract[],
-				image_url: 'https://paras-ipfs.paras.id/bafybeievm2kozdn77e2wm6l4nzvdb4vulnu7xlyp23e6lmlu76ff2h4yb4',
+				image_url:
+					'https://paras-ipfs.paras.id/bafybeievm2kozdn77e2wm6l4nzvdb4vulnu7xlyp23e6lmlu76ff2h4yb4',
 				video_url: 'https://www.youtube.com/watch?v=5o-tRub-0pQ',
 				payout_address: pubKey,
 				repositories: [
 					{
 						label: 'GitHub',
-						url: 'https://github.com/repo'+randomProjectName,
+						url: 'https://github.com/repo' + randomProjectName,
 					},
 				] as ProjectRepository[],
 				fundings: [
@@ -187,98 +191,115 @@ export async function generateFakeRound() {
 		console.log('Review Result', reviewResult)
 	}
 
-	// console.log('Start Voting')
-	// //admin start voting
-	// let startVotingTx = await app.round_contract.start_voting_period({
-	// 	round_id: BigInt(roundId),
-	// 	caller: adminPublicKey,
-	// })
+	console.log('Start Voting')
+	//admin start voting
+	let startVotingTx = await app.round_contract.change_voting_period({
+		round_id: BigInt(roundId),
+		caller: adminPublicKey,
+		start_ms: BigInt(new Date().getTime()),
+		end_ms: BigInt(new Date().getTime() + 1000 * 60 * 60 * 24 * 7),
+	})
 
-	// const startVotingResult = await startVotingTx.signAndSend()
-	// console.log('Start Voting Result', startVotingResult)
+	const startVotingResult = await startVotingTx.signAndSend()
+	console.log('Start Voting Result', startVotingResult.result)
 
-	// let DEPOSIT = 1000 * 10 ** 7
-	// //admin deposit funds
-	// console.log('Deposit Funds')
-	// let depositTx = await app.round_contract.deposit_to_round({
-	// 	round_id: BigInt(roundId),
-	// 	caller: adminPublicKey,
-	// 	amount: BigInt(DEPOSIT),
-	// 	memo: 'This is a test deposit',
-	// 	referrer_id: undefined as Option<string>,
-	// })
+	//change application config
+	console.log('Change Application Config')
+	let changeAppConfigTx = await app.round_contract.set_applications_config({
+		round_id: BigInt(roundId),
+		caller: adminPublicKey,
+		allow_applications: true,
+		start_ms: BigInt(new Date().getTime() - 1000 * 60 * 60 * 24 * 7),
+		end_ms: BigInt(new Date().getTime() - 1000),
+	})
 
-	// const depositResult = await depositTx.signAndSend()
-	// console.log('Deposit Result', depositResult.result)
+	const changeAppConfigResult = await changeAppConfigTx.signAndSend()
+	console.log('Change Application Config Result', changeAppConfigResult.result)
 
-	// //users vote
-	// let num_of_voters = 2
-	// for (let i = 0; i < num_of_voters; i++) {
-	// 	let keypair = Keypair.random()
-	// 	let pubKey = keypair.publicKey()
-	// 	let secret = keypair.secret()
+	let DEPOSIT = 1000 * 10 ** 7
+	//admin deposit funds
+	console.log('Deposit Funds')
+	let depositTx = await app.round_contract.deposit_to_round({
+		round_id: BigInt(roundId),
+		caller: adminPublicKey,
+		amount: BigInt(DEPOSIT),
+		memo: 'This is a test deposit',
+		referrer_id: undefined as Option<string>,
+	})
 
-	// 	let faucet = await axios.get(`https://friendbot.stellar.org?addr=${pubKey}`)
-	// 	let res = await faucet.data
+	const depositResult = await depositTx.signAndSend()
+	console.log('Deposit Result', depositResult.result)
 
-	// 	console.log('Generate Voter', pubKey)
+	//users vote
+	let num_of_voters = 2
+	for (let i = 0; i < num_of_voters; i++) {
+		let keypair = Keypair.random()
+		let pubKey = keypair.publicKey()
+		let secret = keypair.secret()
 
-	// 	let cmdWallet = new CMDWallet({
-	// 		secret,
-	// 		network: 'testnet',
-	// 	})
+		let faucet = await axios.get(`https://friendbot.stellar.org?addr=${pubKey}`)
+		let res = await faucet.data
 
-	// 	let clientApp = new App('testnet', cmdWallet)
+		console.log('Generate Voter', pubKey)
 
-	// 	const pairToPick = await app.round_contract.get_pairs_to_vote({
-	// 		round_id: BigInt(roundId),
-	// 	})
+		let cmdWallet = new CMDWallet({
+			secret,
+			network: 'testnet',
+		})
 
-	// 	console.log('Pairs to Vote', pairToPick.result)
+		let clientApp = new App('testnet', cmdWallet)
 
-	// 	let votedPairs: PickedPair[] = []
+		const pairToPick = await app.round_contract.get_pairs_to_vote({
+			round_id: BigInt(roundId),
+		})
 
-	// 	for (let pair of pairToPick.result) {
-	// 		votedPairs.push({
-	// 			pair_id: pair.pair_id,
-	// 			voted_project_id: pair.projects[0],
-	// 		})
-	// 	}
+		console.log('Pairs to Vote', pairToPick.result)
 
-	// 	const voteTx = await clientApp.round_contract.vote({
-	// 		round_id: BigInt(roundId),
-	// 		voter: pubKey,
-	// 		picks: votedPairs,
-	// 	})
+		let votedPairs: PickedPair[] = []
 
-	// 	const voteResult = (await voteTx.signAndSend()).result
+		for (let pair of pairToPick.result) {
+			votedPairs.push({
+				pair_id: pair.pair_id,
+				voted_project_id: pair.projects[0],
+			})
+		}
 
-	// 	console.log('Vote Result', voteResult)
-	// }
+		const voteTx = await clientApp.round_contract.vote({
+			round_id: BigInt(roundId),
+			voter: pubKey,
+			picks: votedPairs,
+		})
 
-	// //admin end voting
-	// cmdWallet = new CMDWallet({
-	// 	secret: adminSecret,
-	// 	network: 'testnet',
-	// })
+		const voteResult = (await voteTx.signAndSend()).result
 
-	// app = new App('testnet', cmdWallet)
-	// console.log('End Voting')
-	// let endVotingTx = await app.round_contract.close_voting_period({
-	// 	round_id: BigInt(roundId),
-	// 	caller: adminPublicKey,
-	// })
+		console.log('Vote Result', voteResult)
+	}
 
-	// const endVotingResult = await endVotingTx.signAndSend()
-	// console.log('End Voting Result', endVotingResult.result)
+	//admin end voting
+	cmdWallet = new CMDWallet({
+		secret: adminSecret,
+		network: 'testnet',
+	})
 
-	// const roundResult = await app.round_contract.get_voting_results_for_round({
-	// 	round_id: BigInt(roundId),
-	// })
+	app = new App('testnet', cmdWallet)
+	console.log('End Voting')
+	let endVotingTx = await app.round_contract.change_voting_period({
+		round_id: BigInt(roundId),
+		caller: adminPublicKey,
+    start_ms: BigInt(new Date().getTime() - 1000 * 60 * 60 * 24 * 7),
+    end_ms: BigInt(new Date().getTime() - 1000),
+	})
 
-	// console.log('Round Result', roundResult.result)
+	const endVotingResult = await endVotingTx.signAndSend()
+	console.log('End Voting Result', endVotingResult.result)
 
-	// //admin set payouts
+	const roundResult = await app.round_contract.get_voting_results_for_round({
+		round_id: BigInt(roundId),
+	})
+
+	console.log('Round Result', roundResult.result)
+
+	//admin set payouts
 	// console.log('Set Payouts')
 	// let payouts: PayoutInput[] = []
 

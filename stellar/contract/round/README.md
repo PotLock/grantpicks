@@ -277,7 +277,7 @@ pub struct VotingResult {
 pub struct ProjectVotingResult {
     pub project_id: u128,
     pub voting_count: u128,
-    pub allocation: u128,
+    pub is_flagged: bool,
 }
 
 // Round Contact
@@ -336,6 +336,15 @@ pub struct Deposit {
     pub memo: String,
 }
 
+#[contracttype]
+#[derive(Clone, Eq, PartialEq)]
+pub struct FlagDetail {
+    pub project_id: u128,
+    pub applicant_id: Address,
+    pub reason: String,
+    pub flagged_by: Address,
+    pub flagged_ms: u64,
+}
 ```
 
 ## Factory Methods
@@ -389,13 +398,13 @@ fn get_config(env: &Env) -> Config;
 //manipulate/update round
 fn set_cooldown_config(env: &Env, round_id: u128, caller: Address, cooldown_period_ms: Option<u64>) -> RoundDetail;
 fn set_compliance_config(env: &Env, round_id: u128, caller: Address, compliance_req_desc: Option<String>, compliance_period_ms: Option<u64>) -> RoundDetail;
-fn set_redistribution_config(env: &Env, round_id: u128, caller: Address, allow_remaining_funds_redistribution: bool, remaining_funds_redistribution_recipient: Option<Address>) -> RoundDetail; 
+fn set_redistribution_config(env: &Env, round_id: u128, caller: Address, allow_remaining_funds_redistribution: bool, remaining_funds_redistribution_recipient: Option<Address>) -> RoundDetail;
 fn change_voting_period(env: &Env, round_id: u128, caller: Address, start_ms: u64, end_ms: u64);
 fn change_application_period(env: &Env, round_id: u128, caller: Address, start_ms: u64, end_ms: u64);
 fn change_number_of_votes(env: &Env, round_id: u128, caller: Address, num_picks_per_voter: u32);
 fn change_expected_amount(env: &Env, round_id: u128, caller: Address, amount: u128);
-fn close_voting_period(env: &Env, round_id: u128, caller: Address) -> RoundDetail;
-fn start_voting_period(env: &Env, round_id: u128, caller: Address) -> RoundDetail;
+fn unflag_project(env: &Env, round_id: u128, caller: Address, project_id: u128);
+fn add_approved_project(env: &Env, round_id: u128, caller: Address, project_ids: Vec<u128>);
 fn add_admins(env: &Env, round_id: u128, round_admin: Vec<Address>);
 fn remove_admins(env: &Env, round_id: u128, round_admin: Vec<Address>);
 fn set_admins(env: &Env, round_id: u128, round_admin: Vec<Address>);
@@ -450,7 +459,6 @@ fn get_applications_for_round(env: &Env, round_id: u128, from_index: Option<u64>
 fn get_application(env: &Env, round_id: u128, applicant: Address) -> Option<RoundApplication>;
 fn is_payout_done(env: &Env, round_id: u128) -> bool;
 fn user_has_vote(env: &Env, round_id: u128, voter: Address) -> bool;
-fn total_funding(env: &Env, round_id: u128) -> u128;
 fn get_pairs_to_vote(env: &Env, round_id: u128) -> Vec<Pair>;
 fn whitelist_status(env: &Env, round_id: u128, address: Address) -> bool;
 fn blacklist_status(env: &Env, round_id: u128, address: Address) -> bool;

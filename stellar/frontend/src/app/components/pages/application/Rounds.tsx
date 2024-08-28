@@ -16,7 +16,6 @@ import FundRoundModal from './FundRoundModal'
 import { useModalContext } from '@/app/providers/ModalProvider'
 import { getRoundApplication, getRounds } from '@/services/on-chain/round'
 import Contracts from '@/lib/contracts'
-import CMDWallet from '@/lib/wallet'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { IGetRoundsResponse, Network } from '@/types/on-chain'
 import useSWRInfinite from 'swr/infinite'
@@ -27,9 +26,9 @@ import Image from 'next/image'
 import moment from 'moment'
 import { formatStroopToXlm } from '@/utils/helper'
 import IconStellar from '../../svgs/IconStellar'
-import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import { useRouter } from 'next/navigation'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 
 const ApplicationRoundsItem = ({
 	doc,
@@ -49,16 +48,14 @@ const ApplicationRoundsItem = ({
 	const { connectedWallet, stellarPubKey, stellarKit } = useWallet()
 	const [isUserApplied, setIsUserApplied] = useState<boolean>(false)
 	const { setShowMenu } = useGlobalContext()
+	const storage = useAppStorage()
 
 	const fetchRoundApplication = async () => {
 		try {
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
+			const contracts = storage.getStellarContracts()
+
+			if (!contracts) return
+
 			const res = await getRoundApplication(
 				{ round_id: doc.id as bigint, applicant: stellarPubKey },
 				contracts,
@@ -90,13 +87,18 @@ const ApplicationRoundsItem = ({
 		} else if (selectedRoundType === 'on-going') {
 			return `on-going`
 		} else {
-			return `ended`
+			if (doc.round_complete_ms != undefined) {
+				return `ended`
+			} else {
+				return `payout-pending`
+			}
 		}
 	}
 
 	useEffect(() => {
 		fetchRoundApplication()
-	}, [])
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [doc.id])
 
 	return (
 		<div className="p-4 md:p-5 rounded-xl border border-black/10">
@@ -116,7 +118,8 @@ const ApplicationRoundsItem = ({
 								getSpecificTime() === 'on-going'
 								? `border-grantpicks-green-400 text-grantpicks-green-700 bg-grantpicks-green-50`
 								: getSpecificTime() === 'upcoming' ||
-									  getSpecificTime() === 'upcoming-closed'
+									  getSpecificTime() === 'upcoming-closed' ||
+									  getSpecificTime() == 'ended'
 									? `border-grantpicks-black-400 text-grantpicks-black-950 bg-grantpicks-black-50`
 									: `border-grantpicks-amber-400 text-grantpicks-amber-700 bg-grantpicks-amber-50`,
 						)}
@@ -128,6 +131,8 @@ const ApplicationRoundsItem = ({
 						) : getSpecificTime() === 'upcoming' ||
 						  getSpecificTime() === 'upcoming-closed' ? (
 							<IconProject size={18} className="fill-grantpicks-black-950" />
+						) : getSpecificTime() === 'ended' ? (
+							<IconDollar size={18} className="fill-grantpicks-black-950" />
 						) : (
 							<IconDollar size={18} className="fill-grantpicks-amber-400" />
 						)}
@@ -140,7 +145,9 @@ const ApplicationRoundsItem = ({
 										? `application open`
 										: getSpecificTime() === 'upcoming-closed'
 											? `application closed`
-											: `payout pending`}
+											: getSpecificTime() === 'ended'
+												? `completed`
+												: `payout pending`}
 						</p>
 					</div>
 					{(getSpecificTime() === 'on-going' ||
@@ -250,7 +257,7 @@ const ApplicationRoundsItem = ({
 					<p className="text-lg md:text-xl font-normal text-grantpicks-black-950">
 						{formatStroopToXlm(doc.expected_amount)}{' '}
 						<span className="text-sm font-normal text-grantpicks-black-600">
-							NEAR
+							{connectedWallet === 'near' ? 'NEAR' : 'XLM'}
 						</span>
 					</p>
 				)}
@@ -304,39 +311,7 @@ const ApplicationRoundsItem = ({
 										: 'View Result'}
 				</Button>
 			</div>
-			{/* <div className="w-full mt-4">
-				<Button
-					isFullWidth
-					className="!border !border-grantpicks-black-200 !py-2"
-					color="white"
-					onClick={async () => {
-						let cmdWallet = new CMDWallet({
-							stellarPubKey: stellarPubKey,
-						})
-						const contracts = new Contracts(
-							process.env.NETWORK_ENV as Network,
-							cmdWallet,
-						)
-						const startVoteTx =
-							await contracts.round_contract.start_voting_period({
-								round_id: doc.id,
-								caller: stellarPubKey,
-							})
-						// const closeVoteTx =
-						// 	await contracts.round_contract.close_voting_period({
-						// 		round_id: doc.id,
-						// 		caller: stellarPubKey,
-						// 	})
-						const txhash = await contracts.signAndSendTx(
-							stellarKit as StellarWalletsKit,
-							startVoteTx,
-							stellarPubKey,
-						)
-					}}
-				>
-					start force Voting vote
-				</Button>
-			</div> */}
+
 			<RoundDetailDrawer
 				isOpen={showDetailDrawer}
 				onClose={() => setShowDetailDrawer(false)}

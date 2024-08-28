@@ -11,7 +11,7 @@ const IconDot = ({ size, className, onClick }: IconProps) => {
 			xmlns="http://www.w3.org/2000/svg"
 			className={className}
 		>
-			<circle id="dot" cx={4} cy={4} r={4} fill="#292929" />
+			<circle id="dot" cx={4} cy={4} r={4} fill="#656565" />
 		</svg>
 	)
 }

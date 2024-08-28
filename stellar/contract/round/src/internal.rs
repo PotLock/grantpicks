@@ -9,13 +9,13 @@ use crate::{
         find_applications, get_application_by_applicant, read_application, update_application,
         write_application,
     },
-    // approval_writer::{is_project_approved, read_approved_projects, read_flagged_projects, write_approved_projects, write_flagged_projects},
-    approval_writer::{is_project_approved, read_approved_projects, write_approved_projects},
+    approval_writer::{is_project_approved, read_approved_projects, read_flagged_projects, write_approved_projects, write_flagged_projects},
+    // approval_writer::{is_project_approved, read_approved_projects, write_approved_projects},
     calculation::calculate_voting_results,
     core::IsRound,
     data_type::{
-        // ApplicationStatus, Config, CreateRoundParams, Deposit, FlagDetail, Pair, Payout, PayoutInput, PayoutsChallenge, PickResult, PickedPair, ProjectVotingResult, RoundApplication, RoundDetail, UpdateRoundParams, VotingResult
-        ApplicationStatus, Config, CreateRoundParams, Deposit, Pair, Payout, PayoutInput, PayoutsChallenge, PickResult, PickedPair, ProjectVotingResult, RoundApplication, RoundDetail, UpdateRoundParams, VotingResult
+        ApplicationStatus, Config, CreateRoundParams, Deposit, FlagDetail, Pair, Payout, PayoutInput, PayoutsChallenge, PickResult, PickedPair, ProjectVotingResult, RoundApplication, RoundDetail, UpdateRoundParams, VotingResult
+        // ApplicationStatus, Config, CreateRoundParams, Deposit, Pair, Payout, PayoutInput, PayoutsChallenge, PickResult, PickedPair, ProjectVotingResult, RoundApplication, RoundDetail, UpdateRoundParams, VotingResult
     },
     deposit_writer::{
         increment_deposit_id, read_deposit, read_deposit_from_round, write_deposit,
@@ -166,7 +166,6 @@ impl RoundCreator for RoundContract {
 
     fn get_rounds(env: &Env, from_index: Option<u64>, limit: Option<u64>) -> Vec<RoundDetail> {
         let results = get_all_rounds(env, from_index, limit);
-        extend_instance(env);
 
         results
     }
@@ -245,7 +244,7 @@ impl IsRound for RoundContract {
     ) {
         caller.require_auth();
 
-        if start_ms >= end_ms {
+        if start_ms > end_ms {
             panic_with_error!(env, RoundError::VotingStartGreaterThanVotingEnd);
         }
 
@@ -305,38 +304,6 @@ impl IsRound for RoundContract {
         extend_instance(env);
         extend_round(env, round_id);
         log_update_round(env, round.clone());
-    }
-
-    fn close_voting_period(env: &Env, round_id: u128, caller: Address) -> RoundDetail {
-        caller.require_auth();
-
-        let mut round = read_round_info(env, round_id);
-        validate_owner_or_admin(env, &caller, &round);
-
-        round.voting_end_ms = get_ledger_second_as_millis(env);
-
-        write_round_info(env, round_id, &round);
-        extend_instance(env);
-        extend_round(env, round_id);
-        log_update_round(env, round.clone());
-
-        round.clone()
-    }
-
-    fn start_voting_period(env: &Env, round_id: u128, caller: Address) -> RoundDetail {
-        caller.require_auth();
-
-        let mut round = read_round_info(env, round_id);
-        validate_owner_or_admin(env, &caller, &round);
-
-        round.voting_start_ms = get_ledger_second_as_millis(env);
-
-        write_round_info(env, round_id, &round);
-        extend_instance(env);
-        extend_round(env, round_id);
-        log_update_round(env, round.clone());
-
-        round.clone()
     }
 
     fn add_admins(env: &Env, round_id: u128, round_admin: Vec<Address>) {
@@ -595,8 +562,7 @@ impl IsRound for RoundContract {
             memo: internal_memo,
         };
 
-        let nett_amount = deposit.total_amount - deposit.protocol_fee - deposit.referrer_fee;
-        deposit.net_amount = nett_amount.try_into().unwrap();
+        deposit.net_amount = deposit.total_amount - deposit.protocol_fee - deposit.referrer_fee;
 
         token_client.transfer(
             &caller,
@@ -623,9 +589,10 @@ impl IsRound for RoundContract {
         }
 
         let mut updated_round = round.clone();
+        let net_amount_u128: u128 = deposit.net_amount.try_into().unwrap();
 
-        updated_round.current_vault_balance += amount;
-        updated_round.vault_total_deposits += amount;
+        updated_round.current_vault_balance += net_amount_u128;
+        updated_round.vault_total_deposits += net_amount_u128;
 
         write_deposit(env, deposit_id, &deposit);
         write_deposit_id_to_round(env, round_id, deposit_id);
@@ -703,8 +670,6 @@ impl IsRound for RoundContract {
     fn get_pairs_to_vote(env: &Env, round_id: u128) -> Vec<Pair> {
         let round = read_round_info(env, round_id);
         let pairs = get_random_pairs(env, round_id, round.num_picks_per_voter);
-        extend_instance(env);
-        extend_round(env, round_id);
         pairs
     }
 
@@ -743,8 +708,6 @@ impl IsRound for RoundContract {
 
     fn get_voting_results_for_round(env: &Env, round_id: u128) -> Vec<ProjectVotingResult> {
         let results = calculate_voting_results(env, round_id);
-        extend_instance(env);
-        extend_round(env, round_id);
 
         results
     }
@@ -813,6 +776,7 @@ impl IsRound for RoundContract {
                 let payout_amount_u128: u128 = payout.amount.try_into().unwrap();
                 updated_round.current_vault_balance -= payout_amount_u128;
                 total_amount_paid += payout.amount;
+                write_payout_info(env, payout_id, &payout);
                 log_create_payout(env, round.id, payout.recipient_id.clone(), payout.amount);
             });
         });
@@ -829,8 +793,6 @@ impl IsRound for RoundContract {
         limit: Option<u64>,
     ) -> Vec<VotingResult> {
         let results = find_voting_result(env, round_id, skip, limit);
-        extend_instance(env);
-        extend_round(env, round_id);
 
         results
     }
@@ -838,8 +800,6 @@ impl IsRound for RoundContract {
     fn can_vote(env: &Env, round_id: u128, voter: Address) -> bool {
         let round = read_round_info(env, round_id);
         let current_ms = get_ledger_second_as_millis(env);
-        extend_instance(env);
-        extend_round(env, round_id);
 
         if round.voting_start_ms <= current_ms && current_ms <= round.voting_end_ms {
             if round.use_whitelist {
@@ -860,8 +820,6 @@ impl IsRound for RoundContract {
 
     fn get_round(env: &Env, round_id: u128) -> RoundDetail {
         let round = read_round_info(env, round_id);
-        extend_instance(env);
-        extend_round(env, round_id);
 
         round.clone()
     }
@@ -869,7 +827,6 @@ impl IsRound for RoundContract {
     fn is_voting_live(env: &Env, round_id: u128) -> bool {
         let round = read_round_info(env, round_id);
         let current_ms = get_ledger_second_as_millis(env);
-        extend_instance(env);
 
         round.voting_start_ms <= current_ms && current_ms <= round.voting_end_ms
     }
@@ -877,8 +834,6 @@ impl IsRound for RoundContract {
     fn is_application_live(env: &Env, round_id: u128) -> bool {
         let round = read_round_info(env, round_id);
         let current_ms = get_ledger_second_as_millis(env);
-        extend_instance(env);
-        extend_round(env, round_id);
 
         round.application_start_ms.unwrap() <= current_ms
             && current_ms <= round.application_end_ms.unwrap()
@@ -890,19 +845,13 @@ impl IsRound for RoundContract {
         from_index: Option<u64>,
         limit: Option<u64>,
     ) -> Vec<RoundApplication> {
-        // implementation goes here
         let applications = find_applications(env, round_id, from_index, limit);
-        extend_instance(env);
-        extend_round(env, round_id);
 
         applications
     }
 
     fn get_application(env: &Env, round_id: u128, applicant: Address) -> RoundApplication {
         let application = get_application_by_applicant(env, round_id, &applicant);
-
-        extend_instance(env);
-        extend_round(env, round_id);
 
         if application.is_none() {
             panic_with_error!(env, Error::DataNotFound);
@@ -912,26 +861,13 @@ impl IsRound for RoundContract {
     }
 
     fn is_payout_done(env: &Env, round_id: u128) -> bool {
-        extend_instance(env);
-        extend_round(env, round_id);
-
         has_paid(env, round_id)
     }
 
     fn user_has_vote(env: &Env, round_id: u128, voter: Address) -> bool {
         let state = get_voting_state_done(env, round_id, voter);
-        extend_instance(env);
 
         state
-    }
-
-    fn total_funding(env: &Env, round_id: u128) -> u128 {
-        let round = read_round_info(env, round_id);
-        let total_funding = round.current_vault_balance;
-        extend_instance(env);
-        extend_round(env, round_id);
-
-        total_funding
     }
 
     fn add_approved_project(env: &Env, round_id: u128, admin: Address, project_ids: Vec<u128>) {
@@ -1015,21 +951,15 @@ impl IsRound for RoundContract {
     }
 
     fn whitelist_status(env: &Env, round_id: u128, address: Address) -> bool {
-        extend_instance(env);
-        extend_round(env, round_id);
         is_whitelisted(env, round_id, address)
     }
 
     fn blacklist_status(env: &Env, round_id: u128, address: Address) -> bool {
-        extend_instance(env);
-        extend_round(env, round_id);
         is_blacklisted(env, round_id, address)
     }
 
     fn get_all_pairs_for_round(env: &Env, round_id: u128) -> Vec<Pair> {
         let pairs = get_all_pairs(env, round_id);
-        extend_instance(env);
-        extend_round(env, round_id);
 
         pairs
     }
@@ -1038,8 +968,6 @@ impl IsRound for RoundContract {
         let approved_project = read_approved_projects(env, round_id);
         let total_available_pairs = count_total_available_pairs(approved_project.len());
         let pair = get_pair_by_index(env, total_available_pairs, index, &approved_project);
-        extend_instance(env);
-        extend_round(env, round_id);
 
         pair
     }
@@ -1323,8 +1251,6 @@ impl IsRound for RoundContract {
             .try_into()
             .expect("Conversion failed");
         let payouts = read_payouts(env, round_id);
-        extend_instance(env);
-        extend_round(env, round_id);
 
         let mut payouts_external: Vec<Payout> = Vec::new(env);
 
@@ -1543,7 +1469,6 @@ impl IsRound for RoundContract {
         let limit_internal: u64 = limit.unwrap_or(default_page_size);
         let from_index_internal: u64 = from_index.unwrap_or(0);
         let payouts = read_all_payouts(env);
-        extend_instance(env);
 
         let mut payouts_external: Vec<Payout> = Vec::new(env);
 
@@ -1567,7 +1492,6 @@ impl IsRound for RoundContract {
             panic_with_error!(env, RoundError::PayoutNotFound);
         }
 
-        extend_instance(env);
         payout.unwrap().clone()
     }
 
@@ -1625,8 +1549,6 @@ impl IsRound for RoundContract {
         let limit_internal: u64 = limit.unwrap_or(default_page_size);
         let from_index_internal: u64 = from_index.unwrap_or(0);
         let deposits = read_deposit_from_round(env, round_id);
-        extend_instance(env);
-        extend_round(env, round_id);
 
         let mut deposits_external: Vec<Deposit> = Vec::new(env);
 
@@ -1738,9 +1660,6 @@ impl IsRound for RoundContract {
         panic_with_error!(env, Error::DataNotFound);
       }
 
-      extend_instance(env);
-      extend_round(env, round_id);
-
       result.unwrap()
     }
 
@@ -1749,8 +1668,6 @@ impl IsRound for RoundContract {
       let limit_internal: u64 = limit.unwrap_or(default_page_size);
       let from_index_internal: u64 = from_index.unwrap_or(0);
       let rounds = get_voted_rounds_for_voter(env, voter);
-      extend_instance(env);
-
       let mut rounds_external: Vec<RoundDetail> = Vec::new(env);
 
       rounds
@@ -1770,8 +1687,6 @@ impl IsRound for RoundContract {
       let limit_internal: u64 = limit.unwrap_or(default_page_size);
       let from_index_internal: u64 = from_index.unwrap_or(0);
       let challenges = read_payout_challenges(env, round_id);
-      extend_instance(env);
-      extend_round(env, round_id);
 
       let mut challenges_external: Vec<PayoutsChallenge> = Vec::new(env);
 
@@ -1789,49 +1704,49 @@ impl IsRound for RoundContract {
     }
 
 
-    // fn flag_project(env: &Env, round_id: u128, caller: Address, project_id: u128, reason: String)->FlagDetail{
-    //   caller.require_auth();
+    fn flag_project(env: &Env, round_id: u128, caller: Address, project_id: u128, reason: String)->FlagDetail{
+      caller.require_auth();
 
-    //   let round = read_round_info(env, round_id);
-    //   validate_owner_or_admin(env, &caller, &round);
-    //   let mut flagged_projects = read_flagged_projects(env, round_id);
+      let round = read_round_info(env, round_id);
+      validate_owner_or_admin(env, &caller, &round);
+      let mut flagged_projects = read_flagged_projects(env, round_id);
 
-    //   let project_contract = read_project_contract(env);
-    //   let project_client = ProjectRegistryClient::new(env, &project_contract);
-    //   let project = project_client.get_project_by_id(&project_id);
+      let project_contract = read_project_contract(env);
+      let project_client = ProjectRegistryClient::new(env, &project_contract);
+      let project = project_client.get_project_by_id(&project_id);
 
-    //   let flag = FlagDetail{
-    //     project_id: project.id,
-    //     applicant_id: project.owner,
-    //     reason,
-    //     flagged_by: caller.clone(),
-    //     flagged_ms: get_ledger_second_as_millis(env),
-    //   };
+      let flag = FlagDetail{
+        project_id: project.id,
+        applicant_id: project.owner,
+        reason,
+        flagged_by: caller.clone(),
+        flagged_ms: get_ledger_second_as_millis(env),
+      };
 
-    //   flagged_projects.set(project_id, flag.clone());
+      flagged_projects.set(project_id, flag.clone());
 
-    //   write_flagged_projects(env, round_id, &flagged_projects);
-    //   extend_instance(env);
-    //   extend_round(env, round_id);
+      write_flagged_projects(env, round_id, &flagged_projects);
+      extend_instance(env);
+      extend_round(env, round_id);
 
-    //   flag
-    // }
+      flag
+    }
 
-    // fn unflag_project(env: &Env, round_id: u128, caller: Address, project_id: u128){
-    //   caller.require_auth();
+    fn unflag_project(env: &Env, round_id: u128, caller: Address, project_id: u128){
+      caller.require_auth();
 
-    //   let round = read_round_info(env, round_id);
-    //   validate_owner_or_admin(env, &caller, &round);
-    //   let mut flagged_projects = read_flagged_projects(env, round_id);
+      let round = read_round_info(env, round_id);
+      validate_owner_or_admin(env, &caller, &round);
+      let mut flagged_projects = read_flagged_projects(env, round_id);
 
-    //   if !flagged_projects.contains_key(project_id) {
-    //     panic_with_error!(env, Error::DataNotFound);
-    //   }
+      if !flagged_projects.contains_key(project_id) {
+        panic_with_error!(env, Error::DataNotFound);
+      }
 
-    //   flagged_projects.remove(project_id);
+      flagged_projects.remove(project_id);
 
-    //   write_flagged_projects(env, round_id, &flagged_projects);
-    //   extend_instance(env);
-    //   extend_round(env, round_id);
-    // }
+      write_flagged_projects(env, round_id, &flagged_projects);
+      extend_instance(env);
+      extend_round(env, round_id);
+    }
 }

@@ -15,6 +15,7 @@ import { useWallet } from '@/app/providers/WalletProvider'
 import CMDWallet from '@/lib/wallet'
 import Contracts from '@/lib/contracts'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 
 interface FundROundModalProps extends BaseModalProps {
 	doc: IGetRoundsResponse
@@ -29,22 +30,43 @@ const FundRoundModal = ({
 }: FundROundModalProps) => {
 	const [amount, setAmount] = useState<string>('')
 	const [amountUsd, setAmountUsd] = useState<string>('0.00')
+	const [fee, setFee] = useState<string>('0.00')
 	const { setSuccessFundRoundModalProps } = useModalContext()
 	const { stellarPrice, openPageLoading, dismissPageLoading } =
 		useGlobalContext()
 	const { stellarPubKey, stellarKit, currentBalance } = useWallet()
+	const storage = useAppStorage()
 
+	const getFee = async () => {
+		const contracts = storage.getStellarContracts()
+
+		if (!contracts) {
+			return
+		}
+
+		try {
+			const config = (await contracts.round_contract.get_config()).result
+
+			if (config) {
+				const newFee =
+					(Number(config.protocol_fee_basis_points.toString()) * 100) / 10000
+
+				setFee(newFee.toFixed(2).toString())
+			}
+		} catch (error: any) {
+			console.log('error', error)
+		}
+	}
 
 	const onDepositFundRound = async () => {
 		try {
 			openPageLoading()
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
+			const contracts = storage.getStellarContracts()
+
+			if (!contracts) {
+				return
+			}
+
 			const tx = await depositFundRound(
 				{
 					round_id: doc.id,
@@ -78,6 +100,14 @@ const FundRoundModal = ({
 		}
 	}
 
+	useEffect(() => {
+		if (stellarPubKey) {
+			getFee()
+			storage.setMyAddress(stellarPubKey)
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [stellarPubKey])
+
 	return (
 		<Modal isOpen={isOpen} onClose={onClose}>
 			<div className="w-11/12 md:w-[340px] mx-auto bg-white rounded-2xl border border-black/10 shadow p-4">
@@ -109,6 +139,7 @@ const FundRoundModal = ({
 						type="number"
 						value={amount}
 						placeholder="0.00"
+						hintLabel={`included protocol fee ${fee} %`}
 						onChange={(e) => {
 							const calculation =
 								parseFloat(e.target.value || '0') * stellarPrice

@@ -40,9 +40,9 @@ const ResultItem = ({
 	return (
 		<div
 			className={clsx(
-				'flex items-center w-full px-4 py-4 cursor-pointe hover:bg-black/10 transition rounded-2xl',
+				'flex items-center w-full px-4 py-4 cursor-pointe transition rounded-2xl',
 				data.is_flagged && 'bg-red-100 border-none', // Add this line
-				!data.is_flagged && 'bg-white', // Add this line
+				!data.is_flagged && 'bg-white hover:bg-black/10', // Add this line
 			)}
 			onClick={() => {
 				router.push(

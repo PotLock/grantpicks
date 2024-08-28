@@ -248,6 +248,16 @@ const RoundResultPage = () => {
 		}
 	}
 
+	const initPage = async () => {
+		global.openPageLoading()
+		storage.clear()
+		storage.setMyAddress(stellarPubKey)
+		await fetchRoundInfo()
+		await fetchPayoutChallenge()
+		await fetchVotingResultRound()
+		global.dismissPageLoading()
+	}
+
 	const roundData = storage.current_round
 	const endOfChallenge = new Date(
 		Number(roundData?.cooldown_end_ms?.toString()) || 0,
@@ -268,12 +278,10 @@ const RoundResultPage = () => {
 
 	useEffect(() => {
 		if (stellarPubKey) {
-			storage.setMyAddress(stellarPubKey)
-			fetchRoundInfo()
-			fetchPayoutChallenge()
-			fetchVotingResultRound()
+			initPage()
 		}
-	}, [stellarPubKey])
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [stellarPubKey, params.roundId])
 
 	console.log('storage payouts', storage.current_round_payouts)
 

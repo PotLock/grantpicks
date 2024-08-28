@@ -148,6 +148,13 @@ const RoundResultProjectDetailPage = () => {
 		}
 	}
 
+	const initPage = async () => {
+		global.openPageLoading()
+		await fetchVotingResultRound()
+		await fetchRoundInfo()
+		global.dismissPageLoading()
+	}
+
 	const roundData = storage.current_round
 	const projectData = storage.projects.get(params.projectId)
 	let totalVoting = 0
@@ -163,11 +170,12 @@ const RoundResultProjectDetailPage = () => {
 	const allocation = storage.getAllocation(params.projectId)
 
 	useEffect(() => {
-		if (params && stellarPubKey) {
-			fetchVotingResultRound()
-			fetchRoundInfo()
+		if (stellarPubKey) {
+			storage.setMyAddress(stellarPubKey)
+			initPage()
 		}
-	}, [params, stellarPubKey])
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [params.roundId, params.projectId, stellarPubKey])
 
 	return (
 		<RoundResultLayout>
@@ -241,7 +249,7 @@ const RoundResultProjectDetailPage = () => {
 							</div>
 							<div>
 								<p className="text-[25px] font-normal">
-									{votingData?.voting_count.toString()}
+									{votingData ? votingData.voting_count.toString() : 0}
 								</p>
 								<p className="text-xs font-semibold text-grantpicks-black-600">
 									VOTES OUT OF {totalVoting} MATCHES

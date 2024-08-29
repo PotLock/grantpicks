@@ -89,7 +89,12 @@ const ProjectDetailDrawer = ({
 							</div>
 						</div>
 					)}
-					{ytIframe && <div dangerouslySetInnerHTML={{ __html: ytIframe }} />}
+					{ytIframe && (
+						<div
+							className="mb-6 md:mb-8"
+							dangerouslySetInnerHTML={{ __html: ytIframe }}
+						/>
+					)}
 					<div className="mb-6 md:mb-8">
 						<p className="text-base md:text-xl font-semibold mb-3">Overview</p>
 						<p className="text-sm md:text-base text-grantpicks-black-600">

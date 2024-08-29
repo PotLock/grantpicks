@@ -189,7 +189,8 @@ const IsVotedSection = ({
 					<div className="flex items-center space-x-2">
 						<IconCube size={18} className="fill-grantpicks-black-600" />
 						<p className="text-xs md:text-sm">
-							{votingResult?.picks?.length} Matches
+							{votingResult?.picks?.length} Match
+							{(votingResult?.picks?.length as number) > 1 && 'es'}
 						</p>
 					</div>
 					<div className="flex items-center space-x-2">

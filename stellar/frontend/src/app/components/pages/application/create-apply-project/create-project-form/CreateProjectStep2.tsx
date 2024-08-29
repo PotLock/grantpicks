@@ -9,11 +9,15 @@ import { useCreateProject } from './CreateProjectFormMainModal'
 import IconCloseFilled from '@/app/components/svgs/IconCloseFilled'
 import PreviousConfirmationModal from './PreviousConfirmationModal'
 import { prettyTruncate } from '@/utils/helper'
+import { StrKey } from 'round-client'
+import toast from 'react-hot-toast'
+import { toastOptions } from '@/constants/style'
 
 const CreateProjectStep2 = () => {
 	const [members, setMembers] = useState<string[]>([])
 	const [showPrevConfirm, setShowPrevConfirm] = useState<boolean>(false)
 	const { setStep, data, setData, step } = useCreateProject()
+	const [sameMemberError, setSameMemberError] = useState<boolean>(false)
 	const {
 		register,
 		watch,
@@ -37,6 +41,11 @@ const CreateProjectStep2 = () => {
 			setMembers(data.team_member)
 		}
 	}, [step])
+
+	useEffect(() => {
+		setSameMemberError(false)
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [watch('member')])
 
 	return (
 		<div className="bg-grantpicks-black-50 w-full relative">
@@ -67,18 +76,33 @@ const CreateProjectStep2 = () => {
 							{...register('member')}
 							onKeyDown={(e) => {
 								if (e.key == 'Enter') {
-									const member = watch('member')
-									setMembers((prev) => [...prev, member])
-									setValue('member', '')
+									if (!StrKey.isValidEd25519PublicKey(watch('member'))) {
+										toast.error('Address is not valid', {
+											style: toastOptions.error.style,
+										})
+										return
+									}
+									if (members.includes(watch('member'))) {
+										setSameMemberError(true)
+									} else {
+										const member = watch('member')
+										setMembers((prev) => [...prev, member])
+										setValue('member', '')
+									}
 								}
 							}}
 							suffixIcon={
 								<button
+									disabled={watch('member') === ''}
 									onClick={() => {
-										setMembers((prev) => [...prev, watch('member')])
-										setValue('member', '')
+										if (members.includes(watch('member'))) {
+											setSameMemberError(true)
+										} else {
+											setMembers((prev) => [...prev, watch('member')])
+											setValue('member', '')
+										}
 									}}
-									className="text-sm font-semibold text-grantpicks-black-950 cursor-pointer hover:opacity-70 transition"
+									className="text-sm font-semibold text-grantpicks-black-950 cursor-pointer hover:opacity-70 transition disabled:cursor-not-allowed"
 								>
 									Add
 								</button>
@@ -88,8 +112,13 @@ const CreateProjectStep2 = () => {
 									<p className="text-red-500 text-xs mt-1 ml-2">
 										Team member is required
 									</p>
+								) : sameMemberError ? (
+									<p className="text-red-500 text-xs mt-1 ml-2">
+										Team member is already added
+									</p>
 								) : undefined
 							}
+							hintLabel="You must put a valid STELLAR address that belongs to your team member(s)"
 						/>
 					</div>
 					<div className="grid grid-cols-2 md:grid-cols-3 gap-4">

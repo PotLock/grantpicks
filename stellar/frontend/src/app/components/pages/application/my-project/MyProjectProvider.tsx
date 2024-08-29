@@ -11,6 +11,7 @@ import { getProjectApplicant } from '@/services/on-chain/project-registry'
 import { Network } from '@/types/on-chain'
 import Button from '@/app/components/commons/Button'
 import { useRouter } from 'next/navigation'
+import { useModalContext } from '@/app/providers/ModalProvider'
 
 const MyProjectContext = createContext<IMyProjectContext>({
 	projectData: undefined,
@@ -26,6 +27,7 @@ const MyProjectProvider = () => {
 		undefined,
 	)
 	const [noProject, setNoProject] = useState<boolean>(false)
+	const { setCreateProjectFormMainProps } = useModalContext()
 
 	const fetchProjectApplicant = async () => {
 		try {
@@ -73,9 +75,15 @@ const MyProjectProvider = () => {
 							</p>
 							<Button
 								color="black-950"
-								onClick={() => router.push(`/application`)}
+								onClick={() => {
+									router.push(`/application`)
+									setCreateProjectFormMainProps((prev) => ({
+										...prev,
+										isOpen: true,
+									}))
+								}}
 							>
-								Back to Explore
+								Create New Project
 							</Button>
 						</div>
 					</div>

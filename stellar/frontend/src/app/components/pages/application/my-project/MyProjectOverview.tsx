@@ -27,6 +27,7 @@ const MyProjectOverview = () => {
 		register,
 		handleSubmit,
 		setValue,
+		watch,
 		formState: { errors },
 	} = useForm<CreateProjectStep1Data>({
 		defaultValues: {
@@ -123,19 +124,6 @@ const MyProjectOverview = () => {
 							) : undefined
 						}
 					/>
-					<InputText
-						required
-						disabled
-						customLabel={
-							<p className="text-sm font-semibold text-grantpicks-black-950 mb-2">
-								Project ID{' '}
-								<span className="text-sm font-normal text-grantpicks-black-600">
-									(For DAO Only)
-								</span>
-							</p>
-						}
-						{...register('project_id')}
-					/>
 					<InputTextArea
 						label="A brief Description"
 						required
@@ -170,7 +158,12 @@ const MyProjectOverview = () => {
 						color="white"
 						isFullWidth
 						onClick={() => setDefaultData()}
-						className="!py-3 !border !border-grantpicks-black-400"
+						className="!py-3 !border !border-grantpicks-black-400 disabled:cursor-not-allowed"
+						isDisabled={
+							projectData?.name === watch().title &&
+							projectData?.overview === watch().description &&
+							projectData?.overview === watch().considering_desc
+						}
 					>
 						Discard
 					</Button>
@@ -180,7 +173,12 @@ const MyProjectOverview = () => {
 						color="black-950"
 						isFullWidth
 						onClick={handleSubmit(onSaveChanges)}
-						className="!py-3"
+						className="!py-3 disabled:cursor-not-allowed"
+						isDisabled={
+							projectData?.name === watch().title &&
+							projectData?.overview === watch().description &&
+							projectData?.overview === watch().considering_desc
+						}
 					>
 						Save changes
 					</Button>

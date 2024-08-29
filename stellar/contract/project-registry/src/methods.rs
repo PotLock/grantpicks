@@ -25,4 +25,6 @@ pub trait ProjectRegistryTrait {
     fn get_total_projects(env: &Env) -> u32;
     fn get_project_from_applicant(env: &Env, applicant: Address) -> Project;
     fn upgrade(env: &Env, owner: Address, new_wasm_hash: BytesN<32>);
+    // fn migrate(env: &Env, owner: Address, project_id: u128);
+    fn owner(env: &Env) -> Address;
 }

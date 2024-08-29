@@ -19,7 +19,17 @@ pub fn increment_project_num(env: &Env) -> u128 {
     next_num
 }
 
-pub fn read_projects(env: &Env) -> Map<u128, Project> {
+pub fn read_project(env: &Env, project_id: u128) -> Option<Project> {
+    let key = ContractKey::Project(project_id);
+    env.storage().persistent().get(&key)
+}
+
+pub fn write_project(env: &Env, project_id: u128, project: &Project) {
+    let key = ContractKey::Project(project_id);
+    env.storage().persistent().set(&key, project);
+}
+
+pub fn read_old_projects(env: &Env) -> Map<u128, Project> {
     let key = ContractKey::Projects;
     env.storage()
         .persistent()
@@ -28,50 +38,34 @@ pub fn read_projects(env: &Env) -> Map<u128, Project> {
 }
 
 pub fn get_project(env: &Env, project_id: u128) -> Option<Project> {
-    let num_of_projects = read_project_num(env);
-
-    if project_id > num_of_projects {
-        return None;
-    }
-
-    let projects = read_projects(env);
-
-    projects.get(project_id)
+    let project = read_project(env, project_id);
+    project
 }
 
 pub fn find_projects(env: &Env, skip: Option<u64>, limit: Option<u64>) -> Vec<Project> {
-    let projects = read_projects(env);
     let skip: usize = skip.unwrap_or(0).try_into().unwrap();
     let limit: usize = limit.unwrap_or(10).try_into().unwrap();
     assert!(limit <= 20, "limit should be less than or equal to 20");
 
     let mut found_projects: Vec<Project> = Vec::new(env);
 
-    projects
-        .keys()
-        .iter()
-        .skip(skip)
-        .take(limit)
-        .for_each(|project_id| {
-            found_projects.push_back(projects.get(project_id).unwrap());
-        });
+    for i in skip..skip + limit {
+        if let Some(project) = read_project(env, (i+1) as u128) {
+            found_projects.push_back(project);
+        } else {
+            break;
+        }
+    }
 
     found_projects
 }
 
 pub fn add_project(env: &Env, project: Project) {
-    let mut projects = read_projects(env);
-    projects.set(project.id, project);
-    let key = ContractKey::Projects;
-    env.storage().persistent().set(&key, &projects);
+    write_project(env, project.id, &project);
 }
 
 pub fn update_project(env: &Env, project: Project) {
-    let mut projects = read_projects(env);
-    let project_id = project.id;
-    projects.set(project_id, project);
-    let key = ContractKey::Projects;
-    env.storage().persistent().set(&key, &projects);
+    write_project(env, project.id, &project);
 }
 
 pub fn read_applicant_project(env: &Env) -> Map<Address, u128> {
@@ -99,6 +93,6 @@ pub fn is_applied(env: &Env, applicant: &Address) -> bool {
 }
 
 pub fn get_applicant_project_id(env: &Env, applicant: &Address) -> Option<u128> {
-    let data = read_applicant_project(env);
-    data.get(applicant.clone())
+  let data = read_applicant_project(env);
+  data.get(applicant.clone())
 }

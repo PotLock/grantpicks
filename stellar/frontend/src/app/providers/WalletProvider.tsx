@@ -14,6 +14,8 @@ import { setupNearWallet } from '@near-wallet-selector/near-wallet'
 import { setupMyNearWallet } from '@near-wallet-selector/my-near-wallet'
 import { setupMeteorWallet } from '@near-wallet-selector/meteor-wallet'
 import { setupHereWallet } from '@near-wallet-selector/here-wallet'
+import { setupOKXWallet } from '@near-wallet-selector/okx-wallet'
+import { setupCoin98Wallet } from '@near-wallet-selector/coin98-wallet'
 import { setupSender } from '@near-wallet-selector/sender'
 import { localStorageConfigs } from '@/configs/local-storage'
 import {
@@ -21,12 +23,17 @@ import {
 	SignMessageMethod,
 } from '@near-wallet-selector/core/src/lib/wallet'
 import {
-	allowAllModules,
+	xBullModule,
+	FreighterModule,
+	LobstrModule,
+	HanaModule,
 	ISupportedWallet,
 	StellarWalletsKit,
 	WalletNetwork,
 } from '@creit.tech/stellar-wallets-kit'
 import { distinctUntilChanged, map } from 'rxjs'
+import CMDWallet from '@/lib/wallet'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 
 const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 	const [connectedWallet, setConnectedWallet] = useState<
@@ -42,6 +49,9 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 	//stellar
 	const [stellarKit, setStellarKit] = useState<StellarWalletsKit | null>(null)
 	const [stellarPubKey, setStellarPubKey] = useState<string>('')
+	const [currentBalance, setCurrentBalance] = useState<number | null>()
+	const [isInit, setIsInit] = useState<boolean>(true)
+  const store = useAppStorage()
 
 	const onInitNear = async () => {
 		try {
@@ -53,6 +63,8 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 					setupMeteorWallet(),
 					setupSender(),
 					setupHereWallet(),
+					setupOKXWallet(),
+					setupCoin98Wallet(),
 				],
 			})
 
@@ -76,8 +88,15 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 					envVarConfigs.NETWORK_ENV === 'testnet'
 						? WalletNetwork.TESTNET
 						: WalletNetwork.FUTURENET,
-				selectedWalletId: 'xbull',
-				modules: allowAllModules(),
+				selectedWalletId:
+					localStorage.getItem(localStorageConfigs.LAST_STELLAR_WALLET_ID) ||
+					'freighter',
+				modules: [
+					new FreighterModule(),
+					new xBullModule(),
+					new LobstrModule(),
+					new HanaModule(),
+				],
 			})
 			setStellarKit(kit)
 			if (kit) {
@@ -115,6 +134,12 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 				localStorageConfigs.STELLAR_PUBLIC_KEY,
 				localStellarPubKey || pubKey,
 			)
+
+			let cmdWallet = new CMDWallet({
+				stellarPubKey: localStellarPubKey,
+			})
+			const balances = parseInt((await cmdWallet.getBalances())[0].balance)
+			setCurrentBalance(balances)
 			return
 		} else {
 			setConnectedWallet(null)
@@ -136,6 +161,10 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 			onWalletSelected: async (option: ISupportedWallet) => {
 				try {
 					stellarKit.setWallet(option.id)
+					localStorage.setItem(
+						localStorageConfigs.LAST_STELLAR_WALLET_ID,
+						option.id,
+					)
 					const pubKey = await stellarKit?.getPublicKey()
 					setConnectedWallet('stellar')
 					localStorage.setItem(localStorageConfigs.CONNECTED_WALLET, 'stellar')
@@ -171,8 +200,13 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 	}
 
 	useEffect(() => {
-		onInitNear()
-		onInitStellar()
+		const initialization = async () => {
+			setIsInit(true)
+			onInitNear()
+			onInitStellar()
+			setIsInit(false)
+		}
+		initialization()
 	}, [])
 
 	useEffect(() => {
@@ -203,25 +237,28 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 		}
 	}, [nearSelector])
 
-	return (
-		<WalletContext.Provider
-			value={{
-				nearSelector,
-				nearModal,
-				connectedWallet,
-				nearWallet,
-				nearAccounts,
-				onOpenNearWallet,
-				onSignOut,
-				onCheckConnected,
-				stellarKit,
-				stellarPubKey,
-				onOpenStellarWallet,
-			}}
-		>
-			{children}
-		</WalletContext.Provider>
-	)
+	if (!isInit) {
+		return (
+			<WalletContext.Provider
+				value={{
+					nearSelector,
+					nearModal,
+					connectedWallet,
+					nearWallet,
+					nearAccounts,
+					onOpenNearWallet,
+					onSignOut,
+					onCheckConnected,
+					stellarKit,
+					stellarPubKey,
+					onOpenStellarWallet,
+					currentBalance,
+				}}
+			>
+				{children}
+			</WalletContext.Provider>
+		)
+	}
 }
 
 export const useWallet = () => {

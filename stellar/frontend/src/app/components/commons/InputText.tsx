@@ -12,14 +12,17 @@ const InputText = forwardRef<HTMLInputElement, InputProps>(
 			type,
 			required,
 			onChange,
+			onKeyDown,
 			disabled,
 			customLabel,
 			label,
+			labelIcon,
 			hintLabel,
 			preffixIcon,
 			suffixIcon,
 			errorMessage,
 			textAlign = 'left',
+			isStopPropagation,
 		},
 		ref,
 	) => {
@@ -28,12 +31,25 @@ const InputText = forwardRef<HTMLInputElement, InputProps>(
 			<div className={label ? `gap-y-[10px]` : `gap-y-0`}>
 				{customLabel ||
 					(label && (
-						<p className="font-semibold text-grantpicks-black-950 mb-2 cursor-default">
-							{label}
-							{required && <span className="text-red-500 ml-1">*</span>}
-						</p>
+						<div className="flex gap-x-1">
+							<p
+								className={clsx(
+									`font-semibold text-sm mb-2 cursor-default`,
+									disabled
+										? `text-grantpicks-black-300`
+										: `text-grantpicks-black-950`,
+								)}
+							>
+								{label}
+								{required && <span className="text-red-500 ml-1">*</span>}
+							</p>
+							{labelIcon && <div className="z-50">{labelIcon}</div>}
+						</div>
 					))}
 				<div className="relative mb-1">
+					{disabled && (
+						<div className="absolute inset-0 z-20 bg-grantpicks-black-50/50 cursor-not-allowed rounded-xl" />
+					)}
 					{preffixIcon && (
 						<div className="absolute left-0 pl-3 inset-y-0 flex items-center justify-center">
 							{preffixIcon}
@@ -46,10 +62,12 @@ const InputText = forwardRef<HTMLInputElement, InputProps>(
 						value={value}
 						name={name}
 						required={required}
+						style={{
+							paddingLeft: preffixIcon ? `40px` : `12px`,
+							paddingRight: suffixIcon ? `40px` : `12px`,
+						}}
 						className={clsx(
 							`py-3 px-3 outline-none flex-1 bg-white rounded-xl w-full text-grantpicks-black-950 placeholder-grantpicks-black-400 focus:shadow-xl ${className}`,
-							preffixIcon && `pl-12 pr-3`,
-							suffixIcon && `pr-12 pl-3`,
 							focus
 								? 'shadow-md border border-grantpicks-black-400'
 								: 'shadow-none',
@@ -66,6 +84,8 @@ const InputText = forwardRef<HTMLInputElement, InputProps>(
 						onBlur={() => setFocus(false)}
 						placeholder={placeholder}
 						onChange={onChange}
+						onKeyDown={onKeyDown}
+						onClick={(e) => isStopPropagation && e.stopPropagation()}
 					/>
 					{suffixIcon && (
 						<div className="absolute right-0 pr-3 inset-y-0 flex items-center justify-center">

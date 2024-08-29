@@ -6,22 +6,28 @@ import UserMenu from '../pages/application/UserMenu'
 import IconExpandMore from '../svgs/IconExpandMore'
 import IconExpandLess from '../svgs/IconExpandLess'
 import { prettyTruncate } from '@/utils/helper'
+import { useRouter } from 'next/navigation'
+import { useGlobalContext } from '@/app/providers/GlobalProvider'
 
 const TopNav = () => {
 	const { connectedWallet, nearAccounts, stellarPubKey } = useWallet()
-	const [showMenu, setShowMenu] = useState<'choose-wallet' | 'user' | null>(
-		null,
-	)
+	const { showMenu, setShowMenu } = useGlobalContext()
+
+	const router = useRouter()
+
 	return (
 		<div className="flex fixed z-20 inset-x-0 items-center justify-between px-[5vw] md:px-[10vw] xl:px-[15vw] py-4 bg-white">
-			<div>
-				<p className="text-xl md:text-3xl xl:text-5xl font-black text-grantpicks-black-950">
+			<div
+				className="cursor-pointer transition"
+				onClick={() => router.push(`/application`)}
+			>
+				<p className="text-base md:text-lg xl:text-xl font-black text-grantpicks-black-950">
 					GRANTPICKS
 				</p>
 			</div>
 			<div className="flex items-center space-x-4">
 				<Button
-					onClick={() => {}}
+					onClick={() => router.push(`/application`)}
 					className="!text-sm !font-semibold"
 					color="alpha-50"
 				>
@@ -74,21 +80,18 @@ const TopNav = () => {
 							CONNECT WALLET
 						</Button>
 					)}
-					{showMenu ? (
-						showMenu === 'user' && !!connectedWallet ? (
-							<UserMenu
-								onShowChooseWallet={() => setShowMenu('choose-wallet')}
-								onCloseChooseWalletMenu={() => setShowMenu(null)}
-								onClose={() => setShowMenu(null)}
-							/>
-						) : (
-							<ChooseWalletMenu
-								isConnected={!!connectedWallet}
-								onClose={() => setShowMenu(null)}
-								onBack={() => setShowMenu('user')}
-							/>
-						)
-					) : null}
+					<UserMenu
+						isOpen={showMenu === 'user'}
+						onShowChooseWallet={() => setShowMenu('choose-wallet')}
+						onCloseChooseWalletMenu={() => setShowMenu(null)}
+						onClose={() => setShowMenu(null)}
+					/>
+					<ChooseWalletMenu
+						isOpen={showMenu === 'choose-wallet'}
+						isConnected={!!connectedWallet}
+						onClose={() => setShowMenu(null)}
+						onBack={() => setShowMenu('user')}
+					/>
 				</div>
 			</div>
 		</div>

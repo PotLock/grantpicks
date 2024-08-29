@@ -1,4 +1,4 @@
-import React, { Dispatch, SetStateAction, useState } from 'react'
+import React, { Dispatch, SetStateAction, useEffect, useState } from 'react'
 import Modal from '../../commons/Modal'
 import { BaseModalProps } from '@/types/dialog'
 import IconClose from '../../svgs/IconClose'
@@ -7,10 +7,27 @@ import Image from 'next/image'
 import Button from '../../commons/Button'
 import IconAdd from '../../svgs/IconAdd'
 import IconTrash from '../../svgs/IconTrash'
+import { useWallet } from '@/app/providers/WalletProvider'
+import CMDWallet from '@/lib/wallet'
+import Contracts from '@/lib/contracts'
+import {
+	getProjects,
+	IGetProjectsResponse,
+} from '@/services/on-chain/project-registry'
+import { Network } from '@/types/on-chain'
+import { LIMIT_SIZE } from '@/constants/query'
+import useSWRInfinite from 'swr/infinite'
+import InfiniteScroll from 'react-infinite-scroll-component'
+import IconLoading from '../../svgs/IconLoading'
+import { UseFieldArrayAppend, UseFieldArrayRemove } from 'react-hook-form'
+import { CreateRoundData } from '@/types/form'
+import { prettyTruncate } from '@/utils/helper'
 
 interface AddProjectsModalProps extends BaseModalProps {
-	selectedProjects: string[]
-	setSelectedProjects: Dispatch<SetStateAction<string[]>>
+	selectedProjects: IGetProjectsResponse[]
+	setSelectedProjects: Dispatch<SetStateAction<IGetProjectsResponse[]>>
+	append: UseFieldArrayAppend<CreateRoundData, 'projects'>
+	remove: UseFieldArrayRemove
 }
 
 const AddProjectsModal = ({
@@ -18,12 +35,66 @@ const AddProjectsModal = ({
 	onClose,
 	selectedProjects,
 	setSelectedProjects,
+	append,
+	remove,
 }: AddProjectsModalProps) => {
+	const { stellarPubKey, connectedWallet } = useWallet()
+	const [tempSelectedProjects, setTempSelectedProjects] = useState<
+		IGetProjectsResponse[]
+	>([])
 	const [searchProject, setSearchProject] = useState<string>('')
+	const onFetchProjects = async (key: { skip: number; limit: number }) => {
+		const contracts = new Contracts(
+			process.env.NETWORK_ENV as Network,
+			undefined,
+		)
+		const resProjects = await getProjects(
+			{
+				skip: key.skip,
+				limit: key.limit,
+			},
+			contracts,
+		)
+		return resProjects
+	}
+	const getKey = (
+		pageIndex: number,
+		previousPageData: IGetProjectsResponse[],
+	) => {
+		if (!connectedWallet && !isOpen) return null
+		if (previousPageData && !previousPageData.length) return null
+		return {
+			url: `get-projects`,
+			skip: pageIndex,
+			limit: LIMIT_SIZE,
+		}
+	}
+	const {
+		data: projectData,
+		size,
+		setSize,
+		isValidating,
+		isLoading,
+	} = useSWRInfinite(getKey, async (key) => await onFetchProjects(key), {
+		revalidateFirstPage: false,
+	})
+	const projects = projectData
+		? ([] as IGetProjectsResponse[]).concat(...projectData)
+		: []
+	const hasMore = projectData
+		? projectData[projectData.length - 1].length >= LIMIT_SIZE
+		: false
+
+	useEffect(() => {
+		if (isOpen) {
+			setTempSelectedProjects(selectedProjects)
+		}
+	}, [isOpen])
+
 	return (
 		<Modal isOpen={isOpen} onClose={onClose}>
-			<div className="bg-white w-[45vw] mx-auto rounded-xl border border-black/10 shadow">
-				<div className="p-4 bg-grantpicks-black-200 flex items-center justify-between rounded-t-xl">
+			<div className="bg-white w-11/12 md:w-[60vw] lg:w-[45vw] mx-auto rounded-xl border border-black/10 shadow">
+				<div className="p-4 bg-grantpicks-black-50 flex items-center justify-between rounded-t-xl">
 					<div>
 						<p className="text-base font-bold text-grantpicks-black-950">
 							Add Projects
@@ -38,13 +109,13 @@ const AddProjectsModal = ({
 						onClick={() => onClose()}
 					/>
 				</div>
-				{selectedProjects.length > 0 && (
+				{tempSelectedProjects.length > 0 && (
 					<div className="p-4">
 						<p className="text-sm font-normal text-grantpicks-black-600 mb-2">
 							ADDED PROJECTS
 						</p>
 						<div className="overflow-y-auto max-h-[20vh]">
-							{selectedProjects.map((selected, index) => (
+							{tempSelectedProjects.map((selected, index) => (
 								<div
 									className="flex items-center justify-between p-2 cursor-pointer hover:bg-grantpicks-black-200 transition"
 									key={index}
@@ -57,15 +128,17 @@ const AddProjectsModal = ({
 											width={24}
 											height={24}
 										/>
-										<p className="text-base font-normal">{selected}</p>
+										<p className="text-base font-normal">
+											{prettyTruncate(selected.name, 20, 'address')}
+										</p>
 									</div>
 									<IconTrash
 										size={24}
 										className="fill-grantpicks-black-400 cursor-pointer transition hover:opacity-80"
 										onClick={() => {
-											let temp = [...selectedProjects]
+											let temp = [...tempSelectedProjects]
 											temp.splice(index, 1)
-											setSelectedProjects(temp)
+											setTempSelectedProjects(temp)
 										}}
 									/>
 								</div>
@@ -87,33 +160,76 @@ const AddProjectsModal = ({
 					<p className="text-sm font-normal text-grantpicks-black-600 mb-2">
 						ALL PROJECTS
 					</p>
-					<div className="overflow-y-auto max-h-[30vh]">
-						{[...Array(10)].map((d, index) => (
-							<div
-								className="flex items-center space-x-2 p-2 cursor-pointer hover:bg-grantpicks-black-200 transition"
-								key={index}
-								onClick={() =>
-									setSelectedProjects((prev) => [...prev, `Label-${index}`])
+					{projects.length === 0 ? (
+						<div className="h-20 flex items-center justify-center">
+							<p className="text-sm font-light text-grantpicks-black-600">
+								No projects found yet
+							</p>
+						</div>
+					) : isLoading ? (
+						<div className="h-20 flex items-center justify-center">
+							<IconLoading size={24} className="fill-grantpicks-black-600" />
+						</div>
+					) : (
+						<div
+							id="scrollProjectsContainer"
+							className="overflow-y-auto max-h-[30vh]"
+						>
+							<InfiniteScroll
+								dataLength={projects.length}
+								next={() => !isValidating && setSize(size + 1)}
+								hasMore={hasMore}
+								style={{ display: 'flex', flexDirection: 'column' }}
+								scrollableTarget="scrollProjectsContainer"
+								loader={
+									<div className="my-2 flex items-center justify-center">
+										<IconLoading
+											size={24}
+											className="fill-grantpicks-black-600"
+										/>
+									</div>
 								}
 							>
-								<Image
-									src="/assets/images/ava-1.png"
-									alt=""
-									className="rounded-full object-fill"
-									width={24}
-									height={24}
-								/>
-								<p className="text-base font-normal">Label</p>
-							</div>
-						))}
-					</div>
+								{projects
+									.filter(
+										(project) =>
+											!tempSelectedProjects
+												.map((tsp) => BigInt(tsp.id).toString())
+												.includes(BigInt(project.id).toString()),
+									)
+									?.map((project, index) => (
+										<div
+											className="flex items-center space-x-2 p-2 cursor-pointer hover:bg-grantpicks-black-200 transition"
+											key={index}
+											onClick={() =>
+												setTempSelectedProjects((prev) => [project, ...prev])
+											}
+										>
+											<Image
+												src={`/assets/images/ava-1.png`}
+												alt=""
+												className="rounded-full object-fill"
+												width={24}
+												height={24}
+											/>
+											<p className="text-base font-normal">
+												{prettyTruncate(project.name, 20, 'address')}
+											</p>
+										</div>
+									))}
+							</InfiniteScroll>
+						</div>
+					)}
 				</div>
 				<div className="px-4 py-3">
 					<Button
 						color="black"
 						className="!rounded-full !py-3"
 						isFullWidth
-						onClick={() => {}}
+						onClick={() => {
+							setSelectedProjects(tempSelectedProjects)
+							onClose()
+						}}
 					>
 						<div className="flex items-center space-x-2">
 							<IconAdd size={18} className="fill-grantpicks-black-400" />

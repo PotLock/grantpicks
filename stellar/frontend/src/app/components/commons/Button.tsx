@@ -14,6 +14,7 @@ const Button = ({
 	icon,
 	iconPosition,
 	type = 'button',
+	textAlign = 'center',
 }: ButtonProps) => {
 	const getColor = () => {
 		if (color === 'black-950') return 'bg-grantpicks-black-950 text-white'
@@ -22,9 +23,10 @@ const Button = ({
 		else if (color === 'white')
 			return 'bg-white border border-grantpicks-black-400 text-grantpicks-black-950'
 		else if (color === 'transparent')
-			return 'bg-white text-grantpicks-black-950'
+			return 'bg-transparent text-grantpicks-black-950'
 		else if (color === 'alpha-50')
 			return 'bg-grantpicks-alpha-50/5 text-grantpicks-black-950'
+		else if (color === 'red') return 'bg-grantpicks-red-600 text-white'
 	}
 
 	return (
@@ -42,7 +44,16 @@ const Button = ({
 			disabled={isDisabled || isLoading}
 			type={type}
 		>
-			<div className="flex items-center justify-center">
+			<div
+				className={clsx(
+					`flex items-center`,
+					textAlign === 'left'
+						? `justify-start`
+						: textAlign === 'center'
+							? `justify-center`
+							: `justify-end`,
+				)}
+			>
 				{iconPosition === 'left' && <div className="pr-2">{icon}</div>}
 				{children}
 				{iconPosition === 'right' && <div className="pl-2">{icon}</div>}

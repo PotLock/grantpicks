@@ -13,8 +13,13 @@ import IconRemove from '@/app/components/svgs/IconRemove'
 import IconUnfoldMore from '@/app/components/svgs/IconUnfoldMore'
 import { getPriceCrypto } from '@/services/common'
 import { CreateRoundData } from '@/types/form'
-import React, { useEffect, useState } from 'react'
-import { useForm, useFieldArray, Controller } from 'react-hook-form'
+import React, { ChangeEvent, useEffect, useState } from 'react'
+import {
+	useForm,
+	useFieldArray,
+	Controller,
+	SubmitHandler,
+} from 'react-hook-form'
 import Switch from 'react-switch'
 import DatePicker from 'react-datepicker'
 import IconCalendar from '@/app/components/svgs/IconCalendar'
@@ -22,10 +27,40 @@ import AddProjectsModal from '@/app/components/pages/create-round/AddProjectsMod
 import IconClose from '@/app/components/svgs/IconClose'
 import AddAdminsModal from '@/app/components/pages/create-round/AddAdminsModal'
 import clsx from 'clsx'
+import { useGlobalContext } from '@/app/providers/GlobalProvider'
+import { skip } from 'node:test'
+import { IGetProjectsResponse } from '@/services/on-chain/project-registry'
+import CMDWallet from '@/lib/wallet'
+import { useWallet } from '@/app/providers/WalletProvider'
+import Contracts from '@/lib/contracts'
+import { Network } from '@/types/on-chain'
+import {
+	addProjectsRound,
+	createRound,
+	CreateRoundParams,
+	depositFundRound,
+} from '@/services/on-chain/round'
+import { parseToStroop, prettyTruncate, sleep } from '@/utils/helper'
+import { useModalContext } from '@/app/providers/ModalProvider'
+import toast from 'react-hot-toast'
+import { toastOptions } from '@/constants/style'
+import IconStellar from '@/app/components/svgs/IconStellar'
+import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
+import { useRouter } from 'next/navigation'
+import { PERIODS } from '@/constants/round'
+import { IRoundPeriodData } from '@/types/round'
+import { subDays } from 'date-fns'
+import { StrKey } from 'round-client'
+import IconInfoCircle from '@/app/components/svgs/IconInfoCircle'
+import { Tooltip } from 'react-tooltip'
 
 const CreateRoundPage = () => {
+	const router = useRouter()
 	const [showContactType, setShowContactType] = useState<boolean>(false)
-	const [nearPrice, setNearPrice] = useState<number>(0.0)
+	const { nearPrice, stellarPrice, openPageLoading, dismissPageLoading } =
+		useGlobalContext()
+	const { stellarPubKey, stellarKit } = useWallet()
+	const { setSuccessCreateRoundModalProps } = useModalContext()
 	const [amountUsd, setAmountUsd] = useState<string>('0.00')
 	const [expectAmountUsd, setExpectAmountUsd] = useState<string>('0.00')
 	const [showAddProjectsModal, setShowAddProjectsModal] =
@@ -36,35 +71,225 @@ const CreateRoundPage = () => {
 		register,
 		handleSubmit,
 		setValue,
+		reset,
 		watch,
-		getValues,
 		formState: { errors },
 	} = useForm<CreateRoundData>({
 		defaultValues: {
-			vote_per_person: 0,
-			apply_duration: new Date(),
-			max_participants: 0,
-			voting_duration: new Date(),
+			vote_per_person: 1,
+			apply_duration_start: undefined,
+			apply_duration_end: undefined,
+			compliance_period_ms: undefined,
+			compliance_end_ms: undefined,
+			cooldown_period_ms: undefined,
+			cooldown_end_ms: undefined,
+			max_participants: 10,
+			voting_duration_start: null,
+			voting_duration_end: null,
+			use_vault: false,
+			is_video_required: false,
+			allow_application: false,
+			compliance_req_desc: '',
 		},
 	})
-	const [selectedProjects, setSelectedProjects] = useState<string[]>([])
-	const [selectedAdmins, setSelectedAdmins] = useState<string[]>([])
-	const { fields: fieldAdmins, append: appendAdmins } = useFieldArray({
-		control,
-		name: 'admins',
-	})
-	const { fields: fieldProjects, append: appendProjects } = useFieldArray({
+	const { append: appendProject, remove: removeProject } = useFieldArray({
 		control,
 		name: 'projects',
 	})
+	const { append: appendAdmin, remove: removeAdmin } = useFieldArray({
+		control,
+		name: 'admins',
+	})
+	const [selectedProjects, setSelectedProjects] = useState<
+		IGetProjectsResponse[]
+	>([])
+	const [selectedAdmins, setSelectedAdmins] = useState<string[]>([])
+	const [cooldownPeriodData, setCooldownPeriodData] =
+		useState<IRoundPeriodData>({
+			selected: 'days',
+			isOpen: false,
+			period_ms: null,
+		})
+	const [compliancePeriodData, setCompliancePeriodData] =
+		useState<IRoundPeriodData>({
+			selected: 'days',
+			isOpen: false,
+			period_ms: null,
+		})
+
+	const onAddApprovedProjects = async (roundId: bigint) => {
+		try {
+			let cmdWallet = new CMDWallet({
+				stellarPubKey: stellarPubKey,
+			})
+			const contracts = new Contracts(
+				process.env.NETWORK_ENV as Network,
+				cmdWallet,
+			)
+			const projects = selectedProjects.map((p) => p.id)
+			const txAddProject = await addProjectsRound(
+				BigInt(roundId),
+				stellarPubKey,
+				projects,
+				contracts,
+			)
+			const txHash = await contracts.signAndSendTx(
+				stellarKit as StellarWalletsKit,
+				txAddProject,
+				stellarPubKey,
+			)
+			return txHash
+		} catch (error: any) {
+			dismissPageLoading()
+			console.log('error', error)
+		}
+	}
+
+	const onInitialDeposit = async (roundId: bigint) => {
+		try {
+			let cmdWallet = new CMDWallet({
+				stellarPubKey: stellarPubKey,
+			})
+			const contracts = new Contracts(
+				process.env.NETWORK_ENV as Network,
+				cmdWallet,
+			)
+			const txAddProject = await depositFundRound(
+				{
+					caller: stellarPubKey,
+					round_id: roundId,
+					amount: BigInt(parseToStroop(watch().amount)),
+					memo: '',
+					referrer_id: undefined,
+				},
+				contracts,
+			)
+			const txHash = await contracts.signAndSendTx(
+				stellarKit as StellarWalletsKit,
+				txAddProject,
+				stellarPubKey,
+			)
+			return txHash
+		} catch (error: any) {
+			dismissPageLoading()
+			console.log('error', error)
+		}
+	}
+
+	const onCreateRound: SubmitHandler<CreateRoundData> = async (data) => {
+		try {
+			openPageLoading()
+			let cmdWallet = new CMDWallet({
+				stellarPubKey: stellarPubKey,
+			})
+			const contracts = new Contracts(
+				process.env.NETWORK_ENV as Network,
+				cmdWallet,
+			)
+			const maxParticipants =
+				data.max_participants < 10 ? 10 : data.max_participants
+			const createRoundParams: CreateRoundParams = {
+				owner: stellarPubKey,
+				name: data.title,
+				description: data.description,
+				application_start_ms: data.apply_duration_start
+					? BigInt(data.apply_duration_start?.getTime() as number)
+					: undefined,
+				application_end_ms: data.apply_duration_end
+					? BigInt(data.apply_duration_end?.getTime() as number)
+					: undefined,
+				contacts: [
+					{
+						name: data.contact_type,
+						value: data.contact_address,
+					},
+				],
+				expected_amount: parseToStroop(data.expected_amount),
+				max_participants:
+					selectedProjects.length > maxParticipants // TODO: must change "Max Participants" when adding projects
+						? selectedProjects.length
+						: maxParticipants,
+				num_picks_per_voter:
+					data.vote_per_person < 1 ? 1 : data.vote_per_person,
+				use_whitelist: false,
+				is_video_required: data.is_video_required,
+				allow_applications: data.allow_application,
+				use_vault: data.use_vault,
+				voting_start_ms: BigInt(
+					data.voting_duration_start?.getTime() as number,
+				),
+				voting_end_ms: BigInt(data.voting_duration_end?.getTime() as number),
+				admins:
+					data.admins?.length > 0
+						? data.admins.map((admin) => admin.admin_id)
+						: [],
+				allow_remaining_dist: true,
+				compliance_req_desc: data.compliance_req_desc,
+				compliance_end_ms: data.voting_duration_end
+					? BigInt(data.voting_duration_end?.getTime() as number)
+					: undefined,
+				compliance_period_ms: data.compliance_period_ms
+					? BigInt(data.compliance_period_ms as number)
+					: undefined,
+				cooldown_end_ms: data.voting_duration_end
+					? BigInt(data.voting_duration_end?.getTime() as number)
+					: undefined,
+				cooldown_period_ms: undefined,
+				remaining_dist_address: data.remaining_dist_address || stellarPubKey,
+				referrer_fee_basis_points: 0,
+			}
+			console.log('debug params', createRoundParams)
+			const txCreateRound = await createRound(
+				stellarPubKey,
+				createRoundParams,
+				contracts,
+			)
+			const txHashCreateRound = await contracts.signAndSendTx(
+				stellarKit as StellarWalletsKit,
+				txCreateRound,
+				stellarPubKey,
+			)
+			if (txHashCreateRound) {
+				let txHashAddProjects, txHashInitialDeposit
+				if (selectedProjects.length > 0) {
+					txHashAddProjects = await onAddApprovedProjects(
+						txCreateRound.result.id,
+					)
+				}
+				if (watch().amount && watch().amount !== '0') {
+					txHashInitialDeposit = await onInitialDeposit(txCreateRound.result.id)
+				}
+				setSuccessCreateRoundModalProps((prev) => ({
+					...prev,
+					isOpen: true,
+					createRoundRes: txCreateRound.result,
+					txHash: txHashCreateRound,
+				}))
+				reset()
+				dismissPageLoading()
+				router.push(`/application`)
+			}
+		} catch (error: any) {
+			console.error(error)
+			toast.error(error?.message || 'Something went wrong', {
+				style: toastOptions.error.style,
+			})
+			dismissPageLoading()
+		}
+	}
 
 	useEffect(() => {
-		const getPriceNearToUsd = async () => {
-			const res = await getPriceCrypto('NEAR', 'USD')
-			console.log('ress', res?.data)
-			setNearPrice(res?.data['USD'] || 0)
+		const handleKeyDown = (ev: KeyboardEvent) => {
+			if (ev.code === 'Escape') {
+				setCooldownPeriodData({ ...cooldownPeriodData, isOpen: false })
+				setCompliancePeriodData({ ...compliancePeriodData, isOpen: false })
+			}
 		}
-		getPriceNearToUsd()
+		window.addEventListener('keydown', handleKeyDown)
+
+		return () => {
+			window.removeEventListener('keydown', handleKeyDown)
+		}
 	}, [])
 
 	return (
@@ -90,6 +315,7 @@ const CreateRoundPage = () => {
 						/>
 						<InputTextArea
 							label="Round Description"
+							required
 							{...register('description', { required: true })}
 							errorMessage={
 								errors.description?.type === 'required' ? (
@@ -99,6 +325,69 @@ const CreateRoundPage = () => {
 								) : undefined
 							}
 						/>
+						<div className="w-full">
+							<p className="text-base font-semibold text-grantpicks-black-950 mb-2">
+								Voting Duration{' '}
+								<span className="text-grantpicks-red-600 ml-1">*</span>
+							</p>
+							<Controller
+								name="voting_duration_start"
+								control={control}
+								rules={{ required: true }}
+								render={({ field }) => (
+									<DatePicker
+										showIcon
+										minDate={subDays(watch().apply_duration_end as Date, 1)}
+										selectsRange={true}
+										icon={
+											<div className="flex items-center mt-2">
+												<IconCalendar
+													size={20}
+													className="fill-grantpicks-black-400"
+												/>
+											</div>
+										}
+										calendarIconClassName="flex items-center"
+										startDate={field.value as Date}
+										endDate={watch().voting_duration_end as Date}
+										placeholderText="Voting Duration"
+										isClearable={true}
+										onChange={(date) => {
+											field.onChange(date[0])
+											setValue('voting_duration_end', date[1], {
+												shouldValidate: true,
+											})
+										}}
+										className="border border-grantpicks-black-200 rounded-xl w-full h-12"
+										wrapperClassName="w-full mb-1"
+									/>
+								)}
+							/>
+							{errors.voting_duration_start?.type === 'required' ? (
+								<p className="text-red-500 text-xs mt-1 ml-2">
+									Start and end voting duration is required
+								</p>
+							) : undefined}
+							<Controller
+								name="voting_duration_end"
+								control={control}
+								rules={{
+									validate: {
+										validEndDate: (value) => {
+											const currentDate = new Date()
+											return (value && value >= currentDate) || false
+										},
+									},
+								}}
+								render={() => <></>}
+							/>
+							{watch('voting_duration_end') &&
+								errors.voting_duration_end?.type === 'validEndDate' && (
+									<p className="text-red-500 text-xs mt-1 ml-2">
+										Voting end date cannot be in the past
+									</p>
+								)}
+						</div>
 						<div className="space-y-2">
 							<div className="border border-grantpicks-black-200 rounded-xl py-2 px-3 flex items-center justify-between">
 								<p className="text-sm font-semibold text-grantpicks-black-950">
@@ -107,14 +396,10 @@ const CreateRoundPage = () => {
 								</p>
 								<div className="flex items-center space-x-4">
 									<Button
-										isDisabled={watch().vote_per_person <= 5}
+										isDisabled={watch().vote_per_person <= 1}
 										color="transparent"
 										onClick={() => {
-											setValue(
-												'vote_per_person',
-												watch().vote_per_person -
-													(watch().vote_per_person === 5 ? 0 : 1),
-											)
+											setValue('vote_per_person', watch().vote_per_person - 1)
 										}}
 									>
 										<IconRemove
@@ -123,16 +408,12 @@ const CreateRoundPage = () => {
 										/>
 									</Button>
 									<p className="text-sm font-normal text-grantpicks-black-950">
-										{watch().vote_per_person || 0}
+										{watch().vote_per_person || 1}
 									</p>
 									<Button
 										color="transparent"
 										onClick={() => {
-											setValue(
-												'vote_per_person',
-												watch().vote_per_person +
-													(watch().vote_per_person === 0 ? 5 : 1),
-											)
+											setValue('vote_per_person', watch().vote_per_person + 1)
 										}}
 									>
 										<IconAdd size={24} className="fill-grantpicks-black-600" />
@@ -140,7 +421,7 @@ const CreateRoundPage = () => {
 								</div>
 							</div>
 							<p className="text-xs font-normal text-grantpicks-black-600">
-								You must have a minimum of 5 Votes.
+								You must have a minimum of 1 Vote.
 							</p>
 						</div>
 
@@ -165,6 +446,7 @@ const CreateRoundPage = () => {
 									</div>
 									{showContactType && (
 										<Menu
+											isOpen={showContactType}
 											onClose={() => setShowContactType(false)}
 											position="right-0 left-0 -bottom-[150px]"
 										>
@@ -212,13 +494,14 @@ const CreateRoundPage = () => {
 								<div className="flex-1">
 									<InputText
 										required
+										placeholder="Your username..."
 										{...register('contact_address', { required: true })}
 									/>
 								</div>
 							</div>
 							{errors.contact_address?.type === 'required' && (
 								<p className="text-red-500 text-xs mt-1 ml-2">
-									Round title is required
+									Contact address is required
 								</p>
 							)}
 							<p className="text-xs font-normal text-grantpicks-black-600">
@@ -228,19 +511,26 @@ const CreateRoundPage = () => {
 					</div>
 
 					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
-						<div className="flex items-center space-x-4 w-full mb-4">
+						<div className="flex items-start space-x-4 w-full mb-4">
 							<div className="flex-1">
 								<InputText
-									label="Amount"
+									type="number"
+									disabled={!watch().use_vault}
+									label="Initial Deposit"
 									placeholder="Enter amount..."
-									onChange={async (e) => {
-										const calculation =
-											parseFloat(e.target.value || '0') * nearPrice
-										setAmountUsd(`${calculation.toFixed(3)}`)
-										setValue('amount', e.target.value)
-									}}
+									{...register('amount', {
+										onChange: async (e) => {
+											const calculation =
+												parseFloat(e.target.value || '0') * stellarPrice
+											setAmountUsd(`${calculation.toFixed(3)}`)
+											setValue('amount', e.target.value)
+										},
+									})}
 									preffixIcon={
-										<IconNear size={24} className="fill-grantpicks-black-400" />
+										<IconStellar
+											size={24}
+											className="fill-grantpicks-black-400"
+										/>
 									}
 									textAlign="left"
 									suffixIcon={
@@ -257,18 +547,22 @@ const CreateRoundPage = () => {
 							</div>
 							<div className="flex-1">
 								<InputText
+									type="number"
 									label="Expected Amount"
 									required
 									placeholder="Enter amount..."
 									{...register('expected_amount', {
 										onChange: async (e) => {
 											const calculation =
-												parseFloat(e.target.value || '0') * nearPrice
+												parseFloat(e.target.value || '0') * stellarPrice
 											setExpectAmountUsd(`${calculation.toFixed(3)}`)
 										},
 									})}
 									preffixIcon={
-										<IconNear size={24} className="fill-grantpicks-black-400" />
+										<IconStellar
+											size={24}
+											className="fill-grantpicks-black-400"
+										/>
 									}
 									textAlign="left"
 									suffixIcon={
@@ -286,6 +580,11 @@ const CreateRoundPage = () => {
 											<p className="text-red-500 text-xs mt-1 ml-2">
 												Expected Amount is required
 											</p>
+										) : parseFloat(watch().expected_amount) <
+										  parseFloat(watch().amount) ? (
+											<p className="text-red-500 text-xs mt-1 ml-2">
+												Expected Amount should not be less than intiial deposit
+											</p>
 										) : undefined
 									}
 								/>
@@ -294,8 +593,11 @@ const CreateRoundPage = () => {
 						<div className="flex items-center">
 							<Checkbox
 								label="Open Funding Pool"
-								checked={watch().open_funding}
-								onChange={(e) => setValue('open_funding', e.target.checked)}
+								checked={watch().use_vault}
+								onChange={(e) => {
+									setValue('use_vault', e.target.checked)
+									setValue('amount', '')
+								}}
 							/>
 						</div>
 					</div>
@@ -317,129 +619,98 @@ const CreateRoundPage = () => {
 								handleDiameter={18}
 							/>
 						</div>
-						{watch('allow_application') && (
-							<>
-								<div className={`pt-4 mb-6`}>
-									<div className="flex space-x-4 mb-2">
-										<div className="w-[35%] space-y-1">
-											<InputText
-												label="Max Participants"
-												placeholder="0"
-												required
-												{...register('max_participants', {
-													required: true,
-													onChange: (e) => {
-														setValue(
-															'max_participants',
-															parseInt(e.target.value),
-														)
-													},
-												})}
-												preffixIcon={
-													<Button
-														color="transparent"
-														isDisabled={watch().max_participants === 0}
-														onClick={() =>
-															setValue(
-																'max_participants',
-																watch().max_participants - 1,
-															)
-														}
-													>
-														<IconRemove
-															size={24}
-															className="stroke-grantpicks-black-600"
-														/>
-													</Button>
+						<div className={`pt-4 mb-6`}>
+							<div className="flex space-x-4 mb-2">
+								<div className="w-[35%] space-y-1">
+									<InputText
+										type="number"
+										disabled={!watch().allow_application}
+										label="Max Participants"
+										placeholder="10"
+										required={watch().allow_application}
+										{...register('max_participants', {
+											required: watch().allow_application === true,
+											onChange: (e) => {
+												setValue(
+													'max_participants',
+													parseInt(e.target.value) || 0,
+												)
+											},
+										})}
+										preffixIcon={
+											<Button
+												color="transparent"
+												isDisabled={watch().max_participants <= 10}
+												onClick={() =>
+													setValue(
+														'max_participants',
+														watch().max_participants - 1,
+													)
 												}
-												textAlign="center"
-												suffixIcon={
-													<Button
-														color="transparent"
-														onClick={() =>
-															setValue(
-																'max_participants',
-																watch().max_participants + 1,
-															)
-														}
-													>
-														<IconAdd
-															size={24}
-															className="fill-grantpicks-black-600"
-														/>
-													</Button>
+											>
+												<IconRemove
+													size={24}
+													className="stroke-grantpicks-black-600"
+												/>
+											</Button>
+										}
+										textAlign="center"
+										suffixIcon={
+											<Button
+												color="transparent"
+												onClick={() =>
+													setValue(
+														'max_participants',
+														watch().max_participants + 1,
+													)
 												}
-											/>
-											{errors.max_participants?.type === 'required' ? (
-												<p className="text-red-500 text-xs mt-1 ml-2">
-													Max Participants is required
-												</p>
-											) : undefined}
-										</div>
-										<div className="w-[65%]">
-											<p className="text-base font-semibold text-grantpicks-black-950 mb-2">
-												Application Duration{' '}
-												<span className="text-grantpicks-red-600 ml-1">*</span>
-											</p>
-											<Controller
-												name="apply_duration"
-												control={control}
-												rules={{ required: true }}
-												render={({ field }) => (
-													<DatePicker
-														showIcon
-														icon={
-															<div className="flex items-center mt-2">
-																<IconCalendar
-																	size={20}
-																	className="fill-grantpicks-black-400"
-																/>
-															</div>
-														}
-														calendarIconClassName="flex items-center"
-														selected={new Date(field.value)}
-														onChange={(date) => {
-															field.onChange(date)
-														}}
-														className="border border-grantpicks-black-200 rounded-xl w-full h-12"
-														wrapperClassName="w-full mb-1"
-													/>
-												)}
-											/>
-											{errors.apply_duration?.type === 'required' ? (
-												<p className="text-red-500 text-xs mt-1 ml-2">
-													Max Particpants is required
-												</p>
-											) : undefined}
-										</div>
-									</div>
-									<p className="text-xs font-normal text-grantpicks-black-600">
-										You must have a minimum of 10 Participants
-									</p>
-								</div>
-								<div className="flex items-center mb-4">
-									<Checkbox
-										label="Video Required"
-										checked={watch().open_funding}
-										onChange={(e) =>
-											setValue('video_required', e.target.checked)
+											>
+												<IconAdd
+													size={24}
+													className="fill-grantpicks-black-600"
+												/>
+											</Button>
 										}
 									/>
+									{errors.max_participants?.type === 'required' ? (
+										<p className="text-red-500 text-xs mt-1 ml-2">
+											Max Participants is required
+										</p>
+									) : watch().max_participants < 10 ? (
+										<p className="text-red-500 text-xs mt-1 ml-2">
+											Min. 10 Participants
+										</p>
+									) : undefined}
 								</div>
-								<div className="w-full">
-									<p className="text-base font-semibold text-grantpicks-black-950 mb-2">
-										Voting Duration{' '}
-										<span className="text-grantpicks-red-600 ml-1">*</span>
+								<div className="w-[65%]">
+									<p
+										className={clsx(
+											`text-sm font-semibold mb-2`,
+											!watch().allow_application
+												? `text-grantpicks-black-300`
+												: `text-grantpicks-black-950`,
+										)}
+									>
+										Application Duration{' '}
+										{watch().allow_application && (
+											<span className="text-grantpicks-red-600 ml-1">*</span>
+										)}
 									</p>
 									<Controller
-										name="voting_duration"
+										name="apply_duration_start"
 										control={control}
-										rules={{ required: true }}
+										rules={{ required: watch().allow_application }}
 										render={({ field }) => (
 											<DatePicker
+												disabled={!watch().allow_application}
 												showIcon
+												selectsRange={true}
+												maxDate={subDays(
+													watch().voting_duration_start as Date,
+													0,
+												)}
 												icon={
-													<div className="flex items-center mt-2">
+													<div className="flex items-center mt-2 pr-2">
 														<IconCalendar
 															size={20}
 															className="fill-grantpicks-black-400"
@@ -447,23 +718,317 @@ const CreateRoundPage = () => {
 													</div>
 												}
 												calendarIconClassName="flex items-center"
-												selected={new Date(field.value)}
+												startDate={field.value as Date}
+												endDate={watch().apply_duration_end as Date}
+												placeholderText="Apply Duration"
+												isClearable={true}
 												onChange={(date) => {
-													field.onChange(date)
+													field.onChange(date[0])
+													setValue('apply_duration_end', date[1])
 												}}
 												className="border border-grantpicks-black-200 rounded-xl w-full h-12"
 												wrapperClassName="w-full mb-1"
 											/>
 										)}
 									/>
-									{errors.voting_duration?.type === 'required' ? (
+									{errors.apply_duration_start?.type === 'required' ? (
 										<p className="text-red-500 text-xs mt-1 ml-2">
-											Voting duration is required
+											start and end of apply duration is required
 										</p>
 									) : undefined}
 								</div>
-							</>
-						)}
+							</div>
+							<p className="text-xs font-normal text-grantpicks-black-600">
+								You must have a minimum of 10 Participants
+							</p>
+						</div>
+						<div className="flex items-center mb-4">
+							<Checkbox
+								disabled={!watch().allow_application}
+								label="Video Required"
+								checked={watch().is_video_required}
+								onChange={(e) =>
+									setValue('is_video_required', e.target.checked)
+								}
+								className={clsx(
+									!watch().allow_application && '!cursor-not-allowed',
+								)}
+							/>
+						</div>
+					</div>
+
+					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
+						<div className="flex items-center justify-between pb-4 border-b border-black/10">
+							<div className="flex items-center space-x-2">
+								<p className="text-base font-semibold">Cooldown</p>
+								<a
+									data-tooltip-id="require_cooldown_tooltip"
+									data-tooltip-html="Interval after voting period ends to payout period"
+								>
+									<IconInfoCircle
+										size={16}
+										className="stroke-grantpicks-black-600"
+									/>
+								</a>
+								<Tooltip id="require_cooldown_tooltip" place="right" />
+							</div>
+							<Switch
+								checked={watch().allow_cooldown}
+								onChange={async (checked: boolean) => {
+									setValue('allow_cooldown', checked)
+								}}
+								height={22}
+								width={42}
+								checkedIcon={false}
+								uncheckedIcon={false}
+								offColor="#DCDCDC"
+								onColor="#292929"
+								handleDiameter={18}
+							/>
+						</div>
+						<div className={`pt-4 mb-6`}>
+							<InputText
+								type="number"
+								disabled={!watch().allow_cooldown}
+								label="Set Deadline"
+								placeholder="0"
+								required={watch().allow_cooldown}
+								{...register('cooldown_end_ms', {
+									required: watch().allow_cooldown === true,
+									onChange: (ev: ChangeEvent<HTMLInputElement>) => {
+										setCooldownPeriodData({
+											...cooldownPeriodData,
+											period_ms:
+												parseInt(ev.target.value) *
+												(compliancePeriodData.selected === 'days'
+													? 1000 * 60 * 60 * 24
+													: compliancePeriodData.selected === 'weeks'
+														? 1000 * 60 * 60 * 24 * 7
+														: 1000 * 60 * 60 * 24 * 7 * 30),
+										})
+									},
+								})}
+								suffixIcon={
+									<div className="relative">
+										<div
+											onClick={() =>
+												setCooldownPeriodData({
+													...cooldownPeriodData,
+													isOpen: !cooldownPeriodData.isOpen,
+												})
+											}
+											className="border-l pl-4 border-black/10 cursor-pointer flex items-center space-x-2"
+										>
+											<p className="text-sm font-normal text-grantpicks-black-600">
+												{cooldownPeriodData.selected}
+											</p>
+											<IconUnfoldMore
+												size={24}
+												className="fill-grantpicks-black-400"
+											/>
+										</div>
+										{cooldownPeriodData.isOpen && (
+											<div className="border bg-white border-black/10 rounded-xl absolute top-8 right-0 w-24">
+												{PERIODS.map((period, index) => (
+													<div
+														key={index}
+														className="p-2 text-xs font-normal text-gray-950 cursor-pointer hover:opacity-70"
+														onClick={() =>
+															setCooldownPeriodData({
+																...cooldownPeriodData,
+																selected: period,
+																isOpen: false,
+															})
+														}
+													>
+														{period}
+													</div>
+												))}
+											</div>
+										)}
+									</div>
+								}
+								errorMessage={
+									errors.cooldown_end_ms?.type === 'required' ? (
+										<p className="text-red-500 text-xs mt-1 ml-2">
+											Cooldown deadline is required
+										</p>
+									) : undefined
+								}
+							/>
+						</div>
+					</div>
+
+					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
+						<div className="flex items-center justify-between pb-4 border-b border-black/10">
+							<div className="flex items-center space-x-2">
+								<p className="text-base font-semibold">Require Compliance</p>
+								<a
+									data-tooltip-id="require_compliance_tooltip"
+									data-tooltip-html="This requires grantees to do KYC process"
+								>
+									<IconInfoCircle
+										size={16}
+										className="stroke-grantpicks-black-600"
+									/>
+								</a>
+								<Tooltip id="require_compliance_tooltip" place="right" />
+							</div>
+							<Switch
+								checked={watch().allow_compliance}
+								onChange={async (checked: boolean) => {
+									setValue('allow_compliance', checked)
+								}}
+								height={22}
+								width={42}
+								checkedIcon={false}
+								uncheckedIcon={false}
+								offColor="#DCDCDC"
+								onColor="#292929"
+								handleDiameter={18}
+							/>
+						</div>
+						<div className={`pt-4 mb-6`}>
+							<InputTextArea
+								required={watch().allow_compliance}
+								disabled={!watch().allow_compliance}
+								label="Description"
+								{...register('compliance_req_desc', {
+									required: watch().allow_compliance === true,
+								})}
+								errorMessage={
+									errors.compliance_req_desc?.type === 'required' ? (
+										<p className="text-red-500 text-xs mt-1 ml-2">
+											Compliance description is required
+										</p>
+									) : undefined
+								}
+							/>
+							<InputText
+								type="number"
+								disabled={!watch().allow_compliance}
+								label="Set Deadline"
+								placeholder="0"
+								required={watch().allow_compliance}
+								{...register('compliance_period_ms', {
+									required: watch().allow_compliance === true,
+									onChange: (ev: ChangeEvent<HTMLInputElement>) => {
+										setCompliancePeriodData({
+											...compliancePeriodData,
+											period_ms:
+												parseInt(ev.target.value) *
+												(compliancePeriodData.selected === 'days'
+													? 1000 * 60 * 60 * 24
+													: compliancePeriodData.selected === 'weeks'
+														? 1000 * 60 * 60 * 24 * 7
+														: 1000 * 60 * 60 * 24 * 7 * 30),
+										})
+									},
+								})}
+								suffixIcon={
+									<div className="relative">
+										<div
+											onClick={() =>
+												setCompliancePeriodData({
+													...compliancePeriodData,
+													isOpen: !compliancePeriodData.isOpen,
+												})
+											}
+											className="border-l pl-4 border-black/10 cursor-pointer flex items-center space-x-2"
+										>
+											<p className="text-sm font-normal text-grantpicks-black-600">
+												{compliancePeriodData.selected}
+											</p>
+											<IconUnfoldMore
+												size={24}
+												className="fill-grantpicks-black-400"
+											/>
+										</div>
+										{compliancePeriodData.isOpen && (
+											<div className="border bg-white border-black/10 rounded-xl absolute top-8 right-0 w-24">
+												{PERIODS.map((period, index) => (
+													<div
+														key={index}
+														className="p-2 text-xs font-normal text-gray-950 cursor-pointer hover:opacity-70"
+														onClick={() =>
+															setCompliancePeriodData({
+																...compliancePeriodData,
+																selected: period,
+																isOpen: false,
+															})
+														}
+													>
+														{period}
+													</div>
+												))}
+											</div>
+										)}
+									</div>
+								}
+								errorMessage={
+									errors.compliance_period_ms?.type === 'required' ? (
+										<p className="text-red-500 text-xs mt-1 ml-2">
+											Compliance deadline is required
+										</p>
+									) : undefined
+								}
+							/>
+						</div>
+					</div>
+
+					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
+						<div className="flex items-center justify-between pb-4 border-b border-black/10">
+							<div className="flex items-center space-x-2">
+								<p className="text-base font-semibold">
+									Remaining Funds Redistribution
+								</p>
+								<a
+									data-tooltip-id="remaining_funds_tooltip"
+									data-tooltip-html="Remaining funds for those who haven’t done their compliance<br />check get sent to this address after compliance period is over"
+								>
+									<IconInfoCircle
+										size={16}
+										className="stroke-grantpicks-black-600"
+									/>
+								</a>
+								<Tooltip id="remaining_funds_tooltip" place="right" />
+							</div>
+							<Switch
+								checked={watch().allow_remaining_dist}
+								onChange={async (checked: boolean) => {
+									setValue('allow_remaining_dist', checked)
+								}}
+								height={22}
+								width={42}
+								checkedIcon={false}
+								uncheckedIcon={false}
+								offColor="#DCDCDC"
+								onColor="#292929"
+								handleDiameter={18}
+							/>
+						</div>
+						<div className={`pt-4 mb-6`}>
+							<InputText
+								disabled={!watch().allow_remaining_dist}
+								label="Recipient Address"
+								placeholder="Address..."
+								required={watch().allow_remaining_dist}
+								{...register('remaining_dist_address', {
+									required: watch().allow_remaining_dist === true,
+									validate: (value, formValues) =>
+										watch().allow_remaining_dist
+											? StrKey.isValidEd25519PublicKey(value)
+											: true,
+								})}
+								errorMessage={
+									errors.remaining_dist_address?.type === 'validate' ? (
+										<p className="text-red-500 text-xs mt-1 ml-2">
+											Address is invalid
+										</p>
+									) : undefined
+								}
+							/>
+						</div>
 					</div>
 
 					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
@@ -497,7 +1062,7 @@ const CreateRoundPage = () => {
 									<div className="flex items-center space-x-2">
 										<div className="bg-grantpicks-black-400 rounded-full w-6 h-6" />
 										<p className="text-sm font-semibold text-grantpicks-black-950">
-											Label
+											{prettyTruncate(selected.name, 15, 'address')}
 										</p>
 									</div>
 									<IconClose
@@ -507,6 +1072,7 @@ const CreateRoundPage = () => {
 											let temp = [...selectedProjects]
 											temp.splice(index, 1)
 											setSelectedProjects(temp)
+											removeProject(index)
 										}}
 									/>
 								</div>
@@ -517,6 +1083,8 @@ const CreateRoundPage = () => {
 							onClose={() => setShowAddProjectsModal(false)}
 							selectedProjects={selectedProjects}
 							setSelectedProjects={setSelectedProjects}
+							append={appendProject}
+							remove={removeProject}
 						/>
 					</div>
 
@@ -551,16 +1119,17 @@ const CreateRoundPage = () => {
 									<div className="flex items-center space-x-2">
 										<div className="bg-grantpicks-black-400 rounded-full w-6 h-6" />
 										<p className="text-sm font-semibold text-grantpicks-black-950">
-											Label
+											{prettyTruncate(selected, 10, 'address')}
 										</p>
 									</div>
 									<IconClose
 										size={18}
 										className="fill-grantpicks-black-600 cursor-pointer transition hover:opacity-80"
 										onClick={() => {
-											let temp = [...selectedProjects]
+											let temp = [...selectedAdmins]
 											temp.splice(index, 1)
 											setSelectedAdmins(temp)
+											removeAdmin(index)
 										}}
 									/>
 								</div>
@@ -569,8 +1138,10 @@ const CreateRoundPage = () => {
 						<AddAdminsModal
 							isOpen={showAddAdminsModal}
 							onClose={() => setShowAddAdminsModal(false)}
-							selectedProjects={selectedAdmins}
-							setSelectedProjects={setSelectedAdmins}
+							selectedAdmins={selectedAdmins}
+							setSelectedAdmins={setSelectedAdmins}
+							append={appendAdmin}
+							remove={removeAdmin}
 						/>
 					</div>
 
@@ -578,7 +1149,7 @@ const CreateRoundPage = () => {
 						color="black-950"
 						className="!py-3"
 						isFullWidth
-						onClick={() => {}}
+						onClick={handleSubmit(onCreateRound)}
 					>
 						Create Round
 					</Button>

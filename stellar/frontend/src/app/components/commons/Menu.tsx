@@ -4,6 +4,7 @@ import React, { useEffect, useRef } from 'react'
 
 const Menu = ({
 	onClose,
+	isOpen,
 	className,
 	position,
 	closeOnBgClick = true,
@@ -34,12 +35,31 @@ const Menu = ({
 
 	return (
 		<>
+			{isOpen && (
+				<div
+					ref={menuRef}
+					className={clsx('fixed inset-0 z-50 bg-black/10 max-w-full mx-auto')}
+					onClick={(e) => _bgClick(e)}
+				/>
+			)}
+			{isOpen && (
+				<div
+					className={clsx(
+						`absolute hidden md:block z-[60]`,
+						position,
+						className,
+					)}
+				>
+					{children}
+				</div>
+			)}
 			<div
-				ref={menuRef}
-				className={clsx('fixed inset-0 z-50 bg-black/10 max-w-full mx-auto')}
-				onClick={(e) => _bgClick(e)}
-			/>
-			<div className={clsx(`absolute z-[60]`, position, className)}>
+				className={clsx(
+					`fixed block md:hidden bottom-0 inset-x-0 z-[60] transition-transform transform-gpu duration-500`,
+					isOpen ? 'translate-y-[0%]' : 'translate-y-[100%]',
+					className,
+				)}
+			>
 				{children}
 			</div>
 		</>

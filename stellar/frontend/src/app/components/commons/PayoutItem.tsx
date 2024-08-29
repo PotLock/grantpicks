@@ -83,7 +83,7 @@ const PayoutItem = ({
 					placeholder="0"
 					maxLength={6}
 					value={tableState?.actual_amount.toFixed(2)}
-					className="flex flex-grow text-right outline-none w-10 text-sm"
+					className="flex flex-grow text-right outline-none w-10 text-sm disabled:bg-white"
 				/>
 				<IconStellar size={14} className="fill-grantpicks-black-500" />
 			</div>
@@ -93,7 +93,7 @@ const PayoutItem = ({
 					placeholder="0"
 					maxLength={6}
 					value={amountOverride == 0 ? '' : amountOverride}
-					className="flex flex-grow text-right outline-none w-10 text-sm"
+					className="flex flex-grow text-right outline-none w-10 text-sm m-1 bg-grantpicks-black-50 border border-grantpicks-black-100 p-2 rounded-md"
 					onChange={onChangeAmmountOverride}
 				/>
 				<IconStellar size={14} className="fill-grantpicks-black-500" />
@@ -105,7 +105,7 @@ const PayoutItem = ({
 					maxLength={6}
 					disabled
 					value={tableState?.pairwise_weight_adjusted.toFixed(2)}
-					className="flex flex-grow text-right outline-none w-10 text-sm"
+					className="flex flex-grow text-right outline-none w-10 text-sm disabled:bg-white"
 				/>
 				<IconStellar size={14} className="fill-grantpicks-black-500" />
 			</div>
@@ -116,7 +116,7 @@ const PayoutItem = ({
 					maxLength={6}
 					disabled
 					value={tableState?.assigned_weight.toFixed(2)}
-					className="flex flex-grow text-right outline-none w-10 text-sm"
+					className="flex flex-grow text-right outline-none w-10 text-sm disabled:bg-white"
 				/>
 				<IconUnion size={14} className="fill-grantpicks-black-500" />
 			</div>
@@ -127,7 +127,7 @@ const PayoutItem = ({
 					maxLength={6}
 					disabled
 					value={tableState?.assigned_calculated.toFixed(2)}
-					className="flex flex-grow text-right outline-none w-10 text-sm"
+					className="flex flex-grow text-right outline-none w-10 text-sm disabled:bg-white"
 				/>
 				<IconStellar size={14} className="fill-grantpicks-black-500" />
 			</div>
@@ -138,7 +138,7 @@ const PayoutItem = ({
 					maxLength={6}
 					disabled
 					value={tableState?.final_calculation.toFixed(2)}
-					className="flex flex-grow text-right outline-none w-10 text-sm"
+					className="flex flex-grow text-right outline-none w-10 text-sm disabled:bg-white"
 				/>
 				<IconStellar size={14} className="fill-grantpicks-black-500" />
 			</div>

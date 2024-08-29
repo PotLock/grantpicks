@@ -286,6 +286,7 @@ const ApplicationRoundsItem = ({
 								roundData: doc,
 							}))
 						} else {
+							storage.clear()
 							router.push(`/application/round-result/${doc.id}`)
 						}
 					}}

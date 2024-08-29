@@ -76,27 +76,25 @@ const RoundResultPage = () => {
 
 					storage.setPayoutDone(isPayoutDone)
 
-					if (isAdminOrOwner) {
-						let fetch = true
-						let newPayouts: Payout[] = []
+					let fetch = true
+					let newPayouts: Payout[] = []
 
-						while (fetch) {
-							const payouts = (
-								await contracts.round_contract.get_payouts_for_round({
-									round_id: roundId,
-									from_index: BigInt(newPayouts.length),
-									limit: BigInt(5),
-								})
-							).result
+					while (fetch) {
+						const payouts = (
+							await contracts.round_contract.get_payouts_for_round({
+								round_id: roundId,
+								from_index: BigInt(newPayouts.length),
+								limit: BigInt(5),
+							})
+						).result
 
-							newPayouts = newPayouts.concat(payouts)
+						newPayouts = newPayouts.concat(payouts)
 
-							if (payouts.length < 5) {
-								fetch = false
-							}
-
-							storage.setCurrentRoundPayouts(newPayouts)
+						if (payouts.length < 5) {
+							fetch = false
 						}
+
+						storage.setCurrentRoundPayouts(newPayouts)
 					}
 				}
 			}
@@ -319,7 +317,9 @@ const RoundResultPage = () => {
 		Number(roundData?.compliance_end_ms?.toString()) || 0,
 	).getTime()
 
-	const complyPeriod = Number(roundData?.compliance_period_ms?.toString || '0')
+	const complyPeriod = Number(
+		roundData?.compliance_period_ms?.toString() || '0',
+	)
 	const complianceLong =
 		complyPeriod > 0 ? Math.floor(complyPeriod / 86400000) : 0
 
@@ -331,7 +331,6 @@ const RoundResultPage = () => {
 		storage.current_round?.current_vault_balance > 0 &&
 		storage.current_round?.allow_remaining_dist
 
-	console.log('roundData', roundData)
 	useEffect(() => {
 		if (stellarPubKey) {
 			initPage()
@@ -634,7 +633,12 @@ const RoundResultPage = () => {
 			{storage.current_round && (
 				<ChallengePayoutModal
 					isOpen={showChallengeModal}
-					onClose={() => setShowChallengeModal(false)}
+					onClose={async () => {
+						setShowChallengeModal(false)
+						global.openPageLoading()
+						await fetchPayoutChallenge()
+						global.dismissPageLoading()
+					}}
 					roundData={storage.current_round}
 				/>
 			)}
@@ -650,7 +654,7 @@ const RoundResultPage = () => {
 				onClose={async () => {
 					setShowEditPayoutModal(false)
 					global.openPageLoading()
-					await fetchRoundInfo()
+					await Promise.all([fetchRoundInfo(), fetchPayoutChallenge()])
 					global.dismissPageLoading()
 				}}
 			/>

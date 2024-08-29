@@ -75,13 +75,17 @@ const ResultItem = ({
 				)}
 			</div>
 			<div className="flex items-center w-[60%]">
-				<Image
-					src={projectData?.image_url || '/assets/images/ava-1.png'}
-					alt=""
-					width={200}
-					height={200}
-					className="rounded-full w-10 h-10 mx-1"
-				/>
+				{!projectData?.image_url ? (
+					<div className="bg-grantpicks-black-200 rounded-full w-10 h-10" />
+				) : (
+					<Image
+						src={projectData?.image_url}
+						alt=""
+						width={200}
+						height={200}
+						className="rounded-full w-10 h-10 mx-1"
+					/>
+				)}
 				<div className="flex items-center text-xs md:text-sm font-semibold text-grantpicks-black-600 w-full">
 					<div className="w-full">{projectData?.name || 'Loading...'}</div>
 					{data.is_flagged && (

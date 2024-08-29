@@ -61,13 +61,17 @@ const PayoutItem = ({
 	return (
 		<div className="flex w-full items-center p-4 border-b">
 			<div className="flex items-center w-[70%] md:w-[34%]">
-				<Image
-					src={projectData?.image_url || '/assets/images/ava-1.png'}
-					alt=""
-					width={200}
-					height={200}
-					className="rounded-full w-10 h-10 mx-1"
-				/>
+				{!projectData?.image_url ? (
+					<div className="bg-grantpicks-black-200 rounded-full w-10 h-10" />
+				) : (
+					<Image
+						src={projectData?.image_url}
+						alt=""
+						width={200}
+						height={200}
+						className="rounded-full w-10 h-10 mx-1"
+					/>
+				)}
 				<p className="text-xs md:text-sm font-semibold text-grantpicks-black-950">
 					{projectData?.name}
 				</p>

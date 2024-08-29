@@ -108,8 +108,8 @@ const ChallengeItem = ({
 				</div>
 			)}
 			<div className="flex items-center justify-between space-x-2 mb-2 w-full py-2">
-				<div className="w-[10%] flex justify-center">
-					<Image src="/assets/images/ava-1.png" alt="" width={24} height={24} />
+				<div className="flex justify-center">
+					<div className="bg-grantpicks-black-200 rounded-full w-10 h-10" />
 				</div>
 				<p className="text-sm font-semibold">
 					{prettyTruncate(challenge.challenger_id, 10, 'address')}

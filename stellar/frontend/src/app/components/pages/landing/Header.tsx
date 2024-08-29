@@ -17,7 +17,7 @@ const LandingHeader = () => {
 						height={24}
 						className="object-contain"
 					/>
-					<p className="text-base font-bold text-grantpicks-purple-950 uppercase">{`INTRODUCING GRANTSPICK`}</p>
+					<p className="text-base font-bold text-grantpicks-purple-950 uppercase">{`INTRODUCING GRANTPICKS`}</p>
 				</div>
 				<p className="text-[40px] md:text-[44px] lg:text-[50px] xl:text-[62px] max-w-[90%] md:max-w-full hidden md:block font-black text-center uppercase leading-[1.00] whitespace-pre mb-6 z-10">
 					{`Quickly pick your favorite\nprojects get them funded\nand win points.`}

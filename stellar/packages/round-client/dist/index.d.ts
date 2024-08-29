@@ -290,6 +290,9 @@ export declare const Errors: {
     55: {
         message: string;
     };
+    56: {
+        message: string;
+    };
     6: {
         message: string;
     };
@@ -744,25 +747,6 @@ export interface Client {
     set_admins: ({ round_id, round_admin }: {
         round_id: u128;
         round_admin: Array<string>;
-    }, options?: {
-        /**
-         * The fee to pay for the transaction. Default: BASE_FEE
-         */
-        fee?: number;
-        /**
-         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
-         */
-        timeoutInSeconds?: number;
-        /**
-         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
-         */
-        simulate?: boolean;
-    }) => Promise<AssembledTransaction<null>>;
-    /**
-     * Construct and simulate a clear_admins transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
-     */
-    clear_admins: ({ round_id }: {
-        round_id: u128;
     }, options?: {
         /**
          * The fee to pay for the transaction. Default: BASE_FEE
@@ -1931,6 +1915,25 @@ export interface Client {
          */
         simulate?: boolean;
     }) => Promise<AssembledTransaction<null>>;
+    /**
+     * Construct and simulate a get_approved_projects transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     */
+    get_approved_projects: ({ round_id }: {
+        round_id: u128;
+    }, options?: {
+        /**
+         * The fee to pay for the transaction. Default: BASE_FEE
+         */
+        fee?: number;
+        /**
+         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+         */
+        timeoutInSeconds?: number;
+        /**
+         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+         */
+        simulate?: boolean;
+    }) => Promise<AssembledTransaction<Array<u128>>>;
 }
 export declare class Client extends ContractClient {
     readonly options: ContractClientOptions;
@@ -1950,7 +1953,6 @@ export declare class Client extends ContractClient {
         add_admins: (json: string) => AssembledTransaction<null>;
         remove_admins: (json: string) => AssembledTransaction<null>;
         set_admins: (json: string) => AssembledTransaction<null>;
-        clear_admins: (json: string) => AssembledTransaction<null>;
         apply_to_round: (json: string) => AssembledTransaction<RoundApplication>;
         review_application: (json: string) => AssembledTransaction<RoundApplication>;
         deposit_to_round: (json: string) => AssembledTransaction<null>;
@@ -2007,5 +2009,6 @@ export declare class Client extends ContractClient {
         get_challenges_payout: (json: string) => AssembledTransaction<PayoutsChallenge[]>;
         flag_project: (json: string) => AssembledTransaction<FlagDetail>;
         unflag_project: (json: string) => AssembledTransaction<null>;
+        get_approved_projects: (json: string) => AssembledTransaction<bigint[]>;
     };
 }

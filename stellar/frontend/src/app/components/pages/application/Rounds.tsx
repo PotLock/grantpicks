@@ -47,8 +47,27 @@ const ApplicationRoundsItem = ({
 		useModalContext()
 	const { connectedWallet, stellarPubKey, stellarKit } = useWallet()
 	const [isUserApplied, setIsUserApplied] = useState<boolean>(false)
+	const [approvedCount, setApprovedCount] = useState<number>()
 	const { setShowMenu } = useGlobalContext()
 	const storage = useAppStorage()
+
+	const fetchApprovedCount = async () => {
+		try {
+			const contracts = storage.getStellarContracts()
+
+			if (!contracts) return
+
+			const projects = (
+				await contracts.round_contract.get_approved_projects({
+					round_id: doc.id,
+				})
+			).result
+			const count = projects.length
+			setApprovedCount(count)
+		} catch (error: any) {
+			console.log('error fetch project applicant', error)
+		}
+	}
 
 	const fetchRoundApplication = async () => {
 		try {
@@ -97,6 +116,7 @@ const ApplicationRoundsItem = ({
 
 	useEffect(() => {
 		fetchRoundApplication()
+		fetchApprovedCount()
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [doc.id])
 
@@ -208,7 +228,7 @@ const ApplicationRoundsItem = ({
 					<div className="flex items-center space-x-1">
 						<IconProject size={18} className="fill-grantpicks-black-400" />
 						<p className="text-sm font-normal text-grantpicks-black-950">
-							-- Projects
+							{approvedCount ? approvedCount : '--'} Projects
 						</p>
 					</div>
 				)}

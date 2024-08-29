@@ -1,10 +1,10 @@
 use soroban_sdk::{Address, Env, Map, Vec};
 
-use crate::{data_type::VotingResult, storage_key::ContractKey};
+use crate::{data_type::VotingResult, storage_key::ContractKey, utils::get_storage};
 
 pub fn read_voting_state(env: &Env, round_id: u128) -> Map<Address, u32> {
     let key = ContractKey::VotingState(round_id);
-    match env.storage().persistent().get(&key) {
+    match get_storage(env).get(&key) {
         Some(value) => value,
         None => Map::new(env),
     }
@@ -12,7 +12,7 @@ pub fn read_voting_state(env: &Env, round_id: u128) -> Map<Address, u32> {
 
 pub fn write_voting_state(env: &Env, round_id: u128, voting_state: &Map<Address, u32>) {
     let key = ContractKey::VotingState(round_id);
-    env.storage().persistent().set(&key, voting_state);
+    get_storage(env).set(&key, voting_state);
 }
 
 pub fn set_voting_state(env: &Env, round_id: u128, voter: Address, state: u32) {
@@ -33,7 +33,7 @@ pub fn get_voting_state(env: &Env, round_id: u128, voter: Address) -> Option<u32
 
 pub fn read_voting_results(env: &Env, round_id: u128) -> Vec<VotingResult> {
     let key = ContractKey::Votes(round_id);
-    match env.storage().persistent().get(&key) {
+    match get_storage(env).get(&key) {
         Some(value) => value,
         None => Vec::new(env),
     }
@@ -41,7 +41,7 @@ pub fn read_voting_results(env: &Env, round_id: u128) -> Vec<VotingResult> {
 
 pub fn write_voting_results(env: &Env, round_id: u128, voting_results: &Vec<VotingResult>) {
     let key = ContractKey::Votes(round_id);
-    env.storage().persistent().set(&key, voting_results);
+    get_storage(env).set(&key, voting_results);
 }
 
 pub fn find_voting_result(
@@ -75,7 +75,7 @@ pub fn find_voting_result(
 
 pub fn read_voting_count(env: &Env, round_id: u128) -> Map<u128, u128> {
     let key = ContractKey::ProjectVotingCount(round_id);
-    match env.storage().persistent().get(&key) {
+    match get_storage(env).get(&key) {
         Some(value) => value,
         None => Map::new(env),
     }
@@ -83,7 +83,7 @@ pub fn read_voting_count(env: &Env, round_id: u128) -> Map<u128, u128> {
 
 pub fn write_voting_count(env: &Env, round_id: u128, voting_count: &Map<u128, u128>) {
     let key = ContractKey::ProjectVotingCount(round_id);
-    env.storage().persistent().set(&key, voting_count);
+    get_storage(env).set(&key, voting_count);
 }
 
 pub fn get_voting_count(env: &Env, round_id: u128, project_id: u128) -> u128 {

@@ -16,7 +16,6 @@ pub trait IsRound {
     fn add_admins(env: &Env, round_id: u128, round_admin: Vec<Address>);
     fn remove_admins(env: &Env, round_id: u128, round_admin: Vec<Address>);
     fn set_admins(env: &Env, round_id: u128, round_admin: Vec<Address>);
-    fn clear_admins(env: &Env, round_id: u128);
     fn transfer_round_ownership(env: &Env, round_id: u128, new_owner: Address);
     fn apply_to_round(env: &Env, round_id: u128, caller: Address, applicant: Option<Address>, note: Option<String>, review_note: Option<String>) -> RoundApplication;
     fn review_application(env: &Env, round_id: u128, caller: Address, applicant: Address, status: ApplicationStatus, note: Option<String>) -> RoundApplication;
@@ -61,6 +60,7 @@ pub trait IsRound {
     fn get_all_pairs_for_round(env: &Env, round_id: u128) -> Vec<Pair>;
     fn get_pair_by_index(env: &Env, round_id: u128, index: u32) -> Pair;
     fn admins(env: &Env, round_id: u128) -> Vec<Address>;
+    fn get_approved_projects(env: &Env, round_id: u128) -> Vec<u128>;
     fn get_payouts_for_round(env: &Env, round_id: u128, from_index: Option<u64>, limit: Option<u64>) -> Vec<Payout>;
     fn get_payout(env: &Env, payout_id: u32) -> Payout;
     fn get_deposits_for_round(env: &Env, round_id: u128, from_index: Option<u64>, limit: Option<u64>) -> Vec<Deposit>;

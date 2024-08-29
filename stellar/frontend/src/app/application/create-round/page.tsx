@@ -692,7 +692,9 @@ const CreateRoundPage = () => {
 										)}
 									>
 										Application Duration{' '}
-										<span className="text-grantpicks-red-600 ml-1">*</span>
+										{watch().allow_application && (
+											<span className="text-grantpicks-red-600 ml-1">*</span>
+										)}
 									</p>
 									<Controller
 										name="apply_duration_start"
@@ -888,6 +890,7 @@ const CreateRoundPage = () => {
 						</div>
 						<div className={`pt-4 mb-6`}>
 							<InputTextArea
+								required={watch().allow_compliance}
 								disabled={!watch().allow_compliance}
 								label="Description"
 								{...register('compliance_req_desc', {

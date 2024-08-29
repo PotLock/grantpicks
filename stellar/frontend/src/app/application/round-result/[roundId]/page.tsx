@@ -320,6 +320,7 @@ const RoundResultPage = () => {
 	const complyPeriod = Number(
 		roundData?.compliance_period_ms?.toString() || '0',
 	)
+
 	const complianceLong =
 		complyPeriod > 0 ? Math.floor(complyPeriod / 86400000) : 0
 

@@ -165,14 +165,8 @@ const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 							Edit Payout
 						</div>
 						<div className="flex items-center md:border-l md:ml-2 md:pl-2 md:mt-0 mt-2">
-							<Image
-								src={'/assets/images/ava-1.png'}
-								alt=""
-								width={200}
-								height={200}
-								className="rounded-full w-10 h-10 mx-1"
-							/>
-							<div className="flex items-center text-xs md:text-sm font-semibold text-grantpicks-black-600 w-full flex-grow">
+							<div className="bg-grantpicks-black-200 rounded-full w-10 h-10 mr-2" />
+							<div className="flex items-center text-xs md:text-sm font-semibold text-grantpicks-black-600 flex-grow">
 								{stellarPubKey.substring(0, 6)}...
 								{stellarPubKey.substring(stellarPubKey.length - 6)}
 							</div>

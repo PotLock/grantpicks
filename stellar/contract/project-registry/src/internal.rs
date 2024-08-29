@@ -6,11 +6,10 @@ use crate::error::Error;
 use crate::events::{log_create_project_event, log_update_project_event};
 use crate::methods::ProjectRegistryTrait;
 use crate::project_writer::{
-    add_applicant_project, add_project, find_projects, get_applicant_project_id, get_project,
-    increment_project_num, read_projects, update_project,
+    add_applicant_project, add_project, find_projects, get_applicant_project_id, get_project, increment_project_num, read_old_projects, read_project_num, update_project
 };
 use crate::soroban_sdk::{self, contract, contractimpl, Address, Env, Vec};
-use crate::storage::extend_instance;
+use crate::storage::{extend_instance, extend_project};
 use crate::validation::{
     validate_applicant, validate_application, validate_contract_owner, validate_owner,
     validate_owner_or_admin, validate_update_project,
@@ -80,6 +79,7 @@ impl ProjectRegistryTrait for ProjectRegistry {
 
         log_update_project_event(env, uproject.clone());
         update_project(env, uproject);
+        extend_project(env, project_id);
         extend_instance(env);
     }
 
@@ -113,6 +113,7 @@ impl ProjectRegistryTrait for ProjectRegistry {
 
         log_update_project_event(env, uproject.clone());
         update_project(env, uproject);
+        extend_project(env, project_id);
         extend_instance(env);
     }
 
@@ -130,6 +131,7 @@ impl ProjectRegistryTrait for ProjectRegistry {
 
         log_update_project_event(env, uproject.clone());
         update_project(env, uproject);
+        extend_project(env, project_id);
         extend_instance(env);
     }
 
@@ -151,11 +153,13 @@ impl ProjectRegistryTrait for ProjectRegistry {
 
         log_update_project_event(env, uproject.clone());
         update_project(env, uproject);
+        extend_project(env, project_id);
         extend_instance(env);
     }
 
     fn get_project_by_id(env: &Env, project_id: u128) -> Project {
         let project = get_project(env, project_id);
+        extend_project(env, project_id);
         extend_instance(env);
         if project.is_none() {
             panic_with_error!(env, Error::DataNotFound);
@@ -170,7 +174,6 @@ impl ProjectRegistryTrait for ProjectRegistry {
 
     fn get_project_admins(env: &Env, project_id: u128) -> Vec<Address> {
         let project = get_project(env, project_id);
-        extend_instance(env);
 
         if project.is_none() {
             return Vec::new(env);
@@ -180,10 +183,8 @@ impl ProjectRegistryTrait for ProjectRegistry {
     }
 
     fn get_total_projects(env: &Env) -> u32 {
-        let projects = read_projects(env);
-        extend_instance(env);
-
-        projects.len()
+        let total = read_project_num(env);
+        total as u32
     }
 
     fn upgrade(env: &Env, owner: Address, new_wasm_hash: BytesN<32>) {
@@ -199,8 +200,6 @@ impl ProjectRegistryTrait for ProjectRegistry {
     fn get_project_from_applicant(env: &Env, applicant: Address) -> Project {
         let project_id = get_applicant_project_id(env, &applicant);
 
-        extend_instance(env);
-
         if project_id.is_none() {
             panic_with_error!(env, Error::DataNotFound);
         }
@@ -213,4 +212,21 @@ impl ProjectRegistryTrait for ProjectRegistry {
 
         project.unwrap()
     }
+
+    fn owner(env: &Env) -> Address {
+        read_contract_owner(env)
+    }
+
+    // fn migrate(env: &Env, owner: Address, project_id: u128){
+    //     owner.require_auth();
+
+    //     validate_contract_owner(env, &owner);
+
+    //     let old_projects = read_old_projects(env);
+    //     let project = old_projects.get(project_id).unwrap();
+    //     add_project(env, project.clone());
+    //     extend_project(env, project_id);
+
+    //     extend_instance(env)
+    // }
 }

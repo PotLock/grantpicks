@@ -5,6 +5,7 @@ use crate::soroban_sdk::{self, contracttype};
 pub enum ContractKey {
     NumOfProjects,
     Projects,
+    Project(u128),
     RegistryAdmin,
     ApplicantToProjectID,
 }

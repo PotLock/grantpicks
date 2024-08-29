@@ -22,3 +22,7 @@ pub fn extend_persistent(env: &Env, key: &ContractKey) {
         );
     }
 }
+
+pub fn extend_project(env: &Env, project_id: u128) {
+    extend_persistent(env, &ContractKey::Project(project_id));
+}

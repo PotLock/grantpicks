@@ -14,7 +14,12 @@ import Checkbox from '@/app/components/commons/CheckBox'
 import PreviousConfirmationModal from './PreviousConfirmationModal'
 import { StrKey } from 'round-client'
 import { capitalizeFirstLetter } from '@/utils/helper'
-import { GITHUB_URL_REGEX } from '@/constants/regex'
+import {
+	BITCOIN_ADDRESS_REGEX,
+	ETHEREUM_ADDRESS_REGEX,
+	GITHUB_URL_REGEX,
+	NEAR_ADDRESS_REGEX,
+} from '@/constants/regex'
 
 const CreateProjectStep3 = () => {
 	const [showContractMenu, setShowContractMenu] = useState<boolean[]>([])
@@ -140,8 +145,8 @@ const CreateProjectStep3 = () => {
 					</p>
 					{fieldContracts.map((value, index) => {
 						return (
-							<div key={index} className="flex flex-col space-y-2">
-								<div className="flex items-center space-x-4 mb-2">
+							<div key={index} className="flex flex-col mb-2">
+								<div className="flex items-center space-x-4 mb-1">
 									<div className="relative w-[30%]">
 										<div
 											onClick={() => {
@@ -234,6 +239,19 @@ const CreateProjectStep3 = () => {
 											required
 											{...register(`smart_contracts.${index}.address`, {
 												required: true,
+												validate: (value) =>
+													watch().smart_contracts[index].chain === 'bitcoin'
+														? BITCOIN_ADDRESS_REGEX(value)
+														: watch().smart_contracts[index].chain ===
+															  'ethereum'
+															? ETHEREUM_ADDRESS_REGEX(value)
+															: watch().smart_contracts[index].chain ===
+																  'stellar'
+																? StrKey.isValidEd25519PublicKey(value)
+																: watch().smart_contracts[index].chain ===
+																	  'near'
+																	? NEAR_ADDRESS_REGEX(value)
+																	: true,
 											})}
 										/>
 									</div>
@@ -252,12 +270,12 @@ const CreateProjectStep3 = () => {
 								</div>
 								{errors?.smart_contracts?.[index]?.address?.type ===
 								'validate' ? (
-									<p className="text-red-500 text-xs mt-1 ml-2">
+									<p className="text-red-500 text-xs ml-2">
 										Address is invalid
 									</p>
 								) : errors.smart_contracts?.[index]?.address?.type ===
 								  'required' ? (
-									<p className="text-red-500 text-xs mt-1 ml-2">
+									<p className="text-red-500 text-xs ml-2">
 										Address is required
 									</p>
 								) : undefined}

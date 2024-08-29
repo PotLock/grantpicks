@@ -25,12 +25,32 @@ import { useMyProject } from './MyProjectProvider'
 import { StrKey } from 'round-client'
 import { GITHUB_URL_REGEX } from '@/constants/regex'
 
+interface IContract {
+	id: string
+	chain: string
+	address: string
+}
+
+interface IRepo {
+	id: string
+	github_url: string
+}
+
+interface IContact {
+	id: string
+	platform: string
+	link_url: string
+}
+
 const MyProjectLinks = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()
 	const { stellarPubKey, stellarKit } = useWallet()
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const [showContractMenu, setShowContractMenu] = useState<boolean[]>([])
 	const [showContactMenu, setShowContactMenu] = useState<boolean[]>([])
+	const [currentContract, setCurrentContract] = useState<IContract[]>([])
+	const [currentRepo, setCurrentRepo] = useState<IRepo[]>([])
+	const [currentContact, setCurrentContact] = useState<IContact[]>([])
 	const {
 		control,
 		register,
@@ -79,6 +99,13 @@ const MyProjectLinks = () => {
 					address: contract.contract_address,
 				})),
 			)
+			setCurrentContract(
+				projectData?.contracts.map((contract) => ({
+					id: '',
+					chain: contract.name,
+					address: contract.contract_address,
+				})),
+			)
 			setValue(
 				'contacts',
 				projectData?.contacts.map((contact) => ({
@@ -87,8 +114,21 @@ const MyProjectLinks = () => {
 					link_url: contact.value,
 				})),
 			)
+			setCurrentContact(
+				projectData?.contacts.map((contact) => ({
+					id: '',
+					platform: contact.name,
+					link_url: contact.value,
+				})),
+			)
 			setValue(
 				'github_urls',
+				projectData?.repositories.map((repo) => ({
+					id: '',
+					github_url: repo.url,
+				})),
+			)
+			setCurrentRepo(
 				projectData?.repositories.map((repo) => ({
 					id: '',
 					github_url: repo.url,
@@ -526,6 +566,14 @@ const MyProjectLinks = () => {
 						isFullWidth
 						onClick={() => setDefaultData()}
 						className="!py-3 !border !border-grantpicks-black-400"
+						isDisabled={
+							JSON.stringify(watch().smart_contracts) ===
+								JSON.stringify(currentContract) &&
+							JSON.stringify(watch().github_urls) ===
+								JSON.stringify(currentRepo) &&
+							JSON.stringify(watch().contacts) ===
+								JSON.stringify(currentContact)
+						}
 					>
 						Discard
 					</Button>
@@ -535,7 +583,15 @@ const MyProjectLinks = () => {
 						color="black-950"
 						isFullWidth
 						onClick={handleSubmit(onSaveChanges)}
-						className="!py-3"
+						className="!py-3 disabled:cursor-not-allowed"
+						isDisabled={
+							JSON.stringify(watch().smart_contracts) ===
+								JSON.stringify(currentContract) &&
+							JSON.stringify(watch().github_urls) ===
+								JSON.stringify(currentRepo) &&
+							JSON.stringify(watch().contacts) ===
+								JSON.stringify(currentContact)
+						}
 					>
 						Save changes
 					</Button>

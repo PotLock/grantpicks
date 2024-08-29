@@ -1,12 +1,12 @@
 use soroban_sdk::{Address, Env, Map, Vec};
 
 use crate::{
-    data_type::RoundApplication, page_writer::read_default_page_size, storage_key::ContractKey,
+    data_type::RoundApplication, page_writer::read_default_page_size, storage_key::ContractKey, utils::get_storage,
 };
 
 pub fn read_application(env: &Env, round_id: u128) -> Map<Address, RoundApplication> {
     let key = ContractKey::ProjectApplicants(round_id);
-    match env.storage().persistent().get(&key) {
+    match get_storage(env).get(&key) {
         Some(value) => value,
         None => Map::new(env),
     }
@@ -14,7 +14,7 @@ pub fn read_application(env: &Env, round_id: u128) -> Map<Address, RoundApplicat
 
 pub fn write_application(env: &Env, round_id: u128, applications: &Map<Address, RoundApplication>) {
     let key = ContractKey::ProjectApplicants(round_id);
-    env.storage().persistent().set(&key, applications);
+    get_storage(env).set(&key, applications);
 }
 
 pub fn update_application(env: &Env, round_id: u128, application: &RoundApplication) {
@@ -32,8 +32,12 @@ pub fn find_applications(
     let default_page_size = read_default_page_size(env);
     let applications = read_application(env, round_id);
     let skip: usize = skip.unwrap_or(0).try_into().unwrap();
-    let limit: usize = limit.unwrap_or(default_page_size).try_into().unwrap();
-    assert!(limit <= 20, "limit should be less than or equal to 20");
+    let mut limit: usize = limit.unwrap_or(default_page_size).try_into().unwrap();
+
+    if limit > 20 {
+        limit = 20;
+    }
+  
     let mut found_applications: Vec<RoundApplication> = Vec::new(env);
     let keys = applications.keys();
 

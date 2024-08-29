@@ -1,9 +1,9 @@
-use crate::storage_key::ContractKey;
+use crate::{storage_key::ContractKey, utils::get_storage};
 use soroban_sdk::{Address, Env, Map, Vec};
 
 pub fn read_all_whitelist(env: &Env, round_id: u128) -> Map<Address, bool> {
     let key = ContractKey::WhiteList(round_id);
-    match env.storage().persistent().get(&key) {
+    match get_storage(env).get(&key) {
         Some(voters) => voters,
         None => Map::new(env),
     }
@@ -11,12 +11,12 @@ pub fn read_all_whitelist(env: &Env, round_id: u128) -> Map<Address, bool> {
 
 pub fn write_all_whitelist(env: &Env, round_id: u128, voters: &Map<Address, bool>) {
     let key = ContractKey::WhiteList(round_id);
-    env.storage().persistent().set(&key, voters);
+    get_storage(env).set(&key, voters);
 }
 
 pub fn read_all_blacklist(env: &Env, round_id: u128) -> Map<Address, bool> {
     let key = ContractKey::BlackList(round_id);
-    match env.storage().persistent().get(&key) {
+    match get_storage(env).get(&key) {
         Some(voters) => voters,
         None => Map::new(env),
     }
@@ -24,7 +24,7 @@ pub fn read_all_blacklist(env: &Env, round_id: u128) -> Map<Address, bool> {
 
 pub fn write_all_blacklist(env: &Env, round_id: u128, voters: &Map<Address, bool>) {
     let key = ContractKey::BlackList(round_id);
-    env.storage().persistent().set(&key, voters);
+    get_storage(env).set(&key, voters);
 }
 
 pub fn add_to_whitelist(env: &Env, round_id: u128, voter: Address) {
@@ -69,7 +69,7 @@ pub fn is_blacklisted(env: &Env, round_id: u128, voter: Address) -> bool {
 
 pub fn read_voted_rounds(env: &Env) -> Map<Address, Vec<u128>> {
     let key = ContractKey::VotedRoundIds;
-    match env.storage().persistent().get(&key) {
+    match get_storage(env).get(&key) {
         Some(rounds) => rounds,
         None => Map::new(env),
     }
@@ -77,7 +77,7 @@ pub fn read_voted_rounds(env: &Env) -> Map<Address, Vec<u128>> {
 
 pub fn write_voted_rounds(env: &Env, rounds: &Map<Address, Vec<u128>>) {
     let key = ContractKey::VotedRoundIds;
-    env.storage().persistent().set(&key, rounds);
+    get_storage(env).set(&key, rounds);
 }
 
 pub fn add_voted_round(env: &Env, voter: Address, round_id: u128) {

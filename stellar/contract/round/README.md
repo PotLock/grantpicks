@@ -408,7 +408,6 @@ fn add_approved_project(env: &Env, round_id: u128, caller: Address, project_ids:
 fn add_admins(env: &Env, round_id: u128, round_admin: Vec<Address>);
 fn remove_admins(env: &Env, round_id: u128, round_admin: Vec<Address>);
 fn set_admins(env: &Env, round_id: u128, round_admin: Vec<Address>);
-fn clear_admins(env: &Env, round_id: u128);
 fn transfer_round_ownership(env: &Env, round_id: u128, new_owner: Address);
 fn set_round_complete(env: &Env, round_id: u128, caller: Address) -> RoundDetail;
 fn change_allow_applications(env: &Env, round_id: u128, caller: Address, allow_applications: bool, start_ms: Option<u64>, end_ms: Option<u64>) -> RoundDetail;
@@ -472,6 +471,7 @@ fn get_voting_results_for_round(env: &Env, round_id: u128) -> Vec<ProjectVotingR
 fn blacklisted_voters(env: &Env, round_id: u128) -> Vec<Address>;
 fn whitelisted_voters(env: &Env, round_id: u128) -> Vec<Address>;
 fn get_my_vote_for_round(env: &Env, round_id: u128, voter: Address) -> VotingResult;
+fn get_approved_projects(env: &Env, round_id: u128) -> Vec<u128>;
 ```
 
 ## Events For Indexer

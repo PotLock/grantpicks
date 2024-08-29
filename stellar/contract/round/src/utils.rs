@@ -1,4 +1,4 @@
-use soroban_sdk::Env;
+use soroban_sdk::{storage::Persistent, Env};
 
 use crate::fee_writer::read_fee_basis_points;
 
@@ -34,4 +34,8 @@ pub fn calculate_protocol_fee(env: &Env, amount: u128) -> Option<u128> {
     } else {
         None
     }
+}
+
+pub fn get_storage(env: &Env)-> Persistent{
+  env.storage().persistent()
 }

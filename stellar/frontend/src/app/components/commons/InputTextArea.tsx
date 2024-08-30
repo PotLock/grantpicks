@@ -13,6 +13,7 @@ const InputTextArea = forwardRef<HTMLTextAreaElement, InputTextAreaProps>(
 			disabled,
 			required,
 			label,
+			labelIcon,
 			rows = 4,
 			hintLabel,
 			errorMessage,
@@ -24,17 +25,20 @@ const InputTextArea = forwardRef<HTMLTextAreaElement, InputTextAreaProps>(
 		return (
 			<div className={label ? `gap-y-[10px]` : `gap-y-0`}>
 				{label && (
-					<p
-						className={clsx(
-							`font-semibold text-sm mb-2 cursor-default`,
-							disabled
-								? `text-grantpicks-black-300`
-								: `text-grantpicks-black-950`,
-						)}
-					>
-						{label}
-						{required && <span className="text-red-500">*</span>}
-					</p>
+					<div className="flex gap-x-1">
+						<p
+							className={clsx(
+								`font-semibold text-sm mb-2 cursor-default`,
+								disabled
+									? `text-grantpicks-black-300`
+									: `text-grantpicks-black-950`,
+							)}
+						>
+							{label}
+							{required && <span className="text-red-500 ml-1">*</span>}
+						</p>
+						{labelIcon && <div className="z-50">{labelIcon}</div>}
+					</div>
 				)}
 				<div className="relative mb-1">
 					{disabled && (

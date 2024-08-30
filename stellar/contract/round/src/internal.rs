@@ -314,9 +314,9 @@ impl IsRound for RoundContract {
         let mut admins = read_admins(env, round_id);
 
         round_admin.iter().for_each(|admin| {
-            assert!(!admins.contains(admin.clone()), "Admin already exists");
-            assert!(admin != round.owner, "Owner cannot be admin");
-            admins.push_back(admin.clone());
+            if !admins.contains(admin.clone()) && admin != round.owner {
+              admins.push_back(admin.clone());
+            }
         });
 
         write_admins(env, round_id, &admins);
@@ -363,17 +363,6 @@ impl IsRound for RoundContract {
         extend_instance(env);
         extend_round(env, round_id);
         log_update_round(env, round.clone());
-    }
-
-    fn clear_admins(env: &Env, round_id: u128) {
-        let round = read_round_info(env, round_id);
-
-        round.owner.require_auth();
-
-        remove_all_admins(env, round_id);
-
-        extend_instance(env);
-        extend_round(env, round_id);
     }
 
     fn apply_to_round(
@@ -1015,8 +1004,6 @@ impl IsRound for RoundContract {
 
     fn admins(env: &Env, round_id: u128) -> Vec<Address> {
         let admins = read_admins(env, round_id);
-        extend_instance(env);
-        extend_round(env, round_id);
         admins
     }
 
@@ -1747,5 +1734,10 @@ impl IsRound for RoundContract {
       write_flagged_projects(env, round_id, &flagged_projects);
       extend_instance(env);
       extend_round(env, round_id);
+    }
+
+    fn get_approved_projects(env: &Env, round_id: u128) -> Vec<u128>{
+      let approved_projects = read_approved_projects(env, round_id);
+      approved_projects
     }
 }

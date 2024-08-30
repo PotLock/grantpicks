@@ -18,6 +18,8 @@ import Checkbox from '@/app/components/commons/CheckBox'
 import DatePicker from 'react-datepicker'
 import IconCalendar from '@/app/components/svgs/IconCalendar'
 import PreviousConfirmationModal from './PreviousConfirmationModal'
+import IconInfoCircle from '@/app/components/svgs/IconInfoCircle'
+import { Tooltip } from 'react-tooltip'
 
 const CreateProjectStep4 = () => {
 	const { setStep, data, setData } = useCreateProject()
@@ -106,6 +108,20 @@ const CreateProjectStep4 = () => {
 								<InputText
 									required={!watch().is_havent_raised}
 									label="Source"
+									labelIcon={
+										<>
+											<a
+												data-tooltip-id="source_tooltip"
+												data-tooltip-html="Where do you get your funding (Hackathon, seed rounds, bootstrap, etc.)"
+											>
+												<IconInfoCircle
+													size={16}
+													className="stroke-grantpicks-black-600"
+												/>
+											</a>
+											<Tooltip id="source_tooltip" place="right" />
+										</>
+									}
 									{...register(`funding_histories.${index}.source`, {
 										required: !watch().is_havent_raised,
 									})}
@@ -151,6 +167,20 @@ const CreateProjectStep4 = () => {
 								<InputText
 									required={!watch().is_havent_raised}
 									label="Denomination"
+									labelIcon={
+										<>
+											<a
+												data-tooltip-id="denomination_tooltip"
+												data-tooltip-html="Unit of funds (e.g., USD, NEAR, BTC, EUR)"
+											>
+												<IconInfoCircle
+													size={16}
+													className="stroke-grantpicks-black-600"
+												/>
+											</a>
+											<Tooltip id="denomination_tooltip" place="right" />
+										</>
+									}
 									{...register(`funding_histories.${index}.denomination`, {
 										required: !watch().is_havent_raised,
 									})}
@@ -189,6 +219,20 @@ const CreateProjectStep4 = () => {
 									<InputTextArea
 										label="Description"
 										required={!watch().is_havent_raised}
+										labelIcon={
+											<>
+												<a
+													data-tooltip-id="description_tooltip"
+													data-tooltip-html="Tell us a bit more about your funding"
+												>
+													<IconInfoCircle
+														size={16}
+														className="stroke-grantpicks-black-600"
+													/>
+												</a>
+												<Tooltip id="description_tooltip" place="right" />
+											</>
+										}
 										rows={2}
 										{...register(`funding_histories.${index}.description`, {
 											required: !watch().is_havent_raised,

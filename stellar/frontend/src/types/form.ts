@@ -14,6 +14,7 @@ export interface InputProps {
 	disabled?: boolean
 	customLabel?: React.ReactNode
 	label?: string
+	labelIcon?: React.ReactNode
 	hintLabel?: string
 	rows?: number
 	preffixIcon?: React.ReactNode
@@ -35,6 +36,7 @@ export interface InputTextAreaProps {
 	disabled?: boolean
 	customLabel?: React.ReactNode
 	label?: string
+	labelIcon?: React.ReactNode
 	hintLabel?: string
 	rows?: number
 	preffixIcon?: React.ReactNode

@@ -140,9 +140,7 @@ const CreateProjectStep3 = () => {
 					Share your project details
 				</p>
 				<div className="py-4 md:py-6">
-					<p className="text-grantpicks-black-950 mb-2">
-						Smart Contracts <span className="text-grantpicks-red-600">*</span>
-					</p>
+					<p className="text-grantpicks-black-950 mb-2">Smart Contracts</p>
 					{fieldContracts.map((value, index) => {
 						return (
 							<div key={index} className="flex flex-col mb-2">
@@ -236,9 +234,7 @@ const CreateProjectStep3 = () => {
 									</div>
 									<div className="w-[60%]">
 										<InputText
-											required
 											{...register(`smart_contracts.${index}.address`, {
-												required: true,
 												validate: (value) =>
 													watch().smart_contracts[index].chain === 'bitcoin'
 														? BITCOIN_ADDRESS_REGEX(value)
@@ -273,11 +269,6 @@ const CreateProjectStep3 = () => {
 									<p className="text-red-500 text-xs ml-2">
 										Address is invalid
 									</p>
-								) : errors.smart_contracts?.[index]?.address?.type ===
-								  'required' ? (
-									<p className="text-red-500 text-xs ml-2">
-										Address is required
-									</p>
 								) : undefined}
 							</div>
 						)
@@ -308,29 +299,22 @@ const CreateProjectStep3 = () => {
 						/>
 					</div>
 
-					<p className="text-grantpicks-black-950 mb-2">
-						Github <span className="text-grantpicks-red-600">*</span>
-					</p>
+					<p className="text-grantpicks-black-950 mb-2">Github</p>
 					{fieldGithubs.map((value, index) => {
 						return (
 							<div key={index} className="flex items-center space-x-4 mb-2">
 								<div className="w-[90%]">
 									<InputText
-										required
 										{...register(`github_urls.${index}.github_url`, {
-											required: true,
 											validate: (value) => {
-												return GITHUB_URL_REGEX.test(value)
+												return watch().github_urls[index].github_url !== ''
+													? GITHUB_URL_REGEX.test(value)
+													: true
 											},
 										})}
 										errorMessage={
 											errors?.github_urls?.[index]?.github_url?.type ===
-											'required' ? (
-												<p className="text-red-500 text-xs mt-1 ml-2">
-													Github is required
-												</p>
-											) : errors?.github_urls?.[index]?.github_url?.type ===
-											  'validate' ? (
+											'validate' ? (
 												<p className="text-red-500 text-xs mt-1 ml-2">
 													Please enter a valid GitHub URL
 												</p>
@@ -367,9 +351,7 @@ const CreateProjectStep3 = () => {
 						</Button>
 					</div>
 
-					<p className="text-grantpicks-black-950 mb-2">
-						Contacts <span className="text-grantpicks-red-600">*</span>
-					</p>
+					<p className="text-grantpicks-black-950 mb-2">Contacts</p>
 					{fieldContacts.map((value, index) => {
 						return (
 							<div key={index} className="flex flex-col space-y-2">
@@ -458,10 +440,7 @@ const CreateProjectStep3 = () => {
 									<div className="w-[60%]">
 										<InputText
 											placeholder="t.me/Jameson"
-											required
-											{...register(`contacts.${index}.link_url`, {
-												required: true,
-											})}
+											{...register(`contacts.${index}.link_url`, {})}
 										/>
 									</div>
 									<div className="flex-1 w-[15%]">
@@ -477,11 +456,6 @@ const CreateProjectStep3 = () => {
 										/>
 									</div>
 								</div>
-								{errors?.contacts?.[index]?.link_url?.type === 'required' ? (
-									<p className="text-red-500 text-xs ml-2">
-										Contact is required
-									</p>
-								) : undefined}
 							</div>
 						)
 					})}

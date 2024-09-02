@@ -543,6 +543,13 @@ const CreateRoundPage = () => {
 											</p>
 										</div>
 									}
+									errorMessage={
+										parseFloat(watch().amount) < 0 ? (
+											<p className="text-red-500 text-xs mt-1 ml-2">
+												Initial deposit cannot be less than 0
+											</p>
+										) : undefined
+									}
 								/>
 							</div>
 							<div className="flex-1">
@@ -584,6 +591,10 @@ const CreateRoundPage = () => {
 										  parseFloat(watch().amount) ? (
 											<p className="text-red-500 text-xs mt-1 ml-2">
 												Expected Amount should not be less than intiial deposit
+											</p>
+										) : parseFloat(watch().expected_amount) < 0 ? (
+											<p className="text-red-500 text-xs mt-1 ml-2">
+												Expected Amount cannot be less than 0
 											</p>
 										) : undefined
 									}
@@ -853,6 +864,10 @@ const CreateRoundPage = () => {
 										<p className="text-red-500 text-xs mt-1 ml-2">
 											Cooldown deadline is required
 										</p>
+									) : (watch().cooldown_end_ms as unknown as number) < 0 ? (
+										<p className="text-red-500 text-xs mt-1 ml-2">
+											Cooldown deadline cannot be less than 0
+										</p>
 									) : undefined
 								}
 							/>
@@ -969,6 +984,11 @@ const CreateRoundPage = () => {
 									errors.compliance_period_ms?.type === 'required' ? (
 										<p className="text-red-500 text-xs mt-1 ml-2">
 											Compliance deadline is required
+										</p>
+									) : (watch().compliance_period_ms as unknown as number) <
+									  0 ? (
+										<p className="text-red-500 text-xs mt-1 ml-2">
+											Compliance deadline cannot be less than 0
 										</p>
 									) : undefined
 								}

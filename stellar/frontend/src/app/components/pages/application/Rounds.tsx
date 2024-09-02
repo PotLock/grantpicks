@@ -205,9 +205,14 @@ const ApplicationRoundsItem = ({
 					)}
 				</div>
 			</div>
-			<p className="font-semibold text-base md:text-lg lg:text-xl max-w-60 mb-4 text-grantpicks-black-950">
+			<button
+				onClick={() => {
+					setShowDetailDrawer(true)
+				}}
+				className="font-semibold text-base md:text-lg lg:text-xl max-w-60 mb-4 text-grantpicks-black-950 text-left"
+			>
 				{doc.name}
-			</p>
+			</button>
 			<div className="flex items-center justify-between mb-6">
 				{selectedRoundType === 'on-going' ? (
 					<div className="flex items-center space-x-1">

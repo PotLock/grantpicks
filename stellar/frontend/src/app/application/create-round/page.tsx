@@ -292,8 +292,6 @@ const CreateRoundPage = () => {
 		}
 	}, [])
 
-	console.log('>_ date', watch().cooldown_end_ms)
-
 	return (
 		<CreateRoundLayout>
 			<TopNav />

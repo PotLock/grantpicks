@@ -38,16 +38,13 @@ pub fn clear_payouts(env: &Env, round_id: u128) {
 }
 
 pub fn read_payout_id(env: &Env) -> u32 {
-    env.storage()
-        .persistent()
+    get_storage(env)
         .get(&ContractKey::NextPayoutId)
         .unwrap_or_default()
 }
 
 pub fn write_payout_id(env: &Env, payout_id: u32) {
-    env.storage()
-        .persistent()
-        .set(&ContractKey::NextPayoutId, &payout_id);
+    get_storage(env).set(&ContractKey::NextPayoutId, &payout_id);
 }
 
 pub fn increment_payout_id(env: &Env) -> u32 {
@@ -56,34 +53,19 @@ pub fn increment_payout_id(env: &Env) -> u32 {
     payout_id
 }
 
-pub fn read_all_payouts(env: &Env) -> Map<u32, Payout> {
-    let key = ContractKey::PayoutInfo;
-    match get_storage(env).get(&key) {
-        Some(payouts) => payouts,
-        None => Map::new(env),
-    }
-}
-
-pub fn write_all_payouts(env: &Env, payouts: &Map<u32, Payout>) {
-    let key = ContractKey::PayoutInfo;
-    get_storage(env).set(&key, payouts);
-}
-
 pub fn write_payout_info(env: &Env, payout_id: u32, payout: &Payout) {
-    let mut payouts = read_all_payouts(env);
-    payouts.set(payout_id, payout.clone());
-    write_all_payouts(env, &payouts);
+    let key = ContractKey::PayoutInfo(payout_id as u128);
+    get_storage(env).set(&key, payout);
 }
 
 pub fn read_payout_info(env: &Env, payout_id: u32) -> Option<Payout> {
-    let payouts = read_all_payouts(env);
-    payouts.get(payout_id)
+    let key = ContractKey::PayoutInfo(payout_id as u128);
+    get_storage(env).get(&key)
 }
 
 pub fn remove_payout_info(env: &Env, payout_id: u32) {
-    let mut payouts = read_all_payouts(env);
-    payouts.remove(payout_id);
-    write_all_payouts(env, &payouts);
+    let key = ContractKey::PayoutInfo(payout_id as u128);
+    get_storage(env).remove(&key);
 }
 
 pub fn read_project_payout_ids(env: &Env) -> Map<u128, Vec<u32>> {

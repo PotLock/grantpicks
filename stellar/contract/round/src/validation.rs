@@ -7,7 +7,7 @@ use crate::{
     project_registry_writer::read_project_contract,
     utils::get_ledger_second_as_millis,
     voter_writer::{is_blacklisted, is_whitelisted},
-    voting_writer::{get_voting_state_done},
+    voting_writer::get_voting_state_done,
 };
 use soroban_sdk::{panic_with_error, Address, Env, String, Vec};
 
@@ -200,14 +200,6 @@ pub fn validate_blacklist(env: &Env, round_id: u128, voter: &Address) {
 
     if is_blacklisted {
         panic_with_error!(env, RoundError::UserBlacklisted);
-    }
-}
-
-pub fn validate_blacklist_already(env: &Env, round_id: u128, voter: &Address) {
-    let is_blacklisted = is_blacklisted(env, round_id, voter.clone());
-
-    if !is_blacklisted {
-        panic_with_error!(env, RoundError::UserAlreadyBlacklisted);
     }
 }
 

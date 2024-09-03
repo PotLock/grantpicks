@@ -8,7 +8,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CBE3OOQ2O3PUMNJBVLVBOBVIZ6CAWA3D33LQVBTBC7M73QYN46MCODUV";
+        readonly contractId: "CAS33WXG2UO26ZN4EE2RYG5V6U24RA4QWHFGXPU2TKY4OY2FEYIBTUM2";
     };
 };
 export declare enum ProjectStatus {
@@ -122,6 +122,9 @@ export type ContractKey = {
     tag: "Projects";
     values: void;
 } | {
+    tag: "Project";
+    values: readonly [u128];
+} | {
     tag: "RegistryAdmin";
     values: void;
 } | {
@@ -213,8 +216,7 @@ export interface Client {
     /**
      * Construct and simulate a add_admin transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    add_admin: ({ admin, project_id, new_admin }: {
-        admin: string;
+    add_admin: ({ project_id, new_admin }: {
         project_id: u128;
         new_admin: string;
     }, options?: {
@@ -234,8 +236,7 @@ export interface Client {
     /**
      * Construct and simulate a remove_admin transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    remove_admin: ({ admin, project_id, admin_to_remove }: {
-        admin: string;
+    remove_admin: ({ project_id, admin_to_remove }: {
         project_id: u128;
         admin_to_remove: string;
     }, options?: {
@@ -330,8 +331,7 @@ export interface Client {
     /**
      * Construct and simulate a upgrade transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    upgrade: ({ owner, new_wasm_hash }: {
-        owner: string;
+    upgrade: ({ new_wasm_hash }: {
         new_wasm_hash: Buffer;
     }, options?: {
         /**
@@ -366,6 +366,23 @@ export interface Client {
          */
         simulate?: boolean;
     }) => Promise<AssembledTransaction<Project>>;
+    /**
+     * Construct and simulate a owner transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     */
+    owner: (options?: {
+        /**
+         * The fee to pay for the transaction. Default: BASE_FEE
+         */
+        fee?: number;
+        /**
+         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+         */
+        timeoutInSeconds?: number;
+        /**
+         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+         */
+        simulate?: boolean;
+    }) => Promise<AssembledTransaction<string>>;
 }
 export declare class Client extends ContractClient {
     readonly options: ContractClientOptions;
@@ -383,5 +400,6 @@ export declare class Client extends ContractClient {
         get_total_projects: (json: string) => AssembledTransaction<number>;
         upgrade: (json: string) => AssembledTransaction<null>;
         get_project_from_applicant: (json: string) => AssembledTransaction<Project>;
+        owner: (json: string) => AssembledTransaction<string>;
     };
 }

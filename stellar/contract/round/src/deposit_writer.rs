@@ -1,4 +1,4 @@
-use soroban_sdk::{Env, Map, Vec};
+use soroban_sdk::{Env, Vec};
 
 use crate::{data_type::Deposit, storage_key::ContractKey, utils::get_storage};
 
@@ -19,28 +19,14 @@ pub fn increment_deposit_id(env: &Env) -> u128 {
     incremented_deposit_id
 }
 
-pub fn write_deposit_info(env: &Env, deposit_info: &Map<u128, Deposit>) {
-    let key = &ContractKey::DepositInfo;
-    get_storage(env).set(key, deposit_info);
-}
-
-pub fn read_deposit_info(env: &Env) -> Map<u128, Deposit> {
-    let key = &ContractKey::DepositInfo;
-    match get_storage(env).get(key) {
-        Some(deposit_info) => deposit_info,
-        None => Map::new(env),
-    }
-}
-
 pub fn write_deposit(env: &Env, deposit_id: u128, deposit: &Deposit) {
-    let mut deposit_info = read_deposit_info(env);
-    deposit_info.set(deposit_id, deposit.clone());
-    write_deposit_info(env, &deposit_info);
+    let key = &ContractKey::DepositInfo(deposit_id);
+    get_storage(env).set(key, deposit);
 }
 
 pub fn read_deposit(env: &Env, deposit_id: u128) -> Option<Deposit> {
-    let deposit_info = read_deposit_info(env);
-    deposit_info.get(deposit_id)
+    let key = &ContractKey::DepositInfo(deposit_id);
+    get_storage(env).get(key)
 }
 
 pub fn write_deposit_to_round(env: &Env, round_id: u128, deposit_ids: &Vec<u128>) {

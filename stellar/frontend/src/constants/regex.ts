@@ -26,3 +26,10 @@ export const ETHEREUM_ADDRESS_REGEX = (address: string): boolean => {
 	const ethRegex = /^0x[a-fA-F0-9]{40}$/
 	return ethRegex.test(address)
 }
+export const TELEGRAM_USERNAME_REGEX = /^[a-zA-Z0-9_]{5,32}$/
+
+export const INSTAGRAM_USERNAME_REGEX = /^[a-zA-Z0-9_.]{1,30}$/
+
+export const TWITTER_USERNAME_REGEX = /^[a-zA-Z0-9_]{5,15}$/
+
+export const EMAIL_VALIDATION_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/

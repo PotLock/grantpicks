@@ -53,6 +53,12 @@ import { subDays } from 'date-fns'
 import { StrKey } from 'round-client'
 import IconInfoCircle from '@/app/components/svgs/IconInfoCircle'
 import { Tooltip } from 'react-tooltip'
+import {
+	EMAIL_VALIDATION_REGEX,
+	INSTAGRAM_USERNAME_REGEX,
+	TELEGRAM_USERNAME_REGEX,
+	TWITTER_USERNAME_REGEX,
+} from '@/constants/regex'
 
 const CreateRoundPage = () => {
 	const router = useRouter()
@@ -75,6 +81,7 @@ const CreateRoundPage = () => {
 		watch,
 		formState: { errors },
 	} = useForm<CreateRoundData>({
+		mode: 'onChange',
 		defaultValues: {
 			vote_per_person: 1,
 			apply_duration_start: undefined,
@@ -495,13 +502,38 @@ const CreateRoundPage = () => {
 									<InputText
 										required
 										placeholder="Your username..."
-										{...register('contact_address', { required: true })}
+										{...register('contact_address', {
+											required: true,
+											pattern: {
+												value:
+													watch().contact_type === 'Telegram'
+														? TELEGRAM_USERNAME_REGEX
+														: watch().contact_type === 'Instagram'
+															? INSTAGRAM_USERNAME_REGEX
+															: watch().contact_type === 'Twitter'
+																? TWITTER_USERNAME_REGEX
+																: EMAIL_VALIDATION_REGEX,
+												message:
+													watch().contact_type === 'Telegram'
+														? 'Telegram address is not valid'
+														: watch().contact_type === 'Instagram'
+															? 'Instagram address is not valid'
+															: watch().contact_type === 'Twitter'
+																? 'Twitter address is not valid'
+																: 'Email address is not valid',
+											},
+										})}
 									/>
 								</div>
 							</div>
 							{errors.contact_address?.type === 'required' && (
 								<p className="text-red-500 text-xs mt-1 ml-2">
 									Contact address is required
+								</p>
+							)}
+							{errors.contact_address && (
+								<p className="text-red-500 text-xs mt-1 ml-2">
+									{errors.contact_address.message}
 								</p>
 							)}
 							<p className="text-xs font-normal text-grantpicks-black-600">
@@ -542,6 +574,13 @@ const CreateRoundPage = () => {
 												USD
 											</p>
 										</div>
+									}
+									errorMessage={
+										parseFloat(watch().amount) < 0 ? (
+											<p className="text-red-500 text-xs mt-1 ml-2">
+												Initial deposit cannot be less than 0
+											</p>
+										) : undefined
 									}
 								/>
 							</div>
@@ -584,6 +623,10 @@ const CreateRoundPage = () => {
 										  parseFloat(watch().amount) ? (
 											<p className="text-red-500 text-xs mt-1 ml-2">
 												Expected Amount should not be less than intiial deposit
+											</p>
+										) : parseFloat(watch().expected_amount) < 0 ? (
+											<p className="text-red-500 text-xs mt-1 ml-2">
+												Expected Amount cannot be less than 0
 											</p>
 										) : undefined
 									}
@@ -853,6 +896,10 @@ const CreateRoundPage = () => {
 										<p className="text-red-500 text-xs mt-1 ml-2">
 											Cooldown deadline is required
 										</p>
+									) : (watch().cooldown_end_ms as unknown as number) < 0 ? (
+										<p className="text-red-500 text-xs mt-1 ml-2">
+											Cooldown deadline cannot be less than 0
+										</p>
 									) : undefined
 								}
 							/>
@@ -969,6 +1016,11 @@ const CreateRoundPage = () => {
 									errors.compliance_period_ms?.type === 'required' ? (
 										<p className="text-red-500 text-xs mt-1 ml-2">
 											Compliance deadline is required
+										</p>
+									) : (watch().compliance_period_ms as unknown as number) <
+									  0 ? (
+										<p className="text-red-500 text-xs mt-1 ml-2">
+											Compliance deadline cannot be less than 0
 										</p>
 									) : undefined
 								}

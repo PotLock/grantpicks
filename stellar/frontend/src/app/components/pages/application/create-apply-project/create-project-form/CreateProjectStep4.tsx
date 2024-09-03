@@ -106,7 +106,7 @@ const CreateProjectStep4 = () => {
 									}}
 								/>
 								<InputText
-									required
+									required={!watch().is_havent_raised}
 									label="Source"
 									labelIcon={
 										<>
@@ -123,7 +123,7 @@ const CreateProjectStep4 = () => {
 										</>
 									}
 									{...register(`funding_histories.${index}.source`, {
-										required: true,
+										required: !watch().is_havent_raised,
 									})}
 									errorMessage={
 										errors?.funding_histories?.[index]?.source?.type ===
@@ -141,7 +141,7 @@ const CreateProjectStep4 = () => {
 									<Controller
 										name={`funding_histories.${index}.date`}
 										control={control}
-										rules={{ required: true }}
+										rules={{ required: !watch().is_havent_raised }}
 										render={({ field }) => (
 											<DatePicker
 												showIcon
@@ -165,7 +165,7 @@ const CreateProjectStep4 = () => {
 									/>
 								</div>
 								<InputText
-									required
+									required={!watch().is_havent_raised}
 									label="Denomination"
 									labelIcon={
 										<>
@@ -182,7 +182,7 @@ const CreateProjectStep4 = () => {
 										</>
 									}
 									{...register(`funding_histories.${index}.denomination`, {
-										required: true,
+										required: !watch().is_havent_raised,
 									})}
 									errorMessage={
 										errors?.funding_histories?.[index]?.denomination?.type ===
@@ -195,10 +195,10 @@ const CreateProjectStep4 = () => {
 								/>
 								<InputText
 									type="number"
-									required
+									required={!watch().is_havent_raised}
 									label="Amount"
 									{...register(`funding_histories.${index}.amount`, {
-										required: true,
+										required: !watch().is_havent_raised,
 										pattern: /^(0|[1-9]\d*)(\.\d+)?$/,
 									})}
 									errorMessage={
@@ -218,6 +218,7 @@ const CreateProjectStep4 = () => {
 								<div className="col-span-1 md:col-span-2">
 									<InputTextArea
 										label="Description"
+										required={!watch().is_havent_raised}
 										labelIcon={
 											<>
 												<a
@@ -232,10 +233,9 @@ const CreateProjectStep4 = () => {
 												<Tooltip id="description_tooltip" place="right" />
 											</>
 										}
-										required
 										rows={2}
 										{...register(`funding_histories.${index}.description`, {
-											required: true,
+											required: !watch().is_havent_raised,
 										})}
 										errorMessage={
 											errors.funding_histories?.[index]?.description?.type ===

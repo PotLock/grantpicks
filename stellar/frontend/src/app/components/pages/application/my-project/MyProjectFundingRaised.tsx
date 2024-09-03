@@ -2,11 +2,9 @@ import Button from '@/app/components/commons/Button'
 import Checkbox from '@/app/components/commons/CheckBox'
 import InputText from '@/app/components/commons/InputText'
 import InputTextArea from '@/app/components/commons/InputTextArea'
-import Menu from '@/app/components/commons/Menu'
 import IconAdd from '@/app/components/svgs/IconAdd'
 import IconCalendar from '@/app/components/svgs/IconCalendar'
 import IconTrash from '@/app/components/svgs/IconTrash'
-import IconUnfoldMore from '@/app/components/svgs/IconUnfoldMore'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { DEFAULT_IMAGE_URL } from '@/constants/project'
@@ -31,12 +29,20 @@ import {
 import toast from 'react-hot-toast'
 import { useMyProject } from './MyProjectProvider'
 
+interface IFunding {
+	id: string
+	source: string
+	date: Date
+	denomination: string
+	amount: string
+	description: string
+}
+
 const MyProjectFundingRaised = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()
 	const { stellarPubKey, stellarKit } = useWallet()
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
-	const [showContractMenu, setShowContractMenu] = useState<boolean[]>([])
-	const [showContactMenu, setShowContactMenu] = useState<boolean[]>([])
+	const [currentFunding, setCurrentFunding] = useState<IFunding[]>([])
 	const {
 		control,
 		register,
@@ -46,17 +52,7 @@ const MyProjectFundingRaised = () => {
 		reset,
 		formState: { errors },
 	} = useForm<CreateProjectStep4Data>({
-		defaultValues: {
-			funding_histories: [
-				{
-					source: '',
-					date: new Date(),
-					denomination: '',
-					amount: '',
-					description: '',
-				},
-			],
-		},
+		defaultValues: {},
 	})
 	const {
 		fields: fieldHistories,
@@ -69,7 +65,27 @@ const MyProjectFundingRaised = () => {
 
 	const setDefaultData = () => {
 		if (projectData) {
-			setValue('funding_histories', [])
+			setValue(
+				'funding_histories',
+				projectData.funding_histories.map((histories) => ({
+					id: '',
+					source: histories.source,
+					date: new Date(Number(histories.funded_ms)),
+					denomination: histories.denomiation,
+					amount: histories.amount.toString(),
+					description: histories.description,
+				})),
+			)
+			setCurrentFunding(
+				projectData.funding_histories.map((histories) => ({
+					id: '',
+					source: histories.source,
+					date: new Date(Number(histories.funded_ms)),
+					denomination: histories.denomiation,
+					amount: histories.amount.toString(),
+					description: histories.description,
+				})),
+			)
 		}
 	}
 
@@ -135,12 +151,9 @@ const MyProjectFundingRaised = () => {
 		<div className="w-full lg:w-[70%] border border-black/10 bg-white rounded-xl text-grantpicks-black-950">
 			<div className="p-3 md:p-5">
 				<p className="text-lg md:text-xl lg:text-2xl font-semibold text-grantpicks-black-950 mb-6">
-					Links
+					Funding Raised
 				</p>
 				<div className="py-4 md:py-6">
-					<p className="text-grantpicks-black-950 mb-2">
-						Smart Contracts <span className="text-grantpicks-red-600">*</span>
-					</p>
 					<div className="flex flex-col space-y-4 mb-6">
 						{fieldHistories.map((history, index) => (
 							<div
@@ -285,8 +298,12 @@ const MyProjectFundingRaised = () => {
 					<Button
 						color="white"
 						isFullWidth
-						onClick={() => {}}
-						className="!py-3 !border !border-grantpicks-black-400"
+						onClick={() => setDefaultData()}
+						className="!py-3 !border !border-grantpicks-black-400 disabled:cursor-not-allowed"
+						isDisabled={
+							JSON.stringify(watch().funding_histories) ===
+							JSON.stringify(currentFunding)
+						}
 					>
 						Discard
 					</Button>
@@ -296,7 +313,11 @@ const MyProjectFundingRaised = () => {
 						color="black-950"
 						isFullWidth
 						onClick={handleSubmit(onSaveChanges)}
-						className="!py-3"
+						className="!py-3 disabled:cursor-not-allowed"
+						isDisabled={
+							JSON.stringify(watch().funding_histories) ===
+							JSON.stringify(currentFunding)
+						}
 					>
 						Save changes
 					</Button>

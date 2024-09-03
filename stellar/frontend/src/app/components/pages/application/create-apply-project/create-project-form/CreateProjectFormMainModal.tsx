@@ -28,6 +28,7 @@ import { Network } from '@/types/on-chain'
 import { parseToStroop } from '@/utils/helper'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import { useModalContext } from '@/app/providers/ModalProvider'
+import IconClose from '@/app/components/svgs/IconClose'
 
 const CreateProjectFormContext = createContext<ICreateProjectFormContext>({
 	data: DEFAULT_CREATE_PROJECT_DATA,
@@ -129,9 +130,16 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 				onProceedApply,
 			}}
 		>
-			<Modal isOpen={isOpen} onClose={onClose}>
+			<Modal isOpen={true} onClose={onClose} closeOnBgClick>
 				<div className="w-11/12 md:w-[560px] mx-auto bg-white rounded-xl border border-black/10 shadow p-2">
-					<div className="py-4 px-4 md:px-6 flex items-center justify-center">
+					<div className="relative py-4 px-4 md:px-6 flex items-center justify-center">
+						<IconClose
+							size={24}
+							className="fill-grantpicks-black-400 absolute right-0 top-0 cursor-pointer transition hover:opacity-80"
+							onClick={() => {
+								onClose()
+							}}
+						/>
 						<p className="text-3xl md:text-4xl lg:text-[40px] font-black text-grantpicks-black-950 uppercase text-center">
 							Create New Project
 						</p>

@@ -9,6 +9,8 @@ import { prettyTruncate } from '@/utils/helper'
 import { UseFieldArrayAppend, UseFieldArrayRemove } from 'react-hook-form'
 import { CreateRoundData } from '@/types/form'
 import { StrKey } from 'round-client'
+import toast from 'react-hot-toast'
+import { toastOptions } from '@/constants/style'
 
 interface AddAdminsModalProps extends BaseModalProps {
 	selectedAdmins: string[]
@@ -30,6 +32,16 @@ const AddAdminsModal = ({
 	const [sameAdminError, setSameAdminError] = useState<boolean>(false)
 
 	const onAddAdmin = async () => {
+		if (!StrKey.isValidEd25519PublicKey(searchAdmin)) {
+			toast.error('Address is not valid', { style: toastOptions.error.style })
+			return
+		}
+		if (selectedAdmins.includes(searchAdmin)) {
+			toast.error('This admin is already added', {
+				style: toastOptions.error.style,
+			})
+			return
+		}
 		append({ admin_id: searchAdmin })
 		setSelectedAdmins((prev) => [...prev, searchAdmin])
 		setSearchAdmin('')

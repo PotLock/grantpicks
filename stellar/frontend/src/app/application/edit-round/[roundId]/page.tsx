@@ -32,7 +32,7 @@ import AddAdminsModal from '@/app/components/pages/create-round/AddAdminsModal'
 import clsx from 'clsx'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import {
-	addAdminRound,
+	setAdminRound,
 	addProjectsRound,
 	editRound,
 	getRoundAdmins,

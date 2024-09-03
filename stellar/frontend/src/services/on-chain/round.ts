@@ -314,7 +314,7 @@ export const editRound: (
 	return round
 }
 
-export const addAdminRound: (
+export const setAdminRound: (
 	round_id: bigint,
 	round_admin: string[],
 	contract: Contracts,
@@ -323,7 +323,7 @@ export const addAdminRound: (
 	round_admin: string[],
 	contract: Contracts,
 ) => {
-	let round = await contract.round_contract.add_admins({
+	let round = await contract.round_contract.set_admins({
 		round_id,
 		round_admin,
 	})

@@ -18,9 +18,3 @@ pub fn is_admin(env: &Env, round_id: u128, admin: &Address) -> bool {
     let admins = read_admins(env, round_id);
     admins.contains(admin)
 }
-
-pub fn remove_all_admins(env: &Env, round_id: u128) {
-    let key = ContractKey::Admin(round_id);
-    let blank_admins: Vec<Address> = Vec::new(env);
-    get_storage(env).set(&key, &blank_admins);
-}

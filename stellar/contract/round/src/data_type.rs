@@ -1,3 +1,4 @@
+// use soroban_fixed_point_math::SorobanFixedPoint;
 use soroban_sdk::{panic_with_error, Env};
 
 use crate::{
@@ -194,6 +195,7 @@ pub struct PayoutsChallenge {
     pub created_at: u64,
     pub reason: String,
     pub admin_notes: String,
+    pub resolved_by: String,
     pub resolved: bool,
 }
 
@@ -235,9 +237,16 @@ impl RoundDetail {
         }
     }
 
-    pub fn calculate_referrer_fee(&self, amount: u128) -> Option<u128> {
+    pub fn calculate_referrer_fee(&self, env: &Env, amount: u128) -> Option<u128> {
         if let Some(referrer_fee_basis_points) = self.referrer_fee_basis_points {
-            let total_basis_points = 10_000u128;
+            // COMMENTED CODE FIXED POINT MATH DUE BIGGER SIZE
+            // let total_basis_points:u128 = 10_000;
+            // let denominator:u128 = 1_0000000;
+            // let fee: u128 = referrer_fee_basis_points as u128;
+            // let fee_amount = fee.fixed_div_floor(env, &total_basis_points, &denominator).fixed_mul_floor(env, &amount, &denominator);
+            // // Round up
+            // Some(fee_amount)
+            let total_basis_points:u128 = 10_000;
             let fee_amount = (referrer_fee_basis_points as u128).saturating_mul(amount);
             // Round up
             Some(fee_amount.div_ceil(total_basis_points))

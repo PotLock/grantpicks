@@ -1,5 +1,5 @@
 use crate::{
-    admin::{self, read_contract_owner},
+    admin::read_contract_owner,
     data_type::{CreateProjectParams, Project, UpdateProjectParams},
     error::Error,
     project_writer::is_applied,
@@ -53,12 +53,6 @@ pub fn validate_owner_or_admin(env: &Env, admin: &Address, project: &Project) {
         if is_admin.is_none() {
             panic_with_error!(env, Error::AdminOrOwnerOnly);
         }
-    }
-}
-
-pub fn validate_owner(env: &Env, caller: &Address, project: &Project) {
-    if &project.owner != caller {
-        panic_with_error!(env, Error::OwnerOnly);
     }
 }
 

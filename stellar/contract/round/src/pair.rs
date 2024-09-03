@@ -1,13 +1,7 @@
 use crate::{
-    approval_writer::read_approved_projects,
-    data_type::{Pair, RoundDetail},
-    page_writer::read_default_page_size,
-    round_writer::read_round_info,
-    storage::has_store_key,
-    storage_key::ContractKey,
-    utils::{count_total_available_pairs, get_arithmetic_index},
+    approval_writer::read_approved_projects, data_type::{Pair, RoundDetail}, error::Error, page_writer::read_default_page_size, round_writer::read_round_info, storage::has_store_key, storage_key::ContractKey, utils::{count_total_available_pairs, get_arithmetic_index}
 };
-use soroban_sdk::{Env, Vec};
+use soroban_sdk::{panic_with_error, Env, Vec};
 
 pub fn get_pair_by_index(
     env: &Env,
@@ -42,10 +36,9 @@ pub fn get_random_pairs(env: &Env, round_id: u128, num_pairs: u32) -> Vec<Pair> 
     let projects = read_approved_projects(env, round_id);
     let total_available_pairs = count_total_available_pairs(projects.len());
 
-    assert!(
-        num_pairs <= total_available_pairs,
-        "Number of pairs requested is greater than total available pairs"
-    );
+    if num_pairs > total_available_pairs {
+        panic_with_error!(env, Error::DataNotFound);
+    }
 
     let mut pairs: Vec<Pair> = Vec::new(env);
 

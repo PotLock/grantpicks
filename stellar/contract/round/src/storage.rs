@@ -1,6 +1,6 @@
 use soroban_sdk::Env;
 
-use crate::storage_key::ContractKey;
+use crate::{deposit_writer::read_deposit_from_round, payout_writer::read_payouts, storage_key::ContractKey};
 
 pub const DAY_IN_LEDGERS: u32 = 17280;
 pub const PERSISTENT_BUMP_CONSTANT: u32 = DAY_IN_LEDGERS * 180;
@@ -18,8 +18,6 @@ pub fn extend_instance(env: &Env) {
     extend_persistent(env, &ContractKey::ProjectContract);
     extend_persistent(env, &ContractKey::ProjectPayoutIds);
     extend_persistent(env, &ContractKey::VotedRoundIds);
-    extend_persistent(env, &ContractKey::PayoutInfo);
-    extend_persistent(env, &ContractKey::DepositInfo);
 }
 
 pub fn extend_round(env: &Env, round_id: u128) {
@@ -35,6 +33,26 @@ pub fn extend_round(env: &Env, round_id: u128) {
     extend_persistent(env, &ContractKey::WhiteList(round_id));
     extend_persistent(env, &ContractKey::BlackList(round_id));
     extend_persistent(env, &ContractKey::Deposit(round_id));
+
+    let payouts = read_payouts(env, round_id);
+
+    for payout_id in payouts {
+        extend_payout(env, payout_id as u32);
+    }
+
+    let deposits = read_deposit_from_round(env, round_id);
+
+    for deposit_id in deposits {
+        extend_deposit(env, deposit_id as u32);
+    }
+}
+
+pub fn extend_payout(env: &Env, payout_id: u32) {
+    extend_persistent(env, &ContractKey::PayoutInfo(payout_id as u128));
+}
+
+pub fn extend_deposit(env: &Env, deposit_id: u32) {
+    extend_persistent(env, &ContractKey::DepositInfo(deposit_id as u128));
 }
 
 pub fn extend_persistent(env: &Env, key: &ContractKey) {

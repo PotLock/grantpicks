@@ -1,9 +1,9 @@
 use soroban_sdk::{
-    self, contract, contractimpl, panic_with_error, token::TokenClient, Address, BytesN, Env, FromVal, Map, String, Vec
+    self, contract, contractimpl, panic_with_error, token::TokenClient, Address, BytesN, Env, Map, String, Vec
 };
 
 use crate::{
-    admin_writer::{read_admins, remove_all_admins, write_admins},
+    admin_writer::{read_admins, write_admins},
     application_writer::{
         find_applications, get_application_by_applicant, read_application, update_application,
         write_application,
@@ -22,9 +22,7 @@ use crate::{
     },
     error::{ApplicationError, Error, RoundError, VoteError},
     events::{
-        log_create_app, log_create_deposit, log_create_payout, log_create_round, log_create_vote,
-        log_delete_app, log_update_app, log_update_approved_projects, log_update_round,
-        log_update_user_flag, log_update_whitelist,
+        log_create_app, log_create_deposit, log_create_payout, log_create_round, log_create_vote, log_delete_app, log_update_admin, log_update_app, log_update_approved_projects, log_update_round, log_update_user_flag, log_update_whitelist
     },
     external::ProjectRegistryClient,
     factory::RoundCreator,
@@ -35,11 +33,7 @@ use crate::{
     page_writer::{read_default_page_size, write_default_page_size},
     pair::{get_all_pairs, get_all_rounds, get_pair_by_index, get_random_pairs},
     payout_writer::{
-        add_payout_id_to_project_payout_ids, clear_payouts, clear_project_payout_ids, has_paid,
-        increment_payout_id, read_all_payouts, read_payout_challenge, read_payout_challenges,
-        read_payout_info, read_payouts, read_project_payout_ids_for_project,
-        remove_payout_challenge, remove_payout_info, write_payout_challenge,
-        write_payout_challenges, write_payout_info, write_payouts,
+        add_payout_id_to_project_payout_ids, clear_payouts, clear_project_payout_ids, has_paid, increment_payout_id, read_payout_challenge, read_payout_challenges, read_payout_info, read_payouts, read_project_payout_ids_for_project, remove_payout_challenge, remove_payout_info, write_payout_challenge, write_payout_challenges, write_payout_info, write_payouts
     },
     project_registry_writer::{read_project_contract, write_project_contract},
     round_writer::{increment_round_number, is_initialized, read_round_info, write_round_info},
@@ -279,48 +273,6 @@ impl IsRound for RoundContract {
         log_update_round(env, round.clone());
     }
 
-    fn add_admins(env: &Env, round_id: u128, round_admin: Vec<Address>) {
-        let round = read_round_info(env, round_id);
-
-        round.owner.require_auth();
-
-        let mut admins = read_admins(env, round_id);
-
-        round_admin.iter().for_each(|admin| {
-            if !admins.contains(admin.clone()) && admin != round.owner {
-              admins.push_back(admin.clone());
-            }
-        });
-
-        write_admins(env, round_id, &admins);
-        extend_instance(env);
-        extend_round(env, round_id);
-
-        log_update_round(env, round.clone());
-    }
-
-    fn remove_admins(env: &Env, round_id: u128, round_admin: Vec<Address>) {
-        let round = read_round_info(env, round_id);
-
-        round.owner.require_auth();
-
-        let mut admins = read_admins(env, round_id);
-
-        round_admin.iter().for_each(|admin| {
-            if !admins.contains(admin.clone()) {
-                panic_with_error!(env, RoundError::AdminNotFound);
-            }
-
-            let index = admins.first_index_of(admin).unwrap();
-            admins.remove(index);
-        });
-
-        write_admins(env, round_id, &admins);
-        extend_instance(env);
-        extend_round(env, round_id);
-        log_update_round(env, round.clone());
-    }
-
     fn set_admins(env: &Env, round_id: u128, round_admin: Vec<Address>) {
         let round = read_round_info(env, round_id);
 
@@ -335,7 +287,7 @@ impl IsRound for RoundContract {
         write_admins(env, round_id, &round_admin);
         extend_instance(env);
         extend_round(env, round_id);
-        log_update_round(env, round.clone());
+        log_update_admin(env, round_id, round_admin);
     }
 
     fn apply_to_round(
@@ -413,7 +365,7 @@ impl IsRound for RoundContract {
         write_application(env, round_id, &applications);
         extend_instance(env);
         extend_round(env, round_id);
-        log_create_app(env, application.clone());
+        log_create_app(env, round_id, application.clone());
 
         application.clone()
     }
@@ -471,7 +423,7 @@ impl IsRound for RoundContract {
         write_approved_projects(env, round_id, &approved_projects);
         extend_instance(env);
         extend_round(env, round_id);
-        log_create_app(env, updated_application.clone());
+        log_update_app(env, round_id, updated_application.clone());
 
         updated_application.clone()
     }
@@ -508,7 +460,7 @@ impl IsRound for RoundContract {
         }
 
         let protocol_fee = calculate_protocol_fee(env, amount).unwrap_or(0);
-        let referrer_fee = round.calculate_referrer_fee(amount).unwrap_or(0);
+        let referrer_fee = round.calculate_referrer_fee(env, amount).unwrap_or(0);
 
         let deposit_id = increment_deposit_id(env);
 
@@ -1041,7 +993,7 @@ impl IsRound for RoundContract {
         write_application(env, round_id, &applications);
         extend_round(env, round_id);
         extend_instance(env);
-        log_update_app(env, application_internal.clone());
+        log_update_app(env, round_id, application_internal.clone());
 
         application_internal.clone()
     }
@@ -1430,19 +1382,18 @@ impl IsRound for RoundContract {
         let default_page_size = read_default_page_size(env);
         let limit_internal: u64 = limit.unwrap_or(default_page_size);
         let from_index_internal: u64 = from_index.unwrap_or(0);
-        let payouts = read_all_payouts(env);
 
         let mut payouts_external: Vec<Payout> = Vec::new(env);
 
-        payouts
-            .keys()
-            .iter()
-            .skip(from_index_internal as usize)
-            .take(limit_internal as usize)
-            .for_each(|payout_id| {
-                let internal = payouts.get(payout_id).unwrap();
-                payouts_external.push_back(internal.clone());
-            });
+        for i in from_index_internal..limit_internal {
+            let payout = read_payout_info(env, i as u32);
+
+            if payout.is_none() {
+                break;
+            }
+          
+            payouts_external.push_back(payout.unwrap().clone());
+        }
 
         payouts_external
     }

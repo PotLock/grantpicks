@@ -763,11 +763,12 @@ fn test_add_remove_admin() {
     let env = Env::default();
     env.mock_all_auths();
     let admin = Address::generate(&env);
+    let roby = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
     let mut admins: Vec<Address> = Vec::new(&env);
-    admins.push_back(admin.clone());
+    admins.push_back(roby.clone());
 
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
@@ -807,19 +808,20 @@ fn test_add_remove_admin() {
 
     let created_round = round.create_round(&admin, &round_detail);
     let new_admin = Address::generate(&env);
-    let mut new_admins: Vec<Address> = Vec::new(&env);
-    new_admins.push_back(new_admin.clone());
-    round.add_admins(&created_round.id, &new_admins);
 
-    let mut admins = round.admins(&created_round.id);
-    assert_eq!(admins.len(), 2);
+    admins.push_back(new_admin.clone());
+    round.set_admins(&created_round.id, &admins);
 
-    round.remove_admins(&created_round.id, &new_admins);
+    let mut new_admins: Vec<Address> = round.admins(&created_round.id);
+    assert_eq!(new_admins.len(), 2);
 
-    admins = round.admins(&created_round.id);
+    admins.pop_back();
+    round.set_admins(&created_round.id, &admins);
+
+    new_admins = round.admins(&created_round.id);
 
     round.get_round(&created_round.id);
-    assert_eq!(admins.len(), 1);
+    assert_eq!(new_admins.len(), 1);
 }
 
 /*

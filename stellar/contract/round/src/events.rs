@@ -17,6 +17,7 @@ topic shorter :
 6. approved_projects = ap
 7. whitelist = wl
 8. blacklist = bl
+9. admin = adm
 */
 
 pub fn log_create_round(env: &Env, round_detail: RoundDetail) {
@@ -33,17 +34,24 @@ pub fn log_update_round(env: &Env, round_detail: RoundDetail) {
     );
 }
 
-pub fn log_create_app(env: &Env, application: RoundApplication) {
+pub fn log_update_admin(env: &Env, round_id: u128, admins: Vec<Address>) {
+  env.events().publish(
+      (symbol_short!("u_adm"), env.current_contract_address()),
+      (round_id, admins),
+  );
+}
+
+pub fn log_create_app(env: &Env, round_id: u128, application: RoundApplication) {
     env.events().publish(
         (symbol_short!("c_app"), env.current_contract_address()),
-        application,
+        (round_id, application),
     );
 }
 
-pub fn log_update_app(env: &Env, application: RoundApplication) {
+pub fn log_update_app(env: &Env, round_id: u128, application: RoundApplication) {
     env.events().publish(
         (symbol_short!("u_app"), env.current_contract_address()),
-        application,
+        (round_id, application),
     );
 }
 

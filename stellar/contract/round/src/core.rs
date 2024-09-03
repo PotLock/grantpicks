@@ -13,8 +13,6 @@ pub trait IsRound {
     fn set_voting_period(env: &Env, round_id: u128, caller: Address, start_ms: u64, end_ms: u64);
     fn set_number_of_votes(env: &Env, round_id: u128, caller: Address, num_picks_per_voter: u32);
     fn set_expected_amount(env: &Env, round_id: u128, caller: Address, amount: u128);
-    fn add_admins(env: &Env, round_id: u128, round_admin: Vec<Address>);
-    fn remove_admins(env: &Env, round_id: u128, round_admin: Vec<Address>);
     fn set_admins(env: &Env, round_id: u128, round_admin: Vec<Address>);
     fn transfer_round_ownership(env: &Env, round_id: u128, new_owner: Address);
     fn apply_to_round(env: &Env, round_id: u128, caller: Address, applicant: Option<Address>, note: Option<String>, review_note: Option<String>) -> RoundApplication;

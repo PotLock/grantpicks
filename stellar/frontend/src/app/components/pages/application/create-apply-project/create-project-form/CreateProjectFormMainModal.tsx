@@ -130,7 +130,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 				onProceedApply,
 			}}
 		>
-			<Modal isOpen={true} onClose={onClose} closeOnBgClick>
+			<Modal isOpen={isOpen} onClose={onClose} closeOnBgClick>
 				<div className="w-11/12 md:w-[560px] mx-auto bg-white rounded-xl border border-black/10 shadow p-2">
 					<div className="relative py-4 px-4 md:px-6 flex items-center justify-center">
 						<IconClose

@@ -965,7 +965,7 @@ impl IsRound for RoundContract {
         write_application(env, round_id, &applications);
         extend_round(env, round_id);
         extend_instance(env);
-        log_delete_app(env, application_internal.clone());
+        log_delete_app(env, round_id, application_internal.clone());
 
         application_internal.clone()
     }

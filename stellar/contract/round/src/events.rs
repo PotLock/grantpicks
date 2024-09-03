@@ -55,10 +55,10 @@ pub fn log_update_app(env: &Env, round_id: u128, application: RoundApplication) 
     );
 }
 
-pub fn log_delete_app(env: &Env, application: RoundApplication) {
+pub fn log_delete_app(env: &Env, round_id: u128, application: RoundApplication) {
     env.events().publish(
         (symbol_short!("d_app"), env.current_contract_address()),
-        application,
+        (round_id, application),
     );
 }
 

@@ -38,16 +38,13 @@ pub fn clear_payouts(env: &Env, round_id: u128) {
 }
 
 pub fn read_payout_id(env: &Env) -> u32 {
-    env.storage()
-        .persistent()
+    get_storage(env)
         .get(&ContractKey::NextPayoutId)
         .unwrap_or_default()
 }
 
 pub fn write_payout_id(env: &Env, payout_id: u32) {
-    env.storage()
-        .persistent()
-        .set(&ContractKey::NextPayoutId, &payout_id);
+    get_storage(env).set(&ContractKey::NextPayoutId, &payout_id);
 }
 
 pub fn increment_payout_id(env: &Env) -> u32 {

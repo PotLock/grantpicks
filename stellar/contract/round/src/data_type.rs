@@ -194,6 +194,7 @@ pub struct PayoutsChallenge {
     pub created_at: u64,
     pub reason: String,
     pub admin_notes: String,
+    pub resolved_by: String,
     pub resolved: bool,
 }
 

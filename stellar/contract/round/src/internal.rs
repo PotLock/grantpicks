@@ -1,6 +1,5 @@
 use soroban_sdk::{
-    self, contract, contractimpl, panic_with_error, token::TokenClient, Address, BytesN, Env, Map,
-    String, Vec,
+    self, contract, contractimpl, panic_with_error, token::TokenClient, Address, BytesN, Env, FromVal, Map, String, Vec
 };
 
 use crate::{
@@ -235,7 +234,7 @@ impl RoundCreator for RoundContract {
 
 #[contractimpl]
 impl IsRound for RoundContract {
-    fn change_voting_period(
+    fn set_voting_period(
         env: &Env,
         round_id: u128,
         caller: Address,
@@ -261,33 +260,7 @@ impl IsRound for RoundContract {
         log_update_round(env, round.clone());
     }
 
-    fn change_application_period(
-        env: &Env,
-        round_id: u128,
-        caller: Address,
-        start_ms: u64,
-        end_ms: u64,
-    ) {
-        caller.require_auth();
-
-        if start_ms >= end_ms {
-            panic_with_error!(env, RoundError::ApplicationStartGreaterThanApplicationEnd);
-        }
-
-        let mut round = read_round_info(env, round_id);
-
-        validate_owner_or_admin(env, &caller, &round);
-
-        round.application_start_ms = Some(start_ms);
-        round.application_end_ms = Some(end_ms);
-
-        write_round_info(env, round_id, &round);
-        extend_instance(env);
-        extend_round(env, round_id);
-        log_update_round(env, round.clone());
-    }
-
-    fn change_expected_amount(env: &Env, round_id: u128, caller: Address, amount: u128) {
+    fn set_expected_amount(env: &Env, round_id: u128, caller: Address, amount: u128) {
         caller.require_auth();
 
         let mut round = read_round_info(env, round_id);
@@ -961,7 +934,7 @@ impl IsRound for RoundContract {
         pair
     }
 
-    fn change_number_of_votes(env: &Env, round_id: u128, admin: Address, num_picks_per_voter: u32) {
+    fn set_number_of_votes(env: &Env, round_id: u128, admin: Address, num_picks_per_voter: u32) {
         admin.require_auth();
 
         let mut round = read_round_info(env, round_id);
@@ -1376,6 +1349,7 @@ impl IsRound for RoundContract {
             admin_notes: String::from_str(env, ""),
             reason,
             resolved: false,
+            resolved_by: String::from_str(env, ""),
             created_at: get_ledger_second_as_millis(env),
         };
 
@@ -1419,6 +1393,7 @@ impl IsRound for RoundContract {
         let internal_notes = notes.unwrap_or(String::from_str(env, ""));
         if resolve_challenge.is_some() {
             challenge_internal.resolved = resolve_challenge.unwrap();
+            challenge_internal.resolved_by = caller.to_string();
         }
 
         challenge_internal.admin_notes = internal_notes;

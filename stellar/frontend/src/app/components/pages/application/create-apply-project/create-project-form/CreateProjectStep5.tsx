@@ -4,7 +4,7 @@ import IconCheckCircle from '@/app/components/svgs/IconCheckCircle'
 import IconProject from '@/app/components/svgs/IconProject'
 import IconTrash from '@/app/components/svgs/IconTrash'
 import { CreateProjectStep5Data } from '@/types/form'
-import React, { useCallback, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useCreateProject } from './CreateProjectFormMainModal'
 import { useDropzone } from 'react-dropzone'
@@ -14,7 +14,6 @@ import { toastOptions } from '@/constants/style'
 import { YOUTUBE_URL_REGEX } from '@/constants/regex'
 import IconPlay from '@/app/components/svgs/IconPlay'
 import IconPause from '@/app/components/svgs/IconPause'
-import PreviousConfirmationModal from './PreviousConfirmationModal'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import { getSrc } from '@livepeer/react/external'
 import IconLoading from '@/app/components/svgs/IconLoading'
@@ -23,15 +22,14 @@ import { requestUpload, retrieveAsset, uploadFile } from '@/services/upload'
 import * as tus from 'tus-js-client'
 import { Src } from '@livepeer/react'
 import { fetchYoutubeIframe } from '@/utils/helper'
+import { localStorageConfigs } from '@/configs/local-storage'
 
 const CreateProjectStep5 = () => {
 	const { setStep, onProceedApply, setData } = useCreateProject()
 	const { livepeer } = useGlobalContext()
-	const [showPrevConfirm, setShowPrevConfirm] = useState<boolean>(false)
 	const {
 		handleSubmit,
 		setValue,
-		reset,
 		formState: { errors },
 	} = useForm<CreateProjectStep5Data>()
 	const [accFiles, setAccFiles] = useState<File[]>([])
@@ -145,6 +143,27 @@ const CreateProjectStep5 = () => {
 	const onProceed = async () => {
 		await onProceedApply()
 	}
+
+	useEffect(() => {
+		const draftData = localStorage.getItem(
+			localStorageConfigs.CREATE_PROJECT_STEP_5,
+		)
+		if (draftData) {
+			const draft = JSON.parse(draftData)
+			setLinkInput(draft)
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [])
+
+	useEffect(() => {
+		if (linkInput != '') {
+			localStorage.setItem(
+				localStorageConfigs.CREATE_PROJECT_STEP_5,
+				JSON.stringify(linkInput),
+			)
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [linkInput])
 
 	return (
 		<div
@@ -322,7 +341,7 @@ const CreateProjectStep5 = () => {
 					<Button
 						color="white"
 						isFullWidth
-						onClick={() => setShowPrevConfirm(true)}
+						onClick={() => setStep(4)}
 						className="!py-3 !border !border-grantpicks-black-400"
 					>
 						Previous
@@ -342,20 +361,6 @@ const CreateProjectStep5 = () => {
 					</Button>
 				</div>
 			</div>
-			<PreviousConfirmationModal
-				isOpen={showPrevConfirm}
-				onPrevious={() => {
-					reset({})
-					setShowPrevConfirm(false)
-					setAccFiles([])
-					setAccFileUrls([])
-					setLinkInput('')
-					setIsDirtyInput(false)
-					setVideoPlayed(false)
-					setStep(4)
-				}}
-				onClose={() => setShowPrevConfirm(false)}
-			/>
 		</div>
 	)
 }

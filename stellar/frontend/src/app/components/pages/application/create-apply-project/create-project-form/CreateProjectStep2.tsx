@@ -7,28 +7,31 @@ import React, { useEffect, useState } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
 import { useCreateProject } from './CreateProjectFormMainModal'
 import IconCloseFilled from '@/app/components/svgs/IconCloseFilled'
-import PreviousConfirmationModal from './PreviousConfirmationModal'
 import { prettyTruncate } from '@/utils/helper'
 import { StrKey } from 'round-client'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
+import { localStorageConfigs } from '@/configs/local-storage'
 
 const CreateProjectStep2 = () => {
 	const [members, setMembers] = useState<string[]>([])
-	const [showPrevConfirm, setShowPrevConfirm] = useState<boolean>(false)
-	const { setStep, data, setData, step } = useCreateProject()
+	const { setStep, data, setData } = useCreateProject()
+	const [requiredError, setRequiredError] = useState<boolean>(false)
+	const [validationError, setValidationError] = useState<boolean>(false)
 	const [sameMemberError, setSameMemberError] = useState<boolean>(false)
 	const {
 		register,
 		watch,
 		handleSubmit,
 		setValue,
-		reset,
 		formState: { errors },
 	} = useForm<CreateProjectStep2Data>()
 
 	const onNextStep2: SubmitHandler<CreateProjectStep2Data> = (submitData) => {
-		if (members.length === 0) return
+		if (members.length === 0) {
+			setRequiredError(true)
+			return
+		}
 		setData({
 			...data,
 			team_member: members,
@@ -36,16 +39,68 @@ const CreateProjectStep2 = () => {
 		setStep(3)
 	}
 
-	useEffect(() => {
-		if (step === 2) {
-			setMembers(data.team_member)
+	const onAddMember = async () => {
+		if (!StrKey.isValidEd25519PublicKey(watch('member'))) {
+			toast.error('Address is not valid', { style: toastOptions.error.style })
+			return
 		}
-	}, [step])
+		if (members.includes(watch('member'))) {
+			toast.error('This admin is already added', {
+				style: toastOptions.error.style,
+			})
+			return
+		}
+		const member = watch('member')
+		setMembers((prev) => [...prev, member])
+		setValue('member', '')
+	}
 
 	useEffect(() => {
-		setSameMemberError(false)
+		if (watch('member') !== '') {
+			if (!StrKey.isValidEd25519PublicKey(watch('member'))) {
+				setValidationError(true)
+			} else {
+				setValidationError(false)
+			}
+			if (members.includes(watch('member'))) {
+				setSameMemberError(true)
+			} else {
+				setSameMemberError(false)
+			}
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [watch('member'), members])
+
+	useEffect(() => {
+		setRequiredError(false)
+		if (watch('member') === '') {
+			setValidationError(false)
+			setSameMemberError(false)
+		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [watch('member')])
+
+	useEffect(() => {
+		const draftData = localStorage.getItem(
+			localStorageConfigs.CREATE_PROJECT_STEP_2,
+		)
+		if (draftData) {
+			const draft = JSON.parse(draftData)
+			setMembers(draft)
+			console.log('>_ draft', draft)
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [])
+
+	useEffect(() => {
+		if (members.length != 0) {
+			localStorage.setItem(
+				localStorageConfigs.CREATE_PROJECT_STEP_2,
+				JSON.stringify(members),
+			)
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [members])
 
 	return (
 		<div className="bg-grantpicks-black-50 w-full relative">
@@ -76,31 +131,17 @@ const CreateProjectStep2 = () => {
 							{...register('member')}
 							onKeyDown={(e) => {
 								if (e.key == 'Enter') {
-									if (!StrKey.isValidEd25519PublicKey(watch('member'))) {
-										toast.error('Address is not valid', {
-											style: toastOptions.error.style,
-										})
-										return
-									}
-									if (members.includes(watch('member'))) {
-										setSameMemberError(true)
-									} else {
-										const member = watch('member')
-										setMembers((prev) => [...prev, member])
-										setValue('member', '')
-									}
+									onAddMember()
 								}
 							}}
 							suffixIcon={
 								<button
-									disabled={watch('member') === ''}
+									disabled={
+										(requiredError || validationError || sameMemberError) &&
+										watch('member') === ''
+									}
 									onClick={() => {
-										if (members.includes(watch('member'))) {
-											setSameMemberError(true)
-										} else {
-											setMembers((prev) => [...prev, watch('member')])
-											setValue('member', '')
-										}
+										onAddMember()
 									}}
 									className="text-sm font-semibold text-grantpicks-black-950 cursor-pointer hover:opacity-70 transition disabled:cursor-not-allowed"
 								>
@@ -108,9 +149,13 @@ const CreateProjectStep2 = () => {
 								</button>
 							}
 							errorMessage={
-								members.length === 0 ? (
+								requiredError ? (
 									<p className="text-red-500 text-xs mt-1 ml-2">
 										Team member is required
+									</p>
+								) : validationError ? (
+									<p className="text-red-500 text-xs mt-1 ml-2">
+										Address invalid
 									</p>
 								) : sameMemberError ? (
 									<p className="text-red-500 text-xs mt-1 ml-2">
@@ -148,7 +193,7 @@ const CreateProjectStep2 = () => {
 					<Button
 						color="white"
 						isFullWidth
-						onClick={() => setShowPrevConfirm(true)}
+						onClick={() => setStep(1)}
 						className="!py-3 !border !border-grantpicks-black-400"
 					>
 						Previous
@@ -165,16 +210,6 @@ const CreateProjectStep2 = () => {
 					</Button>
 				</div>
 			</div>
-			<PreviousConfirmationModal
-				isOpen={showPrevConfirm}
-				onPrevious={() => {
-					reset({})
-					setMembers([])
-					setShowPrevConfirm(false)
-					setStep(1)
-				}}
-				onClose={() => setShowPrevConfirm(false)}
-			/>
 		</div>
 	)
 }

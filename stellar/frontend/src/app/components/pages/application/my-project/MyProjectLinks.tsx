@@ -25,9 +25,13 @@ import { useMyProject } from './MyProjectProvider'
 import { StrKey } from 'round-client'
 import {
 	BITCOIN_ADDRESS_REGEX,
+	EMAIL_VALIDATION_REGEX,
 	ETHEREUM_ADDRESS_REGEX,
 	GITHUB_URL_REGEX,
+	INSTAGRAM_USERNAME_REGEX,
 	NEAR_ADDRESS_REGEX,
+	TELEGRAM_USERNAME_REGEX,
+	TWITTER_USERNAME_REGEX,
 } from '@/constants/regex'
 
 interface IContract {
@@ -512,8 +516,28 @@ const MyProjectLinks = () => {
 									</div>
 									<div className="w-[60%]">
 										<InputText
+											disabled={watch().contacts[index].platform === ''}
 											placeholder="t.me/Jameson"
-											{...register(`contacts.${index}.link_url`, {})}
+											{...register(`contacts.${index}.link_url`, {
+												pattern: {
+													value:
+														watch().contacts[index].platform === 'telegram'
+															? TELEGRAM_USERNAME_REGEX
+															: watch().contacts[index].platform === 'instagram'
+																? INSTAGRAM_USERNAME_REGEX
+																: watch().contacts[index].platform === 'twitter'
+																	? TWITTER_USERNAME_REGEX
+																	: EMAIL_VALIDATION_REGEX,
+													message:
+														watch().contacts[index].platform === 'telegram'
+															? 'Telegram address is not valid'
+															: watch().contacts[index].platform === 'instagram'
+																? 'Instagram address is not valid'
+																: watch().contacts[index].platform === 'twitter'
+																	? 'Twitter address is not valid'
+																	: 'Email address is not valid',
+												},
+											})}
 										/>
 									</div>
 									<div className="flex-1 w-[15%]">
@@ -529,6 +553,11 @@ const MyProjectLinks = () => {
 										/>
 									</div>
 								</div>
+								{errors?.contacts?.[index]?.link_url && (
+									<p className="text-red-500 text-xs mt-1 ml-2">
+										{errors?.contacts?.[index]?.link_url.message}
+									</p>
+								)}
 							</div>
 						)
 					})}

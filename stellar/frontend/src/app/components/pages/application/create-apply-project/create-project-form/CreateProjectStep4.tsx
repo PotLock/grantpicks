@@ -5,7 +5,7 @@ import IconCheckCircle from '@/app/components/svgs/IconCheckCircle'
 import IconProject from '@/app/components/svgs/IconProject'
 import IconTrash from '@/app/components/svgs/IconTrash'
 import { CreateProjectStep4Data } from '@/types/form'
-import React from 'react'
+import React, { useEffect } from 'react'
 import {
 	Controller,
 	SubmitHandler,
@@ -19,6 +19,7 @@ import DatePicker from 'react-datepicker'
 import IconCalendar from '@/app/components/svgs/IconCalendar'
 import IconInfoCircle from '@/app/components/svgs/IconInfoCircle'
 import { Tooltip } from 'react-tooltip'
+import { localStorageConfigs } from '@/configs/local-storage'
 
 const CreateProjectStep4 = () => {
 	const { setStep, data, setData } = useCreateProject()
@@ -29,28 +30,7 @@ const CreateProjectStep4 = () => {
 		handleSubmit,
 		setValue,
 		formState: { errors },
-	} = useForm<CreateProjectStep4Data>({
-		defaultValues: {
-			funding_histories:
-				data.funding_histories.length > 0
-					? data.funding_histories.map((history) => ({
-							source: history.source || '',
-							date: history.date || new Date(),
-							denomination: history.denomination || '',
-							amount: history.amount || '',
-							description: history.description || '',
-						}))
-					: [
-							{
-								source: '',
-								date: new Date(),
-								denomination: '',
-								amount: '',
-								description: '',
-							},
-						],
-		},
-	})
+	} = useForm<CreateProjectStep4Data>({})
 	const {
 		fields: fieldHistories,
 		append: appendHistory,
@@ -67,6 +47,27 @@ const CreateProjectStep4 = () => {
 		})
 		setStep(5)
 	}
+
+	useEffect(() => {
+		const draftData = localStorage.getItem(
+			localStorageConfigs.CREATE_PROJECT_STEP_4,
+		)
+		if (draftData) {
+			const draft = JSON.parse(draftData)
+			setValue('funding_histories', draft.funding_histories)
+			setValue('is_havent_raised', draft.is_havent_raised)
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [])
+
+	useEffect(() => {
+		const storeData = { ...watch() }
+		localStorage.setItem(
+			localStorageConfigs.CREATE_PROJECT_STEP_4,
+			JSON.stringify(storeData),
+		)
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [watch()])
 
 	return (
 		<div className="bg-grantpicks-black-50 rounded-b-xl w-full relative overflow-y-auto h-[70vh]">

@@ -3,26 +3,23 @@ import InputText from '@/app/components/commons/InputText'
 import InputTextArea from '@/app/components/commons/InputTextArea'
 import IconProject from '@/app/components/svgs/IconProject'
 import { CreateProjectStep1Data } from '@/types/form'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
 import { useCreateProject } from './CreateProjectFormMainModal'
 import { DEFAULT_CREATE_PROJECT_DATA } from '@/constants/project'
 import PreviousConfirmationModal from './PreviousConfirmationModal'
+import { localStorageConfigs } from '@/configs/local-storage'
 
 const CreateProjectStep1 = () => {
 	const { setStep, setData, data, onClose } = useCreateProject()
+
 	const {
 		register,
 		handleSubmit,
+		watch,
+		setValue,
 		formState: { errors },
-	} = useForm<CreateProjectStep1Data>({
-		defaultValues: {
-			title: data?.title || '',
-			project_id: data?.project_id || '',
-			description: data?.description || '',
-			considering_desc: data?.considering_desc || '',
-		},
-	})
+	} = useForm<CreateProjectStep1Data>({})
 
 	const onNextStep1: SubmitHandler<CreateProjectStep1Data> = (submitData) => {
 		setData({
@@ -34,6 +31,28 @@ const CreateProjectStep1 = () => {
 		})
 		setStep(2)
 	}
+
+	useEffect(() => {
+		const draftData = localStorage.getItem(
+			localStorageConfigs.CREATE_PROJECT_STEP_1,
+		)
+		if (draftData) {
+			const draft = JSON.parse(draftData)
+			setValue('title', draft.title)
+			setValue('description', draft.description)
+			setValue('considering_desc', draft.considering_desc)
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [])
+
+	useEffect(() => {
+		const storeData = { ...watch() }
+		localStorage.setItem(
+			localStorageConfigs.CREATE_PROJECT_STEP_1,
+			JSON.stringify(storeData),
+		)
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [watch()])
 
 	return (
 		<div className="bg-grantpicks-black-50 w-full relative">

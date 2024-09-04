@@ -4,7 +4,7 @@ import IconCheckCircle from '@/app/components/svgs/IconCheckCircle'
 import IconProject from '@/app/components/svgs/IconProject'
 import IconTrash from '@/app/components/svgs/IconTrash'
 import { CreateProjectStep5Data } from '@/types/form'
-import React, { useCallback, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useCreateProject } from './CreateProjectFormMainModal'
 import { useDropzone } from 'react-dropzone'
@@ -22,6 +22,7 @@ import { requestUpload, retrieveAsset, uploadFile } from '@/services/upload'
 import * as tus from 'tus-js-client'
 import { Src } from '@livepeer/react'
 import { fetchYoutubeIframe } from '@/utils/helper'
+import { localStorageConfigs } from '@/configs/local-storage'
 
 const CreateProjectStep5 = () => {
 	const { setStep, onProceedApply, setData } = useCreateProject()
@@ -142,6 +143,26 @@ const CreateProjectStep5 = () => {
 	const onProceed = async () => {
 		await onProceedApply()
 	}
+
+	useEffect(() => {
+		const draftData = localStorage.getItem(
+			localStorageConfigs.CREATE_PROJECT_STEP_5,
+		)
+		if (draftData) {
+			const draft = JSON.parse(draftData)
+			setLinkInput(draft)
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [])
+
+	useEffect(() => {
+		// const storeData = { ...watch() }
+		localStorage.setItem(
+			localStorageConfigs.CREATE_PROJECT_STEP_5,
+			JSON.stringify(linkInput),
+		)
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [])
 
 	return (
 		<div

@@ -23,6 +23,7 @@ import {
 	TELEGRAM_USERNAME_REGEX,
 	TWITTER_USERNAME_REGEX,
 } from '@/constants/regex'
+import { localStorageConfigs } from '@/configs/local-storage'
 
 const CreateProjectStep3 = () => {
 	const [showContractMenu, setShowContractMenu] = useState<boolean[]>([])
@@ -38,48 +39,6 @@ const CreateProjectStep3 = () => {
 		formState: { errors },
 	} = useForm<CreateProjectStep3Data>({
 		mode: 'onChange',
-		defaultValues: {
-			smart_contracts:
-				data.smart_contracts.length > 0
-					? data.smart_contracts.map((contract) => ({
-							id: '',
-							chain: contract.chain || '',
-							address: contract.address || '',
-						}))
-					: [
-							{
-								id: '',
-								chain: '',
-								address: '',
-							},
-						],
-			contacts:
-				data.contacts.length > 0
-					? data.contacts.map((contact) => ({
-							id: '',
-							platform: contact.platform || '',
-							link_url: contact.link_url || '',
-						}))
-					: [
-							{
-								id: '',
-								platform: '',
-								link_url: '',
-							},
-						],
-			github_urls:
-				data.github_urls.length > 0
-					? data.github_urls.map((url) => ({
-							id: '',
-							github_url: url || '',
-						}))
-					: [
-							{
-								id: '',
-								github_url: '',
-							},
-						],
-		},
 	})
 	const {
 		fields: fieldContracts,
@@ -120,6 +79,29 @@ const CreateProjectStep3 = () => {
 	useEffect(() => {
 		setShowContractMenu((prev) => [...prev, false])
 	}, [])
+
+	useEffect(() => {
+		const draftData = localStorage.getItem(
+			localStorageConfigs.CREATE_PROJECT_STEP_3,
+		)
+		if (draftData) {
+			const draft = JSON.parse(draftData)
+			setValue('smart_contracts', draft.smart_contracts)
+			setValue('is_open_source', draft.is_open_source)
+			setValue('github_urls', draft.github_urls)
+			setValue('contacts', draft.contacts)
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [])
+
+	useEffect(() => {
+		const storeData = { ...watch() }
+		localStorage.setItem(
+			localStorageConfigs.CREATE_PROJECT_STEP_3,
+			JSON.stringify(storeData),
+		)
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [watch()])
 
 	return (
 		<div className="bg-grantpicks-black-50 rounded-b-xl w-full relative overflow-y-auto h-[70vh]">
@@ -236,6 +218,7 @@ const CreateProjectStep3 = () => {
 									</div>
 									<div className="w-[60%]">
 										<InputText
+											disabled={watch().smart_contracts[index].chain === ''}
 											{...register(`smart_contracts.${index}.address`, {
 												validate: (value) =>
 													watch().smart_contracts[index].chain === 'bitcoin'

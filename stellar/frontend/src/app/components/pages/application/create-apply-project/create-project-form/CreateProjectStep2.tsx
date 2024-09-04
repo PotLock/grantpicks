@@ -11,10 +11,11 @@ import { prettyTruncate } from '@/utils/helper'
 import { StrKey } from 'round-client'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
+import { localStorageConfigs } from '@/configs/local-storage'
 
 const CreateProjectStep2 = () => {
 	const [members, setMembers] = useState<string[]>([])
-	const { setStep, data, setData, step } = useCreateProject()
+	const { setStep, data, setData } = useCreateProject()
 	const [requiredError, setRequiredError] = useState<boolean>(false)
 	const [validationError, setValidationError] = useState<boolean>(false)
 	const [sameMemberError, setSameMemberError] = useState<boolean>(false)
@@ -37,12 +38,6 @@ const CreateProjectStep2 = () => {
 		})
 		setStep(3)
 	}
-
-	useEffect(() => {
-		if (step === 2) {
-			setMembers(data.team_member)
-		}
-	}, [step])
 
 	const onAddMember = async () => {
 		if (!StrKey.isValidEd25519PublicKey(watch('member'))) {
@@ -85,6 +80,26 @@ const CreateProjectStep2 = () => {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [watch('member')])
 
+	useEffect(() => {
+		const draftData = localStorage.getItem(
+			localStorageConfigs.CREATE_PROJECT_STEP_2,
+		)
+		if (draftData) {
+			const draft = JSON.parse(draftData)
+			setMembers(draft)
+			console.log('>_ draft', draft)
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [])
+
+	useEffect(() => {
+		localStorage.setItem(
+			localStorageConfigs.CREATE_PROJECT_STEP_2,
+			JSON.stringify(members),
+		)
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [members])
+
 	return (
 		<div className="bg-grantpicks-black-50 w-full relative">
 			<div className="pt-10 px-4 md:px-6 border-b border-black/10">
@@ -120,9 +135,7 @@ const CreateProjectStep2 = () => {
 							suffixIcon={
 								<button
 									disabled={
-										requiredError ||
-										validationError ||
-										sameMemberError ||
+										(requiredError || validationError || sameMemberError) &&
 										watch('member') === ''
 									}
 									onClick={() => {

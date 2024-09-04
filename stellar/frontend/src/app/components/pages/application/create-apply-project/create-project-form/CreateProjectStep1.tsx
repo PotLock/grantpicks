@@ -10,13 +10,10 @@ import { DEFAULT_CREATE_PROJECT_DATA } from '@/constants/project'
 import PreviousConfirmationModal from './PreviousConfirmationModal'
 
 const CreateProjectStep1 = () => {
-	const { setStep, setData, data, step, onClose } = useCreateProject()
-	const [showPrevConfirm, setShowPrevConfirm] = useState<boolean>(false)
+	const { setStep, setData, data, onClose } = useCreateProject()
 	const {
-		control,
 		register,
 		handleSubmit,
-		reset,
 		formState: { errors },
 	} = useForm<CreateProjectStep1Data>({
 		defaultValues: {
@@ -105,21 +102,12 @@ const CreateProjectStep1 = () => {
 				<Button
 					color="alpha-50"
 					isFullWidth
-					onClick={() => setShowPrevConfirm(true)}
+					onClick={() => onClose()}
 					className="!py-3"
 				>
 					Cancel
 				</Button>
 			</div>
-			<PreviousConfirmationModal
-				isOpen={showPrevConfirm}
-				onPrevious={() => {
-					reset({})
-					setData(DEFAULT_CREATE_PROJECT_DATA)
-					onClose()
-				}}
-				onClose={() => setShowPrevConfirm(false)}
-			/>
 		</div>
 	)
 }

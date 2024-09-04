@@ -11,7 +11,6 @@ import IconUnfoldMore from '@/app/components/svgs/IconUnfoldMore'
 import Menu from '@/app/components/commons/Menu'
 import IconAdd from '@/app/components/svgs/IconAdd'
 import Checkbox from '@/app/components/commons/CheckBox'
-import PreviousConfirmationModal from './PreviousConfirmationModal'
 import { StrKey } from 'round-client'
 import { capitalizeFirstLetter } from '@/utils/helper'
 import {
@@ -24,9 +23,7 @@ import {
 const CreateProjectStep3 = () => {
 	const [showContractMenu, setShowContractMenu] = useState<boolean[]>([])
 	const [showContactMenu, setShowContactMenu] = useState<boolean[]>([])
-	const [showPrevConfirm, setShowPrevConfirm] = useState<boolean>(false)
 	const { setStep, step, data, setData } = useCreateProject()
-	const [errorGithubUrl, setErrorGithubUrl] = useState<boolean>(false)
 	const {
 		control,
 		register,
@@ -483,7 +480,7 @@ const CreateProjectStep3 = () => {
 					<Button
 						color="white"
 						isFullWidth
-						onClick={() => setShowPrevConfirm(true)}
+						onClick={() => setStep(2)}
 						className="!py-3 !border !border-grantpicks-black-400"
 					>
 						Previous
@@ -500,15 +497,6 @@ const CreateProjectStep3 = () => {
 					</Button>
 				</div>
 			</div>
-			<PreviousConfirmationModal
-				isOpen={showPrevConfirm}
-				onPrevious={() => {
-					reset({})
-					setShowPrevConfirm(false)
-					setStep(2)
-				}}
-				onClose={() => setShowPrevConfirm(false)}
-			/>
 		</div>
 	)
 }

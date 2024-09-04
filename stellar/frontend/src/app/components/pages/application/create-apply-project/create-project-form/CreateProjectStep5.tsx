@@ -14,7 +14,6 @@ import { toastOptions } from '@/constants/style'
 import { YOUTUBE_URL_REGEX } from '@/constants/regex'
 import IconPlay from '@/app/components/svgs/IconPlay'
 import IconPause from '@/app/components/svgs/IconPause'
-import PreviousConfirmationModal from './PreviousConfirmationModal'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import { getSrc } from '@livepeer/react/external'
 import IconLoading from '@/app/components/svgs/IconLoading'
@@ -27,11 +26,9 @@ import { fetchYoutubeIframe } from '@/utils/helper'
 const CreateProjectStep5 = () => {
 	const { setStep, onProceedApply, setData } = useCreateProject()
 	const { livepeer } = useGlobalContext()
-	const [showPrevConfirm, setShowPrevConfirm] = useState<boolean>(false)
 	const {
 		handleSubmit,
 		setValue,
-		reset,
 		formState: { errors },
 	} = useForm<CreateProjectStep5Data>()
 	const [accFiles, setAccFiles] = useState<File[]>([])
@@ -322,7 +319,7 @@ const CreateProjectStep5 = () => {
 					<Button
 						color="white"
 						isFullWidth
-						onClick={() => setShowPrevConfirm(true)}
+						onClick={() => setStep(4)}
 						className="!py-3 !border !border-grantpicks-black-400"
 					>
 						Previous
@@ -342,20 +339,6 @@ const CreateProjectStep5 = () => {
 					</Button>
 				</div>
 			</div>
-			<PreviousConfirmationModal
-				isOpen={showPrevConfirm}
-				onPrevious={() => {
-					reset({})
-					setShowPrevConfirm(false)
-					setAccFiles([])
-					setAccFileUrls([])
-					setLinkInput('')
-					setIsDirtyInput(false)
-					setVideoPlayed(false)
-					setStep(4)
-				}}
-				onClose={() => setShowPrevConfirm(false)}
-			/>
 		</div>
 	)
 }

@@ -5,7 +5,7 @@ import IconCheckCircle from '@/app/components/svgs/IconCheckCircle'
 import IconProject from '@/app/components/svgs/IconProject'
 import IconTrash from '@/app/components/svgs/IconTrash'
 import { CreateProjectStep4Data } from '@/types/form'
-import React, { useState } from 'react'
+import React from 'react'
 import {
 	Controller,
 	SubmitHandler,
@@ -17,20 +17,17 @@ import IconAdd from '@/app/components/svgs/IconAdd'
 import Checkbox from '@/app/components/commons/CheckBox'
 import DatePicker from 'react-datepicker'
 import IconCalendar from '@/app/components/svgs/IconCalendar'
-import PreviousConfirmationModal from './PreviousConfirmationModal'
 import IconInfoCircle from '@/app/components/svgs/IconInfoCircle'
 import { Tooltip } from 'react-tooltip'
 
 const CreateProjectStep4 = () => {
 	const { setStep, data, setData } = useCreateProject()
-	const [showPrevConfirm, setShowPrevConfirm] = useState<boolean>(false)
 	const {
 		control,
 		register,
 		watch,
 		handleSubmit,
 		setValue,
-		reset,
 		formState: { errors },
 	} = useForm<CreateProjectStep4Data>({
 		defaultValues: {
@@ -285,7 +282,7 @@ const CreateProjectStep4 = () => {
 					<Button
 						color="white"
 						isFullWidth
-						onClick={() => setShowPrevConfirm(true)}
+						onClick={() => setStep(3)}
 						className="!py-3 !border !border-grantpicks-black-400"
 					>
 						Previous
@@ -302,15 +299,6 @@ const CreateProjectStep4 = () => {
 					</Button>
 				</div>
 			</div>
-			<PreviousConfirmationModal
-				isOpen={showPrevConfirm}
-				onPrevious={() => {
-					reset({})
-					setShowPrevConfirm(false)
-					setStep(3)
-				}}
-				onClose={() => setShowPrevConfirm(false)}
-			/>
 		</div>
 	)
 }

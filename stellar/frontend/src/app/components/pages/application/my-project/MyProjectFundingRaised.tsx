@@ -267,29 +267,45 @@ const MyProjectFundingRaised = () => {
 						<Checkbox
 							label="We haven't raised any funds"
 							checked={watch().is_havent_raised}
-							onChange={(e) => setValue('is_havent_raised', e.target.checked)}
-						/>
-						<Button
-							color="transparent"
-							className="!bg-transparent !border !border-black/10"
-							onClick={() => {
-								appendHistory({
-									id: '',
-									source: '',
-									date: new Date(),
-									denomination: '',
-									amount: '',
-									description: '',
-								})
+							onChange={(e) => {
+								setValue('is_havent_raised', e.target.checked)
+								if (watch().is_havent_raised) {
+									removeHistory()
+								} else {
+									appendHistory({
+										id: '',
+										source: '',
+										date: new Date(),
+										denomination: '',
+										amount: '',
+										description: '',
+									})
+								}
 							}}
-						>
-							<div className="flex items-center space-x-2">
-								<IconAdd size={18} className="fill-grantpicks-black-400" />
-								<p className="text-sm font-semibold text-grantpicks-black-950">
-									Add more
-								</p>
-							</div>
-						</Button>
+						/>
+						{!watch().is_havent_raised && (
+							<Button
+								color="transparent"
+								className="!bg-transparent !border !border-black/10"
+								onClick={() => {
+									appendHistory({
+										id: '',
+										source: '',
+										date: new Date(),
+										denomination: '',
+										amount: '',
+										description: '',
+									})
+								}}
+							>
+								<div className="flex items-center space-x-2">
+									<IconAdd size={18} className="fill-grantpicks-black-400" />
+									<p className="text-sm font-semibold text-grantpicks-black-950">
+										Add more
+									</p>
+								</div>
+							</Button>
+						)}
 					</div>
 				</div>
 			</div>

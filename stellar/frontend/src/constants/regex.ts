@@ -9,23 +9,20 @@ export const GITHUB_URL_REGEX = new RegExp(
 )
 
 export const NEAR_ADDRESS_REGEX = (address: string): boolean => {
-	if (address.length < 2 || address.length > 64) return false
-	const regex = /^(?!.*--)([a-z0-9_-]+)\.near$/
-	if (!regex.test(address)) return false
-	if (address.startsWith('-') || address.endsWith('-')) return false
-	return true
+	const nearRegex = /^(?!.*--)[a-z0-9-]{2,64}\.(near|testnet)$/
+	return nearRegex.test(address)
 }
 
 export const BITCOIN_ADDRESS_REGEX = (address: string): boolean => {
-	const p2pkhRegex = /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/
-	const bech32Regex = /^(bc1)[a-z0-9]{25,90}$/
-	return p2pkhRegex.test(address) || bech32Regex.test(address)
+	const btcRegex = /^(1|3|bc1)[a-km-zA-HJ-NP-Z1-9]{25,62}$/
+	return btcRegex.test(address)
 }
 
 export const ETHEREUM_ADDRESS_REGEX = (address: string): boolean => {
 	const ethRegex = /^0x[a-fA-F0-9]{40}$/
 	return ethRegex.test(address)
 }
+
 export const TELEGRAM_USERNAME_REGEX = /^[a-zA-Z0-9_]{5,32}$/
 
 export const INSTAGRAM_USERNAME_REGEX = /^[a-zA-Z0-9_.]{1,30}$/

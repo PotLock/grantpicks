@@ -156,13 +156,14 @@ const CreateProjectStep5 = () => {
 	}, [])
 
 	useEffect(() => {
-		// const storeData = { ...watch() }
-		localStorage.setItem(
-			localStorageConfigs.CREATE_PROJECT_STEP_5,
-			JSON.stringify(linkInput),
-		)
+		if (linkInput != '') {
+			localStorage.setItem(
+				localStorageConfigs.CREATE_PROJECT_STEP_5,
+				JSON.stringify(linkInput),
+			)
+		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [])
+	}, [linkInput])
 
 	return (
 		<div

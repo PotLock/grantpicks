@@ -93,10 +93,12 @@ const CreateProjectStep2 = () => {
 	}, [])
 
 	useEffect(() => {
-		localStorage.setItem(
-			localStorageConfigs.CREATE_PROJECT_STEP_2,
-			JSON.stringify(members),
-		)
+		if (members.length != 0) {
+			localStorage.setItem(
+				localStorageConfigs.CREATE_PROJECT_STEP_2,
+				JSON.stringify(members),
+			)
+		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [members])
 

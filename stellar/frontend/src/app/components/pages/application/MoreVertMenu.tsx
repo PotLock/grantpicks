@@ -9,6 +9,7 @@ import { IGetRoundsResponse } from '@/types/on-chain'
 import { useWallet } from '@/app/providers/WalletProvider'
 import IconUser from '../../svgs/IconUser'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 const MoreVertMenu = ({
 	isOpen,
@@ -28,6 +29,19 @@ const MoreVertMenu = ({
 	const { selectedRoundType } = useRoundStore()
 	const { stellarPubKey } = useWallet()
 	const router = useRouter()
+
+	const generateLink = () => {
+		if (data.contacts[0].name.toLowerCase().includes('telegram')) {
+			return `https://t.me/${data.contacts[0].value}`
+		} else if (data.contacts[0].name.toLowerCase().includes('instagram')) {
+			return `https://instagram.com/${data.contacts[0].value}`
+		} else if (data.contacts[0].name.toLowerCase().includes('twitter')) {
+			return `https://x.com/${data.contacts[0].value}`
+		} else if (data.contacts[0].name.toLowerCase().includes('email')) {
+			return `mailto:${data.contacts[0].value}`
+		} else return ``
+	}
+
 	return (
 		<Menu isOpen={isOpen} onClose={onClose} position={`right-0 top-0`}>
 			<div className="bg-white rounded-t-2xl md:rounded-2xl border border-black/10 p-2 whitespace-nowrap min-w-40 shadow-md">
@@ -80,15 +94,14 @@ const MoreVertMenu = ({
 					</div>
 				)}
 				{selectedRoundType === 'on-going' && (
-					<div
-						className="p-2 flex items-center space-x-2 cursor-pointer hover:opacity-70 transition"
-						onClick={onFundRound}
-					>
-						<IconUser size={18} className="fill-grantpicks-black-400" />
-						<p className="text-sm font-normal text-grantpicks-black-950">
-							Contact RM
-						</p>
-					</div>
+					<Link href={generateLink()} target="_blank">
+						<div className="p-2 flex items-center space-x-2 cursor-pointer hover:opacity-70 transition">
+							<IconUser size={18} className="fill-grantpicks-black-400" />
+							<p className="text-sm font-normal text-grantpicks-black-950">
+								Contact RM
+							</p>
+						</div>
+					</Link>
 				)}
 			</div>
 		</Menu>

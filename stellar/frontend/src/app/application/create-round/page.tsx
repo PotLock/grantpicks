@@ -79,6 +79,7 @@ const CreateRoundPage = () => {
 		setValue,
 		reset,
 		watch,
+		trigger,
 		formState: { errors },
 	} = useForm<CreateRoundData>({
 		mode: 'onChange',
@@ -455,6 +456,7 @@ const CreateRoundPage = () => {
 												<p
 													onClick={() => {
 														setValue('contact_type', 'Telegram')
+														trigger('contact_address')
 														setShowContactType(false)
 													}}
 													className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
@@ -464,6 +466,7 @@ const CreateRoundPage = () => {
 												<p
 													onClick={() => {
 														setValue('contact_type', 'Instagram')
+														trigger('contact_address')
 														setShowContactType(false)
 													}}
 													className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
@@ -473,6 +476,7 @@ const CreateRoundPage = () => {
 												<p
 													onClick={() => {
 														setValue('contact_type', 'Twitter')
+														trigger('contact_address')
 														setShowContactType(false)
 													}}
 													className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
@@ -482,6 +486,7 @@ const CreateRoundPage = () => {
 												<p
 													onClick={() => {
 														setValue('contact_type', 'Email')
+														trigger('contact_address')
 														setShowContactType(false)
 													}}
 													className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
@@ -494,27 +499,39 @@ const CreateRoundPage = () => {
 								</div>
 								<div className="flex-1">
 									<InputText
+										disabled={!watch('contact_type')}
 										required
 										placeholder="Your username..."
 										{...register('contact_address', {
 											required: true,
-											pattern: {
-												value:
-													watch().contact_type === 'Telegram'
-														? TELEGRAM_USERNAME_REGEX
-														: watch().contact_type === 'Instagram'
-															? INSTAGRAM_USERNAME_REGEX
-															: watch().contact_type === 'Twitter'
-																? TWITTER_USERNAME_REGEX
-																: EMAIL_VALIDATION_REGEX,
-												message:
-													watch().contact_type === 'Telegram'
-														? 'Telegram address is not valid'
-														: watch().contact_type === 'Instagram'
-															? 'Instagram address is not valid'
-															: watch().contact_type === 'Twitter'
-																? 'Twitter address is not valid'
-																: 'Email address is not valid',
+											validate: (value) => {
+												const contactType = watch('contact_type')
+												if (!value) return true
+												if (contactType === 'Telegram') {
+													return (
+														TELEGRAM_USERNAME_REGEX.test(value) ||
+														'Telegram address is not valid'
+													)
+												}
+												if (contactType === 'Instagram') {
+													return (
+														INSTAGRAM_USERNAME_REGEX.test(value) ||
+														'Instagram address is not valid'
+													)
+												}
+												if (contactType === 'Twitter') {
+													return (
+														TWITTER_USERNAME_REGEX.test(value) ||
+														'Twitter address is not valid'
+													)
+												}
+												if (contactType === 'Email') {
+													return (
+														EMAIL_VALIDATION_REGEX.test(value) ||
+														'Email address is not valid'
+													)
+												}
+												return true
 											},
 										})}
 									/>

@@ -155,8 +155,6 @@ const RoundResultPage = () => {
 					})
 				).result
 
-				console.log('votingResults', votingResults)
-
 				if (votingResults) {
 					storage.setCurrentResults(votingResults)
 					const projectInfoAll = storage.projects
@@ -340,9 +338,7 @@ const RoundResultPage = () => {
 		storage.current_round?.allow_remaining_dist
 
 	useEffect(() => {
-		if (stellarPubKey) {
-			initPage()
-		}
+		initPage()
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [stellarPubKey, params.roundId])
 
@@ -402,10 +398,10 @@ const RoundResultPage = () => {
 					</div>
 					<div>
 						<p className="text-[25px] font-normal text-grantpicks-black-950">
-							{connectedWallet === 'stellar'
-								? `${formatStroopToXlm(storage.current_round?.expected_amount || BigInt(0))} XLM`
-								: ''}
-							{` `}
+							{formatStroopToXlm(
+								storage.current_round?.expected_amount || BigInt(0),
+							)}{' '}
+							XLM
 							<span className="text-xs md:text-base font-normal text-grantpicks-black-600">
 								{(
 									Number(
@@ -429,10 +425,10 @@ const RoundResultPage = () => {
 						</div>
 						<div>
 							<p className="text-[25px] font-normal text-grantpicks-black-950">
-								{connectedWallet === 'stellar'
-									? `${formatStroopToXlm(storage.current_round?.vault_total_deposits || BigInt(0))} XLM`
-									: ''}
-
+								{formatStroopToXlm(
+									storage.current_round?.vault_total_deposits || BigInt(0),
+								)}{' '}
+								XLM
 								<span className="text-xs md:text-base font-normal text-grantpicks-black-600">
 									{(
 										Number(

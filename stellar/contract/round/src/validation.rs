@@ -1,13 +1,5 @@
 use crate::{
-    admin_writer::is_admin,
-    approval_writer::{is_project_approved, read_approved_projects},
-    data_type::{CreateRoundParams, RoundDetail, UpdateRoundParams},
-    error::{ApplicationError, Error, RoundError, VoteError},
-    external::ProjectRegistryClient,
-    project_registry_writer::read_project_contract,
-    utils::get_ledger_second_as_millis,
-    voter_writer::{is_blacklisted, is_whitelisted},
-    voting_writer::get_voting_state_done,
+    admin_writer::is_admin, approval_writer::{is_project_approved, read_approved_projects}, config_writer::read_config, data_type::{CreateRoundParams, RoundDetail, UpdateRoundParams}, error::{ApplicationError, Error, RoundError, VoteError}, external::ProjectRegistryClient, utils::get_ledger_second_as_millis, voter_writer::{is_blacklisted, is_whitelisted}, voting_writer::get_voting_state_done
 };
 use soroban_sdk::{panic_with_error, Address, Env, String, Vec};
 
@@ -152,7 +144,7 @@ pub fn validate_not_approved_projects(env: &Env, round_id: u128, project_id: u12
 }
 
 pub fn validate_project_to_approve(env: &Env, round_id: u128, project_ids: &Vec<u128>) {
-    let project_contract = read_project_contract(env);
+    let project_contract = read_config(env).project_contract;
     let project_client = ProjectRegistryClient::new(env, &project_contract);
     let total_projects: u128 = project_client.get_total_projects().into();
 

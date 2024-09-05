@@ -18,8 +18,9 @@ import {
 } from '@/services/on-chain/round'
 import { Network } from '@/types/on-chain'
 import { useParams, useRouter } from 'next/navigation'
+import { Project } from 'project-registry-client'
 import React, { useEffect, useRef, useState } from 'react'
-import { Pair, Project } from 'round-client'
+import { Pair } from 'round-client'
 
 export interface IProjectDetailOwner {
 	isOpen: boolean

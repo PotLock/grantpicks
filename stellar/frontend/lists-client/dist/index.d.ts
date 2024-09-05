@@ -8,7 +8,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CDGZ24GF6T4G6D5UCMXE4TH4SHY5ECSQLUWWMDPIOWD5IERAJ4HITXYX";
+        readonly contractId: "CCRL2DW3H7YFQYDSHQWIVKOR6WMGICBZFUW7WNLTEFFMOSGZGFCKRPWD";
     };
 };
 export type RegistrationStatus = {
@@ -89,36 +89,88 @@ export type ContractKey = {
     values: void;
 } | {
     tag: "Lists";
-    values: void;
+    values: readonly [u128];
 } | {
     tag: "ListAdmins";
-    values: void;
+    values: readonly [u128];
 } | {
     tag: "OwnedList";
-    values: void;
+    values: readonly [string];
 } | {
     tag: "RegistrantList";
-    values: void;
+    values: readonly [string];
 } | {
     tag: "RegistrationsNumber";
     values: void;
 } | {
     tag: "Registrations";
-    values: void;
+    values: readonly [u128];
 } | {
     tag: "ListRegistration";
-    values: void;
+    values: readonly [u128];
 } | {
     tag: "RegistrationsIDs";
-    values: void;
+    values: readonly [string];
 } | {
     tag: "Upvotes";
-    values: void;
+    values: readonly [u128];
 } | {
     tag: "UserUpvotes";
-    values: void;
+    values: readonly [string];
 };
-export declare const Errors: {};
+export declare const Errors: {
+    1: {
+        message: string;
+    };
+    2: {
+        message: string;
+    };
+    3: {
+        message: string;
+    };
+    4: {
+        message: string;
+    };
+    5: {
+        message: string;
+    };
+    6: {
+        message: string;
+    };
+    7: {
+        message: string;
+    };
+    8: {
+        message: string;
+    };
+    9: {
+        message: string;
+    };
+    10: {
+        message: string;
+    };
+    11: {
+        message: string;
+    };
+    12: {
+        message: string;
+    };
+    13: {
+        message: string;
+    };
+    14: {
+        message: string;
+    };
+    15: {
+        message: string;
+    };
+    16: {
+        message: string;
+    };
+    17: {
+        message: string;
+    };
+};
 export interface Client {
     /**
      * Construct and simulate a initialize transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
@@ -167,8 +219,7 @@ export interface Client {
     /**
      * Construct and simulate a update_list transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    update_list: ({ owner, list_id, name, description, cover_image_url, remove_cover_image, default_registration_status, admin_only_registrations }: {
-        owner: string;
+    update_list: ({ list_id, name, description, cover_image_url, remove_cover_image, default_registration_status, admin_only_registrations }: {
         list_id: u128;
         name: Option<string>;
         description: Option<string>;
@@ -193,8 +244,7 @@ export interface Client {
     /**
      * Construct and simulate a delete_list transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    delete_list: ({ owner, list_id }: {
-        owner: string;
+    delete_list: ({ list_id }: {
         list_id: u128;
     }, options?: {
         /**
@@ -253,8 +303,7 @@ export interface Client {
     /**
      * Construct and simulate a transfer_ownership transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    transfer_ownership: ({ owner, list_id, new_owner_id }: {
-        owner: string;
+    transfer_ownership: ({ list_id, new_owner_id }: {
         list_id: u128;
         new_owner_id: string;
     }, options?: {
@@ -274,8 +323,7 @@ export interface Client {
     /**
      * Construct and simulate a add_admins transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    add_admins: ({ owner, list_id, admins }: {
-        owner: string;
+    add_admins: ({ list_id, admins }: {
         list_id: u128;
         admins: Array<string>;
     }, options?: {
@@ -295,8 +343,7 @@ export interface Client {
     /**
      * Construct and simulate a remove_admins transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    remove_admins: ({ owner, list_id, admins }: {
-        owner: string;
+    remove_admins: ({ list_id, admins }: {
         list_id: u128;
         admins: Array<string>;
     }, options?: {
@@ -316,8 +363,7 @@ export interface Client {
     /**
      * Construct and simulate a clear_admins transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    clear_admins: ({ owner, list_id }: {
-        owner: string;
+    clear_admins: ({ list_id }: {
         list_id: u128;
     }, options?: {
         /**
@@ -622,8 +668,7 @@ export interface Client {
     /**
      * Construct and simulate a upgrade transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    upgrade: ({ owner, wasm_hash }: {
-        owner: string;
+    upgrade: ({ wasm_hash }: {
         wasm_hash: Buffer;
     }, options?: {
         /**

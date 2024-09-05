@@ -7,15 +7,10 @@ pub const PERSISTENT_BUMP_CONSTANT: u32 = DAY_IN_LEDGERS * 180;
 pub const PERSISTENT_BUMP_CONSTANT_THRESHOLD: u32 = DAY_IN_LEDGERS * 90;
 
 pub fn extend_instance(env: &Env) {
-    extend_persistent(env, &ContractKey::FactoryOwner);
-    extend_persistent(env, &ContractKey::ProtocolFee);
-    extend_persistent(env, &ContractKey::ProtocolFeeRecepient);
-    extend_persistent(env, &ContractKey::DefaultPageSize);
+    extend_persistent(env, &ContractKey::Config);
     extend_persistent(env, &ContractKey::NextRoundId);
     extend_persistent(env, &ContractKey::NextPayoutId);
     extend_persistent(env, &ContractKey::NextDepositId);
-    extend_persistent(env, &ContractKey::TokenContract);
-    extend_persistent(env, &ContractKey::ProjectContract);
     extend_persistent(env, &ContractKey::ProjectPayoutIds);
     extend_persistent(env, &ContractKey::VotedRoundIds);
 }

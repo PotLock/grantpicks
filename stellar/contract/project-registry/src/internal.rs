@@ -1,7 +1,7 @@
 use soroban_sdk::{panic_with_error, BytesN};
 
 use crate::admin::{read_contract_owner, write_contract_owner};
-use crate::data_type::{CreateProjectParams, Project, ProjectStatus, UpdateProjectParams};
+use crate::data_type::{CreateProjectParams, Project, ProjectStatus, RoundPreCheck, UpdateProjectParams};
 use crate::error::Error;
 use crate::events::{log_create_project_event, log_update_project_event};
 use crate::methods::ProjectRegistryTrait;
@@ -21,6 +21,12 @@ pub struct ProjectRegistry;
 #[contractimpl]
 impl ProjectRegistryTrait for ProjectRegistry {
     fn initialize(env: &Env, contract_owner: Address) {
+        let owner = read_contract_owner(env);
+
+        if owner.is_some() {
+            panic_with_error!(env, Error::AlreadyInitialized);
+        }
+
         write_contract_owner(env, &contract_owner);
     }
 
@@ -201,7 +207,7 @@ impl ProjectRegistryTrait for ProjectRegistry {
     fn upgrade(env: &Env, new_wasm_hash: BytesN<32>) {
         let contract_owner = read_contract_owner(env);
 
-        contract_owner.require_auth();
+        contract_owner.unwrap().require_auth();
 
         env.deployer().update_current_contract_wasm(new_wasm_hash);
 
@@ -225,7 +231,47 @@ impl ProjectRegistryTrait for ProjectRegistry {
     }
 
     fn owner(env: &Env) -> Address {
-        read_contract_owner(env)
+        read_contract_owner(env).unwrap()
+    }
+
+    fn get_precheck(env: &Env, applicant: Address) -> Option<RoundPreCheck>{
+        let project_id = get_applicant_project_id(env, &applicant);
+
+        if project_id.is_none() {
+            return None;
+        }
+
+        let project = get_project(env, project_id.unwrap());
+
+        if project.is_none() {
+            return None;
+        }
+
+        let project = project.unwrap();
+        let precheck = RoundPreCheck {
+            project_id: project.id,
+            applicant: applicant,
+            has_video: project.video_url.len() > 0,
+        };
+
+        Some(precheck)
+    }
+
+    fn get_precheck_by_id(env: &Env, project_id: u128) -> Option<RoundPreCheck>{
+        let project = get_project(env, project_id);
+
+        if project.is_none() {
+            return None;
+        }
+
+        let project = project.unwrap();
+        let precheck = RoundPreCheck {
+            project_id: project.id,
+            applicant: project.owner,
+            has_video: project.video_url.len() > 0,
+        };
+
+        Some(precheck)
     }
 
     // fn migrate(env: &Env, owner: Address, project_id: u128){

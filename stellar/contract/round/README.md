@@ -359,10 +359,12 @@ fn initialize(
     caller: Address,
     token_address: Address,
     registry_address: Address,
+    list_address: Address,
+    kyc_list_id: u128,
     protocol_fee_basis_points: Option<u32>,
     protocol_fee_recipient: Option<Address>,
-    default_page_size: Option<u64>
-);
+    default_page_size: Option<u64>,
+)
 // create a round
 fn create_round(env: &Env, caller: Address, params: CreateRoundParams) -> RoundDetail;
 

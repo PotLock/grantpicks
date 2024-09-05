@@ -232,14 +232,8 @@ const CreateRoundPage = () => {
 						: [],
 				allow_remaining_dist: true,
 				compliance_req_desc: data.compliance_req_desc,
-				compliance_end_ms: data.voting_duration_end
-					? BigInt(data.voting_duration_end?.getTime() as number)
-					: undefined,
 				compliance_period_ms: data.compliance_period_ms
 					? BigInt(data.compliance_period_ms as number)
-					: undefined,
-				cooldown_end_ms: data.voting_duration_end
-					? BigInt(data.voting_duration_end?.getTime() as number)
 					: undefined,
 				cooldown_period_ms: undefined,
 				remaining_dist_address: data.remaining_dist_address || stellarPubKey,

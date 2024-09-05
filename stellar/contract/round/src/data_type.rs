@@ -25,6 +25,10 @@ pub struct Config {
     pub protocol_fee_recipient: Address,
     pub protocol_fee_basis_points: u32,
     pub default_page_size: u64,
+    pub token_contract: Address,
+    pub project_contract: Address,
+    pub list_contract: Address,
+    pub kyc_list_id: u128
 }
 
 //Note: Whitelist And Blacklist In Different Storage
@@ -83,10 +87,8 @@ pub struct CreateRoundParams {
     pub allow_applications: bool,
     pub is_video_required: bool,
     pub cooldown_period_ms: Option<u64>,
-    pub cooldown_end_ms: Option<u64>,
     pub compliance_req_desc: String, // too long on stellar
     pub compliance_period_ms: Option<u64>,
-    pub compliance_end_ms: Option<u64>,
     pub allow_remaining_dist: bool,
     pub remaining_dist_address: Address,
     pub referrer_fee_basis_points: Option<u32>,
@@ -175,6 +177,7 @@ pub struct Payout {
     pub round_id: u128,
     pub recipient_id: Address,
     pub amount: i128,
+    pub paid_amount: i128,
     pub paid_at_ms: Option<u64>,
     pub memo: String,
 }

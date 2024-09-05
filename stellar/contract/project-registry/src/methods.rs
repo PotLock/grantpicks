@@ -1,6 +1,6 @@
 use soroban_sdk::{Address, BytesN, Env, Vec};
 
-use crate::data_type::{CreateProjectParams, Project, ProjectStatus, UpdateProjectParams};
+use crate::data_type::{CreateProjectParams, Project, ProjectStatus, RoundPreCheck, UpdateProjectParams};
 
 pub trait ProjectRegistryTrait {
     fn initialize(env: &Env, contract_owner: Address);
@@ -24,6 +24,8 @@ pub trait ProjectRegistryTrait {
     fn get_project_admins(env: &Env, project_id: u128) -> Vec<Address>;
     fn get_total_projects(env: &Env) -> u32;
     fn get_project_from_applicant(env: &Env, applicant: Address) -> Project;
+    fn get_precheck(env: &Env, applicant: Address) -> Option<RoundPreCheck>;
+    fn get_precheck_by_id(env: &Env, project_id: u128) -> Option<RoundPreCheck>;
     fn upgrade(env: &Env, new_wasm_hash: BytesN<32>);
     // fn migrate(env: &Env, owner: Address, project_id: u128);
     fn owner(env: &Env) -> Address;

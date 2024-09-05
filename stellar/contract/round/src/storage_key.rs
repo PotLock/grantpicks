@@ -3,16 +3,11 @@ use crate::soroban_sdk::{self, contracttype};
 #[contracttype]
 #[derive(Clone)]
 pub enum ContractKey {
-    ProtocolFeeRecepient, // FEE_RECIPIENT
-    ProtocolFee,          // FEE
-    DefaultPageSize,      // DEFAULT_PAGE_SIZE
-    FactoryOwner,
+    Config,               // CONFIG
     NextRoundId,
     NextPayoutId,
     NextDepositId,
     ProjectPayoutIds,
-    TokenContract,
-    ProjectContract,
     VotedRoundIds,
     PayoutInfo(u128),
     DepositInfo(u128),

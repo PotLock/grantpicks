@@ -57,7 +57,7 @@ pub fn validate_owner_or_admin(env: &Env, admin: &Address, project: &Project) {
 }
 
 pub fn validate_contract_owner(env: &Env, caller: &Address) {
-    let contract_admin = read_contract_owner(env);
+    let contract_admin = read_contract_owner(env).unwrap();
 
     if contract_admin != caller.clone() {
         panic_with_error!(env, Error::ContractOwnerOnly);

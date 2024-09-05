@@ -1,7 +1,13 @@
 import { useEffect } from 'react'
 import { useTimer } from 'react-timer-hook'
 
-const TimerEnd = ({ expiryTime }: { expiryTime: number }) => {
+const TimerEnd = ({
+	expiryTime,
+	running,
+}: {
+	expiryTime: number
+	running: boolean
+}) => {
 	const {
 		totalSeconds,
 		seconds,
@@ -20,7 +26,9 @@ const TimerEnd = ({ expiryTime }: { expiryTime: number }) => {
 	})
 
 	useEffect(() => {
-		start()
+		if (running) {
+			start()
+		}
 	}, [])
 
 	return (

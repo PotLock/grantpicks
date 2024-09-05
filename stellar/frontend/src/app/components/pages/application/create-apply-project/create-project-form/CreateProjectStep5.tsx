@@ -50,65 +50,78 @@ const CreateProjectStep5 = () => {
 	>(undefined)
 
 	const onDrop = useCallback(async (acceptedFiles: File[]) => {
-		if (acceptedFiles[0].size / 10 ** 6 > 25) {
-			toast.error('Max. file size is 25 MB', {
-				style: toastOptions.error.style,
-			})
-			return
-		}
-		try {
-			setLoadingFlow('Preparing')
-			setAccFiles((prev) => [...prev, acceptedFiles[0]])
-			const objectUrl = URL.createObjectURL(acceptedFiles[0])
-			setAccFileUrls((prev) => [...prev, objectUrl])
-			const resLivepeer = await requestUpload(livepeer, acceptedFiles[0].name)
-			await uploadFile(
-				acceptedFiles[0],
-				setUploadResult,
-				(percentage) => {
-					setLoadingFlow('Uploading')
-					//@ts-ignore
-					setUploadResult((prev) => ({ ...prev, percentage }))
-				},
-				async (uploadedUrl) => {
-					setUploadResult((prev) => ({
-						...prev,
-						uploadedUrl: uploadedUrl,
-						percentage: ``,
-					}))
-					let assetResult: GetAssetResponse | undefined = undefined
-					assetResult = await retrieveAsset(livepeer, resLivepeer)
-					const closePoolingAsset = setInterval(async () => {
-						setLoadingFlow('Finishing')
+		const videoElement = document.createElement('video')
+		const videoURL = URL.createObjectURL(acceptedFiles[0])
+		videoElement.src = videoURL
+
+		videoElement.onloadedmetadata = async () => {
+			URL.revokeObjectURL(videoURL)
+			const duration = videoElement.duration
+			if (acceptedFiles[0].size / 10 ** 6 > 100 || duration > 300) {
+				toast.error('Your video is more than 5 minutes / more than 100 MB', {
+					style: toastOptions.error.style,
+				})
+				return
+			}
+
+			try {
+				setLoadingFlow('Preparing')
+				setAccFiles((prev) => [...prev, acceptedFiles[0]])
+				const objectUrl = URL.createObjectURL(acceptedFiles[0])
+				setAccFileUrls((prev) => [...prev, objectUrl])
+				const resLivepeer = await requestUpload(livepeer, acceptedFiles[0].name)
+				await uploadFile(
+					acceptedFiles[0],
+					setUploadResult,
+					(percentage) => {
+						setLoadingFlow('Uploading')
+						//@ts-ignore
+						setUploadResult((prev) => ({ ...prev, percentage }))
+					},
+					async (uploadedUrl) => {
+						setUploadResult((prev) => ({
+							...prev,
+							uploadedUrl: uploadedUrl,
+							percentage: ``,
+						}))
+						let assetResult: GetAssetResponse | undefined = undefined
 						assetResult = await retrieveAsset(livepeer, resLivepeer)
-						if (assetResult?.asset?.status?.phase.includes('ready')) {
-							const playbackInfo = await livepeer?.playback.get(
-								assetResult.asset.playbackId as string,
-							)
-							const src = getSrc(playbackInfo?.playbackInfo)
-							setValue('video', {
-								url: src?.[0].src || '',
-								file: acceptedFiles[0],
-							})
-							setData((prev) => ({
-								...prev,
-								video: { file: acceptedFiles[0], url: src?.[0].src as string },
-							}))
-							setPlaybackSrc(src)
-							setLoadingFlow(null)
-							clearInterval(closePoolingAsset)
-							return
-						}
-					}, 1000)
-				},
-				resLivepeer,
-			)
-		} catch (error: any) {
-			setAccFiles([])
-			setAccFileUrls([])
-			setLoadingFlow(null)
-			console.log('error uploading', error)
+						const closePoolingAsset = setInterval(async () => {
+							setLoadingFlow('Finishing')
+							assetResult = await retrieveAsset(livepeer, resLivepeer)
+							if (assetResult?.asset?.status?.phase.includes('ready')) {
+								const playbackInfo = await livepeer?.playback.get(
+									assetResult.asset.playbackId as string,
+								)
+								const src = getSrc(playbackInfo?.playbackInfo)
+								setValue('video', {
+									url: src?.[0].src || '',
+									file: acceptedFiles[0],
+								})
+								setData((prev) => ({
+									...prev,
+									video: {
+										file: acceptedFiles[0],
+										url: src?.[0].src as string,
+									},
+								}))
+								setPlaybackSrc(src)
+								setLoadingFlow(null)
+								clearInterval(closePoolingAsset)
+								return
+							}
+						}, 1000)
+					},
+					resLivepeer,
+				)
+			} catch (error: any) {
+				setAccFiles([])
+				setAccFileUrls([])
+				setLoadingFlow(null)
+				console.log('error uploading', error)
+			}
 		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])
 
 	const onProcessYoutubeInput = async () => {
@@ -223,7 +236,7 @@ const CreateProjectStep5 = () => {
 									Supported format: MP4, YouTube link
 								</p>
 								<p className="text-xs font-normal text-grantpicks-black-950">
-									Maximum size: 25MB{' '}
+									Maximum size: 100MB{' '}
 								</p>
 							</div>
 							<div className="w-[90%]">

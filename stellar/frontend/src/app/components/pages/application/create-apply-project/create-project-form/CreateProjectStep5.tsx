@@ -55,12 +55,12 @@ const CreateProjectStep5 = () => {
 		videoElement.src = videoURL
 
 		videoElement.onloadedmetadata = async () => {
-			URL.revokeObjectURL(videoURL)
 			const duration = videoElement.duration
 			if (acceptedFiles[0].size / 10 ** 6 > 100 || duration > 300) {
 				toast.error('Your video is more than 5 minutes / more than 100 MB', {
 					style: toastOptions.error.style,
 				})
+				URL.revokeObjectURL(videoURL)
 				return
 			}
 
@@ -119,6 +119,8 @@ const CreateProjectStep5 = () => {
 				setAccFileUrls([])
 				setLoadingFlow(null)
 				console.log('error uploading', error)
+			} finally {
+				URL.revokeObjectURL(videoURL)
 			}
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -163,20 +165,27 @@ const CreateProjectStep5 = () => {
 		)
 		if (draftData) {
 			const draft = JSON.parse(draftData)
-			setLinkInput(draft)
+			setAccFiles(draft.accFiles)
+			setPlaybackSrc(draft.playbackSrc)
+			setEmbededYtHtml(draft.embededYtHtml)
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])
 
 	useEffect(() => {
-		if (linkInput != '') {
+		if (embededYtHtml != '' || playbackSrc != null || accFiles.length != 0) {
+			const storeData = {
+				accFiles: accFiles,
+				playbackSrc: playbackSrc,
+				embededYtHtml: embededYtHtml,
+			}
 			localStorage.setItem(
 				localStorageConfigs.CREATE_PROJECT_STEP_5,
-				JSON.stringify(linkInput),
+				JSON.stringify(storeData),
 			)
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [linkInput])
+	}, [playbackSrc, embededYtHtml])
 
 	return (
 		<div
@@ -303,6 +312,9 @@ const CreateProjectStep5 = () => {
 										}))
 										setEmbededYtHtml('')
 									}
+									localStorage.removeItem(
+										localStorageConfigs.CREATE_PROJECT_STEP_5,
+									)
 								}}
 							/>
 						</div>

@@ -87,7 +87,6 @@ const CreateProjectStep2 = () => {
 		if (draftData) {
 			const draft = JSON.parse(draftData)
 			setMembers(draft)
-			console.log('>_ draft', draft)
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])

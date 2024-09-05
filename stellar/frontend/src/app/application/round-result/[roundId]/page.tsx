@@ -498,7 +498,7 @@ const RoundResultPage = () => {
 			{showCompliance && !storage.isPayoutDone && (
 				<div className="p-3 md:p-5 rounded-2xl bg-grantpicks-amber-50 w-full my-4 md:my-8">
 					<p className="text-grantpicks-amber-800 text-[25px] font-semibold pb-4 border-b border-grantpicks-amber-200">
-						<TimerEnd expiryTime={endOfCompliance.getTime()} running={false} />
+						<TimerEnd expiryTime={endOfCompliance.getTime()} running />
 						<span className="text-sm font-normal">
 							Left to Complete KYC
 						</span>{' '}

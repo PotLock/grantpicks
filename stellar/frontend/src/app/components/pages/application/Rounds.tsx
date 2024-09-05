@@ -70,21 +70,23 @@ const ApplicationRoundsItem = ({
 	}
 
 	const fetchRoundApplication = async () => {
-		try {
-			const contracts = storage.getStellarContracts()
+		if (stellarPubKey) {
+			try {
+				const contracts = storage.getStellarContracts()
 
-			if (!contracts) return
+				if (!contracts) return
 
-			const res = await getRoundApplication(
-				{ round_id: doc.id as bigint, applicant: stellarPubKey },
-				contracts,
-			)
-			//@ts-ignore
-			if (!res?.error) {
-				if (selectedRoundType === 'upcoming') setIsUserApplied(true)
+				const res = await getRoundApplication(
+					{ round_id: doc.id as bigint, applicant: stellarPubKey },
+					contracts,
+				)
+				//@ts-ignore
+				if (!res?.error) {
+					if (selectedRoundType === 'upcoming') setIsUserApplied(true)
+				}
+			} catch (error: any) {
+				console.log('error fetch project applicant', error)
 			}
-		} catch (error: any) {
-			console.log('error fetch project applicant', error)
 		}
 	}
 
@@ -290,10 +292,6 @@ const ApplicationRoundsItem = ({
 			<div className="w-full">
 				<Button
 					onClick={() => {
-						if (!connectedWallet) {
-							setShowMenu('choose-wallet')
-							return
-						}
 						if (selectedRoundType === 'on-going') {
 							setVoteConfirmationProps((prev) => ({
 								...prev,

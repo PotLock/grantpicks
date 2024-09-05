@@ -39,7 +39,7 @@ const MyProjectTeam = () => {
 
 	const setDefaultData = () => {
 		if (projectData) {
-			setMembers(projectData.team_members.map((mem) => mem.value))
+			setMembers(projectData.team_members.map((mem: any) => mem.value))
 		}
 	}
 
@@ -198,7 +198,7 @@ const MyProjectTeam = () => {
 						onClick={() => setDefaultData()}
 						className="!py-3 !border !border-grantpicks-black-400 disabled:cursor-not-allowed"
 						isDisabled={
-							projectData?.team_members.map((mem) => mem.value)?.length ===
+							projectData?.team_members.map((mem: any) => mem.value)?.length ===
 								members.length || members.length === 0
 						}
 					>
@@ -212,7 +212,7 @@ const MyProjectTeam = () => {
 						onClick={handleSubmit(onSaveChanges)}
 						className="!py-3 disabled:cursor-not-allowed"
 						isDisabled={
-							projectData?.team_members.map((mem) => mem.value)?.length ===
+							projectData?.team_members.map((mem: any) => mem.value)?.length ===
 								members.length || members.length === 0
 						}
 					>

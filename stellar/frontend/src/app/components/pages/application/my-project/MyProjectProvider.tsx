@@ -3,7 +3,6 @@ import MyProjectLayout from '@/app/components/pages/application/my-project/MyPro
 import MyProjectSection from '@/app/components/pages/application/my-project/MyProjectSection'
 import { IMyProjectContext } from '@/types/context'
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { Project } from 'round-client'
 import { useWallet } from '@/app/providers/WalletProvider'
 import Contracts from '@/lib/contracts'
 import CMDWallet from '@/lib/wallet'
@@ -12,6 +11,7 @@ import { Network } from '@/types/on-chain'
 import Button from '@/app/components/commons/Button'
 import { useRouter } from 'next/navigation'
 import { useModalContext } from '@/app/providers/ModalProvider'
+import { Project } from 'project-registry-client'
 
 const MyProjectContext = createContext<IMyProjectContext>({
 	projectData: undefined,

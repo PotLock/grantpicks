@@ -11,13 +11,14 @@ import Contracts from '@/lib/contracts'
 import { IGetRoundsResponse, Network } from '@/types/on-chain'
 import { getResultVoteRound, getRoundInfo } from '@/services/on-chain/round'
 import { useParams } from 'next/navigation'
-import { Pair, Project, VotingResult } from 'round-client'
+import { Pair, VotingResult } from 'round-client'
 import moment from 'moment'
 import {
 	getProject,
 	GetProjectParams,
 } from '@/services/on-chain/project-registry'
 import { prettyTruncate } from '@/utils/helper'
+import { Project } from 'project-registry-client'
 
 const IsVotedPairItem = ({
 	index,

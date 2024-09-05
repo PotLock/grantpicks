@@ -11,7 +11,7 @@ import IconPause from '../../svgs/IconPause'
 import IconPlay from '../../svgs/IconPlay'
 import Button from '../../commons/Button'
 import IconEye from '../../svgs/IconEye'
-import { Pair, Project } from 'round-client'
+import { Pair } from 'round-client'
 import {
 	getProject,
 	GetProjectParams,
@@ -22,6 +22,7 @@ import { Network } from '@/types/on-chain'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { IProjectDetailOwner } from '@/app/round-vote/[roundId]/page'
 import { fetchYoutubeIframe, prettyTruncate } from '@/utils/helper'
+import { Project } from 'project-registry-client'
 
 interface RoundVotePairItemProps {
 	index: number

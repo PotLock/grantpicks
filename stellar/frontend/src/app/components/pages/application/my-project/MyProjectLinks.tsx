@@ -98,14 +98,14 @@ const MyProjectLinks = () => {
 		if (projectData) {
 			setValue(
 				'smart_contracts',
-				projectData?.contracts.map((contract) => ({
+				projectData?.contracts.map((contract: any) => ({
 					id: '',
 					chain: contract.name,
 					address: contract.contract_address,
 				})),
 			)
 			setCurrentContract(
-				projectData?.contracts.map((contract) => ({
+				projectData?.contracts.map((contract: any) => ({
 					id: '',
 					chain: contract.name,
 					address: contract.contract_address,
@@ -113,14 +113,14 @@ const MyProjectLinks = () => {
 			)
 			setValue(
 				'contacts',
-				projectData?.contacts.map((contact) => ({
+				projectData?.contacts.map((contact: any) => ({
 					id: '',
 					platform: contact.name,
 					link_url: contact.value,
 				})),
 			)
 			setCurrentContact(
-				projectData?.contacts.map((contact) => ({
+				projectData?.contacts.map((contact: any) => ({
 					id: '',
 					platform: contact.name,
 					link_url: contact.value,
@@ -128,13 +128,13 @@ const MyProjectLinks = () => {
 			)
 			setValue(
 				'github_urls',
-				projectData?.repositories.map((repo) => ({
+				projectData?.repositories.map((repo: any) => ({
 					id: '',
 					github_url: repo.url,
 				})),
 			)
 			setCurrentRepo(
-				projectData?.repositories.map((repo) => ({
+				projectData?.repositories.map((repo: any) => ({
 					id: '',
 					github_url: repo.url,
 				})),

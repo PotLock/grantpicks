@@ -19,8 +19,8 @@ import { IGetRoundsResponse, Network } from '@/types/on-chain'
 import { prettyTruncate } from '@/utils/helper'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import Image from 'next/image'
+import { Project } from 'project-registry-client'
 import React, { useEffect, useState } from 'react'
-import { Project } from 'round-client'
 
 interface ApplyProjectToRoundModalProps extends BaseModalProps {
 	round_id?: bigint

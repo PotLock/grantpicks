@@ -33,7 +33,7 @@ if (typeof window !== 'undefined') {
 export const networks = {
   testnet: {
     networkPassphrase: "Test SDF Network ; September 2015",
-    contractId: "CAS33WXG2UO26ZN4EE2RYG5V6U24RA4QWHFGXPU2TKY4OY2FEYIBTUM2",
+    contractId: "CB56YJY26HSUIQGDGRDFHMWTTFZBMHSVEUPDHKUQH7PQPOSJO7WYYJQO",
   }
 } as const
 
@@ -126,6 +126,13 @@ export interface ProjectFundingHistory {
   source: string;
 }
 
+
+export interface RoundPreCheck {
+  applicant: string;
+  has_video: boolean;
+  project_id: u128;
+}
+
 export const Errors = {
   1: {message:"EmptyName"},
 
@@ -145,7 +152,9 @@ export const Errors = {
 
   9: {message:"AlreadyApplied"},
 
-  10: {message:"DataNotFound"}
+  10: {message:"DataNotFound"},
+
+  11: {message:"AlreadyInitialized"}
 }
 export type ContractKey = {tag: "NumOfProjects", values: void} | {tag: "Projects", values: void} | {tag: "Project", values: readonly [u128]} | {tag: "RegistryAdmin", values: void} | {tag: "ApplicantToProjectID", values: void};
 
@@ -411,6 +420,46 @@ export interface Client {
     simulate?: boolean;
   }) => Promise<AssembledTransaction<string>>
 
+  /**
+   * Construct and simulate a get_precheck transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+   */
+  get_precheck: ({applicant}: {applicant: string}, options?: {
+    /**
+     * The fee to pay for the transaction. Default: BASE_FEE
+     */
+    fee?: number;
+
+    /**
+     * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+     */
+    timeoutInSeconds?: number;
+
+    /**
+     * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+     */
+    simulate?: boolean;
+  }) => Promise<AssembledTransaction<Option<RoundPreCheck>>>
+
+  /**
+   * Construct and simulate a get_precheck_by_id transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+   */
+  get_precheck_by_id: ({project_id}: {project_id: u128}, options?: {
+    /**
+     * The fee to pay for the transaction. Default: BASE_FEE
+     */
+    fee?: number;
+
+    /**
+     * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+     */
+    timeoutInSeconds?: number;
+
+    /**
+     * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+     */
+    simulate?: boolean;
+  }) => Promise<AssembledTransaction<Option<RoundPreCheck>>>
+
 }
 export class Client extends ContractClient {
   constructor(public readonly options: ContractClientOptions) {
@@ -424,7 +473,8 @@ export class Client extends ContractClient {
         "AAAAAQAAAAAAAAAAAAAAEVByb2plY3RUZWFtTWVtYmVyAAAAAAAAAgAAAAAAAAAEbmFtZQAAABAAAAAAAAAABXZhbHVlAAAAAAAAEA==",
         "AAAAAQAAAAAAAAAAAAAAEVByb2plY3RSZXBvc2l0b3J5AAAAAAAAAgAAAAAAAAAFbGFiZWwAAAAAAAAQAAAAAAAAAAN1cmwAAAAAEA==",
         "AAAAAQAAAAAAAAAAAAAAFVByb2plY3RGdW5kaW5nSGlzdG9yeQAAAAAAAAUAAAAAAAAABmFtb3VudAAAAAAACgAAAAAAAAALZGVub21pYXRpb24AAAAAEAAAAAAAAAALZGVzY3JpcHRpb24AAAAAEAAAAAAAAAAJZnVuZGVkX21zAAAAAAAABgAAAAAAAAAGc291cmNlAAAAAAAQ",
-        "AAAABAAAAAAAAAAAAAAABUVycm9yAAAAAAAACgAAAAAAAAAJRW1wdHlOYW1lAAAAAAAAAQAAAAAAAAANRW1wdHlPdmVydmlldwAAAAAAAAIAAAAAAAAADUVtcHR5Q29udGFjdHMAAAAAAAADAAAAAAAAAAtFbXB0eUFkbWlucwAAAAAEAAAAAAAAAA1FbXB0eUltYWdlVXJsAAAAAAAABQAAAAAAAAAQQWRtaW5Pck93bmVyT25seQAAAAYAAAAAAAAACU93bmVyT25seQAAAAAAAAcAAAAAAAAAEUNvbnRyYWN0T3duZXJPbmx5AAAAAAAACAAAAAAAAAAOQWxyZWFkeUFwcGxpZWQAAAAAAAkAAAAAAAAADERhdGFOb3RGb3VuZAAAAAo=",
+        "AAAAAQAAAAAAAAAAAAAADVJvdW5kUHJlQ2hlY2sAAAAAAAADAAAAAAAAAAlhcHBsaWNhbnQAAAAAAAATAAAAAAAAAAloYXNfdmlkZW8AAAAAAAABAAAAAAAAAApwcm9qZWN0X2lkAAAAAAAK",
+        "AAAABAAAAAAAAAAAAAAABUVycm9yAAAAAAAACwAAAAAAAAAJRW1wdHlOYW1lAAAAAAAAAQAAAAAAAAANRW1wdHlPdmVydmlldwAAAAAAAAIAAAAAAAAADUVtcHR5Q29udGFjdHMAAAAAAAADAAAAAAAAAAtFbXB0eUFkbWlucwAAAAAEAAAAAAAAAA1FbXB0eUltYWdlVXJsAAAAAAAABQAAAAAAAAAQQWRtaW5Pck93bmVyT25seQAAAAYAAAAAAAAACU93bmVyT25seQAAAAAAAAcAAAAAAAAAEUNvbnRyYWN0T3duZXJPbmx5AAAAAAAACAAAAAAAAAAOQWxyZWFkeUFwcGxpZWQAAAAAAAkAAAAAAAAADERhdGFOb3RGb3VuZAAAAAoAAAAAAAAAEkFscmVhZHlJbml0aWFsaXplZAAAAAAACw==",
         "AAAAAAAAAAAAAAAKaW5pdGlhbGl6ZQAAAAAAAQAAAAAAAAAOY29udHJhY3Rfb3duZXIAAAAAABMAAAAA",
         "AAAAAAAAAAAAAAAFYXBwbHkAAAAAAAACAAAAAAAAAAlhcHBsaWNhbnQAAAAAAAATAAAAAAAAAA5wcm9qZWN0X3BhcmFtcwAAAAAH0AAAABNDcmVhdGVQcm9qZWN0UGFyYW1zAAAAAAEAAAfQAAAAB1Byb2plY3QA",
         "AAAAAAAAAAAAAAAVY2hhbmdlX3Byb2plY3Rfc3RhdHVzAAAAAAAAAwAAAAAAAAAOY29udHJhY3Rfb3duZXIAAAAAABMAAAAAAAAACnByb2plY3RfaWQAAAAAAAoAAAAAAAAACm5ld19zdGF0dXMAAAAAB9AAAAANUHJvamVjdFN0YXR1cwAAAAAAAAA=",
@@ -438,6 +488,8 @@ export class Client extends ContractClient {
         "AAAAAAAAAAAAAAAHdXBncmFkZQAAAAABAAAAAAAAAA1uZXdfd2FzbV9oYXNoAAAAAAAD7gAAACAAAAAA",
         "AAAAAAAAAAAAAAAaZ2V0X3Byb2plY3RfZnJvbV9hcHBsaWNhbnQAAAAAAAEAAAAAAAAACWFwcGxpY2FudAAAAAAAABMAAAABAAAH0AAAAAdQcm9qZWN0AA==",
         "AAAAAAAAAAAAAAAFb3duZXIAAAAAAAAAAAAAAQAAABM=",
+        "AAAAAAAAAAAAAAAMZ2V0X3ByZWNoZWNrAAAAAQAAAAAAAAAJYXBwbGljYW50AAAAAAAAEwAAAAEAAAPoAAAH0AAAAA1Sb3VuZFByZUNoZWNrAAAA",
+        "AAAAAAAAAAAAAAASZ2V0X3ByZWNoZWNrX2J5X2lkAAAAAAABAAAAAAAAAApwcm9qZWN0X2lkAAAAAAAKAAAAAQAAA+gAAAfQAAAADVJvdW5kUHJlQ2hlY2sAAAA=",
         "AAAAAgAAAAAAAAAAAAAAC0NvbnRyYWN0S2V5AAAAAAUAAAAAAAAAAAAAAA1OdW1PZlByb2plY3RzAAAAAAAAAAAAAAAAAAAIUHJvamVjdHMAAAABAAAAAAAAAAdQcm9qZWN0AAAAAAEAAAAKAAAAAAAAAAAAAAANUmVnaXN0cnlBZG1pbgAAAAAAAAAAAAAAAAAAFEFwcGxpY2FudFRvUHJvamVjdElE" ]),
       options
     )
@@ -455,6 +507,8 @@ export class Client extends ContractClient {
         get_total_projects: this.txFromJSON<u32>,
         upgrade: this.txFromJSON<null>,
         get_project_from_applicant: this.txFromJSON<Project>,
-        owner: this.txFromJSON<string>
+        owner: this.txFromJSON<string>,
+        get_precheck: this.txFromJSON<Option<RoundPreCheck>>,
+        get_precheck_by_id: this.txFromJSON<Option<RoundPreCheck>>
   }
 }

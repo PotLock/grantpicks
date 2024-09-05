@@ -13,7 +13,7 @@ echo "deployer address: $my_address"
 
 stellar contract invoke --source potlock-testnet --network testnet --id ${lists_contract_id} -- initialize --owner ${my_address} 
 stellar contract invoke --source potlock-testnet --network testnet --id ${registry_contract_id} -- initialize --contract_owner ${my_address} 
-stellar contract invoke --source potlock-testnet --network testnet --id ${round_contract_id} -- initialize --registry_address ${registry_contract_id} --caller ${my_address} --token_address ${native_token} --protocol_fee_basis_points 200 --protocol_fee_recipient ${my_address} --default_page_size 5
+stellar contract invoke --source potlock-testnet --network testnet --id ${round_contract_id} -- initialize --registry_address ${registry_contract_id} --caller ${my_address} --token_address ${native_token} --protocol_fee_basis_points 200 --protocol_fee_recipient ${my_address} --default_page_size 5 --list_address ${lists_contract_id} --kyc_list_id 1
 
 stellar contract bindings typescript --network testnet --contract-id $lists_contract_id --output-dir ./packages/lists-client --overwrite
 stellar contract bindings typescript --network testnet --contract-id $registry_contract_id --output-dir ./packages/project-registry-client --overwrite

@@ -98,3 +98,11 @@ pub struct ProjectFundingHistory {
     pub description: String,
     pub funded_ms: u64,
 }
+
+#[contracttype]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RoundPreCheck {
+    pub project_id: u128,
+    pub has_video: bool,
+    pub applicant: Address,
+}

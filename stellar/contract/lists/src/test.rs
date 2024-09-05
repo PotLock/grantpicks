@@ -65,7 +65,6 @@ fn test_update_list() {
     );
 
     let updated_list = contract.update_list(
-        &alice,
         &new_list.id,
         &Some(String::from_str(&env, "Alice's updated list")),
         &Some(String::from_str(
@@ -117,7 +116,7 @@ fn test_delete_list() {
         &None,
     );
 
-    contract.delete_list(&alice, &new_list.id);
+    contract.delete_list( &new_list.id);
 
     let lists = contract.get_lists(&None, &None);
     assert_eq!(lists.len(), 0);
@@ -206,7 +205,7 @@ fn test_transfer_ownership() {
         &None,
     );
 
-    let new_owner = contract.transfer_ownership(&alice, &new_list.id, &bob);
+    let new_owner = contract.transfer_ownership( &new_list.id, &bob);
 
     assert_eq!(new_owner, bob);
 }
@@ -233,7 +232,7 @@ fn test_add_admins() {
 
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(bob.clone());
-    let new_admins = contract.add_admins(&alice, &new_list.id, &admins);
+    let new_admins = contract.add_admins(&new_list.id, &admins);
 
     assert_eq!(new_admins.len(), 1);
     assert_eq!(new_admins.get(0).unwrap(), bob);
@@ -261,11 +260,11 @@ fn test_remove_admins() {
 
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(bob.clone());
-    let new_admins = contract.add_admins(&alice, &new_list.id, &admins);
+    let new_admins = contract.add_admins(&new_list.id, &admins);
 
     assert_eq!(new_admins.len(), 1);
 
-    let new_admins = contract.remove_admins(&alice, &new_list.id, &admins);
+    let new_admins = contract.remove_admins(&new_list.id, &admins);
 
     assert_eq!(new_admins.len(), 0);
 }

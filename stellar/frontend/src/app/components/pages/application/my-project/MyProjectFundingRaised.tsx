@@ -67,7 +67,7 @@ const MyProjectFundingRaised = () => {
 		if (projectData) {
 			setValue(
 				'funding_histories',
-				projectData.funding_histories.map((histories) => ({
+				projectData.funding_histories.map((histories: any) => ({
 					id: '',
 					source: histories.source,
 					date: new Date(Number(histories.funded_ms)),
@@ -77,7 +77,7 @@ const MyProjectFundingRaised = () => {
 				})),
 			)
 			setCurrentFunding(
-				projectData.funding_histories.map((histories) => ({
+				projectData.funding_histories.map((histories: any) => ({
 					id: '',
 					source: histories.source,
 					date: new Date(Number(histories.funded_ms)),

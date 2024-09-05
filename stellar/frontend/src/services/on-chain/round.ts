@@ -56,11 +56,9 @@ export interface CreateRoundParams {
 	allow_remaining_dist: boolean
 	application_end_ms?: u64
 	application_start_ms?: u64
-	compliance_end_ms?: u64
 	compliance_period_ms?: u64
 	compliance_req_desc: string
 	contacts: Contact[]
-	cooldown_end_ms?: u64
 	cooldown_period_ms?: u64
 	description: string
 	expected_amount: u128
@@ -266,8 +264,6 @@ export const createRound: (
 			application_end_ms: params.application_end_ms || undefined,
 			application_start_ms: params.application_start_ms || undefined,
 			cooldown_period_ms: params.cooldown_period_ms || undefined,
-			cooldown_end_ms: params.cooldown_end_ms || undefined,
-			compliance_end_ms: params.compliance_end_ms || undefined,
 			compliance_period_ms: params.compliance_period_ms || undefined,
 			compliance_req_desc: params.compliance_req_desc,
 			max_participants: params.max_participants || undefined,

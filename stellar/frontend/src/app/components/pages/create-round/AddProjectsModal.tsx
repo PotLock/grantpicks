@@ -24,7 +24,7 @@ import { CreateRoundData } from '@/types/form'
 import { prettyTruncate } from '@/utils/helper'
 import ProjectDetailDrawer from '../round-vote/ProjectDetailDrawer'
 import { IProjectDetailOwner } from '@/app/round-vote/[roundId]/page'
-import { Project } from 'round-client'
+import { Project } from 'project-registry-client'
 
 interface AddProjectsModalProps extends BaseModalProps {
 	selectedProjects: IGetProjectsResponse[]

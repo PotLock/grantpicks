@@ -48,10 +48,10 @@ pub fn log_create_app(env: &Env, round_id: u128, application: RoundApplication) 
     );
 }
 
-pub fn log_update_app(env: &Env, round_id: u128, application: RoundApplication) {
+pub fn log_update_app(env: &Env, round_id: u128, application: RoundApplication, updated_by: Address) {
     env.events().publish(
         (symbol_short!("u_app"), env.current_contract_address()),
-        (round_id, application),
+        (round_id, application, updated_by),
     );
 }
 

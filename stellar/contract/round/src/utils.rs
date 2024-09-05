@@ -1,7 +1,7 @@
 // use soroban_fixed_point_math::SorobanFixedPoint;
 use soroban_sdk::{storage::Persistent, Env};
 
-use crate::fee_writer::read_fee_basis_points;
+use crate::config_writer::read_config;
 
 pub fn count_total_available_pairs(num_of_projects: u32) -> u32 {
     num_of_projects * (num_of_projects - 1) / 2
@@ -26,8 +26,8 @@ pub fn get_ledger_second_as_millis(env: &Env) -> u64 {
 }
 
 pub fn calculate_protocol_fee(env: &Env, amount: u128) -> Option<u128> {
-    let protocol_fee_basis_points = read_fee_basis_points(env);
-    if let Some(protocol_fee_basis_points) = protocol_fee_basis_points {
+    let protocol_fee_basis_points = read_config(env).protocol_fee_basis_points;
+    if protocol_fee_basis_points > 0 {
         // // COMMENTED CODE FIXED POINT MATH DUE BIGGER SIZE
         // let total_basis_points: u128 = 10_000;
         // let fee:u128 = protocol_fee_basis_points as u128;

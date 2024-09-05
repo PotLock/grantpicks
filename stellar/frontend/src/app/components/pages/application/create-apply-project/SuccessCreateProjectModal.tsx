@@ -11,7 +11,7 @@ import IconClock from '@/app/components/svgs/IconClock'
 import Button from '@/app/components/commons/Button'
 import IconEye from '@/app/components/svgs/IconEye'
 import IconExternalLink from '@/app/components/svgs/IconExternalLink'
-import { Project } from 'round-client'
+import { Project } from 'project-registry-client'
 
 interface SuccessCreateProjectModalProps extends BaseModalProps {
 	createProjectRes?: Project

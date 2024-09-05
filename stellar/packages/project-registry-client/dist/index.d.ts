@@ -8,7 +8,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CAS33WXG2UO26ZN4EE2RYG5V6U24RA4QWHFGXPU2TKY4OY2FEYIBTUM2";
+        readonly contractId: "CB56YJY26HSUIQGDGRDFHMWTTFZBMHSVEUPDHKUQH7PQPOSJO7WYYJQO";
     };
 };
 export declare enum ProjectStatus {
@@ -83,6 +83,11 @@ export interface ProjectFundingHistory {
     funded_ms: u64;
     source: string;
 }
+export interface RoundPreCheck {
+    applicant: string;
+    has_video: boolean;
+    project_id: u128;
+}
 export declare const Errors: {
     1: {
         message: string;
@@ -112,6 +117,9 @@ export declare const Errors: {
         message: string;
     };
     10: {
+        message: string;
+    };
+    11: {
         message: string;
     };
 };
@@ -383,6 +391,44 @@ export interface Client {
          */
         simulate?: boolean;
     }) => Promise<AssembledTransaction<string>>;
+    /**
+     * Construct and simulate a get_precheck transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     */
+    get_precheck: ({ applicant }: {
+        applicant: string;
+    }, options?: {
+        /**
+         * The fee to pay for the transaction. Default: BASE_FEE
+         */
+        fee?: number;
+        /**
+         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+         */
+        timeoutInSeconds?: number;
+        /**
+         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+         */
+        simulate?: boolean;
+    }) => Promise<AssembledTransaction<Option<RoundPreCheck>>>;
+    /**
+     * Construct and simulate a get_precheck_by_id transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     */
+    get_precheck_by_id: ({ project_id }: {
+        project_id: u128;
+    }, options?: {
+        /**
+         * The fee to pay for the transaction. Default: BASE_FEE
+         */
+        fee?: number;
+        /**
+         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+         */
+        timeoutInSeconds?: number;
+        /**
+         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+         */
+        simulate?: boolean;
+    }) => Promise<AssembledTransaction<Option<RoundPreCheck>>>;
 }
 export declare class Client extends ContractClient {
     readonly options: ContractClientOptions;
@@ -401,5 +447,7 @@ export declare class Client extends ContractClient {
         upgrade: (json: string) => AssembledTransaction<null>;
         get_project_from_applicant: (json: string) => AssembledTransaction<Project>;
         owner: (json: string) => AssembledTransaction<string>;
+        get_precheck: (json: string) => AssembledTransaction<Option<RoundPreCheck>>;
+        get_precheck_by_id: (json: string) => AssembledTransaction<Option<RoundPreCheck>>;
     };
 }

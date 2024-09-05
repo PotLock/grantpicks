@@ -309,23 +309,30 @@ const RoundResultPage = () => {
 	}
 
 	const roundData = storage.current_round
-	const endOfChallenge = new Date(
-		Number(roundData?.cooldown_end_ms?.toString()) || 0,
-	).getTime()
+	let showCompliance = false
+	let showCooldownChallenge = false
+	let endOfChallenge = new Date()
+	let endOfCompliance = new Date()
 
-	const endOfCompliance = new Date(
-		Number(roundData?.compliance_end_ms?.toString()) || 0,
-	).getTime()
+	if (roundData?.cooldown_end_ms) {
+		endOfChallenge = new Date(
+			Number(roundData?.cooldown_end_ms?.toString()) || 0,
+		)
+		showCooldownChallenge =
+			endOfChallenge.getTime() > new Date().getTime() &&
+			!roundData?.round_complete_ms
+	}
 
-	const complyPeriod = Number(
-		roundData?.compliance_period_ms?.toString() || '0',
-	)
+	if (roundData?.compliance_end_ms) {
+		endOfCompliance = new Date(
+			Number(roundData?.compliance_end_ms?.toString()) || 0,
+		)
 
-	const complianceLong =
-		complyPeriod > 0 ? Math.floor(complyPeriod / 86400000) : 0
+		showCompliance =
+			endOfCompliance.getTime() > new Date().getTime() &&
+			!roundData?.round_complete_ms
+	}
 
-	const showCooldownChallenge = endOfChallenge > new Date().getTime()
-	const showCompliance = endOfCompliance > new Date().getTime()
 	const canRedistribute =
 		storage.current_round &&
 		storage.isPayoutDone &&
@@ -457,7 +464,7 @@ const RoundResultPage = () => {
 					</div>
 					<div className="md:flex">
 						<div className="text-grantpicks-purple-800 text-[25px] font-semibold w-full md:w-3/4 float-left">
-							<TimerEnd expiryTime={endOfChallenge} />
+							<TimerEnd expiryTime={endOfChallenge.getTime()} running />
 							{` `}
 							<span className="text-sm font-normal">Left till payout</span>{' '}
 						</div>
@@ -491,8 +498,10 @@ const RoundResultPage = () => {
 			{showCompliance && !storage.isPayoutDone && (
 				<div className="p-3 md:p-5 rounded-2xl bg-grantpicks-amber-50 w-full my-4 md:my-8">
 					<p className="text-grantpicks-amber-800 text-[25px] font-semibold pb-4 border-b border-grantpicks-amber-200">
-						{complianceLong} days {` `}
-						<span className="text-sm font-normal">to Complete KYC</span>{' '}
+						<TimerEnd expiryTime={endOfCompliance.getTime()} running />
+						<span className="text-sm font-normal">
+							Left to Complete KYC
+						</span>{' '}
 					</p>
 					<p className="text-grantpicks-black-950 text-base font-normal pt-4">
 						{roundData?.compliance_req_desc}
@@ -647,7 +656,7 @@ const RoundResultPage = () => {
 			<ViewChallengeDrawer
 				isOpen={showViewChallengeDrawer}
 				onClose={() => setShowViewChallengeDrawer(false)}
-				endOfChallenge={endOfChallenge}
+				endOfChallenge={endOfChallenge.getTime()}
 			/>
 
 			<EditPayoutModal

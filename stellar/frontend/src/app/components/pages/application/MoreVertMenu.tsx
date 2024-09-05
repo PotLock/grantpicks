@@ -98,7 +98,7 @@ const MoreVertMenu = ({
 						<div className="p-2 flex items-center space-x-2 cursor-pointer hover:opacity-70 transition">
 							<IconUser size={18} className="fill-grantpicks-black-400" />
 							<p className="text-sm font-normal text-grantpicks-black-950">
-								Contact RM {data.contacts[0].value}
+								Contact RM
 							</p>
 						</div>
 					</Link>

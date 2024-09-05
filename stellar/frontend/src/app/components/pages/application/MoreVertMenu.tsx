@@ -94,7 +94,10 @@ const MoreVertMenu = ({
 					</div>
 				)}
 				{selectedRoundType === 'on-going' && (
-					<Link href={generateLink()} target="_blank">
+					<Link
+						href={data.contacts.length > 0 ? generateLink() : ''}
+						target="_blank"
+					>
 						<div className="p-2 flex items-center space-x-2 cursor-pointer hover:opacity-70 transition">
 							<IconUser size={18} className="fill-grantpicks-black-400" />
 							<p className="text-sm font-normal text-grantpicks-black-950">

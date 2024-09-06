@@ -92,9 +92,7 @@ const ApplicationRoundsItem = ({
 
 	const getSpecificTime = () => {
 		if (selectedRoundType === 'upcoming') {
-			if (new Date().getTime() < Number(doc.application_start_ms)) {
-				return `upcoming`
-			} else if (
+			if (
 				Number(doc.application_start_ms) <= new Date().getTime() &&
 				new Date().getTime() < Number(doc.application_end_ms)
 			) {
@@ -104,6 +102,8 @@ const ApplicationRoundsItem = ({
 				new Date().getTime() < Number(doc.voting_start_ms)
 			) {
 				return `upcoming-closed`
+			} else {
+				return `upcoming`
 			}
 		} else if (selectedRoundType === 'on-going') {
 			return `on-going`

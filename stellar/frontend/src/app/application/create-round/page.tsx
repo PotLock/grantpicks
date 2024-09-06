@@ -587,9 +587,9 @@ const CreateRoundPage = () => {
 										</div>
 									}
 									errorMessage={
-										parseFloat(watch().amount) < 0 ? (
+										parseFloat(watch().amount) <= 0 ? (
 											<p className="text-red-500 text-xs mt-1 ml-2">
-												Initial deposit cannot be less than 0
+												Initial deposit cannot be less than or equal to 0
 											</p>
 										) : undefined
 									}
@@ -602,6 +602,7 @@ const CreateRoundPage = () => {
 									required
 									placeholder="Enter amount..."
 									{...register('expected_amount', {
+										required: true,
 										onChange: async (e) => {
 											const calculation =
 												parseFloat(e.target.value || '0') * stellarPrice
@@ -635,9 +636,9 @@ const CreateRoundPage = () => {
 											<p className="text-red-500 text-xs mt-1 ml-2">
 												Expected Amount should not be less than intiial deposit
 											</p>
-										) : parseFloat(watch().expected_amount) < 0 ? (
+										) : parseFloat(watch().expected_amount) <= 0 ? (
 											<p className="text-red-500 text-xs mt-1 ml-2">
-												Expected Amount cannot be less than 0
+												Expected Amount cannot be less than or equal to 0
 											</p>
 										) : undefined
 									}

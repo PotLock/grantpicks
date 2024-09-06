@@ -43,6 +43,7 @@ const MyProjectFundingRaised = () => {
 	const { stellarPubKey, stellarKit } = useWallet()
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const [currentFunding, setCurrentFunding] = useState<IFunding[]>([])
+	const [currentHaventRaised, setCurrentHaventRaised] = useState<boolean>(false)
 	const {
 		control,
 		register,
@@ -76,6 +77,10 @@ const MyProjectFundingRaised = () => {
 					description: histories.description,
 				})),
 			)
+			setValue(
+				'is_havent_raised',
+				projectData.funding_histories.length === 0 ? true : false,
+			)
 			setCurrentFunding(
 				projectData.funding_histories.map((histories: any) => ({
 					id: '',
@@ -85,6 +90,9 @@ const MyProjectFundingRaised = () => {
 					amount: histories.amount.toString(),
 					description: histories.description,
 				})),
+			)
+			setCurrentHaventRaised(
+				projectData.funding_histories.length === 0 ? true : false,
 			)
 		}
 	}
@@ -318,7 +326,8 @@ const MyProjectFundingRaised = () => {
 						className="!py-3 !border !border-grantpicks-black-400 disabled:cursor-not-allowed"
 						isDisabled={
 							JSON.stringify(watch().funding_histories) ===
-							JSON.stringify(currentFunding)
+								JSON.stringify(currentFunding) &&
+							watch().is_havent_raised === currentHaventRaised
 						}
 					>
 						Discard
@@ -332,7 +341,8 @@ const MyProjectFundingRaised = () => {
 						className="!py-3 disabled:cursor-not-allowed"
 						isDisabled={
 							JSON.stringify(watch().funding_histories) ===
-							JSON.stringify(currentFunding)
+								JSON.stringify(currentFunding) &&
+							watch().is_havent_raised === currentHaventRaised
 						}
 					>
 						Save changes

@@ -44,6 +44,7 @@ const CreateProjectStep4 = () => {
 		setData({
 			...data,
 			funding_histories: submitData.funding_histories,
+			is_havent_raised: submitData.is_havent_raised,
 		})
 		setStep(5)
 	}

@@ -115,6 +115,7 @@ const UserMenu = ({
 						onClick={async () => {
 							await onSignOut()
 							onCloseChooseWalletMenu()
+							router.push(`/application`)
 						}}
 					>
 						<IconLogout size={24} className="fill-grantpicks-red-400" />

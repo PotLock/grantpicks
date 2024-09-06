@@ -212,7 +212,7 @@ const LandingHeader = () => {
 									className="stroke-grantpicks-purple-400 shrink-0"
 								/>
 								<p className="text-base font-normal text-grantpicks-black-600">
-									Create prefund  rounds non custodially or do payouts later{' '}
+									Create prefund rounds non custodially or do payouts later{' '}
 								</p>
 							</div>
 							<div className="flex items-center space-x-2">

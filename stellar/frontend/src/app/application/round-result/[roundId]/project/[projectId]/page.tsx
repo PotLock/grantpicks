@@ -267,7 +267,7 @@ const RoundResultProjectDetailPage = () => {
 							</div>
 							<div>
 								<p className="text-[25px] font-normal">
-									USD {(global.stellarPrice * allocation).toFixed(2)}
+									USD {(global.stellarPrice * allocation).toFixed(2)}{' '}
 									<span className="text-base font-normal text-gray-600">
 										{allocation} XLM
 									</span>{' '}

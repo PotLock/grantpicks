@@ -602,6 +602,7 @@ const CreateRoundPage = () => {
 									required
 									placeholder="Enter amount..."
 									{...register('expected_amount', {
+										required: true,
 										onChange: async (e) => {
 											const calculation =
 												parseFloat(e.target.value || '0') * stellarPrice

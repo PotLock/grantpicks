@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation'
 import IconCopy from '../../svgs/IconCopy'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
+import IconLogout from '../../svgs/IconLogout'
 
 const UserMenu = ({
 	onShowChooseWallet,
@@ -116,7 +117,7 @@ const UserMenu = ({
 							onCloseChooseWalletMenu()
 						}}
 					>
-						<IconCube size={24} className="fill-grantpicks-red-400" />
+						<IconLogout size={24} className="fill-grantpicks-red-400" />
 						<p className="text-sm font-normal text-grantpicks-red-600">
 							Disconnect
 						</p>

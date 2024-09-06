@@ -401,7 +401,7 @@ const RoundResultPage = () => {
 							{formatStroopToXlm(
 								storage.current_round?.expected_amount || BigInt(0),
 							)}{' '}
-							XLM
+							XLM{' '}
 							<span className="text-xs md:text-base font-normal text-grantpicks-black-600">
 								{(
 									Number(
@@ -428,7 +428,7 @@ const RoundResultPage = () => {
 								{formatStroopToXlm(
 									storage.current_round?.vault_total_deposits || BigInt(0),
 								)}{' '}
-								XLM
+								XLM{' '}
 								<span className="text-xs md:text-base font-normal text-grantpicks-black-600">
 									{(
 										Number(

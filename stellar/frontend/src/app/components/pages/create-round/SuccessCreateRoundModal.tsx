@@ -50,13 +50,13 @@ const SuccessCreateRoundModal = ({
 						<IconClock size={18} className="fill-grantpicks-black-600" />
 						<p className="text-sm font-normal text-grantpicks-black-600">
 							Starting{' '}
-							{moment(
-								Number(createRoundRes?.application_start_ms) as number,
-							).format('l')}{' '}
+							{moment(Number(createRoundRes?.voting_start_ms) as number).format(
+								'l',
+							)}{' '}
 							and Ending{' '}
-							{moment(
-								Number(createRoundRes?.application_end_ms) as number,
-							).format('l')}
+							{moment(Number(createRoundRes?.voting_end_ms) as number).format(
+								'l',
+							)}
 						</p>
 					</div>
 					<Button

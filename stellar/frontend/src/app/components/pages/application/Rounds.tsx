@@ -93,17 +93,19 @@ const ApplicationRoundsItem = ({
 	const getSpecificTime = () => {
 		if (selectedRoundType === 'upcoming') {
 			if (
-				Number(doc.application_start_ms) <= new Date().getTime() &&
+				new Date().getTime() >= Number(doc.application_start_ms) &&
 				new Date().getTime() < Number(doc.application_end_ms)
 			) {
 				return `upcoming-open`
 			} else if (
-				Number(doc.application_end_ms) <= new Date().getTime() &&
+				new Date().getTime() >= Number(doc.application_end_ms) &&
 				new Date().getTime() < Number(doc.voting_start_ms)
 			) {
 				return `upcoming-closed`
-			} else {
+			} else if (doc.allow_applications) {
 				return `upcoming`
+			} else {
+				return `upcoming-closed`
 			}
 		} else if (selectedRoundType === 'on-going') {
 			return `on-going`
@@ -275,7 +277,10 @@ const ApplicationRoundsItem = ({
 							<div className="flex items-center space-x-1">
 								<IconClock size={18} className="fill-grantpicks-black-400" />
 								<p className="text-sm font-normal text-grantpicks-black-950">
-									Closed{' '}
+									Voting{' '}
+									{moment(
+										new Date(Number(doc.voting_start_ms) as number),
+									).fromNow()}
 								</p>
 							</div>
 						)}

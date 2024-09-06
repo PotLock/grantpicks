@@ -108,23 +108,29 @@ const RoundDetailDrawer = ({
 
 	const getSpecificTime = () => {
 		if (selectedRoundType === 'upcoming') {
-			if (new Date().getTime() < Number(doc.application_start_ms)) {
-				return `upcoming`
-			} else if (
-				Number(doc.application_start_ms) <= new Date().getTime() &&
+			if (
+				new Date().getTime() >= Number(doc.application_start_ms) &&
 				new Date().getTime() < Number(doc.application_end_ms)
 			) {
 				return `upcoming-open`
 			} else if (
-				Number(doc.application_end_ms) <= new Date().getTime() &&
+				new Date().getTime() >= Number(doc.application_end_ms) &&
 				new Date().getTime() < Number(doc.voting_start_ms)
 			) {
+				return `upcoming-closed`
+			} else if (doc.allow_applications) {
+				return `upcoming`
+			} else {
 				return `upcoming-closed`
 			}
 		} else if (selectedRoundType === 'on-going') {
 			return `on-going`
 		} else {
-			return `ended`
+			if (doc.round_complete_ms != undefined) {
+				return `ended`
+			} else {
+				return `payout-pending`
+			}
 		}
 	}
 
@@ -223,7 +229,7 @@ const RoundDetailDrawer = ({
 									).fromNow()}
 								</p>
 							</div>
-						) : selectedRoundType === 'upcoming' ? (
+						) : selectedRoundType === 'upcoming' && doc.allow_applications ? (
 							<div className="flex flex-1 items-center space-x-1">
 								<IconClock size={18} className="fill-grantpicks-black-400" />
 								<p className="text-sm font-normal text-grantpicks-black-950">
@@ -326,9 +332,16 @@ const RoundDetailDrawer = ({
 								onApplyRound()
 								onClose()
 							}}
+							isDisabled={
+								!doc.allow_applications ||
+								new Date().getTime() > Number(doc.application_end_ms)
+							}
 							className="!py-3 flex-1"
 						>
-							Apply
+							{new Date().getTime() > Number(doc.application_end_ms) ||
+							!doc.allow_applications
+								? 'Application Closed'
+								: 'Apply'}
 						</Button>
 						{doc.use_vault && (
 							<Button

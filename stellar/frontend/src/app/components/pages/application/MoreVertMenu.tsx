@@ -58,17 +58,18 @@ const MoreVertMenu = ({
 					</div>
 				)}
 				{(selectedRoundType === 'upcoming' ||
-					selectedRoundType === 'on-going') && (
-					<div
-						className="p-2 flex items-center space-x-2 cursor-pointer hover:opacity-70 transition"
-						onClick={onViewApps}
-					>
-						<IconProject size={18} className="fill-grantpicks-black-400" />
-						<p className="text-sm font-normal text-grantpicks-black-950">
-							Applications
-						</p>
-					</div>
-				)}
+					selectedRoundType === 'on-going') &&
+					data.allow_applications && (
+						<div
+							className="p-2 flex items-center space-x-2 cursor-pointer hover:opacity-70 transition"
+							onClick={onViewApps}
+						>
+							<IconProject size={18} className="fill-grantpicks-black-400" />
+							<p className="text-sm font-normal text-grantpicks-black-950">
+								Applications
+							</p>
+						</div>
+					)}
 				{selectedRoundType === 'upcoming' && data.owner === stellarPubKey && (
 					<div
 						className="p-2 flex items-center space-x-2 cursor-pointer hover:opacity-70 transition"

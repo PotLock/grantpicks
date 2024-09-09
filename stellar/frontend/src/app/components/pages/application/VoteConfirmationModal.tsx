@@ -21,6 +21,8 @@ import { LIMIT_SIZE } from '@/constants/query'
 import CMDWallet from '@/lib/wallet'
 import Contracts from '@/lib/contracts'
 import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
+import { toastOptions } from '@/constants/style'
 
 interface VoteConfirmationModalProps extends BaseModalProps {
 	data?: IGetRoundsResponse
@@ -44,7 +46,7 @@ const VoteConfirmationModal = ({
 			)
 			const newRes = await getPairsRound(data?.id as bigint, contracts)
 			const uniqueProjects = new Set()
-			newRes.map(pair => {
+			newRes.map((pair) => {
 				uniqueProjects.add(pair.projects[0].toString())
 				uniqueProjects.add(pair.projects[1].toString())
 			})
@@ -140,7 +142,13 @@ const VoteConfirmationModal = ({
 							color="black-950"
 							isFullWidth
 							onClick={() => {
-								router.push(`/round-vote/${data?.id}`)
+								if (!stellarPubKey) {
+									toast.error('Please connect your wallet to vote', {
+										style: toastOptions.error.style,
+									})
+								} else {
+									router.push(`/round-vote/${data?.id}`)
+								}
 								onClose()
 								// onApplyRound()
 								// onClose()

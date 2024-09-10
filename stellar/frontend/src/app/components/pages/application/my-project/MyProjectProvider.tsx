@@ -12,6 +12,8 @@ import Button from '@/app/components/commons/Button'
 import { useRouter } from 'next/navigation'
 import { useModalContext } from '@/app/providers/ModalProvider'
 import { Project } from 'project-registry-client'
+import IconClose from '@/app/components/svgs/IconClose'
+import { useGlobalContext } from '@/app/providers/GlobalProvider'
 
 const MyProjectContext = createContext<IMyProjectContext>({
 	projectData: undefined,
@@ -28,6 +30,7 @@ const MyProjectProvider = () => {
 	)
 	const [noProject, setNoProject] = useState<boolean>(false)
 	const { setCreateProjectFormMainProps } = useModalContext()
+	const { setShowMenu } = useGlobalContext()
 
 	const fetchProjectApplicant = async () => {
 		try {
@@ -69,7 +72,15 @@ const MyProjectProvider = () => {
 			<MyProjectLayout>
 				{noProject ? (
 					<div className="fixed z-20 inset-0 backdrop-blur flex items-center justify-center">
-						<div className="rounded-2xl bg-white p-3 md:p-6 flex flex-col items-center">
+						<div className="relative rounded-2xl bg-white p-3 md:p-6 flex flex-col items-center">
+							<IconClose
+								size={24}
+								className="fill-grantpicks-black-400 absolute right-1 top-1 cursor-pointer transition hover:opacity-80"
+								onClick={() => {
+									router.push(`/application`)
+									setShowMenu(null)
+								}}
+							/>
 							<p className="text-base font-semibold text-grantpicks-black-950 mb-4">
 								You don&apos;t have any project now
 							</p>

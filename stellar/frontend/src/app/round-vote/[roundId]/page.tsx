@@ -6,6 +6,8 @@ import IsVotedSection from '@/app/components/pages/round-vote/IsVotedSection'
 import ProjectDetailDrawer from '@/app/components/pages/round-vote/ProjectDetailDrawer'
 import RoundVoteLayout from '@/app/components/pages/round-vote/RoundVoteLayout'
 import { useWallet } from '@/app/providers/WalletProvider'
+import { localStorageConfigs } from '@/configs/local-storage'
+import { toastOptions } from '@/constants/style'
 import Contracts from '@/lib/contracts'
 import CMDWallet from '@/lib/wallet'
 import {
@@ -20,6 +22,7 @@ import { Network } from '@/types/on-chain'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { Project } from 'project-registry-client'
 import React, { useEffect, useRef, useState } from 'react'
+import toast from 'react-hot-toast'
 import { Pair } from 'round-client'
 
 export interface IProjectDetailOwner {
@@ -117,6 +120,18 @@ const RoundVotePage = () => {
 			setHasVoted(true)
 		}
 	}, [stellarPubKey, params.roundId])
+
+	useEffect(() => {
+		const localStellarPubKey = localStorage.getItem(
+			localStorageConfigs.STELLAR_PUBLIC_KEY,
+		)
+		if (!localStellarPubKey) {
+			router.push('/application')
+			toast.error('Please connect your wallet to vote', {
+				style: toastOptions.error.style,
+			})
+		}
+	}, [])
 
 	return (
 		<RoundVoteLayout>

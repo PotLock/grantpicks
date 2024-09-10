@@ -38,7 +38,7 @@ const RoundVotePage = () => {
 	const [showProjectDetailDrawer, setShowProjectDetailDrawer] =
 		useState<IProjectDetailOwner>({ isOpen: false, project: null })
 	const [hasVoted, setHasVoted] = useState<boolean>(false)
-	const { stellarPubKey, onCheckConnected } = useWallet()
+	const { stellarPubKey } = useWallet()
 	const [isEligible, setIsEligible] = useState<boolean>(true)
 	const [pairsData, setPairsData] = useState<Pair[]>([])
 

@@ -29,6 +29,7 @@ import { parseToStroop } from '@/utils/helper'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import { useModalContext } from '@/app/providers/ModalProvider'
 import IconClose from '@/app/components/svgs/IconClose'
+import { localStorageConfigs } from '@/configs/local-storage'
 
 const CreateProjectFormContext = createContext<ICreateProjectFormContext>({
 	data: DEFAULT_CREATE_PROJECT_DATA,
@@ -107,6 +108,11 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 					txHash: txHashCreateProject,
 				}))
 				setDataForm(DEFAULT_CREATE_PROJECT_DATA)
+				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_1)
+				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_2)
+				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_3)
+				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_4)
+				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_5)
 				dismissPageLoading()
 				onClose()
 			}

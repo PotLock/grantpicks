@@ -517,7 +517,11 @@ const MyProjectLinks = () => {
 									<div className="w-[60%]">
 										<InputText
 											disabled={watch().contacts[index].platform === ''}
-											placeholder="t.me/Jameson"
+											placeholder={
+												watch().contacts[index].platform === 'email'
+													? 'jameson@gmail.com'
+													: 'jameson'
+											}
 											{...register(`contacts.${index}.link_url`, {
 												pattern: {
 													value:

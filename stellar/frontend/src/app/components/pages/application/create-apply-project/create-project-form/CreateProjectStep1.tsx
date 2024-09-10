@@ -85,6 +85,8 @@ const CreateProjectStep1 = () => {
 						label="A brief Description"
 						required
 						rows={2}
+						maxLength={300}
+						hintLabel="Max. 300 characters"
 						{...register('description', { required: true })}
 						errorMessage={
 							errors.description?.type === 'required' ? (
@@ -98,6 +100,8 @@ const CreateProjectStep1 = () => {
 						label="Why do you consider yourself a public good?"
 						required
 						rows={2}
+						maxLength={300}
+						hintLabel="Max. 300 characters"
 						{...register('considering_desc', { required: true })}
 						errorMessage={
 							errors.considering_desc?.type === 'required' ? (

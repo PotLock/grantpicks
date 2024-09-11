@@ -129,11 +129,7 @@ export const getProjectApplicant: (
 	if (project) return project.result
 }
 
-export const createProject: (
-	applicant: string,
-	params: ICreateProjectParams,
-	contract: Contracts,
-) => Promise<AssembledTransaction<Project>> = async (
+export const createProject = async (
 	applicant: string,
 	params: ICreateProjectParams,
 	contract: Contracts,
@@ -145,14 +141,9 @@ export const createProject: (
 	return project
 }
 
-export const updateProject: (
+export const updateProject = async (
 	admin: string,
-	project_id: u128,
-	params: IUpdateProjectParams,
-	contract: Contracts,
-) => Promise<AssembledTransaction<null>> = async (
-	admin: string,
-	project_id: u128,
+	project_id: bigint,
 	params: IUpdateProjectParams,
 	contract: Contracts,
 ) => {

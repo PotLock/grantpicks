@@ -237,11 +237,7 @@ export const getRoundInfo: (
 	return round.result
 }
 
-export const createRound: (
-	caller: string,
-	params: CreateRoundParams,
-	contract: Contracts,
-) => Promise<AssembledTransaction<RoundDetail>> = async (
+export const createRound = async (
 	caller: string,
 	params: CreateRoundParams,
 	contract: Contracts,
@@ -276,12 +272,7 @@ export const createRound: (
 	return round
 }
 
-export const editRound: (
-	caller: string,
-	round_id: bigint,
-	params: UpdateRoundParams,
-	contract: Contracts,
-) => Promise<AssembledTransaction<RoundDetail>> = async (
+export const editRound = async (
 	caller: string,
 	round_id: bigint,
 	params: UpdateRoundParams,
@@ -310,11 +301,7 @@ export const editRound: (
 	return round
 }
 
-export const setAdminRound: (
-	round_id: bigint,
-	round_admin: string[],
-	contract: Contracts,
-) => Promise<AssembledTransaction<null>> = async (
+export const setAdminRound = async (
 	round_id: bigint,
 	round_admin: string[],
 	contract: Contracts,
@@ -326,12 +313,7 @@ export const setAdminRound: (
 	return round
 }
 
-export const addProjectsRound: (
-	round_id: u128,
-	admin: string,
-	projects_ids: u128[],
-	contract: Contracts,
-) => Promise<AssembledTransaction<null>> = async (
+export const addProjectsRound = async (
 	round_id: u128,
 	admin: string,
 	project_ids: u128[],
@@ -348,10 +330,7 @@ export const addProjectsRound: (
 	return round
 }
 
-export const depositFundRound: (
-	params: DepositFundRoundParams,
-	contract: Contracts,
-) => Promise<AssembledTransaction<null>> = async (
+export const depositFundRound = async (
 	params: DepositFundRoundParams,
 	contract: Contracts,
 ) => {
@@ -365,11 +344,7 @@ export const depositFundRound: (
 	return res
 }
 
-export const applyProjectToRound: (
-	params: ApplyProjectToRoundParams,
-	is_owner_round: boolean,
-	contract: Contracts,
-) => Promise<AssembledTransaction<RoundApplication>> = async (
+export const applyProjectToRound = async (
 	params: ApplyProjectToRoundParams,
 	is_owner_round: boolean,
 	contract: Contracts,
@@ -384,10 +359,7 @@ export const applyProjectToRound: (
 	return res
 }
 
-export const reviewApplicationRound: (
-	params: ReviewApplicationParams,
-	contract: Contracts,
-) => Promise<AssembledTransaction<RoundApplication>> = async (
+export const reviewApplicationRound = async (
 	params: ReviewApplicationParams,
 	contract: Contracts,
 ) => {
@@ -401,10 +373,7 @@ export const reviewApplicationRound: (
 	return res
 }
 
-export const voteRound: (
-	params: VoteRoundParams,
-	contract: Contracts,
-) => Promise<AssembledTransaction<null>> = async (
+export const voteRound = async (
 	params: VoteRoundParams,
 	contract: Contracts,
 ) => {
@@ -497,10 +466,7 @@ export const getVotingResultsRound: (
 	return round.result
 }
 
-export const challengePayoutRound: (
-	params: ChallengePayoutParams,
-	contract: Contracts,
-) => Promise<AssembledTransaction<PayoutsChallenge>> = async (
+export const challengePayoutRound = async (
 	params: ChallengePayoutParams,
 	contract: Contracts,
 ) => {
@@ -512,10 +478,7 @@ export const challengePayoutRound: (
 	return round
 }
 
-export const updateChallengePayoutRound: (
-	params: UpdateChallengePayoutParams,
-	contract: Contracts,
-) => Promise<AssembledTransaction<PayoutsChallenge>> = async (
+export const updateChallengePayoutRound = async (
 	params: UpdateChallengePayoutParams,
 	contract: Contracts,
 ) => {
@@ -529,10 +492,7 @@ export const updateChallengePayoutRound: (
 	return round
 }
 
-export const setAdminsRound: (
-	params: SetAdminsRoundParams,
-	contract: Contracts,
-) => Promise<AssembledTransaction<null>> = async (
+export const setAdminsRound = async (
 	params: SetAdminsRoundParams,
 	contract: Contracts,
 ) => {

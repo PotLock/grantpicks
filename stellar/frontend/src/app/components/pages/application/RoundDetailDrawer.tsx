@@ -233,10 +233,16 @@ const RoundDetailDrawer = ({
 							<div className="flex flex-1 items-center space-x-1">
 								<IconClock size={18} className="fill-grantpicks-black-400" />
 								<p className="text-sm font-normal text-grantpicks-black-950">
-									Closes{' '}
-									{moment(
-										new Date(Number(doc.application_start_ms) as number),
-									).fromNow()}{' '}
+									{new Date().getTime() < Number(doc.application_start_ms)
+										? 'Open'
+										: 'Closed'}{' '}
+									{new Date().getTime() < Number(doc.application_start_ms)
+										? moment(
+												new Date(Number(doc.application_start_ms) as number),
+											).fromNow()
+										: moment(
+												new Date(Number(doc.application_end_ms) as number),
+											).fromNow()}{' '}
 								</p>
 							</div>
 						) : (

@@ -63,6 +63,13 @@ import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
 import { useModalContext } from '@/app/providers/ModalProvider'
 import { IRoundPeriodData } from '@/types/round'
+import {
+	EMAIL_VALIDATION_REGEX,
+	INSTAGRAM_USERNAME_REGEX,
+	TELEGRAM_USERNAME_REGEX,
+	TWITTER_USERNAME_REGEX,
+} from '@/constants/regex'
+import { subDays } from 'date-fns'
 
 const EditRoundPage = () => {
 	const router = useRouter()
@@ -83,13 +90,15 @@ const EditRoundPage = () => {
 		setValue,
 		watch,
 		reset,
+		trigger,
 		formState: { errors },
 	} = useForm<UpdateRoundData>({
+		mode: 'onChange',
 		defaultValues: {
-			vote_per_person: 0,
+			vote_per_person: 1,
 			apply_duration_start: new Date(),
 			apply_duration_end: new Date(),
-			max_participants: 0,
+			max_participants: 10,
 			voting_duration_start: new Date(),
 			voting_duration_end: new Date(),
 			use_vault: false,
@@ -198,7 +207,9 @@ const EditRoundPage = () => {
 				setValue('vote_per_person', resRoundInfo?.num_picks_per_voter)
 				setValue(
 					'amount',
-					formatStroopToXlm(resRoundInfo?.current_vault_balance),
+					formatStroopToXlm(resRoundInfo?.current_vault_balance) === '0'
+						? ''
+						: formatStroopToXlm(resRoundInfo?.current_vault_balance),
 				)
 				setValue(
 					'expected_amount',
@@ -506,7 +517,7 @@ const EditRoundPage = () => {
 								</p>
 								<div className="flex items-center space-x-4">
 									<Button
-										isDisabled={watch().vote_per_person <= 0}
+										isDisabled={watch().vote_per_person <= 1}
 										color="transparent"
 										onClick={() => {
 											setValue('vote_per_person', watch().vote_per_person - 1)
@@ -518,7 +529,7 @@ const EditRoundPage = () => {
 										/>
 									</Button>
 									<p className="text-sm font-normal text-grantpicks-black-950">
-										{watch().vote_per_person || 0}
+										{watch().vote_per_person || 1}
 									</p>
 									<Button
 										color="transparent"
@@ -564,6 +575,7 @@ const EditRoundPage = () => {
 												<p
 													onClick={() => {
 														setValue('contact_type', 'Telegram')
+														trigger('contact_address')
 														setShowContactType(false)
 													}}
 													className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
@@ -573,6 +585,7 @@ const EditRoundPage = () => {
 												<p
 													onClick={() => {
 														setValue('contact_type', 'Instagram')
+														trigger('contact_address')
 														setShowContactType(false)
 													}}
 													className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
@@ -582,6 +595,7 @@ const EditRoundPage = () => {
 												<p
 													onClick={() => {
 														setValue('contact_type', 'Twitter')
+														trigger('contact_address')
 														setShowContactType(false)
 													}}
 													className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
@@ -591,6 +605,7 @@ const EditRoundPage = () => {
 												<p
 													onClick={() => {
 														setValue('contact_type', 'Email')
+														trigger('contact_address')
 														setShowContactType(false)
 													}}
 													className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
@@ -603,15 +618,52 @@ const EditRoundPage = () => {
 								</div>
 								<div className="flex-1">
 									<InputText
+										disabled={!watch('contact_type')}
 										required
 										placeholder="Your username..."
-										{...register('contact_address', { required: true })}
+										{...register('contact_address', {
+											required: true,
+											validate: (value) => {
+												const contactType = watch('contact_type')
+												if (!value) return true
+												if (contactType === 'Telegram') {
+													return (
+														TELEGRAM_USERNAME_REGEX.test(value) ||
+														'Telegram address is not valid'
+													)
+												}
+												if (contactType === 'Instagram') {
+													return (
+														INSTAGRAM_USERNAME_REGEX.test(value) ||
+														'Instagram address is not valid'
+													)
+												}
+												if (contactType === 'Twitter') {
+													return (
+														TWITTER_USERNAME_REGEX.test(value) ||
+														'Twitter address is not valid'
+													)
+												}
+												if (contactType === 'Email') {
+													return (
+														EMAIL_VALIDATION_REGEX.test(value) ||
+														'Email address is not valid'
+													)
+												}
+												return true
+											},
+										})}
 									/>
 								</div>
 							</div>
 							{errors.contact_address?.type === 'required' && (
 								<p className="text-red-500 text-xs mt-1 ml-2">
 									Contact address is required
+								</p>
+							)}
+							{errors.contact_address && (
+								<p className="text-red-500 text-xs mt-1 ml-2">
+									{errors.contact_address.message}
 								</p>
 							)}
 							<p className="text-xs font-normal text-grantpicks-black-600">
@@ -621,18 +673,21 @@ const EditRoundPage = () => {
 					</div>
 
 					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
-						<div className="flex items-center space-x-4 w-full mb-4">
+						<div className="flex items-start space-x-4 w-full mb-4">
 							<div className="flex-1">
 								<InputText
+									type="number"
 									disabled={!watch().use_vault}
 									label="Amount"
 									placeholder="Enter amount..."
-									onChange={async (e) => {
-										const calculation =
-											parseFloat(e.target.value || '0') * stellarPrice
-										setAmountUsd(`${calculation.toFixed(3)}`)
-										setValue('amount', e.target.value)
-									}}
+									{...register('amount', {
+										onChange: async (e) => {
+											const calculation =
+												parseFloat(e.target.value || '0') * stellarPrice
+											setAmountUsd(`${calculation.toFixed(3)}`)
+											setValue('amount', e.target.value)
+										},
+									})}
 									preffixIcon={
 										<IconStellar
 											size={24}
@@ -650,14 +705,23 @@ const EditRoundPage = () => {
 											</p>
 										</div>
 									}
+									errorMessage={
+										parseFloat(watch().amount) <= 0 ? (
+											<p className="text-red-500 text-xs mt-1 ml-2">
+												Initial deposit cannot be less than or equal to 0
+											</p>
+										) : undefined
+									}
 								/>
 							</div>
 							<div className="flex-1">
 								<InputText
+									type="number"
 									label="Expected Amount"
 									required
 									placeholder="Enter amount..."
 									{...register('expected_amount', {
+										required: true,
 										onChange: async (e) => {
 											const calculation =
 												parseFloat(e.target.value || '0') * stellarPrice
@@ -686,6 +750,15 @@ const EditRoundPage = () => {
 											<p className="text-red-500 text-xs mt-1 ml-2">
 												Expected Amount is required
 											</p>
+										) : parseFloat(watch().expected_amount) <
+										  parseFloat(watch().amount) ? (
+											<p className="text-red-500 text-xs mt-1 ml-2">
+												Expected Amount should not be less than intiial deposit
+											</p>
+										) : parseFloat(watch().expected_amount) <= 0 ? (
+											<p className="text-red-500 text-xs mt-1 ml-2">
+												Expected Amount cannot be less than or equal to 0
+											</p>
 										) : undefined
 									}
 								/>
@@ -695,7 +768,10 @@ const EditRoundPage = () => {
 							<Checkbox
 								label="Open Funding Pool"
 								checked={watch().use_vault}
-								onChange={(e) => setValue('use_vault', e.target.checked)}
+								onChange={(e) => {
+									setValue('use_vault', e.target.checked)
+									setValue('amount', '')
+								}}
 							/>
 						</div>
 					</div>
@@ -723,10 +799,11 @@ const EditRoundPage = () => {
 									<div className="flex space-x-4 mb-2">
 										<div className="w-[35%] space-y-1">
 											<InputText
+												type="number"
 												disabled={!watch().allow_application}
 												label="Max Participants"
-												placeholder="0"
-												required
+												placeholder="10"
+												required={watch().allow_application}
 												{...register('max_participants', {
 													required: watch().allow_application === true,
 													onChange: (e) => {
@@ -739,7 +816,7 @@ const EditRoundPage = () => {
 												preffixIcon={
 													<Button
 														color="transparent"
-														isDisabled={watch().max_participants === 0}
+														isDisabled={watch().max_participants <= 10}
 														onClick={() =>
 															setValue(
 																'max_participants',
@@ -775,6 +852,10 @@ const EditRoundPage = () => {
 												<p className="text-red-500 text-xs mt-1 ml-2">
 													Max Participants is required
 												</p>
+											) : watch().max_participants < 10 ? (
+												<p className="text-red-500 text-xs mt-1 ml-2">
+													Min. 10 Participants
+												</p>
 											) : undefined}
 										</div>
 										<div className="w-[65%]">
@@ -791,8 +872,12 @@ const EditRoundPage = () => {
 														disabled={!watch().allow_application}
 														showIcon
 														selectsRange={true}
+														maxDate={subDays(
+															watch().voting_duration_start as Date,
+															0,
+														)}
 														icon={
-															<div className="flex items-center mt-2">
+															<div className="flex items-center mt-2 pr-2">
 																<IconCalendar
 																	size={20}
 																	className="fill-grantpicks-black-400"
@@ -845,6 +930,7 @@ const EditRoundPage = () => {
 										render={({ field }) => (
 											<DatePicker
 												showIcon
+												minDate={subDays(watch().apply_duration_end as Date, 1)}
 												selectsRange={true}
 												icon={
 													<div className="flex items-center mt-2">
@@ -861,7 +947,9 @@ const EditRoundPage = () => {
 												isClearable={true}
 												onChange={(date) => {
 													field.onChange(date[0])
-													setValue('voting_duration_end', date[1])
+													setValue('voting_duration_end', date[1], {
+														shouldValidate: true,
+													})
 												}}
 												className="border border-grantpicks-black-200 rounded-xl w-full h-12"
 												wrapperClassName="w-full mb-1"
@@ -873,6 +961,25 @@ const EditRoundPage = () => {
 											Start and end voting duration is required
 										</p>
 									) : undefined}
+									<Controller
+										name="voting_duration_end"
+										control={control}
+										rules={{
+											validate: {
+												validEndDate: (value) => {
+													const currentDate = new Date()
+													return (value && value >= currentDate) || false
+												},
+											},
+										}}
+										render={() => <></>}
+									/>
+									{watch('voting_duration_end') &&
+										errors.voting_duration_end?.type === 'validEndDate' && (
+											<p className="text-red-500 text-xs mt-1 ml-2">
+												Voting end date cannot be in the past
+											</p>
+										)}
 								</div>
 							</>
 						)}
@@ -996,7 +1103,7 @@ const EditRoundPage = () => {
 						isFullWidth
 						onClick={handleSubmit(onEditRound)}
 					>
-						Edit Round
+						Save Changes
 					</Button>
 				</div>
 			</div>

@@ -138,7 +138,10 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 			let cmdWallet = new CMDWallet({
 				stellarPubKey: localStellarPubKey,
 			})
-			const balances = parseInt((await cmdWallet.getBalances())[0].balance)
+			const filterXLM = (await cmdWallet.getBalances()).filter(
+				(xlm) => xlm.asset_type === 'native',
+			)
+			const balances = parseInt(filterXLM[0].balance)
 			setCurrentBalance(balances)
 			return
 		} else {

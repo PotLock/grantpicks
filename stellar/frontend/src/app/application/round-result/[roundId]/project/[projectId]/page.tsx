@@ -134,7 +134,7 @@ const RoundResultProjectDetailPage = () => {
 
 			const txHash = await contract.signAndSendTx(
 				stellarKit as StellarWalletsKit,
-				unflagTx,
+				unflagTx.toXDR(),
 				stellarPubKey,
 			)
 

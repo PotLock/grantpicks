@@ -52,12 +52,9 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 	const onProceedApply = async () => {
 		try {
 			openPageLoading()
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
 			const contracts = new Contracts(
 				process.env.NETWORK_ENV as Network,
-				cmdWallet,
+				undefined,
 			)
 			const params: ICreateProjectParams = {
 				name: dataForm.title,
@@ -90,6 +87,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 					value: mem,
 				})),
 			}
+
 			const txCreateProject = await createProject(
 				stellarPubKey,
 				params,
@@ -97,7 +95,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 			)
 			const txHashCreateProject = await contracts.signAndSendTx(
 				stellarKit as StellarWalletsKit,
-				txCreateProject,
+				txCreateProject.toXDR(),
 				stellarPubKey,
 			)
 			if (txHashCreateProject) {
@@ -117,6 +115,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 				onClose()
 			}
 		} catch (error: any) {
+			console.error(error)
 			console.log('error', error?.message)
 			toast.error(error?.message || 'Something went wrong', {
 				style: toastOptions.error.style,

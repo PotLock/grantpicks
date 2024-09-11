@@ -158,7 +158,7 @@ export const updateProject: (
 ) => {
 	let project = await contract.project_contract.update_project({
 		admin,
-		project_id,
+		project_id: project_id,
 		new_project_params: params,
 	})
 	return project

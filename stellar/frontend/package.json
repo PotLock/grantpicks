@@ -12,7 +12,7 @@
 		"prettier-check": "prettier --check ."
 	},
 	"dependencies": {
-		"@creit.tech/stellar-wallets-kit": "^0.9.2",
+		"@creit.tech/stellar-wallets-kit": "^1.2.0",
 		"@livepeer/react": "^4.2.2",
 		"@near-wallet-selector/coin98-wallet": "^8.9.10",
 		"@near-wallet-selector/core": "^8.9.10",
@@ -30,7 +30,7 @@
 		"@near-wallet-selector/okx-wallet": "^8.9.10",
 		"@near-wallet-selector/sender": "^8.9.10",
 		"@near-wallet-selector/wallet-connect": "^8.9.10",
-		"@stellar/stellar-sdk": "^12.1.0",
+		"@stellar/stellar-sdk": "^12.2.0",
 		"axios": "^1.7.2",
 		"clsx": "^2.1.1",
 		"date-fns": "^3.6.0",

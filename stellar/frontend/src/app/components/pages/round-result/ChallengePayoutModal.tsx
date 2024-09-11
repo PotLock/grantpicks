@@ -47,7 +47,7 @@ const ChallengePayoutModal = ({
 			)
 			const txhash = await contracts.signAndSendTx(
 				stellarKit as StellarWalletsKit,
-				tx,
+				tx.toXDR(),
 				stellarPubKey,
 			)
 			if (txhash) {

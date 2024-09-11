@@ -79,7 +79,7 @@ const FundRoundModal = ({
 			)
 			const txHash = await contracts.signAndSendTx(
 				stellarKit as StellarWalletsKit,
-				tx,
+				tx.toXDR(),
 				stellarPubKey,
 			)
 			if (txHash) {

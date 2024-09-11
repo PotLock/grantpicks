@@ -99,9 +99,21 @@ export const submitTx = async ({
 }: SubmitTxProps) => {
 	if (server instanceof SorobanRpc.Server) {
 		const tx = TransactionBuilder.fromXDR(signedXDR, networkPassphrase)
+
 		let sendResponse
 		let getTx
 		sendResponse = await server.sendTransaction(tx)
+
+		if (sendResponse.status == 'ERROR' && sendResponse.errorResult) {
+			throw new Error('Transaction failed', {
+				cause: sendResponse.errorResult?.result,
+			})
+		}
+
+		if (sendResponse.status == 'TRY_AGAIN_LATER') {
+			throw new Error('Transaction failed. Try again later')
+		}
+
 		getTx = await server.getTransaction(sendResponse.hash)
 
 		while (sendResponse.status == 'PENDING' && getTx.status == 'NOT_FOUND') {

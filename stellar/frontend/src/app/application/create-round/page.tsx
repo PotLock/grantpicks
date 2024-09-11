@@ -143,7 +143,7 @@ const CreateRoundPage = () => {
 			)
 			const txHash = await contracts.signAndSendTx(
 				stellarKit as StellarWalletsKit,
-				txAddProject,
+				txAddProject.toXDR(),
 				stellarPubKey,
 			)
 			return txHash
@@ -174,7 +174,7 @@ const CreateRoundPage = () => {
 			)
 			const txHash = await contracts.signAndSendTx(
 				stellarKit as StellarWalletsKit,
-				txAddProject,
+				txAddProject.toXDR(),
 				stellarPubKey,
 			)
 			return txHash
@@ -248,7 +248,7 @@ const CreateRoundPage = () => {
 			)
 			const txHashCreateRound = await contracts.signAndSendTx(
 				stellarKit as StellarWalletsKit,
-				txCreateRound,
+				txCreateRound.toXDR(),
 				stellarPubKey,
 			)
 			if (txHashCreateRound) {

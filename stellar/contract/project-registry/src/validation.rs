@@ -11,9 +11,9 @@ pub fn validate_application(env: &Env, project_params: &CreateProjectParams) {
         panic_with_error!(env, Error::EmptyAdmins);
     }
 
-    if project_params.contacts.is_empty() {
-        panic_with_error!(env, Error::EmptyContacts);
-    }
+    // if project_params.contacts.is_empty() {
+    //     panic_with_error!(env, Error::EmptyContacts);
+    // }
 
     if project_params.image_url.is_empty() {
         panic_with_error!(env, Error::EmptyImageUrl);
@@ -29,9 +29,9 @@ pub fn validate_application(env: &Env, project_params: &CreateProjectParams) {
 }
 
 pub fn validate_update_project(env: &Env, update_params: &UpdateProjectParams) {
-    if update_params.contacts.is_empty() {
-        panic_with_error!(env, Error::EmptyContacts);
-    }
+    // if update_params.contacts.is_empty() {
+    //     panic_with_error!(env, Error::EmptyContacts);
+    // }
 
     if update_params.image_url.is_empty() {
         panic_with_error!(env, Error::EmptyImageUrl);

@@ -51,7 +51,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 	const [stellarPubKey, setStellarPubKey] = useState<string>('')
 	const [currentBalance, setCurrentBalance] = useState<number | null>()
 	const [isInit, setIsInit] = useState<boolean>(true)
-  const store = useAppStorage()
+	const store = useAppStorage()
 
 	const onInitNear = async () => {
 		try {
@@ -126,7 +126,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 			setNearAccounts(accounts)
 			return
 		} else if (kit && localStellarPubKey) {
-			const pubKey = await kit?.getPublicKey()
+			const pubKey = (await kit?.getAddress()).address
 			setConnectedWallet('stellar')
 			localStorage.setItem(localStorageConfigs.CONNECTED_WALLET, 'stellar')
 			setStellarPubKey(localStellarPubKey || pubKey)
@@ -165,7 +165,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 						localStorageConfigs.LAST_STELLAR_WALLET_ID,
 						option.id,
 					)
-					const pubKey = await stellarKit?.getPublicKey()
+					const pubKey = (await stellarKit?.getAddress()).address
 					setConnectedWallet('stellar')
 					localStorage.setItem(localStorageConfigs.CONNECTED_WALLET, 'stellar')
 					setStellarPubKey(pubKey)

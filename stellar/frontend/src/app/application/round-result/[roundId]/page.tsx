@@ -197,7 +197,7 @@ const RoundResultPage = () => {
 
 			const txHash = await contract.signAndSendTx(
 				stellarKit as StellarWalletsKit,
-				payoutTx,
+				payoutTx.toXDR(),
 				storage.my_address || stellarPubKey,
 			)
 
@@ -228,10 +228,10 @@ const RoundResultPage = () => {
 					caller: storage.my_address || '',
 				},
 			)
-
+			txRoundCompleted.simulate()
 			const txHash = await contract.signAndSendTx(
 				stellarKit as StellarWalletsKit,
-				txRoundCompleted,
+				txRoundCompleted.toXDR(),
 				storage.my_address || stellarPubKey,
 			)
 
@@ -275,7 +275,7 @@ const RoundResultPage = () => {
 
 			const txHash = await contract.signAndSendTx(
 				stellarKit as StellarWalletsKit,
-				distributeRemainingTx,
+				distributeRemainingTx.toXDR(),
 				storage.my_address || stellarPubKey,
 			)
 

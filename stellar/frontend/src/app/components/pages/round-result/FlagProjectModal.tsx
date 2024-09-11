@@ -31,7 +31,7 @@ const FlagProjectModal = ({ isOpen, onClose }: BaseModalProps) => {
 
 			const txHash = await contract.signAndSendTx(
 				stellarKit as StellarWalletsKit,
-				flagTx,
+				flagTx.toXDR(),
 				stellarPubKey,
 			)
 

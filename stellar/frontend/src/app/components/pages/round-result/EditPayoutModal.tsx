@@ -87,7 +87,7 @@ const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 
 			const txHash = await contract.signAndSendTx(
 				stellarKit as StellarWalletsKit,
-				savePayoutTx,
+				savePayoutTx.toXDR(),
 				stellarPubKey,
 			)
 

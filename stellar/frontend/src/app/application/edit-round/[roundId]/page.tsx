@@ -314,7 +314,7 @@ const EditRoundPage = () => {
 			)
 			const txHash = await contracts.signAndSendTx(
 				stellarKit as StellarWalletsKit,
-				txAddProject,
+				txAddProject.toXDR(),
 				stellarPubKey,
 			)
 			return txHash
@@ -342,7 +342,7 @@ const EditRoundPage = () => {
 			)
 			const txHash = await contracts.signAndSendTx(
 				stellarKit as StellarWalletsKit,
-				txAddAdmins,
+				txAddAdmins.toXDR(),
 				stellarPubKey,
 			)
 			return txHash
@@ -368,7 +368,7 @@ const EditRoundPage = () => {
 	// 		// )
 	// 		// const txHash = await contracts.signAndSendTx(
 	// 		// 	stellarKit as StellarWalletsKit,
-	// 		// 	txAddProject,
+	// 		// 	txAddProject.toXDR(),
 	// 		// 	stellarPubKey,
 	// 		// )
 	// 		// return txHash
@@ -428,7 +428,7 @@ const EditRoundPage = () => {
 			console.log('tx update round', txUpdateRound)
 			const txHashUpdateRound = await contracts.signAndSendTx(
 				stellarKit as StellarWalletsKit,
-				txUpdateRound,
+				txUpdateRound.toXDR(),
 				stellarPubKey,
 			)
 			console.log('tx hash update round', txUpdateRound)

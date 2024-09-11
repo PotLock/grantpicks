@@ -85,7 +85,7 @@ const ApplyProjectModal = ({
 			)
 			const txHashApplyProject = await contracts.signAndSendTx(
 				stellarKit as StellarWalletsKit,
-				txApplyProject,
+				txApplyProject.toXDR(),
 				stellarPubKey,
 			)
 			if (txHashApplyProject) {

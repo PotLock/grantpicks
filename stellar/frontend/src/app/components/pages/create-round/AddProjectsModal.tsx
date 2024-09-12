@@ -25,6 +25,8 @@ import { prettyTruncate } from '@/utils/helper'
 import ProjectDetailDrawer from '../round-vote/ProjectDetailDrawer'
 import { IProjectDetailOwner } from '@/app/round-vote/[roundId]/page'
 import { Project } from 'project-registry-client'
+import toast from 'react-hot-toast'
+import { toastOptions } from '@/constants/style'
 
 interface AddProjectsModalProps extends BaseModalProps {
 	selectedProjects: IGetProjectsResponse[]
@@ -216,7 +218,14 @@ const AddProjectsModal = ({
 											className="flex items-center space-x-2 p-2 cursor-pointer hover:bg-grantpicks-black-200 transition"
 											key={index}
 											onClick={() =>
-												setTempSelectedProjects((prev) => [project, ...prev])
+												tempSelectedProjects.length < 10
+													? setTempSelectedProjects((prev) => [
+															project,
+															...prev,
+														])
+													: toast.error('Max. 10 projects', {
+															style: toastOptions.error.style,
+														})
 											}
 										>
 											<Image

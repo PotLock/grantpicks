@@ -119,8 +119,7 @@ const LandingHeader = () => {
 							</p>
 						</div>
 						<p className="text-xl font-semibold text-grantpicks-black-950">
-							Voters pick a from a pair that’s considered to have the most
-							impact{' '}
+							{`Voters pick from a pair that's considered to have the most impact`}{' '}
 						</p>
 					</div>
 					<div className="flex items-center space-x-2 md:space-x-4 px-4 py-3 md:py-5 border border-black/10 rounded-lg">

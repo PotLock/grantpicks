@@ -497,7 +497,7 @@ impl IsRound for RoundContract {
         write_round_info(env, round_id, &updated_round);
         extend_instance(env);
         extend_round(env, round_id);
-        log_create_deposit(env, round.id, caller, amount);
+        log_create_deposit(env, round.id, &deposit);
     }
 
     fn vote(env: &Env, round_id: u128, voter: Address, picks: Vec<PickedPair>) {

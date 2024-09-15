@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation'
 import React from 'react'
 import IconCheck from '../../svgs/IconCheck'
 import Button from '../../commons/Button'
+import Link from 'next/link'
 
 const LandingHeader = () => {
 	const router = useRouter()
@@ -17,20 +18,28 @@ const LandingHeader = () => {
 						height={40}
 						className="object-contain"
 					/>
-					<p className="text-base font-bold text-grantpicks-purple-950 uppercase">{`INTRODUCING GRANTPICKS`}</p>
+					<p className="text-base font-bold text-grantpicks-purple-950">{`Introducing GrantPicks`}</p>
 				</div>
 				<p className="text-[40px] md:text-[44px] lg:text-[50px] xl:text-[62px] max-w-[90%] md:max-w-full hidden md:block font-black text-center uppercase leading-[1.00] whitespace-pre mb-6 z-10">
-					{`Quickly pick your favorite\nprojects get them funded\nand win points.`}
+					{`Head to head contests\nfor funding projects.`}
 				</p>
 				<p className="text-[40px] md:text-[44px] lg:text-[50px] xl:text-[62px] max-w-[80%] md:max-w-full block md:hidden font-black text-center uppercase leading-[1.00] whitespace-pre-wrap mb-6 z-10">
-					{`Quickly pick your favorite projects get them funded\nand win points.`}
+					{`Head to head contests\nfor funding projects.`}
 				</p>
-				<button
-					onClick={() => router.push(`/application`)}
-					className="z-10 launch-app-button w-full md:w-auto bg-gradient-to-b from-[#7B3AED] to-[#5A21B6] text-white border boder-[#DDD6FE] rounded-full px-10 py-3 text-base font-semibold shadow-xl transition-all hover:scale-105 duration-500"
-				>
-					Launch App
-				</button>
+				<div className="flex flex-row justify-center space-x-2 sm:space-x-4 z-10 w-full">
+					<button
+						onClick={() => router.push(`/application`)}
+						className="z-10 launch-app-button  bg-gradient-to-b from-[#7B3AED] to-[#5A21B6] text-white border border-[#DDD6FE] rounded-full px-4 sm:px-6 py-3 text-sm sm:text-base font-semibold shadow-xl transition-all hover:scale-105 duration-500 whitespace-nowrap"
+					>
+						Launch App
+					</button>
+					<button
+						onClick={() => window.open('https://docs.grantpicks.com', '_blank')}
+						className="z-10 learn-more-button bg-white text-[#7B3AED] border border-[#7B3AED] rounded-full px-4 sm:px-6 py-3 text-sm sm:text-base font-semibold transition-all hover:bg-[#F3E8FF] duration-500 whitespace-nowrap"
+					>
+						Learn More
+					</button>
+				</div>
 			</div>
 			<div className="pt-20 md:pt-24 xl:pt-32 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4 md:gap-6 xl:gap-8">
 				<div className="flex items-center space-x-4 z-10">
@@ -44,7 +53,7 @@ const LandingHeader = () => {
 					<div>
 						<div className="w-10 h-0 border-2 border-black mb-3"></div>
 						<p className="text-base md:text-lg xl:text-xl font-semibold text-grantpicks-black-950">
-							No need to review entire sample set
+							Quickly create transparent funding pots.
 						</p>
 					</div>
 				</div>
@@ -59,7 +68,7 @@ const LandingHeader = () => {
 					<div>
 						<div className="w-10 h-0 border-2 border-black mb-3"></div>
 						<p className="text-base md:text-lg xl:text-xl font-semibold text-grantpicks-black-950">
-							Make funding decisions quicker in minutes{' '}
+							Run large gamified contests quicker.{' '}
 						</p>
 					</div>
 				</div>
@@ -89,7 +98,7 @@ const LandingHeader = () => {
 					className="mb-4 md:mb-6 z-10"
 				/>
 				<p className="text-center z-10 text-[25px] md:text-[27px] lg:text-[30px] xl:text-[32px] font-black text-grantpicks-black-950 mb-10 lg:mb-12">
-					HOW IT WORKS
+					<Link href={`https://docs.grantpicks.com`} target="_blank">HOW IT WORKS</Link>
 				</p>
 				<div className="how-it-works-div z-10 p-2 md:p-3 grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 w-full md:w-[80%] lg:w-[70%]">
 					<div className="flex items-center space-x-2 md:space-x-4 px-4 py-3 md:py-5 border border-black/10 rounded-lg">
@@ -99,7 +108,7 @@ const LandingHeader = () => {
 							</p>
 						</div>
 						<p className="text-xl font-semibold text-grantpicks-black-950">
-							Round manager creates a Round
+							Manager creates a round
 						</p>
 					</div>
 					<div className="flex items-center space-x-2 md:space-x-4 px-4 py-3 md:py-5 border border-black/10 rounded-lg">
@@ -109,7 +118,7 @@ const LandingHeader = () => {
 							</p>
 						</div>
 						<p className="text-xl font-semibold text-grantpicks-black-950">
-							Projects apply in the Round{' '}
+							Projects apply to the round{' '}
 						</p>
 					</div>
 					<div className="flex items-center space-x-2 md:space-x-4 px-4 py-3 md:py-5 border border-black/10 rounded-lg col-span-1 md:col-span-2">
@@ -119,8 +128,7 @@ const LandingHeader = () => {
 							</p>
 						</div>
 						<p className="text-xl font-semibold text-grantpicks-black-950">
-							Voters pick a from a pair that’s considered to have the most
-							impact{' '}
+							Voter picks top choices from a set of random head to head battles{' '}
 						</p>
 					</div>
 					<div className="flex items-center space-x-2 md:space-x-4 px-4 py-3 md:py-5 border border-black/10 rounded-lg">
@@ -209,7 +217,7 @@ const LandingHeader = () => {
 							<div className="flex items-center space-x-2">
 								<IconCheck size={24} className="stroke-grantpicks-purple-400" />
 								<p className="text-base font-normal text-grantpicks-black-600">
-									Create prefund  rounds non custodially or do payouts later{' '}
+									Create prefund rounds non custodially or do payouts later{' '}
 								</p>
 							</div>
 							<div className="flex items-center space-x-2">
@@ -227,7 +235,7 @@ const LandingHeader = () => {
 							<div className="flex items-center space-x-2">
 								<IconCheck size={24} className="stroke-grantpicks-purple-400" />
 								<p className="text-base font-normal text-grantpicks-black-600">
-									Flag bot voters {' '}
+									Flag bot voters{' '}
 								</p>
 							</div>
 							<div className="flex items-center space-x-2">
@@ -271,7 +279,7 @@ const LandingHeader = () => {
 								Who can create a round?
 							</p>
 							<p className="text-base font-normal text-grantpicks-black-600">
-								Get access to funding rounds
+								Anyone can create a funding round, but initially will be whitelisted. For more info check out our guide for <Link href={`https://docs.grantpicks.com/user-guides/for-round-managers`} className="text-[#7B3AED] text-base font-bold cursor-pointer hover:opacity-80" target="_blank">Round Owners / Managers</Link>.
 							</p>
 						</div>
 						<div className="space-y-2 lg:space-y-4 mb-4 md:mb-6 lg:mb-8">
@@ -280,7 +288,7 @@ const LandingHeader = () => {
 							</p>
 							<p className="text-base font-normal text-grantpicks-black-600">
 								This mechanism is strictly voting, However you can separately
-								donate through Potlock’s donation contracts?{' '}
+								donate through Potlock's donation contracts?{' '}
 							</p>
 						</div>
 						<div className="space-y-2 lg:space-y-4 mb-4 md:mb-6 lg:mb-8">
@@ -288,7 +296,7 @@ const LandingHeader = () => {
 								What blockchains do you currently support?{' '}
 							</p>
 							<p className="text-base font-normal text-grantpicks-black-600">
-								Stellar and NEAR
+								<Link href={`https://stellar.org`} className="text-[#7B3AED] text-base font-bold cursor-pointer hover:opacity-80" target="_blank">Stellar</Link> and <Link href={`https://near.org`} className="text-[#7B3AED] text-base font-bold cursor-pointer hover:opacity-80" target="_blank">NEAR</Link>
 							</p>
 						</div>
 					</div>
@@ -299,9 +307,9 @@ const LandingHeader = () => {
 							</p>
 							<p className="text-base font-normal text-grantpicks-black-600">
 								Our contracts are currently going under audits.{' '}
-								<span className="text-base font-bold cursor-pointer hover:opacity-80">
+								<Link href="https://potlock.org/audits" target="_blank" className="text-[#7B3AED] text-base font-bold cursor-pointer hover:opacity-80">
 									Check out all our audits here
-								</span>
+								</Link>
 							</p>
 						</div>
 						<div className="space-y-2 lg:space-y-4 mb-4 md:mb-6 lg:mb-8">
@@ -309,7 +317,7 @@ const LandingHeader = () => {
 								How does the voting algorithm work?{' '}
 							</p>
 							<p className="text-base font-normal text-grantpicks-black-600">
-								Calculates based on preferences. Actual script can be found here
+								Calculates based on preferences using budget boxing. <Link href={`https://docs.grantpicks.com/user-guides/pairwise-voting-explained`} className="text-[#7B3AED] text-base font-bold cursor-pointer hover:opacity-80" target="_blank">Actual script can be found here</Link>
 							</p>
 						</div>
 					</div>

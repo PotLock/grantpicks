@@ -1,6 +1,7 @@
 import React from 'react'
 import IconTwitter from '../svgs/IconTwitter'
 import IconTelegram from '../svgs/IconTelegram'
+import IconGithub from '../svgs/IconGithub'
 import clsx from 'clsx'
 import Link from 'next/link'
 
@@ -13,7 +14,7 @@ const Footer = ({ isWhiteBgColor = true }: { isWhiteBgColor?: boolean }) => {
 			)}
 		>
 			<p className="text-sm font-semibold text-grantpicks-black-600 z-10">
-				BUILT BY POTLOCK
+				BUILT BY 🫕 <Link href={`https://potlock.org`} target="_blank">POTLOCK</Link>
 			</p>
 			<div
 				className={clsx(
@@ -38,7 +39,7 @@ const Footer = ({ isWhiteBgColor = true }: { isWhiteBgColor?: boolean }) => {
 				</Link>
 			</div>
 			<p className="text-sm font-semibold text-grantpicks-black-600 z-10">
-				INSPIRED BY COLONY.IO & DORG.TECH
+				INSPIRED BY <Link href={`https://news.colony.io/ideas/en/budget-box`} target="_blank">COLONY</Link> & <Link href={`https://pairdrop.daodrops.io/`} target="_blank">dORG</Link>
 			</p>
 			<div
 				className={clsx(
@@ -57,6 +58,10 @@ const Footer = ({ isWhiteBgColor = true }: { isWhiteBgColor?: boolean }) => {
 					size={24}
 					className="cursor-pointer hover:opacity-80 transition fill-grantpicks-black-400"
 				/>
+				{/* <IconGithub
+					size={24}
+					className="cursor-pointer hover:opacity-80 transition fill-grantpicks-black-400"
+				/> */}
 			</div>
 		</div>
 	)

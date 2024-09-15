@@ -18,12 +18,9 @@
 
 body {
 	color: rgb(var(--foreground-rgb));
-	background: linear-gradient(
-			to bottom,
+	background: linear-gradient(to bottom,
 			transparent,
-			rgb(var(--background-end-rgb))
-		)
-		rgb(var(--background-start-rgb));
+			rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
 }
 
 @layer utilities {
@@ -34,11 +31,9 @@ body {
 	.launch-app-button {
 		border-radius: 24px;
 		border: 1px solid rgba(237, 233, 254, 0);
-		background: radial-gradient(
-			83.78% 135.19% at 52.55% 0%,
-			#7b3aed 0%,
-			#5a21b6 99.6%
-		);
+		background: radial-gradient(83.78% 135.19% at 52.55% 0%,
+				#7b3aed 0%,
+				#5a21b6 99.6%);
 		box-shadow:
 			0px 16px 16px -8px rgba(137, 90, 246, 0.2),
 			0px 8px 8px -4px rgba(137, 90, 246, 0.3),
@@ -72,22 +67,18 @@ body {
 
 	.easily-decide-div {
 		border-radius: 20px;
-		background: linear-gradient(
-			269deg,
-			#9e77f8 -4.71%,
-			#8d5ef7 48.83%,
-			#743cf6 101.94%
-		);
+		background: linear-gradient(269deg,
+				#9e77f8 -4.71%,
+				#8d5ef7 48.83%,
+				#743cf6 101.94%);
 	}
 
 	.launch-app-button-easily-decide {
 		border-radius: 24px;
 		border: 1px solid rgba(237, 233, 254, 0);
-		background: radial-gradient(
-			83.78% 135.19% at 52.55% 0%,
-			#7b3aed 0%,
-			#5a21b6 99.6%
-		);
+		background: radial-gradient(83.78% 135.19% at 52.55% 0%,
+				#7b3aed 0%,
+				#5a21b6 99.6%);
 		box-shadow:
 			0px 16px 16px -8px rgba(137, 90, 246, 0.2),
 			0px 8px 8px -4px rgba(137, 90, 246, 0.3),
@@ -105,8 +96,10 @@ body {
 
 	/* Hide scrollbar for IE, Edge and Firefox */
 	.no-scrollbar {
-		-ms-overflow-style: none; /* IE and Edge */
-		scrollbar-width: none; /* Firefox */
+		-ms-overflow-style: none;
+		/* IE and Edge */
+		scrollbar-width: none;
+		/* Firefox */
 	}
 }
 
@@ -120,4 +113,105 @@ input::-webkit-inner-spin-button {
 /* Firefox */
 input[type='number'] {
 	-moz-appearance: textfield;
+}
+
+.confetti-container {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	z-index: 0;
+}
+
+.confetti {
+	position: absolute;
+	width: 10px;
+	height: 10px;
+	background-color: #7B3AED;
+	opacity: 0.7;
+	animation: confetti-fall 5s linear infinite;
+}
+
+@keyframes confetti-fall {
+	0% {
+		transform: translateY(-100%) rotate(0deg);
+	}
+
+	100% {
+		transform: translateY(100vh) rotate(360deg);
+	}
+}
+
+.confetti:nth-child(2n) {
+	width: 5px;
+	height: 5px;
+	background-color: #5A21B6;
+}
+
+.confetti:nth-child(3n) {
+	width: 8px;
+	height: 8px;
+	background-color: #FECA01;
+}
+
+.confetti:nth-child(4n) {
+	width: 12px;
+	height: 12px;
+	background-color: #a983e7;
+
+}
+
+/* Replace the @for loop with static rules */
+.confetti:nth-child(1) {
+	left: 23%;
+	animation-delay: -1.2s;
+	animation-duration: 4.7s;
+	background-color: #E51011;
+
+}
+
+.confetti:nth-child(2) {
+	left: 56%;
+	animation-delay: -2.8s;
+	animation-duration: 5.2s;
+}
+
+.confetti:nth-child(3) {
+	left: 89%;
+	animation-delay: -0.5s;
+	animation-duration: 3.9s;
+}
+
+/* ... Add more rules as needed, up to 50 */
+
+@keyframes underlineAnimation {
+
+	0%,
+	100% {
+		width: 0;
+		opacity: 0;
+	}
+
+	50% {
+		width: 100%;
+		opacity: 1;
+	}
+}
+
+.animated-underline {
+	position: relative;
+	display: inline-block;
+}
+
+.animated-underline::after {
+	content: '';
+	position: absolute;
+	bottom: -3px;
+	left: 0;
+	width: 100%;
+	height: 6px;
+	background-color: #E51011;
+	animation: underlineAnimation 6s ease-in-out infinite;
 }

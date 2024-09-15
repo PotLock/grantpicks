@@ -11,10 +11,10 @@ const LandingHeader = () => {
 			<div className="flex flex-col items-center text-grantpicks-black-950 p-4 lg:p-0">
 				<div className="flex items-center space-x-4 border border-grantpicks-purple-950 rounded-full px-5 py-2 mb-6 z-10">
 					<Image
-						src="/assets/images/cup.png"
+						src="/assets/images/grantpicksiconsquare.png"
 						alt=""
-						width={24}
-						height={24}
+						width={40}
+						height={40}
 						className="object-contain"
 					/>
 					<p className="text-base font-bold text-grantpicks-purple-950 uppercase">{`INTRODUCING GRANTPICKS`}</p>
@@ -326,7 +326,7 @@ const LandingHeader = () => {
 							color="transparent"
 							isFullWidth
 							className="!launch-app-button-easily-decide !px-10 !py-4 md:!py-3"
-							onClick={() => {}}
+							onClick={() => { }}
 						>
 							<p className="text-sm font-semibold text-white">Launch App</p>
 						</Button>

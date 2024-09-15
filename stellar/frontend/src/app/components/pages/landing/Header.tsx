@@ -4,12 +4,14 @@ import React from 'react'
 import IconCheck from '../../svgs/IconCheck'
 import Button from '../../commons/Button'
 import Link from 'next/link'
+import Confetti from '../../commons/Confetti'
 
 const LandingHeader = () => {
 	const router = useRouter()
 	return (
-		<div className="w-[100%] md:w-[90%] xl:w-[80%] mx-auto pt-20 md:pt-24 xl:pt-32 pb-16 md:pb-20 xl:pb-24 px-4 md:px-0">
-			<div className="flex flex-col items-center text-grantpicks-black-950 p-4 lg:p-0">
+		<div className="w-[100%] md:w-[90%] xl:w-[80%] mx-auto pt-20 md:pt-24 xl:pt-32 pb-16 md:pb-20 xl:pb-24 px-4 md:px-0 relative">
+			<Confetti />
+			<div className="flex flex-col items-center text-grantpicks-black-950 p-4 lg:p-0 relative">
 				<div className="flex items-center space-x-4 border border-grantpicks-purple-950 rounded-full px-5 py-2 mb-6 z-10">
 					<Image
 						src="/assets/images/grantpicksiconsquare.png"
@@ -21,10 +23,18 @@ const LandingHeader = () => {
 					<p className="text-base font-bold text-grantpicks-purple-950">{`Introducing GrantPicks`}</p>
 				</div>
 				<p className="text-[40px] md:text-[44px] lg:text-[50px] xl:text-[62px] max-w-[90%] md:max-w-full hidden md:block font-black text-center uppercase leading-[1.00] whitespace-pre mb-6 z-10">
-					{`Head to head contests\nfor funding projects.`}
+					{`Head to head `}
+					<span className="animated-underline">
+						contests
+					</span>
+					{`\nfor funding projects.`}
 				</p>
 				<p className="text-[40px] md:text-[44px] lg:text-[50px] xl:text-[62px] max-w-[80%] md:max-w-full block md:hidden font-black text-center uppercase leading-[1.00] whitespace-pre-wrap mb-6 z-10">
-					{`Head to head contests\nfor funding projects.`}
+					{`Head to head `}
+					<span className="animated-underline">
+						contests
+					</span>
+					{`\nfor funding projects.`}
 				</p>
 				<div className="flex flex-row justify-center space-x-2 sm:space-x-4 z-10 w-full">
 					<button

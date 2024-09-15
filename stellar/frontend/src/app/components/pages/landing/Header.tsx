@@ -298,7 +298,7 @@ const LandingHeader = () => {
 							</p>
 							<p className="text-base font-normal text-grantpicks-black-600">
 								This mechanism is strictly voting, However you can separately
-								donate through Potlock's donation contracts?{' '}
+								donate through Potlock&apos;s donation contracts?{' '}
 							</p>
 						</div>
 						<div className="space-y-2 lg:space-y-4 mb-4 md:mb-6 lg:mb-8">

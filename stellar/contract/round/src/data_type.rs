@@ -1,3 +1,4 @@
+// use soroban_fixed_point_math::SorobanFixedPoint;
 use soroban_sdk::{panic_with_error, Env};
 
 use crate::{
@@ -24,6 +25,10 @@ pub struct Config {
     pub protocol_fee_recipient: Address,
     pub protocol_fee_basis_points: u32,
     pub default_page_size: u64,
+    pub token_contract: Address,
+    pub project_contract: Address,
+    pub list_contract: Address,
+    pub kyc_list_id: u128
 }
 
 //Note: Whitelist And Blacklist In Different Storage
@@ -82,10 +87,8 @@ pub struct CreateRoundParams {
     pub allow_applications: bool,
     pub is_video_required: bool,
     pub cooldown_period_ms: Option<u64>,
-    pub cooldown_end_ms: Option<u64>,
     pub compliance_req_desc: String, // too long on stellar
     pub compliance_period_ms: Option<u64>,
-    pub compliance_end_ms: Option<u64>,
     pub allow_remaining_dist: bool,
     pub remaining_dist_address: Address,
     pub referrer_fee_basis_points: Option<u32>,
@@ -174,6 +177,7 @@ pub struct Payout {
     pub round_id: u128,
     pub recipient_id: Address,
     pub amount: i128,
+    pub paid_amount: i128,
     pub paid_at_ms: Option<u64>,
     pub memo: String,
 }
@@ -194,6 +198,7 @@ pub struct PayoutsChallenge {
     pub created_at: u64,
     pub reason: String,
     pub admin_notes: String,
+    pub resolved_by: String,
     pub resolved: bool,
 }
 
@@ -235,9 +240,16 @@ impl RoundDetail {
         }
     }
 
-    pub fn calculate_referrer_fee(&self, amount: u128) -> Option<u128> {
+    pub fn calculate_referrer_fee(&self, env: &Env, amount: u128) -> Option<u128> {
         if let Some(referrer_fee_basis_points) = self.referrer_fee_basis_points {
-            let total_basis_points = 10_000u128;
+            // COMMENTED CODE FIXED POINT MATH DUE BIGGER SIZE
+            // let total_basis_points:u128 = 10_000;
+            // let denominator:u128 = 1_0000000;
+            // let fee: u128 = referrer_fee_basis_points as u128;
+            // let fee_amount = fee.fixed_div_floor(env, &total_basis_points, &denominator).fixed_mul_floor(env, &amount, &denominator);
+            // // Round up
+            // Some(fee_amount)
+            let total_basis_points:u128 = 10_000;
             let fee_amount = (referrer_fee_basis_points as u128).saturating_mul(amount);
             // Round up
             Some(fee_amount.div_ceil(total_basis_points))

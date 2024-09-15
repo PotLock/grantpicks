@@ -25,7 +25,7 @@ const ViewChallengeDrawer = ({
 			>
 				<div className="bg-grantpicks-purple-50 p-4 md:p-6 flex items-center justify-end">
 					<p className="text-sm font-bold text-grantpicks-purple-800">
-						{isOpen && <TimerEnd expiryTime={endOfChallenge} />}
+						{isOpen && <TimerEnd expiryTime={endOfChallenge} running />}
 					</p>
 				</div>
 				<div className="px-4 md:px-6 flex items-center justify-between py-4">

@@ -1,7 +1,7 @@
 'use client'
 import { formatStroopToXlm } from '@/utils/helper'
 import { useRouter } from 'next/navigation'
-import { ProjectVotingResult, Project, RoundDetail } from 'round-client'
+import { ProjectVotingResult } from 'round-client'
 import IconStarBronze from '../svgs/IconStarBronze'
 import IconStarGold from '../svgs/IconStarGold'
 import IconStarSilver from '../svgs/IconStarSilver'

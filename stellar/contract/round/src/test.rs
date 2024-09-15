@@ -1,5 +1,6 @@
 #![cfg(test)]
 
+use list_contract::ListExternal;
 use soroban_sdk::token::{StellarAssetClient, TokenClient};
 use soroban_sdk::{self, contracttype, Map, Vec};
 
@@ -13,6 +14,12 @@ use crate::{internal::RoundContract, internal::RoundContractClient};
 mod project_registry {
     soroban_sdk::contractimport!(
         file = "../build/project_registry.wasm",
+    );
+}
+
+mod list_contract {
+    soroban_sdk::contractimport!(
+        file = "../build/lists.wasm",
     );
 }
 
@@ -37,6 +44,35 @@ fn deploy_registry_contract<'a>(env: &Env, admin: &Address) -> project_registry:
     contract.initialize(&admin);
 
     contract
+}
+
+fn deploy_list_contract<'a>(env: &Env, admin: &Address) -> list_contract::Client<'a> {
+    let contract = list_contract::Client::new(
+        env,
+        &env.register_contract_wasm(None, list_contract::WASM),
+    );
+
+    contract.initialize(&admin);
+    create_kyc_list(env, &admin, &contract);
+
+    contract
+}
+
+fn create_kyc_list(env: &Env, owner: &Address, list_contract: &list_contract::Client)->ListExternal {
+    /*
+    for test used default value Approved
+     */
+    let kyc_list = list_contract.create_list(
+        owner,
+        &String::from_str(&env, "kyc_list"),
+        &list_contract::RegistrationStatus::Approved,
+        &None,
+        &None,
+        &None,
+        &None
+    );
+
+    kyc_list
 }
 /*
 Generate fake projects for testing
@@ -129,6 +165,7 @@ fn test_round_create() {
     let round = deploy_contract(&env, &admin);
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
+    let list_contract = deploy_list_contract(&env, &admin);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -149,10 +186,8 @@ fn test_round_create() {
         allow_applications: true,
         owner: admin.clone(),
         cooldown_period_ms: None,
-        cooldown_end_ms: None,
         compliance_req_desc: String::from_str(&env, ""),
         compliance_period_ms: None,
-        compliance_end_ms: Some(1000),
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
@@ -163,6 +198,8 @@ fn test_round_create() {
         &admin,
         &token_contract.address,
         &project_contract.address,
+        &list_contract.address,
+        &1,
         &None,
         &None,
         &None,
@@ -198,7 +235,8 @@ fn test_apply_applications() {
     let round = deploy_contract(&env, &admin);
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
-    let projects = generate_fake_project(&env, &project_contract, 10);
+    let list_contract = deploy_list_contract(&env, &admin);
+    let projects = generate_fake_project(&env, &project_contract, 5);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -219,10 +257,8 @@ fn test_apply_applications() {
         allow_applications: true,
         owner: admin.clone(),
         cooldown_period_ms: None,
-        cooldown_end_ms: None,
         compliance_req_desc: String::from_str(&env, ""),
         compliance_period_ms: None,
-        compliance_end_ms: Some(1000),
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
@@ -233,6 +269,8 @@ fn test_apply_applications() {
         &admin,
         &token_contract.address,
         &project_contract.address,
+        &list_contract.address,
+        &1,
         &None,
         &None,
         &None,
@@ -271,7 +309,8 @@ fn test_review_application() {
     let round = deploy_contract(&env, &admin);
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
-    let projects = generate_fake_project(&env, &project_contract, 15);
+    let list_contract = deploy_list_contract(&env, &admin);
+    let projects = generate_fake_project(&env, &project_contract, 5);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -292,10 +331,8 @@ fn test_review_application() {
         allow_applications: true,
         owner: admin.clone(),
         cooldown_period_ms: None,
-        cooldown_end_ms: None,
         compliance_req_desc: String::from_str(&env, ""),
         compliance_period_ms: None,
-        compliance_end_ms: Some(1000),
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
@@ -306,6 +343,8 @@ fn test_review_application() {
         &admin,
         &token_contract.address,
         &project_contract.address,
+        &list_contract.address,
+        &1,
         &None,
         &None,
         &None,
@@ -351,7 +390,8 @@ fn test_whitelist_applicant() {
     let round = deploy_contract(&env, &admin);
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
-    let projects = generate_fake_project(&env, &project_contract, 15);
+    let list_contract = deploy_list_contract(&env, &admin);
+    let projects = generate_fake_project(&env, &project_contract, 5);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -372,10 +412,8 @@ fn test_whitelist_applicant() {
         allow_applications: true,
         owner: admin.clone(),
         cooldown_period_ms: None,
-        cooldown_end_ms: None,
         compliance_req_desc: String::from_str(&env, ""),
         compliance_period_ms: None,
-        compliance_end_ms: Some(1000),
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
@@ -386,6 +424,8 @@ fn test_whitelist_applicant() {
         &admin,
         &token_contract.address,
         &project_contract.address,
+        &list_contract.address,
+        &1,
         &None,
         &None,
         &None,
@@ -417,7 +457,8 @@ fn test_whitelist_voters() {
     let round = deploy_contract(&env, &admin);
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
-    let projects = generate_fake_project(&env, &project_contract, 15);
+    let list_contract = deploy_list_contract(&env, &admin);
+    let projects = generate_fake_project(&env, &project_contract, 5);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -438,10 +479,8 @@ fn test_whitelist_voters() {
         allow_applications: true,
         owner: admin.clone(),
         cooldown_period_ms: None,
-        cooldown_end_ms: None,
         compliance_req_desc: String::from_str(&env, ""),
         compliance_period_ms: None,
-        compliance_end_ms: Some(1000),
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
@@ -452,6 +491,8 @@ fn test_whitelist_voters() {
         &admin,
         &token_contract.address,
         &project_contract.address,
+        &list_contract.address,
+        &1,
         &None,
         &None,
         &None,
@@ -510,7 +551,8 @@ fn test_blacklist() {
     let round = deploy_contract(&env, &admin);
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
-    let projects = generate_fake_project(&env, &project_contract, 15);
+    let list_contract = deploy_list_contract(&env, &admin);
+    let projects = generate_fake_project(&env, &project_contract, 5);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -531,10 +573,8 @@ fn test_blacklist() {
         allow_applications: true,
         owner: admin.clone(),
         cooldown_period_ms: None,
-        cooldown_end_ms: None,
         compliance_req_desc: String::from_str(&env, ""),
         compliance_period_ms: None,
-        compliance_end_ms: Some(1000),
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
@@ -545,6 +585,8 @@ fn test_blacklist() {
         &admin,
         &token_contract.address,
         &project_contract.address,
+        &list_contract.address,
+        &1,
         &None,
         &None,
         &None,
@@ -615,7 +657,8 @@ fn test_voting() {
     let round = deploy_contract(&env, &admin);
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
-    let projects = generate_fake_project(&env, &project_contract, 10);
+    let list_contract = deploy_list_contract(&env, &admin);
+    let projects = generate_fake_project(&env, &project_contract, 4);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -636,10 +679,8 @@ fn test_voting() {
         allow_applications: true,
         owner: admin.clone(),
         cooldown_period_ms: None,
-        cooldown_end_ms: None,
         compliance_req_desc: String::from_str(&env, ""),
         compliance_period_ms: None,
-        compliance_end_ms: Some(1000),
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
@@ -650,6 +691,8 @@ fn test_voting() {
         &admin,
         &token_contract.address,
         &project_contract.address,
+        &list_contract.address,
+        &1,
         &None,
         &None,
         &None,
@@ -715,6 +758,7 @@ fn test_voting() {
         &None,
     );
 
+
     let voter = Address::generate(&env);
     let pair_to_vote = round.get_pairs_to_vote(&created_round.id);
     let mut picks: Vec<PickedPair> = Vec::new(&env);
@@ -763,11 +807,13 @@ fn test_add_remove_admin() {
     let env = Env::default();
     env.mock_all_auths();
     let admin = Address::generate(&env);
+    let roby = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
+    let list_contract = deploy_list_contract(&env, &admin);
     let mut admins: Vec<Address> = Vec::new(&env);
-    admins.push_back(admin.clone());
+    admins.push_back(roby.clone());
 
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
@@ -786,10 +832,8 @@ fn test_add_remove_admin() {
         allow_applications: true,
         owner: admin.clone(),
         cooldown_period_ms: None,
-        cooldown_end_ms: None,
         compliance_req_desc: String::from_str(&env, ""),
         compliance_period_ms: None,
-        compliance_end_ms: Some(1000),
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
@@ -800,6 +844,8 @@ fn test_add_remove_admin() {
         &admin,
         &token_contract.address,
         &project_contract.address,
+        &list_contract.address,
+        &1,
         &None,
         &None,
         &None,
@@ -807,19 +853,20 @@ fn test_add_remove_admin() {
 
     let created_round = round.create_round(&admin, &round_detail);
     let new_admin = Address::generate(&env);
-    let mut new_admins: Vec<Address> = Vec::new(&env);
-    new_admins.push_back(new_admin.clone());
-    round.add_admins(&created_round.id, &new_admins);
 
-    let mut admins = round.admins(&created_round.id);
-    assert_eq!(admins.len(), 2);
+    admins.push_back(new_admin.clone());
+    round.set_admins(&created_round.id, &admins);
 
-    round.remove_admins(&created_round.id, &new_admins);
+    let mut new_admins: Vec<Address> = round.admins(&created_round.id);
+    assert_eq!(new_admins.len(), 2);
 
-    admins = round.admins(&created_round.id);
+    admins.pop_back();
+    round.set_admins(&created_round.id, &admins);
+
+    new_admins = round.admins(&created_round.id);
 
     round.get_round(&created_round.id);
-    assert_eq!(admins.len(), 1);
+    assert_eq!(new_admins.len(), 1);
 }
 
 /*
@@ -839,7 +886,8 @@ fn test_voting_deposit_and_payout() {
     let round = deploy_contract(&env, &admin);
     let (token_contract, token_admin) = create_token(&env, &admin);
     let project_contract = deploy_registry_contract(&env, &admin);
-    let projects = generate_fake_project(&env, &project_contract, 10);
+    let list_contract = deploy_list_contract(&env, &admin);
+    let projects = generate_fake_project(&env, &project_contract, 4);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -862,10 +910,8 @@ fn test_voting_deposit_and_payout() {
         allow_applications: true,
         owner: admin.clone(),
         cooldown_period_ms: None,
-        cooldown_end_ms: None,
         compliance_req_desc: String::from_str(&env, ""),
-        compliance_period_ms: None,
-        compliance_end_ms: Some(1000),
+        compliance_period_ms: Some(0),
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
@@ -876,6 +922,8 @@ fn test_voting_deposit_and_payout() {
         &admin,
         &token_contract.address,
         &project_contract.address,
+        &list_contract.address,
+        &1,
         &None,
         &None,
         &None,
@@ -892,12 +940,12 @@ fn test_voting_deposit_and_payout() {
     );
 
     let mut project_ids: Vec<u128> = Vec::new(&env);
-    for i in 0..10 {
+    for i in 0..4 {
         project_ids.push_back(i + 1);
     }
     round.add_approved_project(&created_round.id, &admin, &project_ids);
 
-    round.change_voting_period(&created_round.id, &admin, &get_ledger_second_as_millis(&env), &(get_ledger_second_as_millis(&env)+1000));
+    round.set_voting_period(&created_round.id, &admin, &get_ledger_second_as_millis(&env), &(get_ledger_second_as_millis(&env)+1000));
 
     let voter = Address::generate(&env);
     let voter2 = Address::generate(&env);
@@ -942,9 +990,9 @@ fn test_voting_deposit_and_payout() {
     round.vote(&created_round.id, &voter2, &picks2);
 
     let results = round.get_voting_results_for_round(&created_round.id);
-    assert_eq!(results.len(), 10);
+    assert_eq!(results.len(), 4);
 
-    round.change_voting_period(&created_round.id, &admin, &0, &0);
+    round.set_voting_period(&created_round.id, &admin, &0, &0);
 
     let mut payouts: Vec<PayoutInput> = Vec::new(&env);
 
@@ -955,6 +1003,10 @@ fn test_voting_deposit_and_payout() {
     });
 
     round.set_payouts(&created_round.id, &admin, &payouts, &false);
+
+    for payout in payouts.iter() {
+       list_contract.register_batch(&payout.recipient_id, &1, &Some(String::from_str(&env, "Test")), &None);
+    }
 
     let payout_balance = token_contract.balance(&projects.get(0).unwrap().owner);
     round.process_payouts(&created_round.id, &admin);
@@ -988,6 +1040,7 @@ fn test_get_all_pairs() {
     let round = deploy_contract(&env, &admin);
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
+    let list_contract = deploy_list_contract(&env, &admin);
     generate_fake_project(&env, &project_contract, 10);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
@@ -1009,10 +1062,8 @@ fn test_get_all_pairs() {
         allow_applications: false,
         owner: admin.clone(),
         cooldown_period_ms: None,
-        cooldown_end_ms: None,
         compliance_req_desc: String::from_str(&env, ""),
         compliance_period_ms: None,
-        compliance_end_ms: Some(1000),
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
@@ -1023,6 +1074,8 @@ fn test_get_all_pairs() {
         &admin,
         &token_contract.address,
         &project_contract.address,
+        &list_contract.address,
+        &1,
         &None,
         &None,
         &None,
@@ -1088,6 +1141,7 @@ fn test_change_number_of_votes() {
     let round = deploy_contract(&env, &admin);
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
+    let list_contract = deploy_list_contract(&env, &admin);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -1108,10 +1162,8 @@ fn test_change_number_of_votes() {
         allow_applications: true,
         owner: admin.clone(),
         cooldown_period_ms: None,
-        cooldown_end_ms: None,
         compliance_req_desc: String::from_str(&env, ""),
         compliance_period_ms: None,
-        compliance_end_ms: Some(1000),
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
@@ -1122,6 +1174,8 @@ fn test_change_number_of_votes() {
         &admin,
         &token_contract.address,
         &project_contract.address,
+        &list_contract.address,
+        &1,
         &None,
         &None,
         &None,
@@ -1129,7 +1183,7 @@ fn test_change_number_of_votes() {
 
     let created_round = round.create_round(&admin, &round_detail);
     let new_num_picks_per_voter = 3;
-    round.change_number_of_votes(&created_round.id, &admin, &new_num_picks_per_voter);
+    round.set_number_of_votes(&created_round.id, &admin, &new_num_picks_per_voter);
 
     let round_info = round.get_round(&created_round.id);
     assert_eq!(round_info.num_picks_per_voter, new_num_picks_per_voter);
@@ -1148,6 +1202,7 @@ fn test_change_amount() {
     let round = deploy_contract(&env, &admin);
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
+    let list_contract = deploy_list_contract(&env, &admin);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -1168,10 +1223,8 @@ fn test_change_amount() {
         allow_applications: true,
         owner: admin.clone(),
         cooldown_period_ms: None,
-        cooldown_end_ms: None,
         compliance_req_desc: String::from_str(&env, ""),
         compliance_period_ms: None,
-        compliance_end_ms: Some(1000),
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
@@ -1182,6 +1235,8 @@ fn test_change_amount() {
         &admin,
         &token_contract.address,
         &project_contract.address,
+        &list_contract.address,
+        &1,
         &None,
         &None,
         &None,
@@ -1189,7 +1244,7 @@ fn test_change_amount() {
 
     let created_round = round.create_round(&admin, &round_detail);
     let new_amount = 10;
-    round.change_expected_amount(&created_round.id, &admin, &new_amount);
+    round.set_expected_amount(&created_round.id, &admin, &new_amount);
 
     let round_info = round.get_round(&created_round.id);
     assert_eq!(round_info.expected_amount, new_amount);
@@ -1201,13 +1256,14 @@ Test case:
 2. Change the voting period
 */
 #[test]
-fn test_change_voting_period() {
+fn test_set_voting_period() {
     let env = Env::default();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
+    let list_contract = deploy_list_contract(&env, &admin);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -1228,10 +1284,8 @@ fn test_change_voting_period() {
         allow_applications: true,
         owner: admin.clone(),
         cooldown_period_ms: None,
-        cooldown_end_ms: None,
         compliance_req_desc: String::from_str(&env, ""),
         compliance_period_ms: None,
-        compliance_end_ms: Some(1000),
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
@@ -1242,6 +1296,8 @@ fn test_change_voting_period() {
         &admin,
         &token_contract.address,
         &project_contract.address,
+        &list_contract.address,
+        &1,
         &None,
         &None,
         &None,
@@ -1250,7 +1306,7 @@ fn test_change_voting_period() {
     let created_round = round.create_round(&admin, &round_detail);
     let new_start_ms = get_ledger_second_as_millis(&env) + 1000;
     let new_end_ms = get_ledger_second_as_millis(&env) + 2000;
-    round.change_voting_period(&created_round.id, &admin, &new_start_ms, &new_end_ms);
+    round.set_voting_period(&created_round.id, &admin, &new_start_ms, &new_end_ms);
 
     let round_info = round.get_round(&created_round.id);
     assert_eq!(round_info.voting_start_ms, new_start_ms);
@@ -1270,6 +1326,7 @@ fn test_application_period() {
     let round = deploy_contract(&env, &admin);
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
+    let list_contract = deploy_list_contract(&env, &admin);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -1290,10 +1347,8 @@ fn test_application_period() {
         allow_applications: true,
         owner: admin.clone(),
         cooldown_period_ms: None,
-        cooldown_end_ms: None,
         compliance_req_desc: String::from_str(&env, ""),
         compliance_period_ms: None,
-        compliance_end_ms: Some(1000),
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
@@ -1304,6 +1359,8 @@ fn test_application_period() {
         &admin,
         &token_contract.address,
         &project_contract.address,
+        &list_contract.address,
+        &1,
         &None,
         &None,
         &None,
@@ -1312,11 +1369,12 @@ fn test_application_period() {
     let created_round = round.create_round(&admin, &round_detail);
     let new_application_start_ms = get_ledger_second_as_millis(&env) + 1000;
     let new_application_end_ms = get_ledger_second_as_millis(&env) + 2000;
-    round.change_application_period(
+    round.set_applications_config(
         &created_round.id,
         &admin,
-        &new_application_start_ms,
-        &new_application_end_ms,
+        &true,
+        &Some(new_application_start_ms),
+        &Some(new_application_end_ms),
     );
 
     let round_info = round.get_round(&created_round.id);
@@ -1343,6 +1401,7 @@ fn test_update_round() {
     let round = deploy_contract(&env, &admin);
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
+    let list_contract = deploy_list_contract(&env, &admin);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -1363,10 +1422,8 @@ fn test_update_round() {
         allow_applications: true,
         owner: admin.clone(),
         cooldown_period_ms: None,
-        cooldown_end_ms: None,
         compliance_req_desc: String::from_str(&env, ""),
         compliance_period_ms: None,
-        compliance_end_ms: Some(1000),
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
@@ -1377,6 +1434,8 @@ fn test_update_round() {
         &admin,
         &token_contract.address,
         &project_contract.address,
+        &list_contract.address,
+        &1,
         &None,
         &None,
         &None,
@@ -1420,6 +1479,7 @@ fn test_change_allow_applications() {
     let round = deploy_contract(&env, &admin);
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
+    let list_contract = deploy_list_contract(&env, &admin);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -1440,10 +1500,8 @@ fn test_change_allow_applications() {
         allow_applications: true,
         owner: admin.clone(),
         cooldown_period_ms: None,
-        cooldown_end_ms: None,
         compliance_req_desc: String::from_str(&env, ""),
         compliance_period_ms: None,
-        compliance_end_ms: Some(1000),
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
@@ -1454,6 +1512,8 @@ fn test_change_allow_applications() {
         &admin,
         &token_contract.address,
         &project_contract.address,
+        &list_contract.address,
+        &1,
         &None,
         &None,
         &None,
@@ -1488,7 +1548,8 @@ fn test_unapply_from_round() {
     let round = deploy_contract(&env, &admin);
     let (token_contract, token_admin) = create_token(&env, &admin);
     let project_contract = deploy_registry_contract(&env, &admin);
-    let projects = generate_fake_project(&env, &project_contract, 10);
+    let list_contract = deploy_list_contract(&env, &admin);
+    let projects = generate_fake_project(&env, &project_contract, 5);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -1509,10 +1570,8 @@ fn test_unapply_from_round() {
         allow_applications: true,
         owner: admin.clone(),
         cooldown_period_ms: None,
-        cooldown_end_ms: None,
         compliance_req_desc: String::from_str(&env, ""),
         compliance_period_ms: None,
-        compliance_end_ms: Some(1000),
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
@@ -1523,6 +1582,8 @@ fn test_unapply_from_round() {
         &admin,
         &token_contract.address,
         &project_contract.address,
+        &list_contract.address,
+        &1,
         &None,
         &None,
         &None,
@@ -1556,6 +1617,7 @@ fn test_apply_to_round_batch() {
     let round = deploy_contract(&env, &admin);
     let (token_contract, token_admin) = create_token(&env, &admin);
     let project_contract = deploy_registry_contract(&env, &admin);
+    let list_contract = deploy_list_contract(&env, &admin);
     let projects = generate_fake_project(&env, &project_contract, 5);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
@@ -1577,10 +1639,8 @@ fn test_apply_to_round_batch() {
         allow_applications: true,
         owner: admin.clone(),
         cooldown_period_ms: None,
-        cooldown_end_ms: None,
         compliance_req_desc: String::from_str(&env, ""),
         compliance_period_ms: None,
-        compliance_end_ms: Some(1000),
         allow_remaining_dist: false,
         remaining_dist_address: admin.clone(),
         referrer_fee_basis_points: None,
@@ -1591,6 +1651,8 @@ fn test_apply_to_round_batch() {
         &admin,
         &token_contract.address,
         &project_contract.address,
+        &list_contract.address,
+        &1,
         &None,
         &None,
         &None,
@@ -1621,11 +1683,14 @@ fn test_change_round_contract_config() {
     let round = deploy_contract(&env, &admin);
     let (token_contract, token_admin) = create_token(&env, &admin);
     let project_contract = deploy_registry_contract(&env, &admin);
+    let list_contract = deploy_list_contract(&env, &admin);
 
     round.initialize(
         &admin,
         &token_contract.address,
         &project_contract.address,
+        &list_contract.address,
+        &1,
         &None,
         &None,
         &None,

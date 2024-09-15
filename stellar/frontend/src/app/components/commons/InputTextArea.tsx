@@ -18,6 +18,7 @@ const InputTextArea = forwardRef<HTMLTextAreaElement, InputTextAreaProps>(
 			hintLabel,
 			errorMessage,
 			textAlign = 'left',
+			maxLength,
 		},
 		ref,
 	) => {
@@ -68,6 +69,7 @@ const InputTextArea = forwardRef<HTMLTextAreaElement, InputTextAreaProps>(
 						onBlur={() => setFocus(false)}
 						placeholder={placeholder}
 						onChange={onChange}
+						maxLength={maxLength}
 					/>
 				</div>
 				{hintLabel && (

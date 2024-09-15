@@ -28,6 +28,8 @@ import { Network } from '@/types/on-chain'
 import { parseToStroop } from '@/utils/helper'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import { useModalContext } from '@/app/providers/ModalProvider'
+import IconClose from '@/app/components/svgs/IconClose'
+import { localStorageConfigs } from '@/configs/local-storage'
 
 const CreateProjectFormContext = createContext<ICreateProjectFormContext>({
 	data: DEFAULT_CREATE_PROJECT_DATA,
@@ -50,12 +52,9 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 	const onProceedApply = async () => {
 		try {
 			openPageLoading()
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
 			const contracts = new Contracts(
 				process.env.NETWORK_ENV as Network,
-				cmdWallet,
+				undefined,
 			)
 			const params: ICreateProjectParams = {
 				name: dataForm.title,
@@ -88,6 +87,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 					value: mem,
 				})),
 			}
+
 			const txCreateProject = await createProject(
 				stellarPubKey,
 				params,
@@ -95,7 +95,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 			)
 			const txHashCreateProject = await contracts.signAndSendTx(
 				stellarKit as StellarWalletsKit,
-				txCreateProject,
+				txCreateProject.toXDR(),
 				stellarPubKey,
 			)
 			if (txHashCreateProject) {
@@ -106,10 +106,16 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 					txHash: txHashCreateProject,
 				}))
 				setDataForm(DEFAULT_CREATE_PROJECT_DATA)
+				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_1)
+				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_2)
+				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_3)
+				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_4)
+				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_5)
 				dismissPageLoading()
 				onClose()
 			}
 		} catch (error: any) {
+			console.error(error)
 			console.log('error', error?.message)
 			toast.error(error?.message || 'Something went wrong', {
 				style: toastOptions.error.style,
@@ -129,9 +135,16 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 				onProceedApply,
 			}}
 		>
-			<Modal isOpen={isOpen} onClose={onClose}>
+			<Modal isOpen={isOpen} onClose={onClose} closeOnBgClick>
 				<div className="w-11/12 md:w-[560px] mx-auto bg-white rounded-xl border border-black/10 shadow p-2">
-					<div className="py-4 px-4 md:px-6 flex items-center justify-center">
+					<div className="relative py-4 px-4 md:px-6 flex items-center justify-center">
+						<IconClose
+							size={24}
+							className="fill-grantpicks-black-400 absolute right-0 top-0 cursor-pointer transition hover:opacity-80"
+							onClick={() => {
+								onClose()
+							}}
+						/>
 						<p className="text-3xl md:text-4xl lg:text-[40px] font-black text-grantpicks-black-950 uppercase text-center">
 							Create New Project
 						</p>

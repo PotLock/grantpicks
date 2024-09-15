@@ -1,41 +1,28 @@
-use soroban_sdk::{self, contract, contractimpl, Address, BytesN, Env, Map, String, Vec};
+use soroban_sdk::{self, contract, contractimpl, panic_with_error, Address, BytesN, Env, Map, String, Vec};
 
 use crate::{
     data_type::{
         ListExternal, ListInternal, RegistrationExternal, RegistrationInput, RegistrationInternal,
         RegistrationStatus,
-    },
-    events::{
+    }, error::Error, events::{
         log_create_list_event, log_create_registration_event, log_delete_list_event,
         log_delete_registration_event, log_transfer_ownership_event, log_unvote_list_event,
         log_update_admins_event, log_update_list_event, log_update_registration_event,
         log_upvote_list_event,
-    },
-    lists_writer::{
-        add_admin_to_list, add_list, add_list_to_owned_list, add_list_to_registrant_lists,
-        clear_admins, get_list_by_id, get_lists_registered_by, increment_lists_number,
-        read_admins_of_list, read_lists, read_lists_number, read_lists_owned_by,
-        remove_admin_from_list, remove_list, remove_list_from_owned_list,
-        remove_list_to_registrant_lists,
-    },
-    methods::ListsTrait,
-    owner_writer::{read_contract_owner, write_contract_owner},
-    registration_writer::{
+    }, lists_writer::{
+        add_admin_to_list, add_list, add_list_to_owned_list, add_list_to_registrant_lists, clear_admins, get_list_by_id, get_lists_registered_by, increment_lists_number, read_list_admins, read_lists_owned_by, remove_admin_from_list, remove_list, remove_list_from_owned_list, remove_list_to_registrant_lists
+    }, methods::ListsTrait, owner_writer::{read_contract_owner, write_contract_owner}, registration_writer::{
         add_registration, add_registration_id_to_user, add_registration_to_list,
         get_registration_by_id, get_registrations_of_list, get_user_registration_ids_of,
         increment_registration_number, read_registration_number, remove_registration,
         remove_registration_id_to_user, remove_registration_to_list,
-    },
-    storage::extend_instance,
-    upvotes_writer::{
+    }, storage::{extend_instance, extend_list, extend_user}, upvotes_writer::{
         add_upvote_to_list, add_upvoted_list_to_user, clear_upvotes_for_list, read_list_upvotes,
         read_user_upvoted_lists, remove_upvote_from_list, remove_upvoted_list_from_user,
-    },
-    utils::unwrap_or_blank,
-    validation::{
-        validate_contract_owner, validate_cover_image_url, validate_description,
+    }, utils::unwrap_or_blank, validation::{
+        validate_cover_image_url, validate_description,
         validate_has_upvoted_list, validate_name, validate_upvotes_status, validate_valid_list_id,
-    },
+    }
 };
 
 #[contract]
@@ -44,6 +31,11 @@ pub struct ListsContract;
 #[contractimpl]
 impl ListsTrait for ListsContract {
     fn initialize(env: &Env, owner: Address) {
+        let contract_owner = read_contract_owner(env);
+        if contract_owner.is_some() {
+            panic_with_error!(env, Error::AlreadyInitialized);
+        }
+
         write_contract_owner(env, &owner);
     }
 
@@ -59,14 +51,14 @@ impl ListsTrait for ListsContract {
     ) -> ListExternal {
         owner.require_auth();
 
-        validate_name(&name);
+        validate_name(env, &name);
 
         if description.is_some() {
-            validate_description(&description);
+            validate_description(env, &description);
         }
 
         if cover_image_url.is_some() {
-            validate_cover_image_url(&cover_image_url);
+            validate_cover_image_url(env, &cover_image_url);
         }
 
         let mut internal_admins: Vec<Address> = Vec::new(env);
@@ -92,9 +84,9 @@ impl ListsTrait for ListsContract {
         };
 
         add_list(env, list_id, list);
-        add_list_to_owned_list(env, owner.clone(), list_id);
+        add_list_to_owned_list(env, &owner, list_id);
         internal_admins.iter().for_each(|admin| {
-            add_admin_to_list(env, list_id, admin);
+            add_admin_to_list(env, list_id, &admin);
         });
         extend_instance(env);
 
@@ -120,7 +112,6 @@ impl ListsTrait for ListsContract {
 
     fn update_list(
         env: &Env,
-        owner: Address,
         list_id: u128,
         name: Option<String>,
         description: Option<String>,
@@ -129,30 +120,33 @@ impl ListsTrait for ListsContract {
         default_registration_status: Option<RegistrationStatus>,
         admin_only_registrations: Option<bool>,
     ) -> ListExternal {
-        owner.require_auth();
 
         validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
-        assert!(list.is_some(), "List not found");
+        
+        if list.is_none(){
+          panic_with_error!(env, Error::ListNotFound);
+        }
 
         let mut ulist = list.unwrap();
-        assert!(ulist.owner == owner, "Only the owner can update the list");
+        
+        ulist.owner.require_auth();
 
         if name.is_some() {
             let new_name = name.unwrap();
-            validate_name(&new_name);
+            validate_name(env, &new_name);
             ulist.name = new_name;
         }
 
         if description.is_some() {
-            validate_description(&description);
+            validate_description(env, &description);
             let new_description = description.unwrap();
             ulist.description = new_description;
         }
 
         if cover_image_url.is_some() {
-            validate_cover_image_url(&cover_image_url);
+            validate_cover_image_url(env, &cover_image_url);
             let new_cover_image_url = cover_image_url.unwrap();
             ulist.cover_image_url = new_cover_image_url;
         }
@@ -170,8 +164,9 @@ impl ListsTrait for ListsContract {
         }
 
         add_list(env, list_id, ulist.clone());
-        let admins = read_admins_of_list(env, list_id);
+        let admins = read_list_admins(env, list_id);
         extend_instance(env);
+        extend_list(env, list_id);
 
         let external_list = ListExternal {
             id: list_id,
@@ -193,19 +188,22 @@ impl ListsTrait for ListsContract {
         external_list
     }
 
-    fn delete_list(env: &Env, owner: Address, list_id: u128) {
-        owner.require_auth();
+    fn delete_list(env: &Env, list_id: u128) {
 
         validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
-        assert!(list.is_some(), "List not found");
+        
+        if list.is_none(){
+          panic_with_error!(env, Error::ListNotFound);
+        }
 
         let ulist = list.unwrap();
-        assert!(ulist.owner == owner, "Only the owner can delete the list");
+        
+        ulist.owner.require_auth();
 
         remove_list(env, list_id);
-        remove_list_from_owned_list(env, owner, list_id);
+        remove_list_from_owned_list(env, &ulist.owner, list_id);
         clear_upvotes_for_list(env, list_id);
         clear_admins(env, list_id);
         extend_instance(env);
@@ -218,13 +216,17 @@ impl ListsTrait for ListsContract {
         validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
-        assert!(list.is_some(), "List not found");
+       
+        if list.is_none(){
+          panic_with_error!(env, Error::ListNotFound);
+        }
 
         validate_upvotes_status(env, &voter, list_id);
 
         add_upvote_to_list(env, list_id, voter.clone());
         add_upvoted_list_to_user(env, voter, list_id);
         extend_instance(env);
+        extend_list(env, list_id);
         log_upvote_list_event(env, list_id);
     }
 
@@ -234,7 +236,10 @@ impl ListsTrait for ListsContract {
         validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
-        assert!(list.is_some(), "List not found");
+        
+        if list.is_none(){
+          panic_with_error!(env, Error::ListNotFound);
+        }
 
         validate_has_upvoted_list(env, &voter, list_id);
 
@@ -246,53 +251,60 @@ impl ListsTrait for ListsContract {
 
     fn transfer_ownership(
         env: &Env,
-        owner: Address,
         list_id: u128,
         new_owner_id: Address,
     ) -> Address {
-        owner.require_auth();
-
         validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
-        assert!(list.is_some(), "List not found");
+       
+        if list.is_none(){
+          panic_with_error!(env, Error::ListNotFound);
+        }
 
         let mut ulist = list.unwrap();
-        assert!(ulist.owner == owner, "Only the owner can transfer the list");
+        
+        ulist.owner.require_auth();
 
+        remove_list_from_owned_list(env, &ulist.owner, list_id);
         ulist.owner = new_owner_id.clone();
         add_list(env, list_id, ulist.clone());
-        remove_list_from_owned_list(env, owner, list_id);
-        add_list_to_owned_list(env, new_owner_id.clone(), list_id);
+        add_list_to_owned_list(env, &new_owner_id, list_id);
         extend_instance(env);
+        extend_list(env, list_id);
         log_transfer_ownership_event(env, list_id, new_owner_id.clone());
 
         new_owner_id
     }
 
-    fn add_admins(env: &Env, owner: Address, list_id: u128, admins: Vec<Address>) -> Vec<Address> {
-        owner.require_auth();
-
+    fn add_admins(env: &Env, list_id: u128, admins: Vec<Address>) -> Vec<Address> {
         validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
-        assert!(list.is_some(), "List not found");
+      
+        if list.is_none(){
+          panic_with_error!(env, Error::ListNotFound);
+        }
 
         let ulist = list.unwrap();
-        assert!(ulist.owner == owner, "Only the owner can add admins");
+       
+        ulist.owner.require_auth();
 
-        let current_admins = read_admins_of_list(env, list_id);
+        let current_admins = read_list_admins(env, list_id);
 
         for admin in admins.clone() {
-            assert!(!current_admins.contains(&admin), "Admin already exists");
+            if current_admins.contains(&admin) {
+                panic_with_error!(env, Error::AdminAlreadyExists);
+            }
         }
 
         for admin in admins {
-            add_admin_to_list(env, list_id, admin.clone());
+            add_admin_to_list(env, list_id, &admin);
         }
 
-        let new_admins = read_admins_of_list(env, list_id);
+        let new_admins = read_list_admins(env, list_id);
         extend_instance(env);
+        extend_list(env, list_id);
         log_update_admins_event(env, list_id, new_admins.clone());
 
         new_admins
@@ -300,50 +312,57 @@ impl ListsTrait for ListsContract {
 
     fn remove_admins(
         env: &Env,
-        owner: Address,
         list_id: u128,
         admins: Vec<Address>,
     ) -> Vec<Address> {
-        owner.require_auth();
-
         validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
-        assert!(list.is_some(), "List not found");
+        
+        if list.is_none(){
+          panic_with_error!(env, Error::ListNotFound);
+        }
 
         let ulist = list.unwrap();
-        assert!(ulist.owner == owner, "Only the owner can remove admins");
+        
+        ulist.owner.require_auth();
 
-        let current_admins = read_admins_of_list(env, list_id);
+        let current_admins = read_list_admins(env, list_id);
 
         for admin in admins.clone() {
-            assert!(current_admins.contains(&admin), "Admin does not exist");
+            if !current_admins.contains(&admin) {
+                panic_with_error!(env, Error::AdminDoesNotExist);
+            }
         }
 
         for admin in admins {
             remove_admin_from_list(env, list_id, admin.clone());
         }
 
-        let new_admins = read_admins_of_list(env, list_id);
+        let new_admins = read_list_admins(env, list_id);
         extend_instance(env);
+        extend_list(env, list_id);
         log_update_admins_event(env, list_id, new_admins.clone());
 
         new_admins
     }
 
-    fn clear_admins(env: &Env, owner: Address, list_id: u128) {
-        owner.require_auth();
-
+    fn clear_admins(env: &Env, list_id: u128) {
         validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
-        assert!(list.is_some(), "List not found");
+        
+        if list.is_none(){
+          panic_with_error!(env, Error::ListNotFound);
+        }
 
         let ulist = list.unwrap();
-        assert!(ulist.owner == owner, "Only the owner can clear admins");
+       
+        ulist.owner.require_auth();
 
         clear_admins(env, list_id);
         extend_instance(env);
+        extend_list(env, list_id);
         log_update_admins_event(env, list_id, Vec::new(env));
     }
 
@@ -359,23 +378,27 @@ impl ListsTrait for ListsContract {
         validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
-        assert!(list.is_some(), "List not found");
+        
+        if list.is_none(){
+          panic_with_error!(env, Error::ListNotFound);
+        }
 
         let ulist = list.unwrap();
-        let admins = read_admins_of_list(env, list_id);
+        let admins = read_list_admins(env, list_id);
         let is_admin_or_owner = ulist.owner == submitter || admins.contains(&submitter);
         if !is_admin_or_owner {
-            assert!(notes.is_some(), "Notes Reqired for non-admin");
+            if notes.is_none() {
+                panic_with_error!(env, Error::NoteRequired);
+            }
         }
 
         let current_time = env.ledger().timestamp() * 1000;
         let mut registered: Vec<RegistrationExternal> = Vec::new(env);
 
         if is_admin_or_owner {
-            assert!(
-                registrations.is_some(),
-                "Registrations required for admin or owner"
-            );
+            if registrations.is_none() {
+                panic_with_error!(env, Error::RegistrationsRequired);
+            }
         }
 
         let notes = notes.clone().unwrap_or_else(|| String::from_str(env, ""));
@@ -400,7 +423,7 @@ impl ListsTrait for ListsContract {
                 add_registration_to_list(env, list_id, registration_id);
                 add_list_to_registrant_lists(env, registration.registrant.clone(), list_id);
 
-                let registration = RegistrationExternal {
+                let registration_external = RegistrationExternal {
                     id: registration_id,
                     list_id,
                     registrant_id: registration.registrant.clone(),
@@ -412,9 +435,10 @@ impl ListsTrait for ListsContract {
                     registered_by: submitter.clone(),
                 };
 
-                registered.push_back(registration.clone());
+                registered.push_back(registration_external.clone());
 
-                log_create_registration_event(env, list_id, registration_id, registration.clone());
+                extend_user(env, &registration_external.registrant_id);
+                log_create_registration_event(env, list_id, registration_id, registration_external);
             }
         } else {
             let registration_id = increment_registration_number(env);
@@ -435,7 +459,7 @@ impl ListsTrait for ListsContract {
             add_registration_to_list(env, list_id, registration_id);
             add_list_to_registrant_lists(env, submitter.clone(), list_id);
 
-            let registration = RegistrationExternal {
+            let registration_external = RegistrationExternal {
                 id: registration_id,
                 list_id,
                 registrant_id: submitter.clone(),
@@ -447,11 +471,13 @@ impl ListsTrait for ListsContract {
                 registered_by: submitter.clone(),
             };
 
-            registered.push_back(registration.clone());
-            log_create_registration_event(env, list_id, registration_id, registration.clone());
+            registered.push_back(registration_external.clone());
+            extend_user(env, &registration_external.registrant_id);
+            log_create_registration_event(env, list_id, registration_id, registration_external);
         }
 
         extend_instance(env);
+        extend_list(env, list_id);
 
         registered
     }
@@ -470,35 +496,39 @@ impl ListsTrait for ListsContract {
             validate_valid_list_id(env, list_id.unwrap());
 
             list = get_list_by_id(env, list_id.unwrap());
-            assert!(list.is_some(), "List not found");
+            
+            if list.is_none(){
+              panic_with_error!(env, Error::ListNotFound);
+            }
         }
 
         if registration_id.is_some() {
             let current_registration_number = read_registration_number(env);
-            assert!(
-                registration_id.unwrap() <= current_registration_number,
-                "Invalid Registration ID"
-            );
+            if registration_id.unwrap() > current_registration_number{
+              panic_with_error!(env, Error::InvalidRegistrationId);
+            }
         }
 
         if list_id.is_some() {
             let ulist = list.unwrap();
-            let admins = read_admins_of_list(env, list_id.unwrap());
+            let admins = read_list_admins(env, list_id.unwrap());
 
             if registration_id.is_some() {
                 let uregistration_id = registration_id.unwrap();
                 let registration = get_registration_by_id(env, uregistration_id);
-                assert!(registration.is_some(), "Registration not found");
+
+                if registration.is_none(){
+                  panic_with_error!(env, Error::RegistrationNotFound);
+                }
 
                 let uregistration = registration.unwrap();
 
                 let is_admin_or_owner = ulist.owner == submitter || admins.contains(&submitter);
 
                 if uregistration.registrant_id != submitter && !is_admin_or_owner {
-                    assert!(
-                        uregistration.registered_by == submitter,
-                        "Only the registrant or the admin can unregister"
-                    );
+                    if  uregistration.registered_by != submitter{
+                      panic_with_error!(env, Error::AdminOrOwnerOnly);
+                    }
                 }
 
                 remove_registration(env, uregistration_id);
@@ -512,7 +542,7 @@ impl ListsTrait for ListsContract {
                 log_delete_registration_event(env, uregistration.list_id, uregistration_id);
             } else {
                 let registrant_id = submitter.clone();
-                let registration_ids = get_user_registration_ids_of(env, registrant_id.clone());
+                let registration_ids = get_user_registration_ids_of(env, &registrant_id);
 
                 registration_ids.iter().for_each(|registration_id| {
                     let registration = get_registration_by_id(env, registration_id);
@@ -544,10 +574,13 @@ impl ListsTrait for ListsContract {
                     }
                 });
             }
+          
+
+          extend_list(env, ulist.id);
         } else {
             let registrant_id = submitter.clone();
-            let registration_ids = get_user_registration_ids_of(env, registrant_id.clone());
-            let list_registered = get_lists_registered_by(env, registrant_id.clone());
+            let registration_ids = get_user_registration_ids_of(env, &registrant_id);
+            let list_registered = get_lists_registered_by(env, &registrant_id);
 
             registration_ids.iter().for_each(|registration_id| {
                 let registration = get_registration_by_id(env, registration_id);
@@ -571,6 +604,7 @@ impl ListsTrait for ListsContract {
                 }
             });
         }
+
         extend_instance(env);
     }
 
@@ -587,18 +621,24 @@ impl ListsTrait for ListsContract {
         validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
-        assert!(list.is_some(), "List not found");
+       
+        if list.is_none(){
+          panic_with_error!(env, Error::ListNotFound);
+        }
 
         let registration = get_registration_by_id(env, registration_id);
-        assert!(registration.is_some(), "Registration not found");
+       
+        if registration.is_none(){
+          panic_with_error!(env, Error::RegistrationNotFound);
+        }
 
         let ulist = list.unwrap();
-        let admins = read_admins_of_list(env, list_id);
+        let admins = read_list_admins(env, list_id);
         let is_admin_or_owner = ulist.owner == submitter || admins.contains(&submitter);
-        assert!(
-            is_admin_or_owner,
-            "Only owner and admins can update registrations"
-        );
+       
+        if !is_admin_or_owner {
+            panic_with_error!(env, Error::AdminOrOwnerOnly);
+        }
 
         let mut uregistration = registration.unwrap();
         uregistration.status = status;
@@ -609,6 +649,7 @@ impl ListsTrait for ListsContract {
 
         add_registration(env, registration_id, uregistration.clone());
         extend_instance(env);
+        extend_list(env, list_id);
 
         let registration_external = RegistrationExternal {
             id: registration_id,
@@ -631,10 +672,13 @@ impl ListsTrait for ListsContract {
         validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
-        assert!(list.is_some(), "List not found");
+        
+        if list.is_none(){
+          panic_with_error!(env, Error::ListNotFound);
+        }
 
         let ulist = list.unwrap();
-        let admins = read_admins_of_list(env, list_id);
+        let admins = read_list_admins(env, list_id);
 
         ListExternal {
             id: list_id,
@@ -654,45 +698,44 @@ impl ListsTrait for ListsContract {
 
     fn get_lists(env: &Env, from_index: Option<u64>, limit: Option<u64>) -> Vec<ListExternal> {
         let internal_skip: usize = from_index.unwrap_or(0).try_into().unwrap();
-        let internal_limit: usize = limit.unwrap_or(10).try_into().unwrap();
+        let mut internal_limit: usize = limit.unwrap_or(10).try_into().unwrap();
 
-        assert!(internal_limit <= 20, "Limit cannot be more than 20");
+        if internal_limit > 20 {
+            internal_limit = 20;
+        }
 
-        let lists = read_lists(env);
-        let keys = lists.keys();
         let mut result: Vec<ListExternal> = Vec::new(env);
 
-        keys.iter()
-            .take(internal_limit)
-            .skip(internal_skip)
-            .for_each(|id| {
-                let list = lists.get(id);
-                if list.is_some() {
-                    let ulist = list.unwrap();
-                    result.push_back(ListExternal {
-                        id: ulist.id,
-                        name: ulist.name.clone(),
-                        description: ulist.description.clone(),
-                        cover_img_url: ulist.description.clone(),
-                        owner: ulist.owner.clone(),
-                        admin_only_registrations: ulist.admin_only_registration,
-                        default_registration_status: ulist.default_registration_status.clone(),
-                        admins: read_admins_of_list(env, ulist.id),
-                        created_ms: ulist.created_ms,
-                        updated_ms: ulist.updated_ms,
-                        total_registrations_count: get_registrations_of_list(env, ulist.id)
-                            .len()
-                            .into(),
-                        total_upvotes_count: read_list_upvotes(env, ulist.id).len().into(),
-                    });
-                }
-            });
+        for list_id in internal_skip..internal_skip+internal_limit{
+            let list = get_list_by_id(env, list_id as u128);
+
+            if list.is_some(){
+              let total_upvotes_count:u64 = read_list_upvotes(env, list_id as u128).len().into();
+              let total_registrations_count:u64 = get_registrations_of_list(env, list_id as u128).len().into();
+              let ulist = list.unwrap();
+
+              result.push_back(ListExternal {
+                  id: ulist.id,
+                  name: ulist.name.clone(),
+                  description: ulist.description.clone(),
+                  cover_img_url: ulist.description.clone(),
+                  owner: ulist.owner.clone(),
+                  admins: read_list_admins(env, ulist.id),
+                  created_ms: ulist.created_ms,
+                  updated_ms: ulist.updated_ms,
+                  default_registration_status: ulist.default_registration_status.clone(),
+                  admin_only_registrations: ulist.admin_only_registration,
+                  total_registrations_count,
+                  total_upvotes_count,
+              });
+            }
+        }
 
         result
     }
 
     fn get_lists_for_owner(env: &Env, owner_id: Address) -> Vec<ListExternal> {
-        let owned_list = read_lists_owned_by(env, owner_id);
+        let owned_list = read_lists_owned_by(env, &owner_id);
         let mut lists: Vec<ListExternal> = Vec::new(env);
 
         owned_list.iter().for_each(|list_id| {
@@ -708,7 +751,7 @@ impl ListsTrait for ListsContract {
                     owner: ulist.owner.clone(),
                     admin_only_registrations: ulist.admin_only_registration,
                     default_registration_status: ulist.default_registration_status.clone(),
-                    admins: read_admins_of_list(env, ulist.id),
+                    admins: read_list_admins(env, ulist.id),
                     created_ms: ulist.created_ms,
                     updated_ms: ulist.updated_ms,
                     total_registrations_count: get_registrations_of_list(env, list_id).len().into(),
@@ -721,7 +764,7 @@ impl ListsTrait for ListsContract {
     }
 
     fn get_lists_for_registrant(env: &Env, registrant_id: Address) -> Vec<ListExternal> {
-        let registered_lists = get_lists_registered_by(env, registrant_id);
+        let registered_lists = get_lists_registered_by(env, &registrant_id);
         let mut lists: Vec<ListExternal> = Vec::new(env);
 
         registered_lists.iter().for_each(|list_id| {
@@ -737,7 +780,7 @@ impl ListsTrait for ListsContract {
                     owner: ulist.owner.clone(),
                     admin_only_registrations: ulist.admin_only_registration,
                     default_registration_status: ulist.default_registration_status.clone(),
-                    admins: read_admins_of_list(env, ulist.id),
+                    admins: read_list_admins(env, ulist.id),
                     created_ms: ulist.created_ms,
                     updated_ms: ulist.updated_ms,
                     total_registrations_count: get_registrations_of_list(env, list_id).len().into(),
@@ -759,8 +802,11 @@ impl ListsTrait for ListsContract {
         let mut result: Vec<Address> = Vec::new(env);
 
         let internal_skip: usize = from_index.unwrap_or(0).try_into().unwrap();
-        let internal_limit: usize = limit.unwrap_or(10).try_into().unwrap();
-        assert!(internal_limit <= 20, "Limit cannot be more than 20");
+        let mut internal_limit: usize = limit.unwrap_or(10).try_into().unwrap();
+      
+        if internal_limit > 20 {
+            internal_limit = 20;
+        }
 
         upvotes
             .iter()
@@ -779,7 +825,7 @@ impl ListsTrait for ListsContract {
         from_index: Option<u64>,
         limit: Option<u64>,
     ) -> Vec<ListExternal> {
-        let upvoted_list = read_user_upvoted_lists(env, user);
+        let upvoted_list = read_user_upvoted_lists(env, &user);
         let mut lists: Map<u128, ListInternal> = Map::new(env);
         let mut result: Vec<ListExternal> = Vec::new(env);
 
@@ -792,8 +838,11 @@ impl ListsTrait for ListsContract {
         });
 
         let internal_skip: usize = from_index.unwrap_or(0).try_into().unwrap();
-        let internal_limit: usize = limit.unwrap_or(10).try_into().unwrap();
-        assert!(internal_limit <= 20, "Limit cannot be more than 20");
+        let mut internal_limit: usize = limit.unwrap_or(10).try_into().unwrap();
+        
+        if internal_limit > 20 {
+            internal_limit = 20;
+        }
 
         lists
             .keys()
@@ -810,7 +859,7 @@ impl ListsTrait for ListsContract {
                     owner: ulist.owner.clone(),
                     admin_only_registrations: ulist.admin_only_registration,
                     default_registration_status: ulist.default_registration_status.clone(),
-                    admins: read_admins_of_list(env, ulist.id),
+                    admins: read_list_admins(env, ulist.id),
                     created_ms: ulist.created_ms,
                     updated_ms: ulist.updated_ms,
                     total_registrations_count: get_registrations_of_list(env, list_id).len().into(),
@@ -823,7 +872,10 @@ impl ListsTrait for ListsContract {
 
     fn get_registration(env: &Env, registration_id: u128) -> RegistrationExternal {
         let registration = get_registration_by_id(env, registration_id);
-        assert!(registration.is_some(), "Registration Not Found");
+        
+        if registration.is_none(){
+          panic_with_error!(env, Error::RegistrationNotFound);
+        }
 
         let uregistration = registration.unwrap();
 
@@ -873,8 +925,11 @@ impl ListsTrait for ListsContract {
         }
 
         let internal_skip: usize = from_index.unwrap_or(0).try_into().unwrap();
-        let internal_limit: usize = limit.unwrap_or(10).try_into().unwrap();
-        assert!(internal_limit <= 20, "Limit cannot be more than 20");
+        let mut internal_limit: usize = limit.unwrap_or(10).try_into().unwrap();
+        
+        if internal_limit > 20 {
+            internal_limit = 20;
+        }
 
         registrations
             .keys()
@@ -908,7 +963,7 @@ impl ListsTrait for ListsContract {
         from_index: Option<u64>,
         limit: Option<u64>,
     ) -> Vec<RegistrationExternal> {
-        let registration_ids = get_user_registration_ids_of(env, registrant_id.clone());
+        let registration_ids = get_user_registration_ids_of(env, &registrant_id);
         let mut registrations: Map<u128, RegistrationInternal> = Map::new(env);
         let mut result: Vec<RegistrationExternal> = Vec::new(env);
 
@@ -934,8 +989,11 @@ impl ListsTrait for ListsContract {
         }
 
         let internal_skip: usize = from_index.unwrap_or(0).try_into().unwrap();
-        let internal_limit: usize = limit.unwrap_or(10).try_into().unwrap();
-        assert!(internal_limit <= 20, "Limit cannot be more than 20");
+        let mut internal_limit: usize = limit.unwrap_or(10).try_into().unwrap();
+        
+        if internal_limit > 20 {
+            internal_limit = 20;
+        }
 
         registrations
             .keys()
@@ -969,14 +1027,14 @@ impl ListsTrait for ListsContract {
         required_status: Option<RegistrationStatus>,
     ) -> bool {
         extend_instance(env);
-        let registration_ids = get_user_registration_ids_of(env, registrant_id.clone());
+        let registration_ids = get_user_registration_ids_of(env, &registrant_id);
 
         if required_status.is_none() && list_id.is_none() {
             return !registration_ids.is_empty();
         }
 
         if required_status.is_none() {
-            return get_lists_registered_by(env, registrant_id.clone()).contains(list_id.unwrap());
+            return get_lists_registered_by(env, &registrant_id).contains(list_id.unwrap());
         }
 
         let status = required_status.unwrap();
@@ -993,21 +1051,20 @@ impl ListsTrait for ListsContract {
     }
 
     fn owner(env: &Env) -> Address {
-        read_contract_owner(env)
+        read_contract_owner(env).unwrap()
     }
 
-    fn upgrade(env: &Env, owner: Address, wasm_hash: BytesN<32>) {
-        owner.require_auth();
-
+    fn upgrade(env: &Env, wasm_hash: BytesN<32>) {
         let contract_owner = read_contract_owner(env);
-        validate_contract_owner(&contract_owner, &owner);
+        
+        contract_owner.unwrap().require_auth();
 
         env.deployer().update_current_contract_wasm(wasm_hash);
         extend_instance(env);
     }
 
     fn admins(env: &Env, list_id: u128) -> Vec<Address> {
-        let admins = read_admins_of_list(env, list_id);
+        let admins = read_list_admins(env, list_id);
         extend_instance(env);
 
         admins

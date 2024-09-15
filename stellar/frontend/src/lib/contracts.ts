@@ -80,21 +80,16 @@ class Contracts {
 		return this._wallet
 	}
 
-	async signAndSendTx(
-		kit: StellarWalletsKit,
-		tx: AssembledTransaction<null | any> | undefined,
-		publicKey: string,
-	) {
+	async signAndSendTx(kit: StellarWalletsKit, tx: string, publicKey: string) {
 		let signedXdr
-		const signedRes = await kit?.signTx({
-			xdr: tx?.toXDR() as string,
-			publicKeys: [publicKey],
-			network:
+		const signedRes = await kit?.signTransaction(tx, {
+			address: publicKey,
+			networkPassphrase:
 				envVarConfigs.NETWORK_ENV === 'testnet'
 					? WalletNetwork.TESTNET
-					: WalletNetwork.FUTURENET,
+					: WalletNetwork.PUBLIC,
 		})
-		signedXdr = signedRes?.result
+		signedXdr = signedRes ? signedRes?.signedTxXdr : undefined
 		if (signedXdr) {
 			const server = getSorobanServer()
 			const txHash = await submitTx({
@@ -104,6 +99,8 @@ class Contracts {
 				server,
 			})
 			return txHash
+		} else {
+			throw new Error('Tx canceled by user')
 		}
 	}
 

@@ -22,6 +22,11 @@ import IconLoading from '../../svgs/IconLoading'
 import { UseFieldArrayAppend, UseFieldArrayRemove } from 'react-hook-form'
 import { CreateRoundData } from '@/types/form'
 import { prettyTruncate } from '@/utils/helper'
+import ProjectDetailDrawer from '../round-vote/ProjectDetailDrawer'
+import { IProjectDetailOwner } from '@/app/round-vote/[roundId]/page'
+import { Project } from 'project-registry-client'
+import toast from 'react-hot-toast'
+import { toastOptions } from '@/constants/style'
 
 interface AddProjectsModalProps extends BaseModalProps {
 	selectedProjects: IGetProjectsResponse[]
@@ -43,6 +48,8 @@ const AddProjectsModal = ({
 		IGetProjectsResponse[]
 	>([])
 	const [searchProject, setSearchProject] = useState<string>('')
+	const [showProjectDetailDrawer, setShowProjectDetailDrawer] =
+		useState<IProjectDetailOwner>({ isOpen: false, project: null })
 	const onFetchProjects = async (key: { skip: number; limit: number }) => {
 		const contracts = new Contracts(
 			process.env.NETWORK_ENV as Network,
@@ -117,7 +124,7 @@ const AddProjectsModal = ({
 						<div className="overflow-y-auto max-h-[20vh]">
 							{tempSelectedProjects.map((selected, index) => (
 								<div
-									className="flex items-center justify-between p-2 cursor-pointer hover:bg-grantpicks-black-200 transition"
+									className="flex items-center justify-between p-2 hover:bg-grantpicks-black-200 transition"
 									key={index}
 								>
 									<div className="flex items-center space-x-2">
@@ -128,9 +135,18 @@ const AddProjectsModal = ({
 											width={24}
 											height={24}
 										/>
-										<p className="text-base font-normal">
+										<button
+											onClick={() => {
+												setShowProjectDetailDrawer((prev) => ({
+													...prev,
+													isOpen: true,
+													project: selected as Project,
+												}))
+											}}
+											className="text-base font-normal"
+										>
 											{prettyTruncate(selected.name, 20, 'address')}
-										</p>
+										</button>
 									</div>
 									<IconTrash
 										size={24}
@@ -202,7 +218,14 @@ const AddProjectsModal = ({
 											className="flex items-center space-x-2 p-2 cursor-pointer hover:bg-grantpicks-black-200 transition"
 											key={index}
 											onClick={() =>
-												setTempSelectedProjects((prev) => [project, ...prev])
+												tempSelectedProjects.length < 10
+													? setTempSelectedProjects((prev) => [
+															project,
+															...prev,
+														])
+													: toast.error('Max. 10 projects', {
+															style: toastOptions.error.style,
+														})
 											}
 										>
 											<Image
@@ -238,6 +261,16 @@ const AddProjectsModal = ({
 					</Button>
 				</div>
 			</div>
+			<ProjectDetailDrawer
+				isOpen={showProjectDetailDrawer?.isOpen || false}
+				onClose={() =>
+					setShowProjectDetailDrawer((prev) => ({
+						...prev,
+						isOpen: false,
+					}))
+				}
+				projectData={showProjectDetailDrawer.project || undefined}
+			/>
 		</Modal>
 	)
 }

@@ -5,7 +5,7 @@ import IconCheckCircle from '@/app/components/svgs/IconCheckCircle'
 import IconProject from '@/app/components/svgs/IconProject'
 import IconTrash from '@/app/components/svgs/IconTrash'
 import { CreateProjectStep4Data } from '@/types/form'
-import React, { useState } from 'react'
+import React, { useEffect } from 'react'
 import {
 	Controller,
 	SubmitHandler,
@@ -17,43 +17,20 @@ import IconAdd from '@/app/components/svgs/IconAdd'
 import Checkbox from '@/app/components/commons/CheckBox'
 import DatePicker from 'react-datepicker'
 import IconCalendar from '@/app/components/svgs/IconCalendar'
-import PreviousConfirmationModal from './PreviousConfirmationModal'
 import IconInfoCircle from '@/app/components/svgs/IconInfoCircle'
 import { Tooltip } from 'react-tooltip'
+import { localStorageConfigs } from '@/configs/local-storage'
 
 const CreateProjectStep4 = () => {
 	const { setStep, data, setData } = useCreateProject()
-	const [showPrevConfirm, setShowPrevConfirm] = useState<boolean>(false)
 	const {
 		control,
 		register,
 		watch,
 		handleSubmit,
 		setValue,
-		reset,
 		formState: { errors },
-	} = useForm<CreateProjectStep4Data>({
-		defaultValues: {
-			funding_histories:
-				data.funding_histories.length > 0
-					? data.funding_histories.map((history) => ({
-							source: history.source || '',
-							date: history.date || new Date(),
-							denomination: history.denomination || '',
-							amount: history.amount || '',
-							description: history.description || '',
-						}))
-					: [
-							{
-								source: '',
-								date: new Date(),
-								denomination: '',
-								amount: '',
-								description: '',
-							},
-						],
-		},
-	})
+	} = useForm<CreateProjectStep4Data>({})
 	const {
 		fields: fieldHistories,
 		append: appendHistory,
@@ -67,9 +44,31 @@ const CreateProjectStep4 = () => {
 		setData({
 			...data,
 			funding_histories: submitData.funding_histories,
+			is_havent_raised: submitData.is_havent_raised,
 		})
 		setStep(5)
 	}
+
+	useEffect(() => {
+		const draftData = localStorage.getItem(
+			localStorageConfigs.CREATE_PROJECT_STEP_4,
+		)
+		if (draftData) {
+			const draft = JSON.parse(draftData)
+			setValue('funding_histories', draft.funding_histories)
+			setValue('is_havent_raised', draft.is_havent_raised)
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [])
+
+	useEffect(() => {
+		const storeData = { ...watch() }
+		localStorage.setItem(
+			localStorageConfigs.CREATE_PROJECT_STEP_4,
+			JSON.stringify(storeData),
+		)
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [watch()])
 
 	return (
 		<div className="bg-grantpicks-black-50 rounded-b-xl w-full relative overflow-y-auto h-[70vh]">
@@ -106,7 +105,7 @@ const CreateProjectStep4 = () => {
 									}}
 								/>
 								<InputText
-									required
+									required={!watch().is_havent_raised}
 									label="Source"
 									labelIcon={
 										<>
@@ -123,7 +122,7 @@ const CreateProjectStep4 = () => {
 										</>
 									}
 									{...register(`funding_histories.${index}.source`, {
-										required: true,
+										required: !watch().is_havent_raised,
 									})}
 									errorMessage={
 										errors?.funding_histories?.[index]?.source?.type ===
@@ -141,7 +140,7 @@ const CreateProjectStep4 = () => {
 									<Controller
 										name={`funding_histories.${index}.date`}
 										control={control}
-										rules={{ required: true }}
+										rules={{ required: !watch().is_havent_raised }}
 										render={({ field }) => (
 											<DatePicker
 												showIcon
@@ -165,7 +164,7 @@ const CreateProjectStep4 = () => {
 									/>
 								</div>
 								<InputText
-									required
+									required={!watch().is_havent_raised}
 									label="Denomination"
 									labelIcon={
 										<>
@@ -182,7 +181,7 @@ const CreateProjectStep4 = () => {
 										</>
 									}
 									{...register(`funding_histories.${index}.denomination`, {
-										required: true,
+										required: !watch().is_havent_raised,
 									})}
 									errorMessage={
 										errors?.funding_histories?.[index]?.denomination?.type ===
@@ -195,10 +194,10 @@ const CreateProjectStep4 = () => {
 								/>
 								<InputText
 									type="number"
-									required
+									required={!watch().is_havent_raised}
 									label="Amount"
 									{...register(`funding_histories.${index}.amount`, {
-										required: true,
+										required: !watch().is_havent_raised,
 										pattern: /^(0|[1-9]\d*)(\.\d+)?$/,
 									})}
 									errorMessage={
@@ -218,6 +217,7 @@ const CreateProjectStep4 = () => {
 								<div className="col-span-1 md:col-span-2">
 									<InputTextArea
 										label="Description"
+										required={!watch().is_havent_raised}
 										labelIcon={
 											<>
 												<a
@@ -232,10 +232,9 @@ const CreateProjectStep4 = () => {
 												<Tooltip id="description_tooltip" place="right" />
 											</>
 										}
-										required
 										rows={2}
 										{...register(`funding_histories.${index}.description`, {
-											required: true,
+											required: !watch().is_havent_raised,
 										})}
 										errorMessage={
 											errors.funding_histories?.[index]?.description?.type ===
@@ -254,29 +253,45 @@ const CreateProjectStep4 = () => {
 						<Checkbox
 							label="We haven't raised any funds"
 							checked={watch().is_havent_raised}
-							onChange={(e) => setValue('is_havent_raised', e.target.checked)}
-						/>
-						<Button
-							color="transparent"
-							className="!bg-transparent !border !border-black/10"
-							onClick={() => {
-								appendHistory({
-									id: '',
-									source: '',
-									date: new Date(),
-									denomination: '',
-									amount: '',
-									description: '',
-								})
+							onChange={(e) => {
+								setValue('is_havent_raised', e.target.checked)
+								if (watch().is_havent_raised) {
+									removeHistory()
+								} else {
+									appendHistory({
+										id: '',
+										source: '',
+										date: new Date(),
+										denomination: '',
+										amount: '',
+										description: '',
+									})
+								}
 							}}
-						>
-							<div className="flex items-center space-x-2">
-								<IconAdd size={18} className="fill-grantpicks-black-400" />
-								<p className="text-sm font-semibold text-grantpicks-black-950">
-									Add more
-								</p>
-							</div>
-						</Button>
+						/>
+						{!watch().is_havent_raised && (
+							<Button
+								color="transparent"
+								className="!bg-transparent !border !border-black/10"
+								onClick={() => {
+									appendHistory({
+										id: '',
+										source: '',
+										date: new Date(),
+										denomination: '',
+										amount: '',
+										description: '',
+									})
+								}}
+							>
+								<div className="flex items-center space-x-2">
+									<IconAdd size={18} className="fill-grantpicks-black-400" />
+									<p className="text-sm font-semibold text-grantpicks-black-950">
+										Add more
+									</p>
+								</div>
+							</Button>
+						)}
 					</div>
 				</div>
 			</div>
@@ -285,7 +300,7 @@ const CreateProjectStep4 = () => {
 					<Button
 						color="white"
 						isFullWidth
-						onClick={() => setShowPrevConfirm(true)}
+						onClick={() => setStep(3)}
 						className="!py-3 !border !border-grantpicks-black-400"
 					>
 						Previous
@@ -302,15 +317,6 @@ const CreateProjectStep4 = () => {
 					</Button>
 				</div>
 			</div>
-			<PreviousConfirmationModal
-				isOpen={showPrevConfirm}
-				onPrevious={() => {
-					reset({})
-					setShowPrevConfirm(false)
-					setStep(3)
-				}}
-				onClose={() => setShowPrevConfirm(false)}
-			/>
 		</div>
 	)
 }

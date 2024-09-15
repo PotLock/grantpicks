@@ -81,7 +81,7 @@ const IsNotVotedSection = ({
 			const txVoteProject = await voteRound(voteParams, contracts)
 			const txHashApplyProject = await contracts.signAndSendTx(
 				stellarKit as StellarWalletsKit,
-				txVoteProject,
+				txVoteProject.toXDR(),
 				stellarPubKey,
 			)
 			if (txVoteProject) {

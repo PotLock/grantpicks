@@ -27,6 +27,7 @@ const InputText = forwardRef<HTMLInputElement, InputProps>(
 		ref,
 	) => {
 		const [focus, setFocus] = useState<boolean>(false)
+
 		return (
 			<div className={label ? `gap-y-[10px]` : `gap-y-0`}>
 				{customLabel ||
@@ -80,7 +81,18 @@ const InputText = forwardRef<HTMLInputElement, InputProps>(
 									? `text-center`
 									: `text-right`,
 						)}
-						onFocus={() => setFocus(true)}
+						onFocus={(e) => {
+							setFocus(true)
+							if (type === 'number') {
+								e.target.addEventListener(
+									'wheel',
+									function (e) {
+										e.preventDefault()
+									},
+									{ passive: false },
+								)
+							}
+						}}
 						onBlur={() => setFocus(false)}
 						placeholder={placeholder}
 						onChange={onChange}

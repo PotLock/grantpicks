@@ -33,7 +33,7 @@ if (typeof window !== 'undefined') {
 export const networks = {
   testnet: {
     networkPassphrase: "Test SDF Network ; September 2015",
-    contractId: "CBE3OOQ2O3PUMNJBVLVBOBVIZ6CAWA3D33LQVBTBC7M73QYN46MCODUV",
+    contractId: "CB56YJY26HSUIQGDGRDFHMWTTFZBMHSVEUPDHKUQH7PQPOSJO7WYYJQO",
   }
 } as const
 
@@ -126,6 +126,13 @@ export interface ProjectFundingHistory {
   source: string;
 }
 
+
+export interface RoundPreCheck {
+  applicant: string;
+  has_video: boolean;
+  project_id: u128;
+}
+
 export const Errors = {
   1: {message:"EmptyName"},
 
@@ -145,9 +152,11 @@ export const Errors = {
 
   9: {message:"AlreadyApplied"},
 
-  10: {message:"DataNotFound"}
+  10: {message:"DataNotFound"},
+
+  11: {message:"AlreadyInitialized"}
 }
-export type ContractKey = {tag: "NumOfProjects", values: void} | {tag: "Projects", values: void} | {tag: "RegistryAdmin", values: void} | {tag: "ApplicantToProjectID", values: void};
+export type ContractKey = {tag: "NumOfProjects", values: void} | {tag: "Projects", values: void} | {tag: "Project", values: readonly [u128]} | {tag: "RegistryAdmin", values: void} | {tag: "ApplicantToProjectID", values: void};
 
 
 export interface Client {
@@ -234,7 +243,7 @@ export interface Client {
   /**
    * Construct and simulate a add_admin transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
    */
-  add_admin: ({admin, project_id, new_admin}: {admin: string, project_id: u128, new_admin: string}, options?: {
+  add_admin: ({project_id, new_admin}: {project_id: u128, new_admin: string}, options?: {
     /**
      * The fee to pay for the transaction. Default: BASE_FEE
      */
@@ -254,7 +263,7 @@ export interface Client {
   /**
    * Construct and simulate a remove_admin transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
    */
-  remove_admin: ({admin, project_id, admin_to_remove}: {admin: string, project_id: u128, admin_to_remove: string}, options?: {
+  remove_admin: ({project_id, admin_to_remove}: {project_id: u128, admin_to_remove: string}, options?: {
     /**
      * The fee to pay for the transaction. Default: BASE_FEE
      */
@@ -354,7 +363,7 @@ export interface Client {
   /**
    * Construct and simulate a upgrade transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
    */
-  upgrade: ({owner, new_wasm_hash}: {owner: string, new_wasm_hash: Buffer}, options?: {
+  upgrade: ({new_wasm_hash}: {new_wasm_hash: Buffer}, options?: {
     /**
      * The fee to pay for the transaction. Default: BASE_FEE
      */
@@ -391,6 +400,66 @@ export interface Client {
     simulate?: boolean;
   }) => Promise<AssembledTransaction<Project>>
 
+  /**
+   * Construct and simulate a owner transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+   */
+  owner: (options?: {
+    /**
+     * The fee to pay for the transaction. Default: BASE_FEE
+     */
+    fee?: number;
+
+    /**
+     * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+     */
+    timeoutInSeconds?: number;
+
+    /**
+     * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+     */
+    simulate?: boolean;
+  }) => Promise<AssembledTransaction<string>>
+
+  /**
+   * Construct and simulate a get_precheck transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+   */
+  get_precheck: ({applicant}: {applicant: string}, options?: {
+    /**
+     * The fee to pay for the transaction. Default: BASE_FEE
+     */
+    fee?: number;
+
+    /**
+     * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+     */
+    timeoutInSeconds?: number;
+
+    /**
+     * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+     */
+    simulate?: boolean;
+  }) => Promise<AssembledTransaction<Option<RoundPreCheck>>>
+
+  /**
+   * Construct and simulate a get_precheck_by_id transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+   */
+  get_precheck_by_id: ({project_id}: {project_id: u128}, options?: {
+    /**
+     * The fee to pay for the transaction. Default: BASE_FEE
+     */
+    fee?: number;
+
+    /**
+     * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+     */
+    timeoutInSeconds?: number;
+
+    /**
+     * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+     */
+    simulate?: boolean;
+  }) => Promise<AssembledTransaction<Option<RoundPreCheck>>>
+
 }
 export class Client extends ContractClient {
   constructor(public readonly options: ContractClientOptions) {
@@ -404,20 +473,24 @@ export class Client extends ContractClient {
         "AAAAAQAAAAAAAAAAAAAAEVByb2plY3RUZWFtTWVtYmVyAAAAAAAAAgAAAAAAAAAEbmFtZQAAABAAAAAAAAAABXZhbHVlAAAAAAAAEA==",
         "AAAAAQAAAAAAAAAAAAAAEVByb2plY3RSZXBvc2l0b3J5AAAAAAAAAgAAAAAAAAAFbGFiZWwAAAAAAAAQAAAAAAAAAAN1cmwAAAAAEA==",
         "AAAAAQAAAAAAAAAAAAAAFVByb2plY3RGdW5kaW5nSGlzdG9yeQAAAAAAAAUAAAAAAAAABmFtb3VudAAAAAAACgAAAAAAAAALZGVub21pYXRpb24AAAAAEAAAAAAAAAALZGVzY3JpcHRpb24AAAAAEAAAAAAAAAAJZnVuZGVkX21zAAAAAAAABgAAAAAAAAAGc291cmNlAAAAAAAQ",
-        "AAAABAAAAAAAAAAAAAAABUVycm9yAAAAAAAACgAAAAAAAAAJRW1wdHlOYW1lAAAAAAAAAQAAAAAAAAANRW1wdHlPdmVydmlldwAAAAAAAAIAAAAAAAAADUVtcHR5Q29udGFjdHMAAAAAAAADAAAAAAAAAAtFbXB0eUFkbWlucwAAAAAEAAAAAAAAAA1FbXB0eUltYWdlVXJsAAAAAAAABQAAAAAAAAAQQWRtaW5Pck93bmVyT25seQAAAAYAAAAAAAAACU93bmVyT25seQAAAAAAAAcAAAAAAAAAEUNvbnRyYWN0T3duZXJPbmx5AAAAAAAACAAAAAAAAAAOQWxyZWFkeUFwcGxpZWQAAAAAAAkAAAAAAAAADERhdGFOb3RGb3VuZAAAAAo=",
+        "AAAAAQAAAAAAAAAAAAAADVJvdW5kUHJlQ2hlY2sAAAAAAAADAAAAAAAAAAlhcHBsaWNhbnQAAAAAAAATAAAAAAAAAAloYXNfdmlkZW8AAAAAAAABAAAAAAAAAApwcm9qZWN0X2lkAAAAAAAK",
+        "AAAABAAAAAAAAAAAAAAABUVycm9yAAAAAAAACwAAAAAAAAAJRW1wdHlOYW1lAAAAAAAAAQAAAAAAAAANRW1wdHlPdmVydmlldwAAAAAAAAIAAAAAAAAADUVtcHR5Q29udGFjdHMAAAAAAAADAAAAAAAAAAtFbXB0eUFkbWlucwAAAAAEAAAAAAAAAA1FbXB0eUltYWdlVXJsAAAAAAAABQAAAAAAAAAQQWRtaW5Pck93bmVyT25seQAAAAYAAAAAAAAACU93bmVyT25seQAAAAAAAAcAAAAAAAAAEUNvbnRyYWN0T3duZXJPbmx5AAAAAAAACAAAAAAAAAAOQWxyZWFkeUFwcGxpZWQAAAAAAAkAAAAAAAAADERhdGFOb3RGb3VuZAAAAAoAAAAAAAAAEkFscmVhZHlJbml0aWFsaXplZAAAAAAACw==",
         "AAAAAAAAAAAAAAAKaW5pdGlhbGl6ZQAAAAAAAQAAAAAAAAAOY29udHJhY3Rfb3duZXIAAAAAABMAAAAA",
         "AAAAAAAAAAAAAAAFYXBwbHkAAAAAAAACAAAAAAAAAAlhcHBsaWNhbnQAAAAAAAATAAAAAAAAAA5wcm9qZWN0X3BhcmFtcwAAAAAH0AAAABNDcmVhdGVQcm9qZWN0UGFyYW1zAAAAAAEAAAfQAAAAB1Byb2plY3QA",
         "AAAAAAAAAAAAAAAVY2hhbmdlX3Byb2plY3Rfc3RhdHVzAAAAAAAAAwAAAAAAAAAOY29udHJhY3Rfb3duZXIAAAAAABMAAAAAAAAACnByb2plY3RfaWQAAAAAAAoAAAAAAAAACm5ld19zdGF0dXMAAAAAB9AAAAANUHJvamVjdFN0YXR1cwAAAAAAAAA=",
         "AAAAAAAAAAAAAAAOdXBkYXRlX3Byb2plY3QAAAAAAAMAAAAAAAAABWFkbWluAAAAAAAAEwAAAAAAAAAKcHJvamVjdF9pZAAAAAAACgAAAAAAAAASbmV3X3Byb2plY3RfcGFyYW1zAAAAAAfQAAAAE1VwZGF0ZVByb2plY3RQYXJhbXMAAAAAAA==",
-        "AAAAAAAAAAAAAAAJYWRkX2FkbWluAAAAAAAAAwAAAAAAAAAFYWRtaW4AAAAAAAATAAAAAAAAAApwcm9qZWN0X2lkAAAAAAAKAAAAAAAAAAluZXdfYWRtaW4AAAAAAAATAAAAAA==",
-        "AAAAAAAAAAAAAAAMcmVtb3ZlX2FkbWluAAAAAwAAAAAAAAAFYWRtaW4AAAAAAAATAAAAAAAAAApwcm9qZWN0X2lkAAAAAAAKAAAAAAAAAA9hZG1pbl90b19yZW1vdmUAAAAAEwAAAAA=",
+        "AAAAAAAAAAAAAAAJYWRkX2FkbWluAAAAAAAAAgAAAAAAAAAKcHJvamVjdF9pZAAAAAAACgAAAAAAAAAJbmV3X2FkbWluAAAAAAAAEwAAAAA=",
+        "AAAAAAAAAAAAAAAMcmVtb3ZlX2FkbWluAAAAAgAAAAAAAAAKcHJvamVjdF9pZAAAAAAACgAAAAAAAAAPYWRtaW5fdG9fcmVtb3ZlAAAAABMAAAAA",
         "AAAAAAAAAAAAAAARZ2V0X3Byb2plY3RfYnlfaWQAAAAAAAABAAAAAAAAAApwcm9qZWN0X2lkAAAAAAAKAAAAAQAAB9AAAAAHUHJvamVjdAA=",
         "AAAAAAAAAAAAAAAMZ2V0X3Byb2plY3RzAAAAAgAAAAAAAAAEc2tpcAAAA+gAAAAGAAAAAAAAAAVsaW1pdAAAAAAAA+gAAAAGAAAAAQAAA+oAAAfQAAAAB1Byb2plY3QA",
         "AAAAAAAAAAAAAAASZ2V0X3Byb2plY3RfYWRtaW5zAAAAAAABAAAAAAAAAApwcm9qZWN0X2lkAAAAAAAKAAAAAQAAA+oAAAAT",
         "AAAAAAAAAAAAAAASZ2V0X3RvdGFsX3Byb2plY3RzAAAAAAAAAAAAAQAAAAQ=",
-        "AAAAAAAAAAAAAAAHdXBncmFkZQAAAAACAAAAAAAAAAVvd25lcgAAAAAAABMAAAAAAAAADW5ld193YXNtX2hhc2gAAAAAAAPuAAAAIAAAAAA=",
+        "AAAAAAAAAAAAAAAHdXBncmFkZQAAAAABAAAAAAAAAA1uZXdfd2FzbV9oYXNoAAAAAAAD7gAAACAAAAAA",
         "AAAAAAAAAAAAAAAaZ2V0X3Byb2plY3RfZnJvbV9hcHBsaWNhbnQAAAAAAAEAAAAAAAAACWFwcGxpY2FudAAAAAAAABMAAAABAAAH0AAAAAdQcm9qZWN0AA==",
-        "AAAAAgAAAAAAAAAAAAAAC0NvbnRyYWN0S2V5AAAAAAQAAAAAAAAAAAAAAA1OdW1PZlByb2plY3RzAAAAAAAAAAAAAAAAAAAIUHJvamVjdHMAAAAAAAAAAAAAAA1SZWdpc3RyeUFkbWluAAAAAAAAAAAAAAAAAAAUQXBwbGljYW50VG9Qcm9qZWN0SUQ=" ]),
+        "AAAAAAAAAAAAAAAFb3duZXIAAAAAAAAAAAAAAQAAABM=",
+        "AAAAAAAAAAAAAAAMZ2V0X3ByZWNoZWNrAAAAAQAAAAAAAAAJYXBwbGljYW50AAAAAAAAEwAAAAEAAAPoAAAH0AAAAA1Sb3VuZFByZUNoZWNrAAAA",
+        "AAAAAAAAAAAAAAASZ2V0X3ByZWNoZWNrX2J5X2lkAAAAAAABAAAAAAAAAApwcm9qZWN0X2lkAAAAAAAKAAAAAQAAA+gAAAfQAAAADVJvdW5kUHJlQ2hlY2sAAAA=",
+        "AAAAAgAAAAAAAAAAAAAAC0NvbnRyYWN0S2V5AAAAAAUAAAAAAAAAAAAAAA1OdW1PZlByb2plY3RzAAAAAAAAAAAAAAAAAAAIUHJvamVjdHMAAAABAAAAAAAAAAdQcm9qZWN0AAAAAAEAAAAKAAAAAAAAAAAAAAANUmVnaXN0cnlBZG1pbgAAAAAAAAAAAAAAAAAAFEFwcGxpY2FudFRvUHJvamVjdElE" ]),
       options
     )
   }
@@ -433,6 +506,9 @@ export class Client extends ContractClient {
         get_project_admins: this.txFromJSON<Array<string>>,
         get_total_projects: this.txFromJSON<u32>,
         upgrade: this.txFromJSON<null>,
-        get_project_from_applicant: this.txFromJSON<Project>
+        get_project_from_applicant: this.txFromJSON<Project>,
+        owner: this.txFromJSON<string>,
+        get_precheck: this.txFromJSON<Option<RoundPreCheck>>,
+        get_precheck_by_id: this.txFromJSON<Option<RoundPreCheck>>
   }
 }

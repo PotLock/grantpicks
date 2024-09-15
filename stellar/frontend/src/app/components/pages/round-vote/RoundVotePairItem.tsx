@@ -4,6 +4,7 @@ import React, {
 	Dispatch,
 	SetStateAction,
 	useEffect,
+	useMemo,
 	useRef,
 	useState,
 } from 'react'
@@ -11,7 +12,7 @@ import IconPause from '../../svgs/IconPause'
 import IconPlay from '../../svgs/IconPlay'
 import Button from '../../commons/Button'
 import IconEye from '../../svgs/IconEye'
-import { Pair, Project } from 'round-client'
+import { Pair } from 'round-client'
 import {
 	getProject,
 	GetProjectParams,
@@ -22,6 +23,7 @@ import { Network } from '@/types/on-chain'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { IProjectDetailOwner } from '@/app/round-vote/[roundId]/page'
 import { fetchYoutubeIframe, prettyTruncate } from '@/utils/helper'
+import { Project } from 'project-registry-client'
 
 interface RoundVotePairItemProps {
 	index: number
@@ -106,28 +108,9 @@ const RoundVotePairItem = ({
 		}
 	}, [data])
 
-	return (
-		<div
-			key={index}
-			id={`boxing-${index}`}
-			className="min-w-full flex items-center justify-between snap-center space-x-4"
-		>
-			{/* the first */}
-			<div
-				onClick={() => {
-					let temp = [...selectedPairs]
-					temp[index] = data.projects[0].toString()
-					setSelectedPairs(temp)
-				}}
-				ref={wrapper1Ref}
-				className={clsx(
-					`rounded-3xl transition-all duration-200 w-[280px] md:w-[360px] lg:w-[448px] cursor-pointer`,
-					selectedPairs[index] === data.projects[0].toString()
-						? // true
-							`border-4 border-grantpicks-purple-500`
-						: `border-4 border-black/10`,
-				)}
-			>
+	const firstVideoComponent = useMemo(() => {
+		return (
+			<div>
 				{!firstProjectData?.video_url.includes('youtube') && (
 					<div className="relative">
 						<video
@@ -165,6 +148,79 @@ const RoundVotePairItem = ({
 						dangerouslySetInnerHTML={{ __html: ytIframe1 }}
 					/>
 				)}
+			</div>
+		)
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [firstProjectData?.video_url, ytIframe1])
+
+	const secondVideoComponent = useMemo(() => {
+		return (
+			<div>
+				{!secondProjectData?.video_url.includes('youtube') && (
+					<div className="relative">
+						<video
+							ref={video2Ref}
+							src={secondProjectData?.video_url || `/assets/videos/video-2.mp4`}
+							autoPlay={false}
+							controls={false}
+							className="w-[80%] mx-auto aspect-video"
+						></video>
+						<div className="flex items-center justify-center absolute inset-0 z-20">
+							<button
+								onClick={async () => {
+									setVideoPlayerProps((prev) => ({
+										...prev,
+										isOpen: true,
+										videoUrl:
+											secondProjectData?.video_url ||
+											`/assets/videos/video-2.mp4`,
+									}))
+								}}
+								className="w-10 h-10 flex items-center justify-center rounded-full bg-grantpicks-black-950 cursor-pointer hover:opacity-70 transition"
+							>
+								{video2Played ? (
+									<IconPause size={28} className="fill-grantpicks-black-400" />
+								) : (
+									<IconPlay size={28} className="stroke-grantpicks-black-400" />
+								)}
+							</button>
+						</div>
+					</div>
+				)}
+				{ytIframe2 && (
+					<div
+						className="flex items-center justify-center"
+						dangerouslySetInnerHTML={{ __html: ytIframe2 }}
+					/>
+				)}
+			</div>
+		)
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [secondProjectData?.video_url, ytIframe2])
+
+	return (
+		<div
+			key={index}
+			id={`boxing-${index}`}
+			className="min-w-full flex items-center justify-between snap-center space-x-4"
+		>
+			{/* the first */}
+			<div
+				onClick={() => {
+					let temp = [...selectedPairs]
+					temp[index] = data.projects[0].toString()
+					setSelectedPairs(temp)
+				}}
+				ref={wrapper1Ref}
+				className={clsx(
+					`rounded-3xl transition-all duration-200 w-[280px] md:w-[360px] lg:w-[448px] cursor-pointer`,
+					selectedPairs[index] === data.projects[0].toString()
+						? // true
+							`border-4 border-grantpicks-purple-500`
+						: `border-4 border-black/10`,
+				)}
+			>
+				{firstVideoComponent}
 				<div className="md:p-4 lg:p-5">
 					<div className="flex items-center space-x-2 mb-4">
 						<div className="rounded-full w-6 h-6 bg-grantpicks-black-400" />
@@ -212,43 +268,7 @@ const RoundVotePairItem = ({
 						: `border-4 border-black/10`,
 				)}
 			>
-				{!firstProjectData?.video_url.includes('youtube') && (
-					<div className="relative">
-						<video
-							ref={video2Ref}
-							src={secondProjectData?.video_url || `/assets/videos/video-2.mp4`}
-							autoPlay={false}
-							controls={false}
-							className="w-[80%] mx-auto aspect-video"
-						></video>
-						<div className="flex items-center justify-center absolute inset-0 z-20">
-							<button
-								onClick={async () => {
-									setVideoPlayerProps((prev) => ({
-										...prev,
-										isOpen: true,
-										videoUrl:
-											secondProjectData?.video_url ||
-											`/assets/videos/video-2.mp4`,
-									}))
-								}}
-								className="w-10 h-10 flex items-center justify-center rounded-full bg-grantpicks-black-950 cursor-pointer hover:opacity-70 transition"
-							>
-								{video1Played ? (
-									<IconPause size={28} className="fill-grantpicks-black-400" />
-								) : (
-									<IconPlay size={28} className="stroke-grantpicks-black-400" />
-								)}
-							</button>
-						</div>
-					</div>
-				)}
-				{ytIframe2 && (
-					<div
-						className="flex items-center justify-center"
-						dangerouslySetInnerHTML={{ __html: ytIframe2 }}
-					/>
-				)}
+				{secondVideoComponent}
 				<div className="md:p-4 lg:p-5">
 					<div className="flex items-center space-x-2 mb-4">
 						<div className="rounded-full w-6 h-6 bg-grantpicks-black-400" />

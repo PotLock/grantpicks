@@ -43,6 +43,7 @@ export interface InputTextAreaProps {
 	suffixIcon?: React.ReactNode
 	errorMessage?: JSX.Element
 	textAlign?: 'left' | 'center' | 'right'
+	maxLength?: number
 }
 
 export interface CheckboxProps {

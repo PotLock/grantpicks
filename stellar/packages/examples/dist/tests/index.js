@@ -29,7 +29,7 @@ export async function generateFakeRound() {
             application_end_ms: BigInt(new Date().getTime() + 1000 * 60 * 60 * 24 * 7),
             voting_start_ms: BigInt(new Date().getTime() + 1000 * 60 * 60 * 24 * 8),
             voting_end_ms: BigInt(new Date().getTime() + 1000 * 60 * 60 * 24 * 14),
-            name: 'Round ' + randomName,
+            name: 'Round Ongoing X',
             description: 'This is a test round',
             is_video_required: false,
             allow_applications: true,
@@ -39,11 +39,9 @@ export async function generateFakeRound() {
             use_whitelist: false,
             contacts: [],
             owner: adminPublicKey,
-            compliance_end_ms: BigInt(new Date().getTime() + 1000 * 60 * 60 * 24 * 7),
-            compliance_period_ms: BigInt(1000 * 60 * 60 * 24 * 7),
+            compliance_period_ms: undefined,
             compliance_req_desc: 'This is a compliance requirement',
-            cooldown_end_ms: BigInt(new Date().getTime() + 1000 * 60 * 60 * 24 * 7),
-            cooldown_period_ms: BigInt(1000 * 60 * 60 * 24 * 7),
+            cooldown_period_ms: undefined,
             allow_remaining_dist: false,
             remaining_dist_address: adminPublicKey,
             referrer_fee_basis_points: 0,
@@ -155,7 +153,7 @@ export async function generateFakeRound() {
     }
     console.log('Start Voting');
     //admin start voting
-    let startVotingTx = await app.round_contract.change_voting_period({
+    let startVotingTx = await app.round_contract.set_voting_period({
         round_id: BigInt(roundId),
         caller: adminPublicKey,
         start_ms: BigInt(new Date().getTime()),
@@ -226,7 +224,7 @@ export async function generateFakeRound() {
     // })
     // app = new App('testnet', cmdWallet)
     // console.log('End Voting')
-    // let endVotingTx = await app.round_contract.change_voting_period({
+    // let endVotingTx = await app.round_contract.set_voting_period({
     // 	round_id: BigInt(roundId),
     // 	caller: adminPublicKey,
     // 	start_ms: BigInt(new Date().getTime() - 1000 * 60 * 60 * 24 * 7),
@@ -238,13 +236,15 @@ export async function generateFakeRound() {
     // 	round_id: BigInt(roundId),
     // })
     // console.log('Round Result', roundResult.result)
-    //admin set payouts
+    // //admin set payouts
     // console.log('Set Payouts')
+    // const config: Config = (await app.round_contract.get_config()).result
     // let payouts: PayoutInput[] = []
+    // const toDistribute = DEPOSIT - (Number(config.protocol_fee_basis_points) / 10000) * DEPOSIT
     // for (let result of roundResult.result) {
     // 	if (result.voting_count > 0) {
     // 		payouts.push({
-    // 			amount: BigInt(DEPOSIT / (num_of_voters * 2)) * result.voting_count,
+    // 			amount: BigInt(toDistribute / (num_of_voters * 2)) * result.voting_count,
     // 			memo: 'This is a test payout',
     // 			recipient_id: project_to_owner[result.project_id.toString()],
     // 		})

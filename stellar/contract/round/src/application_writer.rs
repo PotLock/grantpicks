@@ -1,7 +1,7 @@
 use soroban_sdk::{Address, Env, Map, Vec};
 
 use crate::{
-    data_type::RoundApplication, page_writer::read_default_page_size, storage_key::ContractKey, utils::get_storage,
+    config_writer::read_config, data_type::RoundApplication, storage_key::ContractKey, utils::get_storage
 };
 
 pub fn read_application(env: &Env, round_id: u128) -> Map<Address, RoundApplication> {
@@ -29,7 +29,7 @@ pub fn find_applications(
     skip: Option<u64>,
     limit: Option<u64>,
 ) -> Vec<RoundApplication> {
-    let default_page_size = read_default_page_size(env);
+    let default_page_size = read_config(env).default_page_size;
     let applications = read_application(env, round_id);
     let skip: usize = skip.unwrap_or(0).try_into().unwrap();
     let mut limit: usize = limit.unwrap_or(default_page_size).try_into().unwrap();

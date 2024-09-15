@@ -53,6 +53,12 @@ import { subDays } from 'date-fns'
 import { StrKey } from 'round-client'
 import IconInfoCircle from '@/app/components/svgs/IconInfoCircle'
 import { Tooltip } from 'react-tooltip'
+import {
+	EMAIL_VALIDATION_REGEX,
+	INSTAGRAM_USERNAME_REGEX,
+	TELEGRAM_USERNAME_REGEX,
+	TWITTER_USERNAME_REGEX,
+} from '@/constants/regex'
 
 const CreateRoundPage = () => {
 	const router = useRouter()
@@ -73,8 +79,10 @@ const CreateRoundPage = () => {
 		setValue,
 		reset,
 		watch,
+		trigger,
 		formState: { errors },
 	} = useForm<CreateRoundData>({
+		mode: 'onChange',
 		defaultValues: {
 			vote_per_person: 1,
 			apply_duration_start: undefined,
@@ -135,7 +143,7 @@ const CreateRoundPage = () => {
 			)
 			const txHash = await contracts.signAndSendTx(
 				stellarKit as StellarWalletsKit,
-				txAddProject,
+				txAddProject.toXDR(),
 				stellarPubKey,
 			)
 			return txHash
@@ -166,7 +174,7 @@ const CreateRoundPage = () => {
 			)
 			const txHash = await contracts.signAndSendTx(
 				stellarKit as StellarWalletsKit,
-				txAddProject,
+				txAddProject.toXDR(),
 				stellarPubKey,
 			)
 			return txHash
@@ -225,14 +233,8 @@ const CreateRoundPage = () => {
 						: [],
 				allow_remaining_dist: true,
 				compliance_req_desc: data.compliance_req_desc,
-				compliance_end_ms: data.voting_duration_end
-					? BigInt(data.voting_duration_end?.getTime() as number)
-					: undefined,
 				compliance_period_ms: data.compliance_period_ms
 					? BigInt(data.compliance_period_ms as number)
-					: undefined,
-				cooldown_end_ms: data.voting_duration_end
-					? BigInt(data.voting_duration_end?.getTime() as number)
 					: undefined,
 				cooldown_period_ms: undefined,
 				remaining_dist_address: data.remaining_dist_address || stellarPubKey,
@@ -246,7 +248,7 @@ const CreateRoundPage = () => {
 			)
 			const txHashCreateRound = await contracts.signAndSendTx(
 				stellarKit as StellarWalletsKit,
-				txCreateRound,
+				txCreateRound.toXDR(),
 				stellarPubKey,
 			)
 			if (txHashCreateRound) {
@@ -454,6 +456,7 @@ const CreateRoundPage = () => {
 												<p
 													onClick={() => {
 														setValue('contact_type', 'Telegram')
+														trigger('contact_address')
 														setShowContactType(false)
 													}}
 													className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
@@ -463,6 +466,7 @@ const CreateRoundPage = () => {
 												<p
 													onClick={() => {
 														setValue('contact_type', 'Instagram')
+														trigger('contact_address')
 														setShowContactType(false)
 													}}
 													className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
@@ -472,6 +476,7 @@ const CreateRoundPage = () => {
 												<p
 													onClick={() => {
 														setValue('contact_type', 'Twitter')
+														trigger('contact_address')
 														setShowContactType(false)
 													}}
 													className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
@@ -481,6 +486,7 @@ const CreateRoundPage = () => {
 												<p
 													onClick={() => {
 														setValue('contact_type', 'Email')
+														trigger('contact_address')
 														setShowContactType(false)
 													}}
 													className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
@@ -493,15 +499,52 @@ const CreateRoundPage = () => {
 								</div>
 								<div className="flex-1">
 									<InputText
+										disabled={!watch('contact_type')}
 										required
 										placeholder="Your username..."
-										{...register('contact_address', { required: true })}
+										{...register('contact_address', {
+											required: true,
+											validate: (value) => {
+												const contactType = watch('contact_type')
+												if (!value) return true
+												if (contactType === 'Telegram') {
+													return (
+														TELEGRAM_USERNAME_REGEX.test(value) ||
+														'Telegram address is not valid'
+													)
+												}
+												if (contactType === 'Instagram') {
+													return (
+														INSTAGRAM_USERNAME_REGEX.test(value) ||
+														'Instagram address is not valid'
+													)
+												}
+												if (contactType === 'Twitter') {
+													return (
+														TWITTER_USERNAME_REGEX.test(value) ||
+														'Twitter address is not valid'
+													)
+												}
+												if (contactType === 'Email') {
+													return (
+														EMAIL_VALIDATION_REGEX.test(value) ||
+														'Email address is not valid'
+													)
+												}
+												return true
+											},
+										})}
 									/>
 								</div>
 							</div>
 							{errors.contact_address?.type === 'required' && (
 								<p className="text-red-500 text-xs mt-1 ml-2">
 									Contact address is required
+								</p>
+							)}
+							{errors.contact_address && (
+								<p className="text-red-500 text-xs mt-1 ml-2">
+									{errors.contact_address.message}
 								</p>
 							)}
 							<p className="text-xs font-normal text-grantpicks-black-600">
@@ -543,6 +586,13 @@ const CreateRoundPage = () => {
 											</p>
 										</div>
 									}
+									errorMessage={
+										parseFloat(watch().amount) <= 0 ? (
+											<p className="text-red-500 text-xs mt-1 ml-2">
+												Initial deposit cannot be less than or equal to 0
+											</p>
+										) : undefined
+									}
 								/>
 							</div>
 							<div className="flex-1">
@@ -552,6 +602,7 @@ const CreateRoundPage = () => {
 									required
 									placeholder="Enter amount..."
 									{...register('expected_amount', {
+										required: true,
 										onChange: async (e) => {
 											const calculation =
 												parseFloat(e.target.value || '0') * stellarPrice
@@ -584,6 +635,10 @@ const CreateRoundPage = () => {
 										  parseFloat(watch().amount) ? (
 											<p className="text-red-500 text-xs mt-1 ml-2">
 												Expected Amount should not be less than intiial deposit
+											</p>
+										) : parseFloat(watch().expected_amount) <= 0 ? (
+											<p className="text-red-500 text-xs mt-1 ml-2">
+												Expected Amount cannot be less than or equal to 0
 											</p>
 										) : undefined
 									}
@@ -853,6 +908,10 @@ const CreateRoundPage = () => {
 										<p className="text-red-500 text-xs mt-1 ml-2">
 											Cooldown deadline is required
 										</p>
+									) : (watch().cooldown_end_ms as unknown as number) < 0 ? (
+										<p className="text-red-500 text-xs mt-1 ml-2">
+											Cooldown deadline cannot be less than 0
+										</p>
 									) : undefined
 								}
 							/>
@@ -861,11 +920,11 @@ const CreateRoundPage = () => {
 
 					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
 						<div className="flex items-center justify-between pb-4 border-b border-black/10">
-							<div className="flex items-center space-x-2">
+							<div className="flex items-center space-x-2 z-50">
 								<p className="text-base font-semibold">Require Compliance</p>
 								<a
 									data-tooltip-id="require_compliance_tooltip"
-									data-tooltip-html="This requires grantees to do KYC process"
+									data-tooltip-html="This requires grantees to do KYC process. That means that projects must KYC <br/>an account with Potlock KYC partner and if they don't after the compliance period <br/>all their earned funds will be sent to the funds remaining address"
 								>
 									<IconInfoCircle
 										size={16}
@@ -970,6 +1029,11 @@ const CreateRoundPage = () => {
 										<p className="text-red-500 text-xs mt-1 ml-2">
 											Compliance deadline is required
 										</p>
+									) : (watch().compliance_period_ms as unknown as number) <
+									  0 ? (
+										<p className="text-red-500 text-xs mt-1 ml-2">
+											Compliance deadline cannot be less than 0
+										</p>
 									) : undefined
 								}
 							/>
@@ -978,7 +1042,7 @@ const CreateRoundPage = () => {
 
 					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
 						<div className="flex items-center justify-between pb-4 border-b border-black/10">
-							<div className="flex items-center space-x-2">
+							<div className="flex items-center space-x-2 z-50">
 								<p className="text-base font-semibold">
 									Remaining Funds Redistribution
 								</p>

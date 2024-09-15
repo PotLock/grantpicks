@@ -38,7 +38,7 @@ const Menu = ({
 			{isOpen && (
 				<div
 					ref={menuRef}
-					className={clsx('fixed inset-0 z-50 bg-black/10 max-w-full mx-auto')}
+					className={clsx('fixed inset-0 z-50 max-w-full mx-auto')}
 					onClick={(e) => _bgClick(e)}
 				/>
 			)}

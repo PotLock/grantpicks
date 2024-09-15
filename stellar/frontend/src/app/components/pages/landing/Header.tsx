@@ -119,8 +119,7 @@ const LandingHeader = () => {
 							</p>
 						</div>
 						<p className="text-xl font-semibold text-grantpicks-black-950">
-							Voters pick a from a pair that’s considered to have the most
-							impact{' '}
+							{`Voters pick from a pair that's considered to have the most impact`}{' '}
 						</p>
 					</div>
 					<div className="flex items-center space-x-2 md:space-x-4 px-4 py-3 md:py-5 border border-black/10 rounded-lg">
@@ -167,7 +166,7 @@ const LandingHeader = () => {
 								<div className="flex items-center space-x-2">
 									<IconCheck
 										size={24}
-										className="stroke-grantpicks-purple-400"
+										className="stroke-grantpicks-purple-400 shrink-0"
 									/>
 									<p className="text-base font-normal text-grantpicks-black-600">
 										Get access to funding rounds
@@ -176,7 +175,7 @@ const LandingHeader = () => {
 								<div className="flex items-center space-x-2">
 									<IconCheck
 										size={24}
-										className="stroke-grantpicks-purple-400"
+										className="stroke-grantpicks-purple-400 shrink-0"
 									/>
 									<p className="text-base font-normal text-grantpicks-black-600">
 										Create custom project, discoverable across Potlock products{' '}
@@ -192,7 +191,7 @@ const LandingHeader = () => {
 								<div className="flex items-center space-x-2">
 									<IconCheck
 										size={24}
-										className="stroke-grantpicks-purple-400"
+										className="stroke-grantpicks-purple-400 shrink-0"
 									/>
 									<p className="text-base font-normal text-grantpicks-black-600">
 										Vote and get retroactive points
@@ -207,43 +206,64 @@ const LandingHeader = () => {
 						</p>
 						<div className="space-y-2">
 							<div className="flex items-center space-x-2">
-								<IconCheck size={24} className="stroke-grantpicks-purple-400" />
+								<IconCheck
+									size={24}
+									className="stroke-grantpicks-purple-400 shrink-0"
+								/>
 								<p className="text-base font-normal text-grantpicks-black-600">
-									Create prefund  rounds non custodially or do payouts later{' '}
+									Create prefund rounds non custodially or do payouts later{' '}
 								</p>
 							</div>
 							<div className="flex items-center space-x-2">
-								<IconCheck size={24} className="stroke-grantpicks-purple-400" />
+								<IconCheck
+									size={24}
+									className="stroke-grantpicks-purple-400 shrink-0"
+								/>
 								<p className="text-base font-normal text-grantpicks-black-600">
 									Choose voter requirements{' '}
 								</p>
 							</div>
 							<div className="flex items-center space-x-2">
-								<IconCheck size={24} className="stroke-grantpicks-purple-400" />
+								<IconCheck
+									size={24}
+									className="stroke-grantpicks-purple-400 shrink-0"
+								/>
 								<p className="text-base font-normal text-grantpicks-black-600">
 									Add projects manually or have them apply{' '}
 								</p>
 							</div>
 							<div className="flex items-center space-x-2">
-								<IconCheck size={24} className="stroke-grantpicks-purple-400" />
+								<IconCheck
+									size={24}
+									className="stroke-grantpicks-purple-400 shrink-0"
+								/>
 								<p className="text-base font-normal text-grantpicks-black-600">
 									Flag bot voters {' '}
 								</p>
 							</div>
 							<div className="flex items-center space-x-2">
-								<IconCheck size={24} className="stroke-grantpicks-purple-400" />
+								<IconCheck
+									size={24}
+									className="stroke-grantpicks-purple-400 shrink-0"
+								/>
 								<p className="text-base font-normal text-grantpicks-black-600">
 									Calculate and adjust payouts{' '}
 								</p>
 							</div>
 							<div className="flex items-center space-x-2">
-								<IconCheck size={24} className="stroke-grantpicks-purple-400" />
+								<IconCheck
+									size={24}
+									className="stroke-grantpicks-purple-400 shrink-0"
+								/>
 								<p className="text-base font-normal text-grantpicks-black-600">
 									Audit votes and pay results{' '}
 								</p>
 							</div>
 							<div className="flex items-center space-x-2">
-								<IconCheck size={24} className="stroke-grantpicks-purple-400" />
+								<IconCheck
+									size={24}
+									className="stroke-grantpicks-purple-400 shrink-0"
+								/>
 								<p className="text-base font-normal text-grantpicks-black-600">
 									Vote and get retroactive points{' '}
 								</p>

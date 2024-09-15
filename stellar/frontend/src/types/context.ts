@@ -11,7 +11,8 @@ import { WalletSelectorModal } from '@near-wallet-selector/modal-ui'
 import { Dispatch, SetStateAction } from 'react'
 import { IGetRoundsResponse } from './on-chain'
 import { Livepeer } from 'livepeer'
-import { Project, RoundApplication } from 'round-client'
+import { RoundApplication } from 'round-client'
+import { Project } from 'project-registry-client'
 
 export interface IWalletContext {
 	connectedWallet: 'near' | 'stellar' | null

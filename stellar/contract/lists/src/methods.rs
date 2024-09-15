@@ -16,7 +16,6 @@ pub trait ListsTrait {
     ) -> ListExternal;
     fn update_list(
         env: &Env,
-        owner: Address,
         list_id: u128,
         name: Option<String>,
         description: Option<String>,
@@ -25,23 +24,21 @@ pub trait ListsTrait {
         default_registration_status: Option<RegistrationStatus>,
         admin_only_registrations: Option<bool>,
     ) -> ListExternal;
-    fn delete_list(env: &Env, owner: Address, list_id: u128);
+    fn delete_list(env: &Env, list_id: u128);
     fn upvote(env: &Env, voter: Address, list_id: u128);
     fn remove_upvote(env: &Env, voter: Address, list_id: u128);
     fn transfer_ownership(
         env: &Env,
-        owner: Address,
         list_id: u128,
         new_owner_id: Address,
     ) -> Address;
-    fn add_admins(env: &Env, owner: Address, list_id: u128, admins: Vec<Address>) -> Vec<Address>;
+    fn add_admins(env: &Env, list_id: u128, admins: Vec<Address>) -> Vec<Address>;
     fn remove_admins(
         env: &Env,
-        owner: Address,
         list_id: u128,
         admins: Vec<Address>,
     ) -> Vec<Address>;
-    fn clear_admins(env: &Env, owner: Address, list_id: u128);
+    fn clear_admins(env: &Env, list_id: u128);
     fn register_batch(
         env: &Env,
         submitter: Address,
@@ -114,6 +111,6 @@ pub trait ListsTrait {
     ) -> bool;
 
     fn owner(env: &Env) -> Address;
-    fn upgrade(env: &Env, owner: Address, new_wasm_hash: BytesN<32>);
+    fn upgrade(env: &Env, new_wasm_hash: BytesN<32>);
     fn admins(env: &Env, list_id: u128) -> Vec<Address>;
 }

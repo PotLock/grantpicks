@@ -7,6 +7,7 @@ import { generateApplicator } from './project-registry/apply.js'
 import { applyToRound } from './round/apply.js'
 import { reviewApplicationAndApprove } from './round/review.js'
 import { getProjectFromApplicant } from './project-registry/user-application.js'
+import { createList } from './lists/create.js'
 
 async function commands(params: string[], app: App) {
 	let result = null
@@ -35,6 +36,9 @@ async function commands(params: string[], app: App) {
 			break
 		case 'round_add_admin':
 			result = await addAdmin(params.slice(1), app)
+			break
+		case 'kyc_list':
+			result = await createList(params.slice(1), app)
 			break
 	}
 

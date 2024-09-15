@@ -78,7 +78,7 @@ const ChallengeItem = ({
 
 			const txHash = await contract.signAndSendTx(
 				stellarKit as StellarWalletsKit,
-				resolveTx,
+				resolveTx.toXDR(),
 				stellarPubKey,
 			)
 

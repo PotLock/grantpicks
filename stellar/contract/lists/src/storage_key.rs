@@ -1,3 +1,5 @@
+use soroban_sdk::Address;
+
 use crate::soroban_sdk::{self, contracttype};
 
 #[contracttype]
@@ -5,14 +7,14 @@ use crate::soroban_sdk::{self, contracttype};
 pub enum ContractKey {
     ContractOwner,
     ListsNumber,
-    Lists,
-    ListAdmins,
-    OwnedList,
-    RegistrantList,
+    Lists(u128),
+    ListAdmins(u128),
+    OwnedList(Address),
+    RegistrantList(Address),
     RegistrationsNumber,
-    Registrations,
-    ListRegistration,
-    RegistrationsIDs,
-    Upvotes,
-    UserUpvotes,
+    Registrations(u128),
+    ListRegistration(u128),
+    RegistrationsIDs(Address),
+    Upvotes(u128),
+    UserUpvotes(Address),
 }

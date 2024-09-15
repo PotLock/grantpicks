@@ -4,7 +4,7 @@ import IconCheckCircle from '@/app/components/svgs/IconCheckCircle'
 import IconProject from '@/app/components/svgs/IconProject'
 import IconTrash from '@/app/components/svgs/IconTrash'
 import { CreateProjectStep5Data } from '@/types/form'
-import React, { useCallback, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useCreateProject } from './CreateProjectFormMainModal'
 import { useDropzone } from 'react-dropzone'
@@ -14,7 +14,6 @@ import { toastOptions } from '@/constants/style'
 import { YOUTUBE_URL_REGEX } from '@/constants/regex'
 import IconPlay from '@/app/components/svgs/IconPlay'
 import IconPause from '@/app/components/svgs/IconPause'
-import PreviousConfirmationModal from './PreviousConfirmationModal'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import { getSrc } from '@livepeer/react/external'
 import IconLoading from '@/app/components/svgs/IconLoading'
@@ -23,15 +22,14 @@ import { requestUpload, retrieveAsset, uploadFile } from '@/services/upload'
 import * as tus from 'tus-js-client'
 import { Src } from '@livepeer/react'
 import { fetchYoutubeIframe } from '@/utils/helper'
+import { localStorageConfigs } from '@/configs/local-storage'
 
 const CreateProjectStep5 = () => {
 	const { setStep, onProceedApply, setData } = useCreateProject()
 	const { livepeer } = useGlobalContext()
-	const [showPrevConfirm, setShowPrevConfirm] = useState<boolean>(false)
 	const {
 		handleSubmit,
 		setValue,
-		reset,
 		formState: { errors },
 	} = useForm<CreateProjectStep5Data>()
 	const [accFiles, setAccFiles] = useState<File[]>([])
@@ -52,65 +50,80 @@ const CreateProjectStep5 = () => {
 	>(undefined)
 
 	const onDrop = useCallback(async (acceptedFiles: File[]) => {
-		if (acceptedFiles[0].size / 10 ** 6 > 25) {
-			toast.error('Max. file size is 25 MB', {
-				style: toastOptions.error.style,
-			})
-			return
-		}
-		try {
-			setLoadingFlow('Preparing')
-			setAccFiles((prev) => [...prev, acceptedFiles[0]])
-			const objectUrl = URL.createObjectURL(acceptedFiles[0])
-			setAccFileUrls((prev) => [...prev, objectUrl])
-			const resLivepeer = await requestUpload(livepeer, acceptedFiles[0].name)
-			await uploadFile(
-				acceptedFiles[0],
-				setUploadResult,
-				(percentage) => {
-					setLoadingFlow('Uploading')
-					//@ts-ignore
-					setUploadResult((prev) => ({ ...prev, percentage }))
-				},
-				async (uploadedUrl) => {
-					setUploadResult((prev) => ({
-						...prev,
-						uploadedUrl: uploadedUrl,
-						percentage: ``,
-					}))
-					let assetResult: GetAssetResponse | undefined = undefined
-					assetResult = await retrieveAsset(livepeer, resLivepeer)
-					const closePoolingAsset = setInterval(async () => {
-						setLoadingFlow('Finishing')
+		const videoElement = document.createElement('video')
+		const videoURL = URL.createObjectURL(acceptedFiles[0])
+		videoElement.src = videoURL
+
+		videoElement.onloadedmetadata = async () => {
+			const duration = videoElement.duration
+			if (acceptedFiles[0].size / 10 ** 6 > 100 || duration > 300) {
+				toast.error('Your video is more than 5 minutes / more than 100 MB', {
+					style: toastOptions.error.style,
+				})
+				URL.revokeObjectURL(videoURL)
+				return
+			}
+
+			try {
+				setLoadingFlow('Preparing')
+				setAccFiles((prev) => [...prev, acceptedFiles[0]])
+				const objectUrl = URL.createObjectURL(acceptedFiles[0])
+				setAccFileUrls((prev) => [...prev, objectUrl])
+				const resLivepeer = await requestUpload(livepeer, acceptedFiles[0].name)
+				await uploadFile(
+					acceptedFiles[0],
+					setUploadResult,
+					(percentage) => {
+						setLoadingFlow('Uploading')
+						//@ts-ignore
+						setUploadResult((prev) => ({ ...prev, percentage }))
+					},
+					async (uploadedUrl) => {
+						setUploadResult((prev) => ({
+							...prev,
+							uploadedUrl: uploadedUrl,
+							percentage: ``,
+						}))
+						let assetResult: GetAssetResponse | undefined = undefined
 						assetResult = await retrieveAsset(livepeer, resLivepeer)
-						if (assetResult?.asset?.status?.phase.includes('ready')) {
-							const playbackInfo = await livepeer?.playback.get(
-								assetResult.asset.playbackId as string,
-							)
-							const src = getSrc(playbackInfo?.playbackInfo)
-							setValue('video', {
-								url: src?.[0].src || '',
-								file: acceptedFiles[0],
-							})
-							setData((prev) => ({
-								...prev,
-								video: { file: acceptedFiles[0], url: src?.[0].src as string },
-							}))
-							setPlaybackSrc(src)
-							setLoadingFlow(null)
-							clearInterval(closePoolingAsset)
-							return
-						}
-					}, 1000)
-				},
-				resLivepeer,
-			)
-		} catch (error: any) {
-			setAccFiles([])
-			setAccFileUrls([])
-			setLoadingFlow(null)
-			console.log('error uploading', error)
+						const closePoolingAsset = setInterval(async () => {
+							setLoadingFlow('Finishing')
+							assetResult = await retrieveAsset(livepeer, resLivepeer)
+							if (assetResult?.asset?.status?.phase.includes('ready')) {
+								const playbackInfo = await livepeer?.playback.get(
+									assetResult.asset.playbackId as string,
+								)
+								const src = getSrc(playbackInfo?.playbackInfo)
+								setValue('video', {
+									url: src?.[0].src || '',
+									file: acceptedFiles[0],
+								})
+								setData((prev) => ({
+									...prev,
+									video: {
+										file: acceptedFiles[0],
+										url: src?.[0].src as string,
+									},
+								}))
+								setPlaybackSrc(src)
+								setLoadingFlow(null)
+								clearInterval(closePoolingAsset)
+								return
+							}
+						}, 1000)
+					},
+					resLivepeer,
+				)
+			} catch (error: any) {
+				setAccFiles([])
+				setAccFileUrls([])
+				setLoadingFlow(null)
+				console.log('error uploading', error)
+			} finally {
+				URL.revokeObjectURL(videoURL)
+			}
 		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])
 
 	const onProcessYoutubeInput = async () => {
@@ -145,6 +158,34 @@ const CreateProjectStep5 = () => {
 	const onProceed = async () => {
 		await onProceedApply()
 	}
+
+	useEffect(() => {
+		const draftData = localStorage.getItem(
+			localStorageConfigs.CREATE_PROJECT_STEP_5,
+		)
+		if (draftData) {
+			const draft = JSON.parse(draftData)
+			setAccFiles(draft.accFiles)
+			setPlaybackSrc(draft.playbackSrc)
+			setEmbededYtHtml(draft.embededYtHtml)
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [])
+
+	useEffect(() => {
+		if (embededYtHtml != '' || playbackSrc != null || accFiles.length != 0) {
+			const storeData = {
+				accFiles: accFiles,
+				playbackSrc: playbackSrc,
+				embededYtHtml: embededYtHtml,
+			}
+			localStorage.setItem(
+				localStorageConfigs.CREATE_PROJECT_STEP_5,
+				JSON.stringify(storeData),
+			)
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [playbackSrc, embededYtHtml])
 
 	return (
 		<div
@@ -204,7 +245,7 @@ const CreateProjectStep5 = () => {
 									Supported format: MP4, YouTube link
 								</p>
 								<p className="text-xs font-normal text-grantpicks-black-950">
-									Maximum size: 25MB{' '}
+									Maximum size: 100MB{' '}
 								</p>
 							</div>
 							<div className="w-[90%]">
@@ -271,6 +312,9 @@ const CreateProjectStep5 = () => {
 										}))
 										setEmbededYtHtml('')
 									}
+									localStorage.removeItem(
+										localStorageConfigs.CREATE_PROJECT_STEP_5,
+									)
 								}}
 							/>
 						</div>
@@ -322,7 +366,7 @@ const CreateProjectStep5 = () => {
 					<Button
 						color="white"
 						isFullWidth
-						onClick={() => setShowPrevConfirm(true)}
+						onClick={() => setStep(4)}
 						className="!py-3 !border !border-grantpicks-black-400"
 					>
 						Previous
@@ -331,10 +375,14 @@ const CreateProjectStep5 = () => {
 				<div className="flex-1">
 					<Button
 						color={
-							accFiles.length === 0 && !embededYtHtml ? `disabled` : `black-950`
+							(accFiles.length === 0 && !embededYtHtml) || loadingFlow !== null
+								? `disabled`
+								: `black-950`
 						}
 						isFullWidth
-						isDisabled={accFiles.length === 0 && !embededYtHtml}
+						isDisabled={
+							(accFiles.length === 0 && !embededYtHtml) || loadingFlow !== null
+						}
 						onClick={handleSubmit(onProceed)}
 						className="!py-3"
 					>
@@ -342,20 +390,6 @@ const CreateProjectStep5 = () => {
 					</Button>
 				</div>
 			</div>
-			<PreviousConfirmationModal
-				isOpen={showPrevConfirm}
-				onPrevious={() => {
-					reset({})
-					setShowPrevConfirm(false)
-					setAccFiles([])
-					setAccFileUrls([])
-					setLinkInput('')
-					setIsDirtyInput(false)
-					setVideoPlayed(false)
-					setStep(4)
-				}}
-				onClose={() => setShowPrevConfirm(false)}
-			/>
 		</div>
 	)
 }

@@ -11,6 +11,7 @@ pub enum Error {
     IndexOutOfBound = 32,
     SameOwner = 38,
     DataNotFound = 52,
+    AlreadyInitialized = 57,
 }
 
 #[allow(clippy::module_name_repetitions)]

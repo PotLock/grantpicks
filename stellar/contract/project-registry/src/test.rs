@@ -224,7 +224,7 @@ fn test_add_admin() {
         },
     );
 
-    contract.add_admin(&bob, &project.id, &charlie);
+    contract.add_admin( &project.id, &charlie);
 
     let project = contract.get_project_by_id(&project.id);
 
@@ -296,14 +296,14 @@ fn test_remove_admin() {
         },
     );
 
-    contract.add_admin(&bob, &project.id, &charlie);
+    contract.add_admin(&project.id, &charlie);
 
     let project = contract.get_project_by_id(&project.id);
 
     assert_eq!(project.admins.len(), 2);
     assert_eq!(project.admins.get(1).unwrap(), charlie);
 
-    contract.remove_admin(&bob, &project.id, &charlie);
+    contract.remove_admin( &project.id, &charlie);
 
     let project = contract.get_project_by_id(&project.id);
 
@@ -443,7 +443,7 @@ fn test_get_project_admins() {
         },
     );
 
-    contract.add_admin(&bob, &project.id, &charlie);
+    contract.add_admin(&project.id, &charlie);
 
     let admins = contract.get_project_admins(&project.id);
 

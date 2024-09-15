@@ -23,7 +23,33 @@ import { SubmitHandler, useFieldArray, useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { useMyProject } from './MyProjectProvider'
 import { StrKey } from 'round-client'
-import { GITHUB_URL_REGEX } from '@/constants/regex'
+import {
+	BITCOIN_ADDRESS_REGEX,
+	EMAIL_VALIDATION_REGEX,
+	ETHEREUM_ADDRESS_REGEX,
+	GITHUB_URL_REGEX,
+	INSTAGRAM_USERNAME_REGEX,
+	NEAR_ADDRESS_REGEX,
+	TELEGRAM_USERNAME_REGEX,
+	TWITTER_USERNAME_REGEX,
+} from '@/constants/regex'
+
+interface IContract {
+	id: string
+	chain: string
+	address: string
+}
+
+interface IRepo {
+	id: string
+	github_url: string
+}
+
+interface IContact {
+	id: string
+	platform: string
+	link_url: string
+}
 
 const MyProjectLinks = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()
@@ -31,6 +57,9 @@ const MyProjectLinks = () => {
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const [showContractMenu, setShowContractMenu] = useState<boolean[]>([])
 	const [showContactMenu, setShowContactMenu] = useState<boolean[]>([])
+	const [currentContract, setCurrentContract] = useState<IContract[]>([])
+	const [currentRepo, setCurrentRepo] = useState<IRepo[]>([])
+	const [currentContact, setCurrentContact] = useState<IContact[]>([])
 	const {
 		control,
 		register,
@@ -73,7 +102,14 @@ const MyProjectLinks = () => {
 		if (projectData) {
 			setValue(
 				'smart_contracts',
-				projectData?.contracts.map((contract) => ({
+				projectData?.contracts.map((contract: any) => ({
+					id: '',
+					chain: contract.name,
+					address: contract.contract_address,
+				})),
+			)
+			setCurrentContract(
+				projectData?.contracts.map((contract: any) => ({
 					id: '',
 					chain: contract.name,
 					address: contract.contract_address,
@@ -81,7 +117,14 @@ const MyProjectLinks = () => {
 			)
 			setValue(
 				'contacts',
-				projectData?.contacts.map((contact) => ({
+				projectData?.contacts.map((contact: any) => ({
+					id: '',
+					platform: contact.name,
+					link_url: contact.value,
+				})),
+			)
+			setCurrentContact(
+				projectData?.contacts.map((contact: any) => ({
 					id: '',
 					platform: contact.name,
 					link_url: contact.value,
@@ -89,7 +132,13 @@ const MyProjectLinks = () => {
 			)
 			setValue(
 				'github_urls',
-				projectData?.repositories.map((repo) => ({
+				projectData?.repositories.map((repo: any) => ({
+					id: '',
+					github_url: repo.url,
+				})),
+			)
+			setCurrentRepo(
+				projectData?.repositories.map((repo: any) => ({
 					id: '',
 					github_url: repo.url,
 				})),
@@ -138,7 +187,7 @@ const MyProjectLinks = () => {
 			)
 			const txHashUpdateProject = await contracts.signAndSendTx(
 				stellarKit as StellarWalletsKit,
-				txUpdateProject,
+				txUpdateProject.toXDR(),
 				stellarPubKey,
 			)
 			if (txHashUpdateProject) {
@@ -172,13 +221,11 @@ const MyProjectLinks = () => {
 					Links
 				</p>
 				<div className="py-4 md:py-6">
-					<p className="text-grantpicks-black-950 mb-2">
-						Smart Contracts <span className="text-grantpicks-red-600">*</span>
-					</p>
+					<p className="text-grantpicks-black-950 mb-2">Smart Contracts</p>
 					{fieldContracts.map((value, index) => {
 						return (
-							<div key={index} className="flex flex-col space-y-2">
-								<div className="flex items-center space-x-4 mb-2">
+							<div key={index} className="flex flex-col mb-2">
+								<div className="flex items-center space-x-4 mb-1">
 									<div className="relative w-[30%]">
 										<div
 											onClick={() => {
@@ -266,9 +313,20 @@ const MyProjectLinks = () => {
 									</div>
 									<div className="w-[60%]">
 										<InputText
-											required
 											{...register(`smart_contracts.${index}.address`, {
-												required: true,
+												validate: (value) =>
+													watch().smart_contracts[index].chain === 'bitcoin'
+														? BITCOIN_ADDRESS_REGEX(value)
+														: watch().smart_contracts[index].chain ===
+															  'ethereum'
+															? ETHEREUM_ADDRESS_REGEX(value)
+															: watch().smart_contracts[index].chain ===
+																  'stellar'
+																? StrKey.isValidEd25519PublicKey(value)
+																: watch().smart_contracts[index].chain ===
+																	  'near'
+																	? NEAR_ADDRESS_REGEX(value)
+																	: true,
 											})}
 										/>
 									</div>
@@ -287,13 +345,8 @@ const MyProjectLinks = () => {
 								</div>
 								{errors?.smart_contracts?.[index]?.address?.type ===
 								'validate' ? (
-									<p className="text-red-500 text-xs mt-1 ml-2">
+									<p className="text-red-500 text-xs ml-2">
 										Address is invalid
-									</p>
-								) : errors.smart_contracts?.[index]?.address?.type ===
-								  'required' ? (
-									<p className="text-red-500 text-xs mt-1 ml-2">
-										Address is required
 									</p>
 								) : undefined}
 							</div>
@@ -325,29 +378,22 @@ const MyProjectLinks = () => {
 						/>
 					</div>
 
-					<p className="text-grantpicks-black-950 mb-2">
-						Github <span className="text-grantpicks-red-600">*</span>
-					</p>
+					<p className="text-grantpicks-black-950 mb-2">Github</p>
 					{fieldGithubs.map((value, index) => {
 						return (
 							<div key={index} className="flex items-center space-x-4 mb-2">
 								<div className="w-[90%]">
 									<InputText
-										required
 										{...register(`github_urls.${index}.github_url`, {
-											required: true,
 											validate: (value) => {
-												return GITHUB_URL_REGEX.test(value)
+												return watch().github_urls[index].github_url !== ''
+													? GITHUB_URL_REGEX.test(value)
+													: true
 											},
 										})}
 										errorMessage={
 											errors?.github_urls?.[index]?.github_url?.type ===
-											'required' ? (
-												<p className="text-red-500 text-xs mt-1 ml-2">
-													Github is required
-												</p>
-											) : errors?.github_urls?.[index]?.github_url?.type ===
-											  'validate' ? (
+											'validate' ? (
 												<p className="text-red-500 text-xs mt-1 ml-2">
 													Please enter a valid GitHub URL
 												</p>
@@ -384,9 +430,7 @@ const MyProjectLinks = () => {
 						</Button>
 					</div>
 
-					<p className="text-grantpicks-black-950 mb-2">
-						Contacts <span className="text-grantpicks-red-600">*</span>
-					</p>
+					<p className="text-grantpicks-black-950 mb-2">Contacts</p>
 					{fieldContacts.map((value, index) => {
 						return (
 							<div key={index} className="flex flex-col space-y-2">
@@ -472,10 +516,31 @@ const MyProjectLinks = () => {
 									</div>
 									<div className="w-[60%]">
 										<InputText
-											placeholder="t.me/Jameson"
-											required
+											disabled={watch().contacts[index].platform === ''}
+											placeholder={
+												watch().contacts[index].platform === 'email'
+													? 'jameson@gmail.com'
+													: 'jameson'
+											}
 											{...register(`contacts.${index}.link_url`, {
-												required: true,
+												pattern: {
+													value:
+														watch().contacts[index].platform === 'telegram'
+															? TELEGRAM_USERNAME_REGEX
+															: watch().contacts[index].platform === 'instagram'
+																? INSTAGRAM_USERNAME_REGEX
+																: watch().contacts[index].platform === 'twitter'
+																	? TWITTER_USERNAME_REGEX
+																	: EMAIL_VALIDATION_REGEX,
+													message:
+														watch().contacts[index].platform === 'telegram'
+															? 'Telegram address is not valid'
+															: watch().contacts[index].platform === 'instagram'
+																? 'Instagram address is not valid'
+																: watch().contacts[index].platform === 'twitter'
+																	? 'Twitter address is not valid'
+																	: 'Email address is not valid',
+												},
 											})}
 										/>
 									</div>
@@ -492,11 +557,11 @@ const MyProjectLinks = () => {
 										/>
 									</div>
 								</div>
-								{errors?.contacts?.[index]?.link_url?.type === 'required' ? (
-									<p className="text-red-500 text-xs ml-2">
-										Contact is required
+								{errors?.contacts?.[index]?.link_url && (
+									<p className="text-red-500 text-xs mt-1 ml-2">
+										{errors?.contacts?.[index]?.link_url.message}
 									</p>
-								) : undefined}
+								)}
 							</div>
 						)
 					})}
@@ -526,6 +591,14 @@ const MyProjectLinks = () => {
 						isFullWidth
 						onClick={() => setDefaultData()}
 						className="!py-3 !border !border-grantpicks-black-400"
+						isDisabled={
+							JSON.stringify(watch().smart_contracts) ===
+								JSON.stringify(currentContract) &&
+							JSON.stringify(watch().github_urls) ===
+								JSON.stringify(currentRepo) &&
+							JSON.stringify(watch().contacts) ===
+								JSON.stringify(currentContact)
+						}
 					>
 						Discard
 					</Button>
@@ -535,7 +608,15 @@ const MyProjectLinks = () => {
 						color="black-950"
 						isFullWidth
 						onClick={handleSubmit(onSaveChanges)}
-						className="!py-3"
+						className="!py-3 disabled:cursor-not-allowed"
+						isDisabled={
+							JSON.stringify(watch().smart_contracts) ===
+								JSON.stringify(currentContract) &&
+							JSON.stringify(watch().github_urls) ===
+								JSON.stringify(currentRepo) &&
+							JSON.stringify(watch().contacts) ===
+								JSON.stringify(currentContact)
+						}
 					>
 						Save changes
 					</Button>

@@ -1,7 +1,6 @@
 import { IDrawerProps } from '@/types/dialog'
 import React, { useEffect, useRef, useState } from 'react'
 import Drawer from '../../commons/Drawer'
-import { Project } from 'round-client'
 import IconPause from '../../svgs/IconPause'
 import IconPlay from '../../svgs/IconPlay'
 import { useModalContext } from '@/app/providers/ModalProvider'
@@ -9,6 +8,7 @@ import { fetchYoutubeIframe, prettyTruncate } from '@/utils/helper'
 import Button from '../../commons/Button'
 import IconArrowOutward from '../../svgs/IconArrowOutward'
 import Link from 'next/link'
+import { Project } from 'project-registry-client'
 
 interface ProjectDetailDrawerProps extends IDrawerProps {
 	projectData?: Project

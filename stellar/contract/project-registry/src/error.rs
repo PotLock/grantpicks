@@ -13,5 +13,6 @@ pub enum Error {
     OwnerOnly = 7,
     ContractOwnerOnly = 8,
     AlreadyApplied = 9,
-    DataNotFound = 10
+    DataNotFound = 10,
+    AlreadyInitialized = 11,
 }

@@ -70,37 +70,41 @@ const ApplicationRoundsItem = ({
 	}
 
 	const fetchRoundApplication = async () => {
-		try {
-			const contracts = storage.getStellarContracts()
+		if (stellarPubKey) {
+			try {
+				const contracts = storage.getStellarContracts()
 
-			if (!contracts) return
+				if (!contracts) return
 
-			const res = await getRoundApplication(
-				{ round_id: doc.id as bigint, applicant: stellarPubKey },
-				contracts,
-			)
-			//@ts-ignore
-			if (!res?.error) {
-				if (selectedRoundType === 'upcoming') setIsUserApplied(true)
+				const res = await getRoundApplication(
+					{ round_id: doc.id as bigint, applicant: stellarPubKey },
+					contracts,
+				)
+				//@ts-ignore
+				if (!res?.error) {
+					if (selectedRoundType === 'upcoming') setIsUserApplied(true)
+				}
+			} catch (error: any) {
+				console.log('error fetch project applicant', error)
 			}
-		} catch (error: any) {
-			console.log('error fetch project applicant', error)
 		}
 	}
 
 	const getSpecificTime = () => {
 		if (selectedRoundType === 'upcoming') {
-			if (new Date().getTime() < Number(doc.application_start_ms)) {
-				return `upcoming`
-			} else if (
-				Number(doc.application_start_ms) <= new Date().getTime() &&
+			if (
+				new Date().getTime() >= Number(doc.application_start_ms) &&
 				new Date().getTime() < Number(doc.application_end_ms)
 			) {
 				return `upcoming-open`
 			} else if (
-				Number(doc.application_end_ms) <= new Date().getTime() &&
+				new Date().getTime() >= Number(doc.application_end_ms) &&
 				new Date().getTime() < Number(doc.voting_start_ms)
 			) {
+				return `upcoming-closed`
+			} else if (doc.allow_applications) {
+				return `upcoming`
+			} else {
 				return `upcoming-closed`
 			}
 		} else if (selectedRoundType === 'on-going') {
@@ -205,9 +209,14 @@ const ApplicationRoundsItem = ({
 					)}
 				</div>
 			</div>
-			<p className="font-semibold text-base md:text-lg lg:text-xl max-w-60 mb-4 text-grantpicks-black-950">
+			<button
+				onClick={() => {
+					setShowDetailDrawer(true)
+				}}
+				className="font-semibold text-base md:text-lg lg:text-xl max-w-60 mb-4 text-grantpicks-black-950 text-left"
+			>
 				{doc.name}
-			</p>
+			</button>
 			<div className="flex items-center justify-between mb-6">
 				{selectedRoundType === 'on-going' ? (
 					<div className="flex items-center space-x-1">
@@ -268,7 +277,10 @@ const ApplicationRoundsItem = ({
 							<div className="flex items-center space-x-1">
 								<IconClock size={18} className="fill-grantpicks-black-400" />
 								<p className="text-sm font-normal text-grantpicks-black-950">
-									Closed{' '}
+									Voting{' '}
+									{moment(
+										new Date(Number(doc.voting_start_ms) as number),
+									).fromNow()}
 								</p>
 							</div>
 						)}
@@ -285,10 +297,6 @@ const ApplicationRoundsItem = ({
 			<div className="w-full">
 				<Button
 					onClick={() => {
-						if (!connectedWallet) {
-							setShowMenu('choose-wallet')
-							return
-						}
 						if (selectedRoundType === 'on-going') {
 							setVoteConfirmationProps((prev) => ({
 								...prev,

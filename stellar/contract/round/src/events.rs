@@ -1,4 +1,4 @@
-use crate::data_type::{RoundApplication, RoundDetail, VotingResult};
+use crate::data_type::{Deposit, RoundApplication, RoundDetail, VotingResult};
 use soroban_sdk::{self, symbol_short, Address, Env, Vec};
 
 /*
@@ -62,10 +62,10 @@ pub fn log_delete_app(env: &Env, round_id: u128, application: RoundApplication) 
     );
 }
 
-pub fn log_create_deposit(env: &Env, round_id: u128, actor: Address, amount: u128) {
+pub fn log_create_deposit(env: &Env, round_id: u128, data: &Deposit) {
     env.events().publish(
         (symbol_short!("c_depo"), env.current_contract_address()),
-        (round_id, actor, amount),
+        (round_id, data.clone()),
     );
 }
 

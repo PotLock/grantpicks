@@ -505,10 +505,10 @@ pub fn log_create_app(env: &Env, round_id: u128, application: RoundApplication) 
     );
 }
 
-pub fn log_update_app(env: &Env, round_id: u128, application: RoundApplication) {
+pub fn log_update_app(env: &Env, round_id: u128, application: RoundApplication, updated_by: Address) {
     env.events().publish(
         (symbol_short!("u_app"), env.current_contract_address()),
-        (round_id, application),
+        (round_id, application, updated_by),
     );
 }
 
@@ -524,10 +524,10 @@ pub fn log_delete_app(env: &Env, round_id: u128, application: RoundApplication) 
 3. Deposit Events
 
 ```rs
-pub fn log_create_deposit(env: &Env, round_id: u128, actor: Address, amount: u128) {
+pub fn log_create_deposit(env: &Env, round_id: u128, data: &Deposit) {
     env.events().publish(
         (symbol_short!("c_depo"), env.current_contract_address()),
-        (round_id, actor, amount),
+        (round_id, data.clone()),
     );
 }
 ```

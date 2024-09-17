@@ -1,4 +1,4 @@
-use crate::data_type::{Deposit, RoundApplication, RoundDetail, VotingResult};
+use crate::data_type::{Deposit, Payout, RoundApplication, RoundDetail, VotingResult};
 use soroban_sdk::{self, symbol_short, Address, Env, Vec};
 
 /*
@@ -76,11 +76,18 @@ pub fn log_create_vote(env: &Env, round_id: u128, result: VotingResult) {
     );
 }
 
-pub fn log_create_payout(env: &Env, round_id: u128, address: Address, amount: i128) {
+pub fn log_create_payout(env: &Env, round_id: u128, payout: &Payout) {
     env.events().publish(
         (symbol_short!("c_pay"), env.current_contract_address()),
-        (round_id, address, amount),
+        (round_id, payout.clone()),
     );
+}
+
+pub fn log_update_payout(env: &Env, round_id: u128, payout: &Payout) {
+  env.events().publish(
+      (symbol_short!("u_pay"), env.current_contract_address()),
+      (round_id, payout.clone()),
+  );
 }
 
 pub fn log_update_approved_projects(env: &Env, round_id: u128, project_ids: Vec<u128>) {

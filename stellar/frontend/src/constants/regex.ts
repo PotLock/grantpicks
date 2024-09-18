@@ -9,7 +9,8 @@ export const GITHUB_URL_REGEX = new RegExp(
 )
 
 export const NEAR_ADDRESS_REGEX = (address: string): boolean => {
-	const nearRegex = /^(?!.*--)[a-z0-9-]{2,64}\.(near|testnet)$/
+	const nearRegex =
+		/^(?!.*--)[a-z0-9]+(?:-[a-z0-9]+)*(\.[a-z0-9]+)*(?:\.near|\.testnet)$/
 	return nearRegex.test(address)
 }
 

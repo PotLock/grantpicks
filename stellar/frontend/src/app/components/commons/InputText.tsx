@@ -49,7 +49,7 @@ const InputText = forwardRef<HTMLInputElement, InputProps>(
 					))}
 				<div className="relative mb-1">
 					{disabled && (
-						<div className="absolute inset-0 z-20 bg-grantpicks-black-50/50 cursor-not-allowed rounded-xl" />
+						<div className="absolute inset-0 bg-grantpicks-black-50/50 cursor-not-allowed rounded-xl" />
 					)}
 					{preffixIcon && (
 						<div className="absolute left-0 pl-3 inset-y-0 flex items-center justify-center">

@@ -13,7 +13,7 @@ use crate::{
         increment_deposit_id, read_deposit, read_deposit_from_round, write_deposit,
         write_deposit_id_to_round,
     }, error::{ApplicationError, Error, RoundError, VoteError}, events::{
-        log_create_app, log_create_deposit, log_create_payout, log_create_round, log_create_vote, log_delete_app, log_update_admin, log_update_app, log_update_approved_projects, log_update_round, log_update_user_flag, log_update_whitelist
+        log_create_app, log_create_deposit, log_create_payout, log_create_round, log_create_vote, log_delete_app, log_update_admin, log_update_app, log_update_approved_projects, log_update_payout, log_update_round, log_update_user_flag, log_update_whitelist
     }, external::{ListsClient, ProjectRegistryClient, RegistrationStatus}, factory::RoundCreator, pair::{get_all_pairs, get_all_rounds, get_pair_by_index, get_random_pairs}, payout_writer::{
         add_payout_id_to_project_payout_ids, clear_payouts, clear_project_payout_ids, has_paid, increment_payout_id, read_payout_challenge, read_payout_challenges, read_payout_info, read_payouts, read_project_payout_ids_for_project, remove_payout_challenge, remove_payout_info, write_payout_challenge, write_payout_challenges, write_payout_info, write_payouts
     }, round_writer::{increment_round_number, is_initialized, read_round_info, write_round_info}, storage::{clear_round, extend_instance, extend_round}, utils::{calculate_protocol_fee, count_total_available_pairs, get_ledger_second_as_millis}, validation::{
@@ -688,7 +688,7 @@ impl IsRound for RoundContract {
                 updated_round.current_vault_balance -= payout_amount_u128;
                 total_amount_paid += payout.amount;
                 write_payout_info(env, payout_id, &payout);
-                log_create_payout(env, round.id, payout.recipient_id.clone(), payout.amount);
+                log_update_payout(env, round.id, &payout);
             });
         });
 
@@ -1246,6 +1246,7 @@ impl IsRound for RoundContract {
             };
 
             write_payout_info(env, payout_id, &payout);
+            log_create_payout(env, round.id, &payout);
             payouts_internal.push_back(payout_id);
             add_payout_id_to_project_payout_ids(env, project_id, payout_id);
             payouts_external.push_back(payout.clone());

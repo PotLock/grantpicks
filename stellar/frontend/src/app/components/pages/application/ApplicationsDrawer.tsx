@@ -219,7 +219,7 @@ const ApplicationsDrawer = ({
 		IGetRoundApplicationsResponse[]
 	>([])
 	const containerScrollRef = useRef<HTMLDivElement>(null)
-  const storage = useAppStorage()
+	const storage = useAppStorage()
 
 	const onFetchRoundApplications = async (key: {
 		url: string
@@ -255,9 +255,11 @@ const ApplicationsDrawer = ({
 			revalidateFirstPage: false,
 		})
 	const applications = data
-		? ([] as IGetRoundApplicationsResponse[]).concat(...data)
+		? ([] as IGetRoundApplicationsResponse[]).concat(
+				...(data as any as IGetRoundApplicationsResponse[]),
+			)
 		: []
-	const hasMore = data ? data[data.length - 1].length >= LIMIT_SIZE : false
+	const hasMore = data ? data.length >= LIMIT_SIZE : false
 
 	useEffect(() => {
 		if (data) {

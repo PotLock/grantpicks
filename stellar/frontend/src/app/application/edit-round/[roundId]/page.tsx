@@ -302,7 +302,7 @@ const EditRoundPage = () => {
 				// if (resProjects.length > 0) {
 				// 	setValue(`projects`, resProjects)
 				// }
-				if (resRoundAdmins.length > 0) {
+				if (resRoundAdmins && resRoundAdmins.length > 0) {
 					setSelectedAdmins(resRoundAdmins.map((admin) => admin))
 					setValue(
 						'admins',

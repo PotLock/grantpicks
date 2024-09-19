@@ -284,7 +284,7 @@ const ApplicationRoundsItem = ({
 const MyVotesPage = () => {
 	const { stellarPubKey, connectedWallet } = useWallet()
 	const [roundsData, setRoundsData] = useState<IGetRoundsResponse[]>([])
-  const storage = useAppStorage()
+	const storage = useAppStorage()
 
 	const onFetchMyVotedRounds = async (key: {
 		url: string
@@ -320,8 +320,12 @@ const MyVotesPage = () => {
 		useSWRInfinite(getKey, async (key) => await onFetchMyVotedRounds(key), {
 			revalidateFirstPage: false,
 		})
-	const rounds = data ? ([] as IGetRoundsResponse[]).concat(...data) : []
-	const hasMore = data ? data[data.length - 1].length >= LIMIT_SIZE : false
+	const rounds = data
+		? ([] as IGetRoundsResponse[]).concat(
+				...(data as any as IGetRoundsResponse[]),
+			)
+		: []
+	const hasMore = data ? data.length >= LIMIT_SIZE : false
 
 	return (
 		<MyVotesLayout>

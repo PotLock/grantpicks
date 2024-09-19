@@ -91,11 +91,11 @@ const AddProjectsModal = ({
 		revalidateFirstPage: false,
 	})
 	const projects = projectData
-		? ([] as IGetProjectsResponse[]).concat(...projectData)
+		? ([] as IGetProjectsResponse[]).concat(
+				...(projectData as any as IGetProjectsResponse[]),
+			)
 		: []
-	const hasMore = projectData
-		? projectData[projectData.length - 1].length >= LIMIT_SIZE
-		: false
+	const hasMore = projectData ? projectData.length >= LIMIT_SIZE : false
 
 	useEffect(() => {
 		if (isOpen) {

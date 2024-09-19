@@ -410,8 +410,12 @@ const ApplicationRounds = () => {
 		useSWRInfinite(getKey, async (key) => await onFetchRounds(key), {
 			revalidateFirstPage: false,
 		})
-	const rounds = data ? ([] as IGetRoundsResponse[]).concat(...data) : []
-	const hasMore = data ? data[data.length - 1].length >= LIMIT_SIZE : false
+	const rounds = data
+		? ([] as IGetRoundsResponse[]).concat(
+				...(data as any as IGetRoundsResponse[]),
+			)
+		: []
+	const hasMore = data ? data.length >= LIMIT_SIZE : false
 
 	useEffect(() => {
 		if (data) {

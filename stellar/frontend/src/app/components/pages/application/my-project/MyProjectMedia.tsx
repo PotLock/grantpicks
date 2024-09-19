@@ -36,6 +36,7 @@ import { DEFAULT_IMAGE_URL } from '@/constants/project'
 import Contracts from '@/lib/contracts'
 import { Network } from '@/types/on-chain'
 import { useMyProject } from './MyProjectProvider'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 
 const MyProjectMedia = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()
@@ -65,6 +66,7 @@ const MyProjectMedia = () => {
 	const [playbackSrc, setPlaybackSrc] = useState<Src[] | null>(null)
 	const [ytIframe, setYtIframe] = useState<string>('')
 	const embededYtHtmlRef = useRef<HTMLDivElement>(null)
+	const storage = useAppStorage()
 
 	const onDrop = useCallback(async (acceptedFiles: File[]) => {
 		if (acceptedFiles[0].size / 10 ** 6 > 25) {
@@ -137,13 +139,12 @@ const MyProjectMedia = () => {
 	const onSaveChanges: SubmitHandler<CreateProjectStep5Data> = async (data) => {
 		try {
 			openPageLoading()
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
+			let contracts = storage.getStellarContracts()
+
+			if (!contracts) {
+				return
+			}
+
 			const params: IUpdateProjectParams = {
 				...projectData,
 				name: projectData?.name || '',

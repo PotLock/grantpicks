@@ -27,6 +27,7 @@ import {
 	HasVotedRoundParams,
 	isHasVotedRound,
 } from '@/services/on-chain/round'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 import useRoundStore from '@/stores/zustand/useRoundStore'
 import { IGetRoundsResponse, Network } from '@/types/on-chain'
 import { formatStroopToXlm } from '@/utils/helper'
@@ -283,16 +284,19 @@ const ApplicationRoundsItem = ({
 const MyVotesPage = () => {
 	const { stellarPubKey, connectedWallet } = useWallet()
 	const [roundsData, setRoundsData] = useState<IGetRoundsResponse[]>([])
+  const storage = useAppStorage()
 
 	const onFetchMyVotedRounds = async (key: {
 		url: string
 		skip: number
 		limit: number
 	}) => {
-		const contracts = new Contracts(
-			process.env.NETWORK_ENV as Network,
-			undefined,
-		)
+		let contracts = storage.getStellarContracts()
+
+		if (!contracts) {
+			return
+		}
+
 		const res = await getMyVotedRounds(
 			{ from_index: key.skip, limit: key.limit, voter: stellarPubKey },
 			contracts,

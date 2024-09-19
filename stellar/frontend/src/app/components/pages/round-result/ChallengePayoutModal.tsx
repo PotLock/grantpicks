@@ -13,6 +13,7 @@ import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 
 interface ChallengePayoutModalProps extends BaseModalProps {
 	roundData: IGetRoundsResponse | undefined
@@ -26,17 +27,17 @@ const ChallengePayoutModal = ({
 	const [reason, setReason] = useState<string>('')
 	const { stellarPubKey, stellarKit } = useWallet()
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
+	const storage = useAppStorage()
 
 	const onSubmitChallenge = async () => {
 		try {
 			openPageLoading()
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
+			let contracts = storage.getStellarContracts()
+
+			if (!contracts) {
+				return
+			}
+
 			const tx = await challengePayoutRound(
 				{
 					round_id: roundData?.id as bigint,

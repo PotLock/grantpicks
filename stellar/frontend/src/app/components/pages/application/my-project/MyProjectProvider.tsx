@@ -14,6 +14,7 @@ import { useModalContext } from '@/app/providers/ModalProvider'
 import { Project } from 'project-registry-client'
 import IconClose from '@/app/components/svgs/IconClose'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 
 const MyProjectContext = createContext<IMyProjectContext>({
 	projectData: undefined,
@@ -31,16 +32,16 @@ const MyProjectProvider = () => {
 	const [noProject, setNoProject] = useState<boolean>(false)
 	const { setCreateProjectFormMainProps } = useModalContext()
 	const { setShowMenu } = useGlobalContext()
+	const storage = useAppStorage()
 
 	const fetchProjectApplicant = async () => {
 		try {
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
+			let contracts = storage.getStellarContracts()
+
+			if (!contracts) {
+				return
+			}
+
 			const res = await getProjectApplicant(stellarPubKey, contracts)
 			//@ts-ignore
 			if (!res?.error) {

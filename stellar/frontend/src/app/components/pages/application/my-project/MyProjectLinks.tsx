@@ -33,6 +33,7 @@ import {
 	TELEGRAM_USERNAME_REGEX,
 	TWITTER_USERNAME_REGEX,
 } from '@/constants/regex'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 
 interface IContract {
 	id: string
@@ -97,6 +98,7 @@ const MyProjectLinks = () => {
 		control,
 		name: 'contacts',
 	})
+	const storage = useAppStorage()
 
 	const setDefaultData = () => {
 		if (projectData) {
@@ -149,13 +151,12 @@ const MyProjectLinks = () => {
 	const onSaveChanges: SubmitHandler<CreateProjectStep3Data> = async (data) => {
 		try {
 			openPageLoading()
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
+			let contracts = storage.getStellarContracts()
+
+			if (!contracts) {
+				return
+			}
+
 			const params: IUpdateProjectParams = {
 				...projectData,
 				name: projectData?.name || '',

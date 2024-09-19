@@ -70,6 +70,7 @@ import {
 	TWITTER_USERNAME_REGEX,
 } from '@/constants/regex'
 import { subDays } from 'date-fns'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 
 const EditRoundPage = () => {
 	const router = useRouter()
@@ -130,12 +131,15 @@ const EditRoundPage = () => {
 			isOpen: false,
 			period_ms: null,
 		})
+	const storage = useAppStorage()
 
 	const onFetchAdmins = async () => {
-		const contracts = new Contracts(
-			process.env.NETWORK_ENV as Network,
-			undefined,
-		)
+		let contracts = storage.getStellarContracts()
+
+		if (!contracts) {
+			return
+		}
+
 		const res = await getRoundAdmins(
 			{ round_id: BigInt(params.roundId) },
 			contracts,
@@ -144,10 +148,12 @@ const EditRoundPage = () => {
 	}
 
 	const onFetchRoundInfo = async () => {
-		const contracts = new Contracts(
-			process.env.NETWORK_ENV as Network,
-			undefined,
-		)
+		let contracts = storage.getStellarContracts()
+
+		if (!contracts) {
+			return
+		}
+
 		const resRoundInfo = await getRoundInfo(
 			{ round_id: BigInt(params.roundId) },
 			contracts,
@@ -156,10 +162,12 @@ const EditRoundPage = () => {
 	}
 
 	const onFetchRoundApplications = async () => {
-		const contracts = new Contracts(
-			process.env.NETWORK_ENV as Network,
-			undefined,
-		)
+		let contracts = storage.getStellarContracts()
+
+		if (!contracts) {
+			return
+		}
+
 		let resRoundApps: IGetRoundApplicationsResponse[] = []
 		let currData: IGetRoundApplicationsResponse[]
 		do {
@@ -177,10 +185,12 @@ const EditRoundPage = () => {
 	const onFetchProjectsByApplication = async (
 		roundApps: IGetRoundApplicationsResponse[],
 	) => {
-		const contracts = new Contracts(
-			process.env.NETWORK_ENV as Network,
-			undefined,
-		)
+		let contracts = storage.getStellarContracts()
+
+		if (!contracts) {
+			return
+		}
+
 		console.log('project id from round apps', roundApps)
 		let resProjects: IGetProjectsResponse[] = []
 		roundApps.forEach(async (app, index) => {
@@ -309,13 +319,12 @@ const EditRoundPage = () => {
 
 	const onAddApprovedProjects = async (roundId: bigint) => {
 		try {
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
+			let contracts = storage.getStellarContracts()
+
+			if (!contracts) {
+				return
+			}
+
 			const projects = selectedProjects.map((p) => p.id)
 			const txAddProject = await addProjectsRound(
 				BigInt(roundId),
@@ -337,13 +346,12 @@ const EditRoundPage = () => {
 
 	const onSetAdmins = async (roundId: bigint) => {
 		try {
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
+			let contracts = storage.getStellarContracts()
+
+			if (!contracts) {
+				return
+			}
+
 			const txAddAdmins = await setAdminsRound(
 				{
 					round_id: BigInt(roundId),
@@ -392,13 +400,12 @@ const EditRoundPage = () => {
 	const onEditRound: SubmitHandler<UpdateRoundData> = async (data) => {
 		try {
 			openPageLoading()
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
+			let contracts = storage.getStellarContracts()
+
+			if (!contracts) {
+				return
+			}
+
 			const udpateRoundParams: UpdateRoundParams = {
 				name: data.title,
 				description: data.description,

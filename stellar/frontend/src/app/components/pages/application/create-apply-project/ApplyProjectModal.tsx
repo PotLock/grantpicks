@@ -14,6 +14,7 @@ import {
 	applyProjectToRound,
 	ApplyProjectToRoundParams,
 } from '@/services/on-chain/round'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 import { BaseModalProps } from '@/types/dialog'
 import { IGetRoundsResponse, Network } from '@/types/on-chain'
 import { prettyTruncate } from '@/utils/helper'
@@ -41,16 +42,16 @@ const ApplyProjectModal = ({
 	const [applyNote, setApplyNote] = useState<string>('')
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const { setSuccessApplyProjectInitProps } = useModalContext()
+	const storage = useAppStorage()
 
 	const fetchProjectApplicant = async () => {
 		try {
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
+			let contracts = storage.getStellarContracts()
+
+			if (!contracts) {
+				return
+			}
+
 			const res = await getProjectApplicant(stellarPubKey, contracts)
 			//@ts-ignore
 			if (!res?.error) setProjectData(res)
@@ -64,13 +65,12 @@ const ApplyProjectModal = ({
 	const onApplyProjectToRound = async () => {
 		try {
 			openPageLoading()
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
+			let contracts = storage.getStellarContracts()
+
+			if (!contracts) {
+				return
+			}
+
 			const applyParams: ApplyProjectToRoundParams = {
 				round_id: round_id as bigint,
 				caller: stellarPubKey,

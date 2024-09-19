@@ -26,6 +26,7 @@ import IconInstagram from '../../svgs/IconInstagram'
 import IconTwitter from '../../svgs/IconTwitter'
 import IconEmail from '../../svgs/IconEmail'
 import Link from 'next/link'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 
 interface RoundDetailDrawerProps extends IDrawerProps {
 	doc: IGetRoundsResponse
@@ -96,12 +97,15 @@ const RoundDetailDrawer = ({
 }: RoundDetailDrawerProps) => {
 	const { selectedRoundType } = useRoundStore()
 	const { connectedWallet, stellarPubKey } = useWallet()
+	const storage = useAppStorage()
 
 	const onFetchRoundAdmins = async () => {
-		const contracts = new Contracts(
-			process.env.NETWORK_ENV as Network,
-			undefined,
-		)
+		let contracts = storage.getStellarContracts()
+
+		if (!contracts) {
+			return
+		}
+
 		const res = await getRoundAdmins({ round_id: BigInt(doc.id) }, contracts)
 		return res
 	}

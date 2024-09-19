@@ -20,6 +20,7 @@ import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
 import { IProjectDetailOwner } from '@/app/round-vote/[roundId]/page'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 
 const IsNotVotedSection = ({
 	setShowEvalGuide,
@@ -42,6 +43,7 @@ const IsNotVotedSection = ({
 	const { setVideoPlayerProps } = useModalContext()
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const { stellarPubKey, stellarKit } = useWallet()
+  const storage = useAppStorage()
 
 	const onPreviousBoxing = (currIdx: number) => {
 		if (currIdx > 0) {
@@ -62,13 +64,13 @@ const IsNotVotedSection = ({
 	const onVotePair = async () => {
 		try {
 			openPageLoading()
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
+
+			let contracts = storage.getStellarContracts()
+
+			if (!contracts) {
+				return
+			}
+
 			const voteParams: VoteRoundParams = {
 				round_id: BigInt(params.roundId),
 				voter: stellarPubKey,

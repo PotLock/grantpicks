@@ -130,6 +130,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 			setConnectedWallet('stellar')
 			localStorage.setItem(localStorageConfigs.CONNECTED_WALLET, 'stellar')
 			setStellarPubKey(localStellarPubKey || pubKey)
+			store.setMyAddress(localStellarPubKey || pubKey)
 			localStorage.setItem(
 				localStorageConfigs.STELLAR_PUBLIC_KEY,
 				localStellarPubKey || pubKey,
@@ -172,6 +173,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 					setConnectedWallet('stellar')
 					localStorage.setItem(localStorageConfigs.CONNECTED_WALLET, 'stellar')
 					setStellarPubKey(pubKey)
+					store.setMyAddress(pubKey)
 					localStorage.setItem(localStorageConfigs.STELLAR_PUBLIC_KEY, pubKey)
 					//sign out near
 					const wallet = await nearSelector?.wallet()

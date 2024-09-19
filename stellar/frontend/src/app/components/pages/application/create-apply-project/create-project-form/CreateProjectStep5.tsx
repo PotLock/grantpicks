@@ -222,7 +222,7 @@ const CreateProjectStep5 = () => {
 							</p>
 						</div>
 					</div>
-				) : accFiles.length === 0 && !embededYtHtml ? (
+				) : accFiles && accFiles.length === 0 && !embededYtHtml ? (
 					<div className="bg-white rounded-xl p-4 md:p-6 border border-black/10">
 						<div
 							{...getRootProps()}
@@ -288,13 +288,13 @@ const CreateProjectStep5 = () => {
 					<div className="rounded-xl relative bg-white w-full border border-black/10">
 						<div className="flex items-center justify-between px-4 py-3">
 							<p className="text-sm font-semibold text-grantpicks-black-950">
-								{accFiles.length > 0 ? accFiles[0].name : ''}
+								{accFiles && accFiles.length > 0 ? accFiles[0].name : ''}
 							</p>
 							<IconTrash
 								size={24}
 								className="fill-grantpicks-black-400 cursor-pointer hover:opacity-70 transition"
 								onClick={() => {
-									if (accFiles.length > 0) {
+									if (accFiles && accFiles.length > 0) {
 										let temp = [...accFiles]
 										temp.splice(0, 1)
 										setAccFiles(temp)
@@ -318,7 +318,7 @@ const CreateProjectStep5 = () => {
 								}}
 							/>
 						</div>
-						{accFiles.length > 0 && (
+						{accFiles && accFiles.length > 0 && (
 							<div className="relative">
 								<video
 									ref={videoRef}
@@ -375,13 +375,15 @@ const CreateProjectStep5 = () => {
 				<div className="flex-1">
 					<Button
 						color={
-							(accFiles.length === 0 && !embededYtHtml) || loadingFlow !== null
+							(accFiles && accFiles.length === 0 && !embededYtHtml) ||
+							loadingFlow !== null
 								? `disabled`
 								: `black-950`
 						}
 						isFullWidth
 						isDisabled={
-							(accFiles.length === 0 && !embededYtHtml) || loadingFlow !== null
+							(accFiles && accFiles.length === 0 && !embededYtHtml) ||
+							loadingFlow !== null
 						}
 						onClick={handleSubmit(onProceed)}
 						className="!py-3"

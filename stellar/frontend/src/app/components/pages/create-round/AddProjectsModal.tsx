@@ -27,6 +27,7 @@ import { IProjectDetailOwner } from '@/app/round-vote/[roundId]/page'
 import { Project } from 'project-registry-client'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 
 interface AddProjectsModalProps extends BaseModalProps {
 	selectedProjects: IGetProjectsResponse[]
@@ -50,11 +51,15 @@ const AddProjectsModal = ({
 	const [searchProject, setSearchProject] = useState<string>('')
 	const [showProjectDetailDrawer, setShowProjectDetailDrawer] =
 		useState<IProjectDetailOwner>({ isOpen: false, project: null })
+	const storage = useAppStorage()
+
 	const onFetchProjects = async (key: { skip: number; limit: number }) => {
-		const contracts = new Contracts(
-			process.env.NETWORK_ENV as Network,
-			undefined,
-		)
+		let contracts = storage.getStellarContracts()
+
+		if (!contracts) {
+			return
+		}
+
 		const resProjects = await getProjects(
 			{
 				skip: key.skip,

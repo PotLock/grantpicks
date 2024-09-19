@@ -32,6 +32,7 @@ import { toastOptions } from '@/constants/style'
 import { prettyTruncate } from '@/utils/helper'
 import ApplicationAcceptModal from './ApplicationAcceptModal'
 import ApplicationRejectModal from './ApplicationRejectModal'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 
 interface ApplicationsDrawerProps extends IDrawerProps {
 	doc: IGetRoundsResponse
@@ -54,17 +55,17 @@ const ApplicationItem = ({
 	const { dismissPageLoading, openPageLoading } = useGlobalContext()
 	const [openAcceptModal, setOpenAcceptModal] = useState<boolean>(false)
 	const [openRejectModal, setOpenRejectModal] = useState<boolean>(false)
+	const storage = useAppStorage()
 
 	const onAcceptReject = async (type: 'accept' | 'reject', note: string) => {
 		try {
 			openPageLoading()
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
+			let contracts = storage.getStellarContracts()
+
+			if (!contracts) {
+				return
+			}
+
 			const params: ReviewApplicationParams = {
 				round_id: roundData.id,
 				caller: stellarPubKey,
@@ -218,16 +219,19 @@ const ApplicationsDrawer = ({
 		IGetRoundApplicationsResponse[]
 	>([])
 	const containerScrollRef = useRef<HTMLDivElement>(null)
+  const storage = useAppStorage()
 
 	const onFetchRoundApplications = async (key: {
 		url: string
 		skip: number
 		limit: number
 	}) => {
-		const contracts = new Contracts(
-			process.env.NETWORK_ENV as Network,
-			undefined,
-		)
+		let contracts = storage.getStellarContracts()
+
+		if (!contracts) {
+			return
+		}
+
 		const res = await getRoundApplications(
 			{ round_id: BigInt(doc.id), skip: key.skip, limit: key.limit },
 			contracts,

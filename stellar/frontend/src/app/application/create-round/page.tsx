@@ -59,6 +59,7 @@ import {
 	TELEGRAM_USERNAME_REGEX,
 	TWITTER_USERNAME_REGEX,
 } from '@/constants/regex'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 
 const CreateRoundPage = () => {
 	const router = useRouter()
@@ -124,16 +125,16 @@ const CreateRoundPage = () => {
 			isOpen: false,
 			period_ms: null,
 		})
+	const storage = useAppStorage()
 
 	const onAddApprovedProjects = async (roundId: bigint) => {
 		try {
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
+			let contracts = storage.getStellarContracts()
+
+			if (!contracts) {
+				return
+			}
+
 			const projects = selectedProjects.map((p) => p.id)
 			const txAddProject = await addProjectsRound(
 				BigInt(roundId),
@@ -155,13 +156,12 @@ const CreateRoundPage = () => {
 
 	const onInitialDeposit = async (roundId: bigint) => {
 		try {
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
+			let contracts = storage.getStellarContracts()
+
+			if (!contracts) {
+				return
+			}
+
 			const txAddProject = await depositFundRound(
 				{
 					caller: stellarPubKey,
@@ -187,13 +187,12 @@ const CreateRoundPage = () => {
 	const onCreateRound: SubmitHandler<CreateRoundData> = async (data) => {
 		try {
 			openPageLoading()
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
+			let contracts = storage.getStellarContracts()
+
+			if (!contracts) {
+				return
+			}
+
 			const maxParticipants =
 				data.max_participants < 10 ? 10 : data.max_participants
 			const createRoundParams: CreateRoundParams = {

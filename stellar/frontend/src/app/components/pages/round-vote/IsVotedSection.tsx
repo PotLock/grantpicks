@@ -19,6 +19,7 @@ import {
 } from '@/services/on-chain/project-registry'
 import { prettyTruncate } from '@/utils/helper'
 import { Project } from 'project-registry-client'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 
 const IsVotedPairItem = ({
 	index,
@@ -36,16 +37,16 @@ const IsVotedPairItem = ({
 	const [secondProjectData, setSecondProjectData] = useState<
 		Project | undefined
 	>(undefined)
+  const storage = useAppStorage()
 
 	const fetchProjectById = async () => {
 		try {
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
+			let contracts = storage.getStellarContracts()
+
+			if (!contracts) {
+				return
+			}
+
 			const get1stProjectParams: GetProjectParams = {
 				project_id: pair.projects[0],
 			}
@@ -127,17 +128,17 @@ const IsVotedSection = ({
 	const [roundData, setRoundData] = useState<IGetRoundsResponse | undefined>(
 		undefined,
 	)
+	const storage = useAppStorage()
 
 	const fetchRoundData = async () => {
 		try {
 			if (!stellarPubKey) return
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
+			let contracts = storage.getStellarContracts()
+
+			if (!contracts) {
+				return
+			}
+
 			const roundRes = await getRoundInfo(
 				{ round_id: BigInt(params.roundId) },
 				contracts,
@@ -153,13 +154,13 @@ const IsVotedSection = ({
 	const fetchResultRound = async () => {
 		try {
 			if (!stellarPubKey) return
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
+
+			let contracts = storage.getStellarContracts()
+
+			if (!contracts) {
+				return
+			}
+
 			const votingResultRes = await getResultVoteRound(
 				{ round_id: BigInt(params.roundId), voter: stellarPubKey },
 				contracts,

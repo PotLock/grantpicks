@@ -24,6 +24,7 @@ import { useWallet } from '@/app/providers/WalletProvider'
 import { IProjectDetailOwner } from '@/app/round-vote/[roundId]/page'
 import { fetchYoutubeIframe, prettyTruncate } from '@/utils/helper'
 import { Project } from 'project-registry-client'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 
 interface RoundVotePairItemProps {
 	index: number
@@ -56,16 +57,16 @@ const RoundVotePairItem = ({
 		Project | undefined
 	>(undefined)
 	const { stellarPubKey } = useWallet()
+	const storage = useAppStorage()
 
 	const fetchProjectById = async () => {
 		try {
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
+			let contracts = storage.getStellarContracts()
+
+			if (!contracts) {
+				return
+			}
+
 			const get1stProjectParams: GetProjectParams = {
 				project_id: data.projects[0],
 			}

@@ -377,18 +377,20 @@ const ApplicationRoundsItem = ({
 
 const ApplicationRounds = () => {
 	const { selectedRoundType, setSelectedRoundType } = useRoundStore()
-	const { stellarPubKey, connectedWallet } = useWallet()
 	const [roundsData, setRoundsData] = useState<IGetRoundsResponse[]>([])
+	const storage = useAppStorage()
 
 	const onFetchRounds = async (key: {
 		url: string
 		skip: number
 		limit: number
 	}) => {
-		const contracts = new Contracts(
-			process.env.NETWORK_ENV as Network,
-			undefined,
-		)
+		let contracts = storage.getStellarContracts()
+
+		if (!contracts) {
+			return
+		}
+
 		const res = await getRounds({ skip: key.skip, limit: key.limit }, contracts)
 		return res
 	}

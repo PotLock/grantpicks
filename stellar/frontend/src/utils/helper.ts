@@ -106,7 +106,7 @@ export const submitTx = async ({
 
 		if (sendResponse.status == 'ERROR' && sendResponse.errorResult) {
 			throw new Error('Transaction failed', {
-				cause: sendResponse.errorResult?.result,
+				cause: sendResponse.errorResult?.result(),
 			})
 		}
 

@@ -21,6 +21,7 @@ import { SubmitHandler, useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { useMyProject } from './MyProjectProvider'
 import { StrKey } from 'round-client'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 
 const MyProjectTeam = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()
@@ -36,6 +37,7 @@ const MyProjectTeam = () => {
 		setValue,
 		formState: { errors },
 	} = useForm<CreateProjectStep2Data>()
+	const storage = useAppStorage()
 
 	const setDefaultData = () => {
 		if (projectData) {
@@ -46,13 +48,12 @@ const MyProjectTeam = () => {
 	const onSaveChanges: SubmitHandler<CreateProjectStep2Data> = async (data) => {
 		try {
 			openPageLoading()
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
+			let contracts = storage.getStellarContracts()
+
+			if (!contracts) {
+				return
+			}
+
 			const params: IUpdateProjectParams = {
 				...projectData,
 				name: projectData?.name || '',

@@ -28,6 +28,7 @@ import {
 } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { useMyProject } from './MyProjectProvider'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 
 interface IFunding {
 	id: string
@@ -63,6 +64,8 @@ const MyProjectFundingRaised = () => {
 		control,
 		name: 'funding_histories',
 	})
+
+  const storage = useAppStorage()
 
 	const setDefaultData = () => {
 		if (projectData) {
@@ -100,13 +103,12 @@ const MyProjectFundingRaised = () => {
 	const onSaveChanges: SubmitHandler<CreateProjectStep4Data> = async (data) => {
 		try {
 			openPageLoading()
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
+			let contracts = storage.getStellarContracts()
+
+			if (!contracts) {
+				return
+			}
+
 			const params: IUpdateProjectParams = {
 				...projectData,
 				name: projectData?.name || '',

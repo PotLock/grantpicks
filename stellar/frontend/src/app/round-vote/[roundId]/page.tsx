@@ -18,6 +18,7 @@ import {
 	isAvailableVoteRound,
 	isHasVotedRound,
 } from '@/services/on-chain/round'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 import { Network } from '@/types/on-chain'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { Project } from 'project-registry-client'
@@ -41,17 +42,18 @@ const RoundVotePage = () => {
 	const { stellarPubKey } = useWallet()
 	const [isEligible, setIsEligible] = useState<boolean>(true)
 	const [pairsData, setPairsData] = useState<Pair[]>([])
+	const storage = useAppStorage()
 
 	const checkVoterIsEligible = async () => {
 		try {
 			if (!stellarPubKey) return
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
+
+			let contracts = storage.getStellarContracts()
+
+			if (!contracts) {
+				return
+			}
+
 			const txParams: AvailableVoteRoundParams = {
 				round_id: BigInt(params.roundId),
 				voter: stellarPubKey,
@@ -71,13 +73,13 @@ const RoundVotePage = () => {
 	const checkVoterHasVoted = async () => {
 		try {
 			if (!stellarPubKey) return
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
+
+			let contracts = storage.getStellarContracts()
+
+			if (!contracts) {
+				return
+			}
+
 			const txParams: HasVotedRoundParams = {
 				round_id: BigInt(params.roundId),
 				voter: stellarPubKey,
@@ -93,13 +95,13 @@ const RoundVotePage = () => {
 	const fetchPairsRound = async () => {
 		try {
 			if (!stellarPubKey) return
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
+
+			let contracts = storage.getStellarContracts()
+
+			if (!contracts) {
+				return
+			}
+
 			const roundRes = await getRoundInfo(
 				{ round_id: BigInt(params.roundId) },
 				contracts,

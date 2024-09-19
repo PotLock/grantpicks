@@ -30,6 +30,7 @@ import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import { useModalContext } from '@/app/providers/ModalProvider'
 import IconClose from '@/app/components/svgs/IconClose'
 import { localStorageConfigs } from '@/configs/local-storage'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 
 const CreateProjectFormContext = createContext<ICreateProjectFormContext>({
 	data: DEFAULT_CREATE_PROJECT_DATA,
@@ -48,14 +49,17 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 	const [step, setStep] = useState<number>(1)
 	const { stellarPubKey, stellarKit } = useWallet()
 	const { setSuccessCreateProjectModalProps } = useModalContext()
+	const storage = useAppStorage()
 
 	const onProceedApply = async () => {
 		try {
 			openPageLoading()
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				undefined,
-			)
+			const contracts = storage.getStellarContracts()
+
+			if (!contracts) {
+				return
+			}
+
 			const params: ICreateProjectParams = {
 				name: dataForm.title,
 				overview: dataForm.description,
@@ -93,6 +97,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 				params,
 				contracts,
 			)
+
 			const txHashCreateProject = await contracts.signAndSendTx(
 				stellarKit as StellarWalletsKit,
 				txCreateProject.toXDR(),

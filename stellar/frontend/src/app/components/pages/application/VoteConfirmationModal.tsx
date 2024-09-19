@@ -23,6 +23,7 @@ import Contracts from '@/lib/contracts'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 
 interface VoteConfirmationModalProps extends BaseModalProps {
 	data?: IGetRoundsResponse
@@ -37,13 +38,16 @@ const VoteConfirmationModal = ({
 	const { connectedWallet, stellarPubKey } = useWallet()
 	const { selectedRoundType } = useRoundStore()
 	const [totalProjects, setTotalProjects] = useState<number>(0)
+	const storage = useAppStorage()
 
 	const onFetchTotalProjects = async () => {
 		try {
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				undefined,
-			)
+			let contracts = storage.getStellarContracts()
+
+			if (!contracts) {
+				return
+			}
+
 			const newRes = await getPairsRound(data?.id as bigint, contracts)
 			const uniqueProjects = new Set()
 			newRes.map((pair) => {

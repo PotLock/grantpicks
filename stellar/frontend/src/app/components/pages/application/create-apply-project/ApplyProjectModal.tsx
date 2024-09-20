@@ -128,7 +128,7 @@ const ApplyProjectModal = ({
 					}}
 				/>
 				<p className="text-base md:text-lg lg:text-xl font-semibold text-grantpicks-black-950 text-center">
-					Apply to Web3 Education & Skill Development
+					Apply to {projectData?.name}
 				</p>
 				{projectData ? (
 					isProjectMissingInfo ? (

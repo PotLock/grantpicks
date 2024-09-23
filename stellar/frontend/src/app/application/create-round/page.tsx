@@ -1101,7 +1101,7 @@ const CreateRoundPage = () => {
 									Add Projects
 								</p>
 								<p className="text-sm font-normal text-grantpicks-black-600">
-									Add a minimum of 10 projects to participate in the round.
+									Add a maximum of 10 projects to participate in the round.
 								</p>
 							</div>
 							<button

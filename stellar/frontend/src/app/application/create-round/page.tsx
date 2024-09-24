@@ -73,6 +73,7 @@ const CreateRoundPage = () => {
 	const [showAddProjectsModal, setShowAddProjectsModal] =
 		useState<boolean>(false)
 	const [showAddAdminsModal, setShowAddAdminsModal] = useState<boolean>(false)
+	const [isMobile, setIsMobile] = useState(false)
 	const {
 		control,
 		register,
@@ -292,6 +293,17 @@ const CreateRoundPage = () => {
 			window.removeEventListener('keydown', handleKeyDown)
 		}
 	}, [])
+
+	useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 425)
+    }
+
+    checkIfMobile()
+    window.addEventListener('resize', checkIfMobile)
+
+    return () => window.removeEventListener('resize', checkIfMobile)
+  }, [])
 
 	return (
 		<CreateRoundLayout>
@@ -559,7 +571,7 @@ const CreateRoundPage = () => {
 									type="number"
 									disabled={!watch().use_vault}
 									label="Initial Deposit"
-									placeholder="Enter amount..."
+									placeholder={isMobile ? "" : "Enter amount..."}
 									{...register('amount', {
 										onChange: async (e) => {
 											const calculation =
@@ -599,7 +611,7 @@ const CreateRoundPage = () => {
 									type="number"
 									label="Expected Amount"
 									required
-									placeholder="Enter amount..."
+									placeholder={isMobile ? "" : "Enter amount..."}
 									{...register('expected_amount', {
 										required: true,
 										onChange: async (e) => {

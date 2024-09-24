@@ -14,7 +14,12 @@ import RoundDetailDrawer from './RoundDetailDrawer'
 import ApplicationsDrawer from './ApplicationsDrawer'
 import FundRoundModal from './FundRoundModal'
 import { useModalContext } from '@/app/providers/ModalProvider'
-import { getRoundApplication, getRounds } from '@/services/on-chain/round'
+import {
+	getRoundApplication,
+	getRounds,
+	HasVotedRoundParams,
+	isHasVotedRound,
+} from '@/services/on-chain/round'
 import Contracts from '@/lib/contracts'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { IGetRoundsResponse, Network } from '@/types/on-chain'
@@ -49,6 +54,7 @@ const ApplicationRoundsItem = ({
 	const [isUserApplied, setIsUserApplied] = useState<boolean>(false)
 	const [approvedCount, setApprovedCount] = useState<number>()
 	const { setShowMenu } = useGlobalContext()
+	const [hasVoted, setHasVoted] = useState<boolean>(false)
 	const storage = useAppStorage()
 
 	const fetchApprovedCount = async () => {
@@ -118,11 +124,33 @@ const ApplicationRoundsItem = ({
 		}
 	}
 
+	const checkIfUserHasVoted = async () => {
+		if (stellarPubKey) {
+			try {
+				const contracts = storage.getStellarContracts()
+
+				if (!contracts) return
+
+				const params: HasVotedRoundParams = {
+					round_id: doc.id,
+					voter: stellarPubKey,
+				}
+				const hasVoted = await isHasVotedRound(params, contracts)
+				setHasVoted(hasVoted)
+			} catch (error: any) {
+				console.log('error checking if user has voted', error)
+			}
+		} else {
+			setHasVoted(false)
+		}
+	}
+
 	useEffect(() => {
 		fetchRoundApplication()
 		fetchApprovedCount()
+		checkIfUserHasVoted()
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [doc.id])
+	}, [doc.id, connectedWallet, stellarPubKey])
 
 	return (
 		<div className="p-4 md:p-5 rounded-xl border border-black/10">
@@ -324,13 +352,16 @@ const ApplicationRoundsItem = ({
 					isDisabled={
 						getSpecificTime() === 'upcoming' ||
 						getSpecificTime() === 'upcoming-closed' ||
-						isUserApplied
+						isUserApplied ||
+						(selectedRoundType === 'on-going' && hasVoted)
 					}
 				>
 					{isUserApplied
 						? `You're already a part of this round.`
 						: getSpecificTime() === 'on-going'
-							? 'Vote'
+							? hasVoted
+								? `You've voted in this round`
+								: 'Vote'
 							: getSpecificTime() === 'upcoming'
 								? 'No application allowed'
 								: getSpecificTime() === 'upcoming-open'
@@ -379,6 +410,7 @@ const ApplicationRounds = () => {
 	const { selectedRoundType, setSelectedRoundType } = useRoundStore()
 	const [roundsData, setRoundsData] = useState<IGetRoundsResponse[]>([])
 	const storage = useAppStorage()
+	const { connectedWallet } = useWallet()
 
 	const onFetchRounds = async (key: {
 		url: string
@@ -437,7 +469,8 @@ const ApplicationRounds = () => {
 			}
 			setRoundsData(temp)
 		}
-	}, [selectedRoundType, data])
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [selectedRoundType, data, connectedWallet])
 
 	return (
 		<div>

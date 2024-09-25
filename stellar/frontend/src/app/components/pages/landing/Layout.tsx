@@ -1,6 +1,7 @@
 import React from 'react'
 import BaseLayout from '../../commons/BaseLayout'
 import Footer from '../../commons/Footer'
+import Navbar from './Navbar'
 
 const LandingLayout = ({ children }: { children: React.ReactNode }) => {
 	return (
@@ -14,6 +15,7 @@ const LandingLayout = ({ children }: { children: React.ReactNode }) => {
 					}}
 				/>
 				<div className="bg-[url('/assets/images/container.png')] z-10 absolute inset-0 h-full"></div>
+				<Navbar />
 				<div className="z-20">{children}</div>
 				<Footer />
 			</>

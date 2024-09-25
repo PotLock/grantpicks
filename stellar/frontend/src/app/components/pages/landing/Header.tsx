@@ -3,76 +3,20 @@ import React from 'react'
 import IconCheck from '../../svgs/IconCheck'
 import Button from '../../commons/Button'
 import HomeSection from './HomeSection'
+import IconGearCheck from '../../svgs/IconGearCheck'
+import CreateRoundsSvg from '../../svgs/CreateRoundsSvg'
+import ExploreSvg from '../../svgs/ExploreSvg'
+import VotingSvg from '../../svgs/VotingSvg'
+import BudgetBoxingSvg from '../../svgs/BudgetBoxingSvg'
+import ResultPayoutSvg from '../../svgs/ResultPayoutSvg'
+import MultiChainSvg from '../../svgs/MultiChainSvg'
+import HowItWorksSection from './HowItWorksSection'
 
 const LandingHeader = () => {
 	return (
 		<div className="w-[100%] md:w-[90%] xl:w-[80%] mx-auto pt-20 md:pt-24 xl:pt-32 pb-16 md:pb-20 xl:pb-24 px-4 md:px-0">
 			<HomeSection />
-			<div className="pt-20 md:pt-24 xl:pt-32 flex flex-col items-center">
-				<Image
-					src="/assets/images/check-bubble.png"
-					alt=""
-					width={50}
-					height={50}
-					className="mb-4 md:mb-6 z-10"
-				/>
-				<p className="text-center z-10 text-[25px] md:text-[27px] lg:text-[30px] xl:text-[32px] font-black text-grantpicks-black-950 mb-10 lg:mb-12">
-					HOW IT WORKS
-				</p>
-				<div className="how-it-works-div z-10 p-2 md:p-3 grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 w-full md:w-[80%] lg:w-[70%]">
-					<div className="flex items-center space-x-2 md:space-x-4 px-4 py-3 md:py-5 border border-black/10 rounded-lg">
-						<div className="how-it-works-counter py-2 px-[14px]">
-							<p className="text-base lg:text-xl font-semibold text-grantpicks-black-950">
-								1
-							</p>
-						</div>
-						<p className="text-xl font-semibold text-grantpicks-black-950">
-							Round manager creates a Round
-						</p>
-					</div>
-					<div className="flex items-center space-x-2 md:space-x-4 px-4 py-3 md:py-5 border border-black/10 rounded-lg">
-						<div className="how-it-works-counter py-2 px-[14px]">
-							<p className="text-base lg:text-xl font-semibold text-grantpicks-black-950">
-								2
-							</p>
-						</div>
-						<p className="text-xl font-semibold text-grantpicks-black-950">
-							Projects apply in the Round{' '}
-						</p>
-					</div>
-					<div className="flex items-center space-x-2 md:space-x-4 px-4 py-3 md:py-5 border border-black/10 rounded-lg col-span-1 md:col-span-2">
-						<div className="how-it-works-counter py-2 px-[14px]">
-							<p className="text-base lg:text-xl font-semibold text-grantpicks-black-950">
-								3
-							</p>
-						</div>
-						<p className="text-xl font-semibold text-grantpicks-black-950">
-							{`Voters pick from a pair that's considered to have the most impact`}{' '}
-						</p>
-					</div>
-					<div className="flex items-center space-x-2 md:space-x-4 px-4 py-3 md:py-5 border border-black/10 rounded-lg">
-						<div className="how-it-works-counter py-2 px-[14px]">
-							<p className="text-base lg:text-xl font-semibold text-grantpicks-black-950">
-								4
-							</p>
-						</div>
-						<p className="text-xl font-semibold text-grantpicks-black-950">
-							Fund distribution is calculated via budget boxing algorithm{' '}
-						</p>
-					</div>
-					<div className="flex items-center space-x-2 md:space-x-4 px-4 py-3 md:py-5 border border-black/10 rounded-lg">
-						<div className="how-it-works-counter py-2 px-[14px]">
-							<p className="text-base lg:text-xl font-semibold text-grantpicks-black-950">
-								5
-							</p>
-						</div>
-						<p className="text-xl font-semibold text-grantpicks-black-950">
-							Projects get paid out{' '}
-						</p>
-					</div>
-				</div>
-			</div>
-
+			<HowItWorksSection />
 			<div className="pt-20 md:pt-24 xl:pt-32 flex flex-col items-center">
 				<Image
 					src="/assets/images/check-bubble.png"

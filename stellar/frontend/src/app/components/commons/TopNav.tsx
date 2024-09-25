@@ -39,9 +39,11 @@ const TopNav = () => {
 							color="transparent"
 							onClick={() => setShowMenu((prev) => (!!prev ? null : 'user'))}
 						>
-							<div className="flex items-center justify-between">
-								<div className="flex items-center space-x-2 mr-6">
-									<div className="bg-grantpicks-black-200 rounded-full w-10 h-10" />
+							<div className="md:pr-2">
+								<div className="bg-grantpicks-black-200 rounded-full w-10 h-10" />
+							</div>
+							<div className="flex items-center justify-between hidden md:flex">
+								<div className="flex items-center mr-6">
 									<div>
 										<p className="text-sm font-semibold text-grantpicks-black-950">
 											{connectedWallet === 'near'

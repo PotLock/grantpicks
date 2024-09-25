@@ -1,85 +1,13 @@
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
 import React from 'react'
 import IconCheck from '../../svgs/IconCheck'
 import Button from '../../commons/Button'
+import HomeSection from './HomeSection'
 
 const LandingHeader = () => {
-	const router = useRouter()
 	return (
 		<div className="w-[100%] md:w-[90%] xl:w-[80%] mx-auto pt-20 md:pt-24 xl:pt-32 pb-16 md:pb-20 xl:pb-24 px-4 md:px-0">
-			<div className="flex flex-col items-center text-grantpicks-black-950 p-4 lg:p-0">
-				<div className="flex items-center space-x-4 border border-grantpicks-purple-950 rounded-full px-5 py-2 mb-6 z-10">
-					<Image
-						src="/assets/images/cup.png"
-						alt=""
-						width={24}
-						height={24}
-						className="object-contain"
-					/>
-					<p className="text-base font-bold text-grantpicks-purple-950 uppercase">{`INTRODUCING GRANTPICKS`}</p>
-				</div>
-				<p className="text-[40px] md:text-[44px] lg:text-[50px] xl:text-[62px] max-w-[90%] md:max-w-full hidden md:block font-black text-center uppercase leading-[1.00] whitespace-pre mb-6 z-10">
-					{`Quickly pick your favorite\nprojects get them funded\nand win points.`}
-				</p>
-				<p className="text-[40px] md:text-[44px] lg:text-[50px] xl:text-[62px] max-w-[80%] md:max-w-full block md:hidden font-black text-center uppercase leading-[1.00] whitespace-pre-wrap mb-6 z-10">
-					{`Quickly pick your favorite projects get them funded\nand win points.`}
-				</p>
-				<button
-					onClick={() => router.push(`/application`)}
-					className="z-10 launch-app-button w-full md:w-auto bg-gradient-to-b from-[#7B3AED] to-[#5A21B6] text-white border boder-[#DDD6FE] rounded-full px-10 py-3 text-base font-semibold shadow-xl transition-all hover:scale-105 duration-500"
-				>
-					Launch App
-				</button>
-			</div>
-			<div className="pt-20 md:pt-24 xl:pt-32 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4 md:gap-6 xl:gap-8">
-				<div className="flex items-center space-x-4 z-10">
-					<Image
-						src="/assets/images/item.png"
-						width={80}
-						height={80}
-						alt=""
-						className="object-fill"
-					/>
-					<div>
-						<div className="w-10 h-0 border-2 border-black mb-3"></div>
-						<p className="text-base md:text-lg xl:text-xl font-semibold text-grantpicks-black-950">
-							No need to review entire sample set
-						</p>
-					</div>
-				</div>
-				<div className="flex items-center space-x-4 z-10">
-					<Image
-						src="/assets/images/item.png"
-						width={80}
-						height={80}
-						alt=""
-						className="object-fill"
-					/>
-					<div>
-						<div className="w-10 h-0 border-2 border-black mb-3"></div>
-						<p className="text-base md:text-lg xl:text-xl font-semibold text-grantpicks-black-950">
-							Make funding decisions quicker in minutes{' '}
-						</p>
-					</div>
-				</div>
-				<div className="flex items-center space-x-4 z-10">
-					<Image
-						src="/assets/images/item.png"
-						width={80}
-						height={80}
-						alt=""
-						className="object-fill"
-					/>
-					<div>
-						<div className="w-10 h-0 border-2 border-black mb-3"></div>
-						<p className="text-base md:text-lg xl:text-xl font-semibold text-grantpicks-black-950">
-							Poll a larger group of voters (rapid sentiment){' '}
-						</p>
-					</div>
-				</div>
-			</div>
-
+			<HomeSection />
 			<div className="pt-20 md:pt-24 xl:pt-32 flex flex-col items-center">
 				<Image
 					src="/assets/images/check-bubble.png"

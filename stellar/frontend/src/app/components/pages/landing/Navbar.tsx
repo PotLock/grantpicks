@@ -32,7 +32,7 @@ const Navbar = () => {
 				onClick={() => {
 					router.push('/application')
 				}}
-				className="flex items-center text-white h-full gap-x-[10px] px-7 purple-button"
+				className="flex items-center text-white h-full gap-x-[10px] px-7 purple-button transition-all hover:scale-105 duration-500"
 			>
 				<p className="text-sm font-semibold">Launch App</p>
 				<IconRocket size={18} className="fill-white" />

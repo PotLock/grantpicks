@@ -8,8 +8,6 @@ import RoundVoteLayout from '@/app/components/pages/round-vote/RoundVoteLayout'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { localStorageConfigs } from '@/configs/local-storage'
 import { toastOptions } from '@/constants/style'
-import Contracts from '@/lib/contracts'
-import CMDWallet from '@/lib/wallet'
 import {
 	AvailableVoteRoundParams,
 	getPairsRound,

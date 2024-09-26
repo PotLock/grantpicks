@@ -20,7 +20,6 @@ import {
 	HasVotedRoundParams,
 	isHasVotedRound,
 } from '@/services/on-chain/round'
-import Contracts from '@/lib/contracts'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { IGetRoundsResponse, Network } from '@/types/on-chain'
 import useSWRInfinite from 'swr/infinite'

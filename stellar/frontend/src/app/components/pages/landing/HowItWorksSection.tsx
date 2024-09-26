@@ -17,7 +17,7 @@ const HowItWorksSection = () => {
 				</p>
 			</div>
 			<div className="grid gap-y-[18px] pb-[51px] z-10 justify-items-center">
-				<p className="font-black text-[50px] text-[#171717] uppercase text-center max-w-[782px]">
+				<p className="font-black text-[40px] md:text-[44px] lg:text-[50px] xl:text-[62px] text-[#171717] uppercase text-center max-w-[782px]">
 					What Can You Do on GrantPicks?
 				</p>
 				<p className="font-semibold text-xl text-[#687076] text-center max-w-[846px]">

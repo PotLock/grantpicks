@@ -4,9 +4,9 @@ import React from 'react'
 import PurpleUnderline from '../../svgs/PurpleUnderline'
 import IconRocket from '../../svgs/IconRocket'
 import IconExternalLink from '../../svgs/IconExternalLink'
-import IconFunding from '../../svgs/IconFunding'
-import IconGame from '../../svgs/IconGame'
-import IconVerticalBar from '../../svgs/IconVerticalBar'
+import IconCrowdFunding from '../../svgs/IconCrowdFunding'
+import IconGameHandle from '../../svgs/IconGameHandle'
+import IconPoll from '../../svgs/IconPoll'
 
 const HomeSection = () => {
 	const router = useRouter()
@@ -56,41 +56,41 @@ const HomeSection = () => {
 				</div>
 			</div>
 			<div className="pt-[91px] py-3 grid justify-items-center grid-cols-1 md:grid-cols-3 gap-12">
-				<div className="grid justify-items-center z-10 content-start">
-					<IconFunding />
-					<div className="grid gap-y-6">
-						<p className="font-semibold text-xl text-[#281950] text-center">
-							Transparent Funding Pots
-						</p>
-						<p className="text-[#281950BF]/75 text-center">
-							Establish clear funding mechanisms that allow all participants to
-							track contributions and allocations.
-						</p>
+				<div className="grid gap-y-6 justify-items-center z-10 content-start">
+					<div className="p-[9px] rounded-[10px] bg-gradient-to-br from-[rgba(134,239,172,0.5)] to-[rgba(110,231,183,0.5)] shadow-[0_8px_10px_-6px_rgba(16,185,129,0.3),0_20px_25px_-5px_rgba(16,185,129,0.3),0_0_0_1px_rgba(16,185,129,0.35)]">
+						<IconCrowdFunding />
 					</div>
+					<p className="font-semibold text-xl text-[#281950] text-center">
+						Transparent Funding Pots
+					</p>
+					<p className="text-[#281950BF]/75 text-center">
+						Establish clear funding mechanisms that allow all participants to
+						track contributions and allocations.
+					</p>
 				</div>
-				<div className="grid justify-items-center z-10 content-start">
-					<IconGame />
-					<div className="grid gap-y-6">
-						<p className="font-semibold text-xl text-[#281950] text-center">
-							Gamified Contest Experience
-						</p>
-						<p className="text-[#281950BF]/75 text-center">
-							Enhance user engagement through interactive contests that make
-							voting enjoyable and rewarding.
-						</p>
+				<div className="grid gap-y-6 justify-items-center z-10 content-start">
+					<div className="p-[9px] rounded-[10px] bg-gradient-to-br from-yellow-200/75 to-yellow-300/75 shadow-[0_8px_10px_-6px_rgba(245,158,11,0.3),0_20px_25px_-5px_rgba(245,158,11,0.3),0_0px_0px_1px_rgba(251,191,36,0.6)]">
+						<IconGameHandle />
 					</div>
+					<p className="font-semibold text-xl text-[#281950] text-center">
+						Gamified Contest Experience
+					</p>
+					<p className="text-[#281950BF]/75 text-center">
+						Enhance user engagement through interactive contests that make
+						voting enjoyable and rewarding.
+					</p>
 				</div>
-				<div className="grid justify-items-center z-10 content-start">
-					<IconVerticalBar />
-					<div className="grid gap-y-6">
-						<p className="font-semibold text-xl text-[#281950] text-center">
-							Rapid Sentiment Polling
-						</p>
-						<p className="text-[#281950BF]/75 text-center">
-							Gather quick insights from a broad audience using our efficient
-							pairwise voting system.
-						</p>
+				<div className="grid gap-y-6 justify-items-center z-10 content-start">
+					<div className="p-[9px] rounded-[10px] bg-gradient-to-br from-[rgba(125,211,252,0.5)] to-[rgba(147,197,253,0.5)] shadow-[0px_8px_10px_-6px_#3B82F64D,0px_20px_25px_-5px_#3B82F64D,0px_0px_0px_1px_#3B82F64D]">
+						<IconPoll />
 					</div>
+					<p className="font-semibold text-xl text-[#281950] text-center">
+						Rapid Sentiment Polling
+					</p>
+					<p className="text-[#281950BF]/75 text-center">
+						Gather quick insights from a broad audience using our efficient
+						pairwise voting system.
+					</p>
 				</div>
 			</div>
 		</div>

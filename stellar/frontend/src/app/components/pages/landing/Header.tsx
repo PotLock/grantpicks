@@ -1,150 +1,16 @@
 import Image from 'next/image'
 import React from 'react'
-import IconCheck from '../../svgs/IconCheck'
 import Button from '../../commons/Button'
 import HomeSection from './HomeSection'
-import IconGearCheck from '../../svgs/IconGearCheck'
-import CreateRoundsSvg from '../../svgs/CreateRoundsSvg'
-import ExploreSvg from '../../svgs/ExploreSvg'
-import VotingSvg from '../../svgs/VotingSvg'
-import BudgetBoxingSvg from '../../svgs/BudgetBoxingSvg'
-import ResultPayoutSvg from '../../svgs/ResultPayoutSvg'
-import MultiChainSvg from '../../svgs/MultiChainSvg'
 import HowItWorksSection from './HowItWorksSection'
+import FeaturesSection from './FeaturesSection'
 
 const LandingHeader = () => {
 	return (
 		<div className="w-[100%] md:w-[90%] xl:w-[80%] mx-auto pt-20 md:pt-24 xl:pt-32 pb-16 md:pb-20 xl:pb-24 px-4 md:px-0">
 			<HomeSection />
 			<HowItWorksSection />
-			<div className="pt-20 md:pt-24 xl:pt-32 flex flex-col items-center">
-				<Image
-					src="/assets/images/check-bubble.png"
-					alt=""
-					width={50}
-					height={50}
-					className="mb-4 md:mb-6 z-10"
-				/>
-				<p className="text-center z-10 text-[25px] md:text-[27px] lg:text-[30px] xl:text-[32px] font-black text-grantpicks-black-950 mb-10 lg:mb-12">
-					FEATURES
-				</p>
-				<div className="how-it-works-div z-10 p-4 md:p-6 lg:p-8 grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-5 lg:gap-6 xl:gap-8 w-full md:w-[80%] lg:w-[70%]">
-					<div className="space-y-2 md:space-y-5 lg:space-y-6 xl:space-y-8">
-						<div className="space-y-2 lg:space-y-4">
-							<p className="text-base font-bold text-grantpicks-black-950">
-								PROJECTS
-							</p>
-							<div className="space-y-2">
-								<div className="flex items-center space-x-2">
-									<IconCheck
-										size={24}
-										className="stroke-grantpicks-purple-400 shrink-0"
-									/>
-									<p className="text-base font-normal text-grantpicks-black-600">
-										Get access to funding rounds
-									</p>
-								</div>
-								<div className="flex items-center space-x-2">
-									<IconCheck
-										size={24}
-										className="stroke-grantpicks-purple-400 shrink-0"
-									/>
-									<p className="text-base font-normal text-grantpicks-black-600">
-										Create custom project, discoverable across Potlock products{' '}
-									</p>
-								</div>
-							</div>
-						</div>
-						<div className="space-y-2 lg:space-y-4">
-							<p className="text-base font-bold text-grantpicks-black-950">
-								PUBLIC
-							</p>
-							<div className="space-y-2">
-								<div className="flex items-center space-x-2">
-									<IconCheck
-										size={24}
-										className="stroke-grantpicks-purple-400 shrink-0"
-									/>
-									<p className="text-base font-normal text-grantpicks-black-600">
-										Vote and get retroactive points
-									</p>
-								</div>
-							</div>
-						</div>
-					</div>
-					<div className="space-y-2 lg:space-y-4">
-						<p className="text-base font-bold text-grantpicks-black-950">
-							FUNDERS
-						</p>
-						<div className="space-y-2">
-							<div className="flex items-center space-x-2">
-								<IconCheck
-									size={24}
-									className="stroke-grantpicks-purple-400 shrink-0"
-								/>
-								<p className="text-base font-normal text-grantpicks-black-600">
-									Create prefund rounds non custodially or do payouts later{' '}
-								</p>
-							</div>
-							<div className="flex items-center space-x-2">
-								<IconCheck
-									size={24}
-									className="stroke-grantpicks-purple-400 shrink-0"
-								/>
-								<p className="text-base font-normal text-grantpicks-black-600">
-									Choose voter requirements{' '}
-								</p>
-							</div>
-							<div className="flex items-center space-x-2">
-								<IconCheck
-									size={24}
-									className="stroke-grantpicks-purple-400 shrink-0"
-								/>
-								<p className="text-base font-normal text-grantpicks-black-600">
-									Add projects manually or have them apply{' '}
-								</p>
-							</div>
-							<div className="flex items-center space-x-2">
-								<IconCheck
-									size={24}
-									className="stroke-grantpicks-purple-400 shrink-0"
-								/>
-								<p className="text-base font-normal text-grantpicks-black-600">
-									Flag bot voters {' '}
-								</p>
-							</div>
-							<div className="flex items-center space-x-2">
-								<IconCheck
-									size={24}
-									className="stroke-grantpicks-purple-400 shrink-0"
-								/>
-								<p className="text-base font-normal text-grantpicks-black-600">
-									Calculate and adjust payouts{' '}
-								</p>
-							</div>
-							<div className="flex items-center space-x-2">
-								<IconCheck
-									size={24}
-									className="stroke-grantpicks-purple-400 shrink-0"
-								/>
-								<p className="text-base font-normal text-grantpicks-black-600">
-									Audit votes and pay results{' '}
-								</p>
-							</div>
-							<div className="flex items-center space-x-2">
-								<IconCheck
-									size={24}
-									className="stroke-grantpicks-purple-400 shrink-0"
-								/>
-								<p className="text-base font-normal text-grantpicks-black-600">
-									Vote and get retroactive points{' '}
-								</p>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-
+			<FeaturesSection />
 			<div className="pt-20 md:pt-24 xl:pt-32 flex flex-col items-center">
 				<Image
 					src="/assets/images/chat-bubble.png"

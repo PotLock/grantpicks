@@ -7,6 +7,7 @@ import IconExternalLink from '../../svgs/IconExternalLink'
 import IconCrowdFunding from '../../svgs/IconCrowdFunding'
 import IconGameHandle from '../../svgs/IconGameHandle'
 import IconPoll from '../../svgs/IconPoll'
+import Link from 'next/link'
 
 const HomeSection = () => {
 	const router = useRouter()
@@ -49,10 +50,16 @@ const HomeSection = () => {
 						<p className="text-sm font-semibold">Launch App</p>
 						<IconRocket size={18} className="fill-white" />
 					</button>
-					<button className="flex items-center justify-center z-10 md:w-auto gap-x-[10px] px-7 h-12 rounded-full bg-white border border-grantpicks-black-300 drop-shadow text-grantpicks-black-950 transition-all hover:scale-105 duration-500">
-						<p className="text-sm font-semibold">Learn More</p>
-						<IconExternalLink size={18} className="stroke-black" />
-					</button>
+					<Link
+						className="z-10"
+						href={'https://docs.potlock.io/'}
+						target="_blank"
+					>
+						<button className="flex items-center justify-center md:w-auto gap-x-[10px] px-7 h-12 rounded-full bg-white border border-grantpicks-black-300 drop-shadow text-grantpicks-black-950 transition-all hover:scale-105 duration-500">
+							<p className="text-sm font-semibold">Learn More</p>
+							<IconExternalLink size={18} className="stroke-black" />
+						</button>
+					</Link>
 				</div>
 			</div>
 			<div className="pt-[91px] py-3 grid justify-items-center grid-cols-1 md:grid-cols-3 gap-12">

@@ -7,6 +7,13 @@ import Button from '../../commons/Button'
 const Navbar = () => {
 	const router = useRouter()
 
+	const scrollToSection = (sectionId: string) => {
+		const section = document.getElementById(sectionId)
+		if (section) {
+			section.scrollIntoView({ behavior: 'smooth' })
+		}
+	}
+
 	return (
 		<div className="flex mt-[41px] z-20 fixed inset-x-0 items-center justify-between px-4 md:px-12 xl:px-20 h-12">
 			<button
@@ -24,10 +31,10 @@ const Navbar = () => {
 				<p className="text-[#020909] font-black text-xl">GrantPicks</p>
 			</button>
 			<div className="text-[#202237] font-medium text-sm gap-x-[6px] flex border border-grantpicks-purple-500/20 h-full rounded-full px-7 bg-[#EEF2FE]">
-				<button className="px-3">Home</button>
-				<button className="px-3">How it Works</button>
-				<button className="px-3">Features</button>
-				<button className="px-3">FAQs</button>
+				<button className="px-3" onClick={() => scrollToSection('home')}>Home</button>
+				<button className="px-3" onClick={() => scrollToSection('how-it-works')}>How it Works</button>
+				<button className="px-3" onClick={() => scrollToSection('features')}>Features</button>
+				<button className="px-3" onClick={() => scrollToSection('faqs')}>FAQs</button>
 			</div>
 			<Button
 				color="purple"

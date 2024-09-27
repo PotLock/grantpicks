@@ -8,6 +8,7 @@ export type TColor =
 	| 'white'
 	| 'transparent'
 	| 'red'
+	| 'purple'
 
 export interface ButtonProps {
 	color: TColor

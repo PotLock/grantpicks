@@ -8,6 +8,7 @@ import IconCrowdFunding from '../../svgs/IconCrowdFunding'
 import IconGameHandle from '../../svgs/IconGameHandle'
 import IconPoll from '../../svgs/IconPoll'
 import Link from 'next/link'
+import Button from '../../commons/Button'
 
 const HomeSection = () => {
 	const router = useRouter()
@@ -40,23 +41,36 @@ const HomeSection = () => {
 					Join the competition! Vote for innovative projects in thrilling
 					head-to-head battles and help decide which ideas get funded.
 				</p>
-				<div className="grid md:flex gap-6 w-full md:justify-center">
-					<button
+				<div className="grid md:flex gap-6 w-full md:justify-center z-10 h-12">
+					<Button
+						color="purple"
+						icon={<IconRocket size={18} className="fill-white" />}
+						iconPosition="right"
+						className="px-7"
 						onClick={() => {
 							router.push('/application')
 						}}
-						className="flex items-center justify-center z-10 md:w-auto text-white gap-x-[10px] px-7 h-12 purple-button transition-all hover:scale-105 duration-500"
 					>
-						<p className="text-sm font-semibold">Launch App</p>
-						<IconRocket size={18} className="fill-white" />
-					</button>
-					<Link
+						Launch App
+					</Button>
+					{/* <Link
 						className="z-10 flex items-center justify-center md:w-auto gap-x-[10px] px-7 h-12 rounded-full bg-white border border-grantpicks-black-300 drop-shadow text-grantpicks-black-950 transition-all hover:scale-105 duration-500"
 						href={'https://docs.potlock.io/'}
 						target="_blank"
 					>
 						<p className="text-sm font-semibold">Learn More</p>
 						<IconExternalLink size={18} className="stroke-black" />
+					</Link> */}
+					<Link href={'https://docs.potlock.io/'} target="_blank">
+						<Button
+							color="white"
+							icon={<IconExternalLink size={18} className="stroke-black" />}
+							iconPosition="right"
+							className="px-7 h-full"
+							onClick={() => {}}
+						>
+							Launch App
+						</Button>
 					</Link>
 				</div>
 			</div>

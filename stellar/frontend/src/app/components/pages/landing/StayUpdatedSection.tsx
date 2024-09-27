@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import InputText from '../../commons/InputText'
 import Image from 'next/image'
+import Button from '../../commons/Button'
 
 const StayUpdatedSection = () => {
 	const [emailInput, setEmailInput] = useState<string>('')
@@ -28,12 +29,9 @@ const StayUpdatedSection = () => {
 								className="!rounded-full"
 							/>
 						</div>
-						<button
-							onClick={() => {}}
-							className="flex items-center justify-center text-white py-[14px] gap-x-[10px] px-[58px] purple-button transition-all hover:scale-105 duration-500"
-						>
-							<p className="text-sm font-semibold">Submit</p>
-						</button>
+						<Button color="purple" className="px-[58px]" onClick={() => {}}>
+							Submit
+						</Button>
 					</div>
 				</div>
 				<div className="lg:shrink-0 flex justify-center">

@@ -2,6 +2,7 @@ import Image from 'next/image'
 import React from 'react'
 import IconRocket from '../../svgs/IconRocket'
 import { useRouter } from 'next/navigation'
+import Button from '../../commons/Button'
 
 const Navbar = () => {
 	const router = useRouter()
@@ -28,15 +29,17 @@ const Navbar = () => {
 				<button className="px-3">Features</button>
 				<button className="px-3">FAQs</button>
 			</div>
-			<button
+			<Button
+				color="purple"
+				icon={<IconRocket size={18} className="fill-white" />}
+				iconPosition="right"
+				className="h-full px-7"
 				onClick={() => {
 					router.push('/application')
 				}}
-				className="flex items-center text-white h-full gap-x-[10px] px-7 purple-button transition-all hover:scale-105 duration-500"
 			>
-				<p className="text-sm font-semibold">Launch App</p>
-				<IconRocket size={18} className="fill-white" />
-			</button>
+				Launch App
+			</Button>
 		</div>
 	)
 }

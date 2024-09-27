@@ -7,7 +7,7 @@ const Navbar = () => {
 	const router = useRouter()
 
 	return (
-		<div className="flex mt-[41px] z-20 fixed inset-x-0 items-center justify-between px-[5vw] md:px-[10vw] xl:px-[15vw] h-12">
+		<div className="flex mt-[41px] z-20 fixed inset-x-0 items-center justify-between px-4 md:px-12 xl:px-20 h-12">
 			<button
 				onClick={() => {
 					router.push('/application')

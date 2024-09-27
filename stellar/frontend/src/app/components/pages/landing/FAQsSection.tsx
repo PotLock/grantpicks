@@ -52,7 +52,7 @@ const FAQsSection = () => {
 					about GrantPicks and its features.
 				</p>
 			</div>
-			<div className="w-full md:w-[80%] lg:w-[70%] space-y-4 z-10">
+			<div className="w-full space-y-4 z-10">
 				{faqs.map((faq, index) => (
 					<div key={index} className="bg-grantpicks-purple-100 rounded-2xl">
 						<div className="flex justify-between items-center w-full py-8 px-9 text-left">

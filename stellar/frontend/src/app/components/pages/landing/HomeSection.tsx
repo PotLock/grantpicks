@@ -14,7 +14,7 @@ const HomeSection = () => {
 
 	return (
 		<div>
-			<div className="flex flex-col items-center text-grantpicks-black-950 p-4 lg:p-0 mt-[91px]">
+			<div className="flex flex-col items-center text-grantpicks-black-950 p-0 mt-[91px]">
 				<div className="flex justify-center items-center gap-x-[6px] bg-[#F4F4F5] border border-white drop-shadow rounded-full h-7 w-[221px] mb-6 z-10">
 					<Image
 						src="/assets/images/grantpicks-logo-new.png"
@@ -51,14 +51,12 @@ const HomeSection = () => {
 						<IconRocket size={18} className="fill-white" />
 					</button>
 					<Link
-						className="z-10"
+						className="z-10 flex items-center justify-center md:w-auto gap-x-[10px] px-7 h-12 rounded-full bg-white border border-grantpicks-black-300 drop-shadow text-grantpicks-black-950 transition-all hover:scale-105 duration-500"
 						href={'https://docs.potlock.io/'}
 						target="_blank"
 					>
-						<button className="flex items-center justify-center md:w-auto gap-x-[10px] px-7 h-12 rounded-full bg-white border border-grantpicks-black-300 drop-shadow text-grantpicks-black-950 transition-all hover:scale-105 duration-500">
-							<p className="text-sm font-semibold">Learn More</p>
-							<IconExternalLink size={18} className="stroke-black" />
-						</button>
+						<p className="text-sm font-semibold">Learn More</p>
+						<IconExternalLink size={18} className="stroke-black" />
 					</Link>
 				</div>
 			</div>

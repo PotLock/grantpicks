@@ -150,30 +150,36 @@ const FeaturesSection = () => {
 		},
 	]
 
-	const renderList = (dataArray: Array<{ title: string; icon: React.ReactNode; description: string }>) => {
+	const renderList = (
+		dataArray: Array<{
+			title: string
+			icon: React.ReactNode
+			description: string
+		}>,
+	) => {
 		return dataArray.map((data) => (
 			<div key={data.title} className="grid gap-y-6 content-start">
 				{data.icon}
 				<div>
-          <p className="font-medium text-[#171717]">{data.title}</p>
-          <p className="text-[#171717]/50">{data.description}</p>
-        </div>
-      </div>
-    ));
-  };
+					<p className="font-medium text-[#171717]">{data.title}</p>
+					<p className="text-[#171717]/50">{data.description}</p>
+				</div>
+			</div>
+		))
+	}
 
-  const getDataForTab = () => {
-    switch (tab) {
-      case 'projects':
-        return projectsData;
-      case 'public':
-        return publicData;
-      case 'funders':
-        return fundersData;
-      default:
-        return [];
-    }
-  };
+	const getDataForTab = () => {
+		switch (tab) {
+			case 'projects':
+				return projectsData
+			case 'public':
+				return publicData
+			case 'funders':
+				return fundersData
+			default:
+				return []
+		}
+	}
 
 	return (
 		<div className="pt-20 md:pt-24 xl:pt-32 grid justify-items-center">
@@ -188,14 +194,15 @@ const FeaturesSection = () => {
 					Unlock the Power of Collaborative Funding
 				</p>
 				<p className="font-semibold text-xl text-[#687076] text-center max-w-[846px]">
-					Discover GrantPicks' features that enable projects, engage voters, and
-					support funders in making impactful funding decisions.
+					Discover GrantPicks&apos; features that enable projects, engage
+					voters, and support funders in making impactful funding decisions.
 				</p>
 			</div>
 			<div className="pb-[50px] z-10">
 				<div className="flex items-center rounded-full py-[4.75px] px-[2.31px] bg-grantpicks-purple-100 border border-grantpicks-purple-500">
 					{tabTitle.map((data) => (
 						<button
+							key={data.id}
 							onClick={() => {
 								setTab(data.id)
 							}}

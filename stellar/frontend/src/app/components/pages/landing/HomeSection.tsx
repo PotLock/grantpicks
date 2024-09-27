@@ -46,19 +46,19 @@ const HomeSection = () => {
 						color="purple"
 						icon={<IconRocket size={18} className="fill-white" />}
 						iconPosition="right"
-						className="px-7"
+						className="px-7 w-full md:w-auto"
 						onClick={() => {
 							router.push('/application')
 						}}
 					>
 						Launch App
 					</Button>
-					<Link href={'https://docs.potlock.io/'} target="_blank">
+					<Link href={'https://docs.potlock.io/'} target="_blank" className="w-full md:w-auto">
 						<Button
 							color="white"
 							icon={<IconExternalLink size={18} className="stroke-black" />}
 							iconPosition="right"
-							className="px-7 h-full"
+							className="px-7 h-full w-full md:w-auto"
 							onClick={() => {}}
 						>
 							Launch App

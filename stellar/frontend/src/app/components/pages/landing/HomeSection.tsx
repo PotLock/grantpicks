@@ -53,7 +53,11 @@ const HomeSection = () => {
 					>
 						Launch App
 					</Button>
-					<Link href={'https://docs.potlock.io/'} target="_blank" className="w-full md:w-auto">
+					<Link
+						href={'https://docs.potlock.io/'}
+						target="_blank"
+						className="w-full md:w-auto"
+					>
 						<Button
 							color="white"
 							icon={<IconExternalLink size={18} className="stroke-black" />}
@@ -61,7 +65,7 @@ const HomeSection = () => {
 							className="px-7 h-full w-full md:w-auto"
 							onClick={() => {}}
 						>
-							Launch App
+							Learn More
 						</Button>
 					</Link>
 				</div>

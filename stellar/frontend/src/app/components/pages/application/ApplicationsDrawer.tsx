@@ -33,6 +33,7 @@ import { prettyTruncate } from '@/utils/helper'
 import ApplicationAcceptModal from './ApplicationAcceptModal'
 import ApplicationRejectModal from './ApplicationRejectModal'
 import useAppStorage from '@/stores/zustand/useAppStorage'
+import Image from 'next/image'
 
 interface ApplicationsDrawerProps extends IDrawerProps {
 	doc: IGetRoundsResponse
@@ -166,7 +167,12 @@ const ApplicationItem = ({
 				</div>
 			)}
 			<div className="flex items-center space-x-3 px-3 md:px-4 py-2">
-				<div className="bg-grantpicks-black-200 rounded-full w-6 h-6" />
+				<Image
+					src={`https://www.tapback.co/api/avatar/${item.applicant_id}`}
+					alt="applicant"
+					width={24}
+					height={24}
+				/>
 				<p>
 					<span className="text-base font-bold text-grantpicks-black-950 mr-1">
 						{prettyTruncate(item.applicant_id, 20, 'address')}

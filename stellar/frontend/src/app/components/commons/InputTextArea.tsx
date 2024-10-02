@@ -43,7 +43,7 @@ const InputTextArea = forwardRef<HTMLTextAreaElement, InputTextAreaProps>(
 				)}
 				<div className="relative mb-1">
 					{disabled && (
-						<div className="absolute inset-0 z-20 bg-grantpicks-black-50/50 cursor-not-allowed rounded-xl" />
+						<div className="absolute inset-0 bg-grantpicks-black-50/50 cursor-not-allowed rounded-xl" />
 					)}
 					<textarea
 						ref={ref}

@@ -8,6 +8,7 @@ import IconExpandLess from '../svgs/IconExpandLess'
 import { prettyTruncate } from '@/utils/helper'
 import { useRouter } from 'next/navigation'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
+import Image from 'next/image'
 
 const TopNav = () => {
 	const { connectedWallet, nearAccounts, stellarPubKey } = useWallet()
@@ -35,14 +36,23 @@ const TopNav = () => {
 				</Button>
 				<div className="relative">
 					{!!connectedWallet ? (
-						<Button
-							color="transparent"
+						<button
 							onClick={() => setShowMenu((prev) => (!!prev ? null : 'user'))}
+							className="flex"
 						>
 							<div className="md:pr-2">
-								<div className="bg-grantpicks-black-200 rounded-full w-10 h-10" />
+								<Image
+									src={`https://www.tapback.co/api/avatar/${
+										connectedWallet === 'near'
+											? nearAccounts[0]?.accountId
+											: stellarPubKey
+									}`}
+									alt="image"
+									width={40}
+									height={40}
+								/>
 							</div>
-							<div className="flex items-center justify-between hidden md:flex">
+							<div className="items-center justify-between hidden md:flex">
 								<div className="flex items-center mr-6">
 									<div>
 										<p className="text-sm font-semibold text-grantpicks-black-950">
@@ -70,7 +80,7 @@ const TopNav = () => {
 									/>
 								)}
 							</div>
-						</Button>
+						</button>
 					) : (
 						<Button
 							onClick={() =>

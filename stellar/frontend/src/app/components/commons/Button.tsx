@@ -34,10 +34,10 @@ const Button = ({
 		<button
 			style={style}
 			className={clsx(
-				'transition duration-300 ease-in-out hover:brightness-125 font-semibold relative rounded-full px-4 py-2',
+				'transition duration-300 ease-in-out hover:opacity-70 font-semibold relative rounded-full px-4 py-2',
 				getColor(),
 				isFullWidth && `w-full`,
-				isDisabled && `cursor-not-allowed brightness-75 hover:brightness-75`,
+				isDisabled && `cursor-not-allowed opacity-60 hover:bg-opacity-50`,
 				isLoading && 'cursor-wait',
 				className,
 			)}

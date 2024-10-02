@@ -28,12 +28,8 @@ import IconClose from '@/app/components/svgs/IconClose'
 import AddAdminsModal from '@/app/components/pages/create-round/AddAdminsModal'
 import clsx from 'clsx'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
-import { skip } from 'node:test'
 import { IGetProjectsResponse } from '@/services/on-chain/project-registry'
-import CMDWallet from '@/lib/wallet'
 import { useWallet } from '@/app/providers/WalletProvider'
-import Contracts from '@/lib/contracts'
-import { Network } from '@/types/on-chain'
 import {
 	addProjectsRound,
 	createRound,
@@ -60,6 +56,7 @@ import {
 	TWITTER_USERNAME_REGEX,
 } from '@/constants/regex'
 import useAppStorage from '@/stores/zustand/useAppStorage'
+import { usePotlockService } from '@/services/potlock'
 
 const CreateRoundPage = () => {
 	const router = useRouter()
@@ -74,6 +71,7 @@ const CreateRoundPage = () => {
 		useState<boolean>(false)
 	const [showAddAdminsModal, setShowAddAdminsModal] = useState<boolean>(false)
 	const [isMobile, setIsMobile] = useState(false)
+	const potlockService = usePotlockService()
 	const {
 		control,
 		register,
@@ -261,10 +259,24 @@ const CreateRoundPage = () => {
 				if (watch().amount && watch().amount !== '0') {
 					txHashInitialDeposit = await onInitialDeposit(txCreateRound.result.id)
 				}
+
+				let round = null
+
+				while (!round) {
+					try {
+						round = await potlockService.getRound(
+							Number(txCreateRound.result.id),
+						)
+					} catch (e) {
+						console.error(e)
+					}
+					await sleep(3000)
+				}
+
 				setSuccessCreateRoundModalProps((prev) => ({
 					...prev,
 					isOpen: true,
-					createRoundRes: txCreateRound.result,
+					createRoundRes: round,
 					txHash: txHashCreateRound,
 				}))
 				reset()
@@ -295,15 +307,15 @@ const CreateRoundPage = () => {
 	}, [])
 
 	useEffect(() => {
-    const checkIfMobile = () => {
-      setIsMobile(window.innerWidth < 425)
-    }
+		const checkIfMobile = () => {
+			setIsMobile(window.innerWidth < 425)
+		}
 
-    checkIfMobile()
-    window.addEventListener('resize', checkIfMobile)
+		checkIfMobile()
+		window.addEventListener('resize', checkIfMobile)
 
-    return () => window.removeEventListener('resize', checkIfMobile)
-  }, [])
+		return () => window.removeEventListener('resize', checkIfMobile)
+	}, [])
 
 	return (
 		<CreateRoundLayout>
@@ -571,7 +583,7 @@ const CreateRoundPage = () => {
 									type="number"
 									disabled={!watch().use_vault}
 									label="Initial Deposit"
-									placeholder={isMobile ? "" : "Enter amount..."}
+									placeholder={isMobile ? '' : 'Enter amount...'}
 									{...register('amount', {
 										onChange: async (e) => {
 											const calculation =
@@ -611,7 +623,7 @@ const CreateRoundPage = () => {
 									type="number"
 									label="Expected Amount"
 									required
-									placeholder={isMobile ? "" : "Enter amount..."}
+									placeholder={isMobile ? '' : 'Enter amount...'}
 									{...register('expected_amount', {
 										required: true,
 										onChange: async (e) => {

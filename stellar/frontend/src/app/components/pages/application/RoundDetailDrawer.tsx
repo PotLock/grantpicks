@@ -11,13 +11,10 @@ import IconClock from '../../svgs/IconClock'
 import IconGroup from '../../svgs/IconGroup'
 import IconTelegram from '../../svgs/IconTelegram'
 import Button from '../../commons/Button'
-import { IGetRoundsResponse, Network } from '@/types/on-chain'
 import { useWallet } from '@/app/providers/WalletProvider'
 import IconNear from '../../svgs/IconNear'
 import moment from 'moment'
 import { formatStroopToXlm, prettyTruncate } from '@/utils/helper'
-import CMDWallet from '@/lib/wallet'
-import Contracts from '@/lib/contracts'
 import { getRoundAdmins } from '@/services/on-chain/round'
 import useSWR from 'swr'
 import IconLoading from '../../svgs/IconLoading'
@@ -27,9 +24,10 @@ import IconTwitter from '../../svgs/IconTwitter'
 import IconEmail from '../../svgs/IconEmail'
 import Link from 'next/link'
 import useAppStorage from '@/stores/zustand/useAppStorage'
+import { GPRound } from '@/models/round'
 
 interface RoundDetailDrawerProps extends IDrawerProps {
-	doc: IGetRoundsResponse
+	doc: GPRound
 	onOpenFundRound: () => void
 	onApplyRound: () => void
 	onVote: () => void
@@ -113,13 +111,14 @@ const RoundDetailDrawer = ({
 	const getSpecificTime = () => {
 		if (selectedRoundType === 'upcoming') {
 			if (
-				new Date().getTime() >= Number(doc.application_start_ms) &&
-				new Date().getTime() < Number(doc.application_end_ms)
+				new Date().getTime() >=
+					new Date(doc.application_start || '').getTime() &&
+				new Date().getTime() < new Date(doc.application_end || '').getTime()
 			) {
 				return `upcoming-open`
 			} else if (
-				new Date().getTime() >= Number(doc.application_end_ms) &&
-				new Date().getTime() < Number(doc.voting_start_ms)
+				new Date().getTime() >= new Date(doc.application_end || '').getTime() &&
+				new Date().getTime() < new Date(doc.voting_start || '').getTime()
 			) {
 				return `upcoming-closed`
 			} else if (doc.allow_applications) {
@@ -130,7 +129,7 @@ const RoundDetailDrawer = ({
 		} else if (selectedRoundType === 'on-going') {
 			return `on-going`
 		} else {
-			if (doc.round_complete_ms != undefined) {
+			if (doc.round_complete != null) {
 				return `ended`
 			} else {
 				return `payout-pending`
@@ -228,30 +227,30 @@ const RoundDetailDrawer = ({
 								<IconClock size={18} className="fill-grantpicks-black-400" />
 								<p className="text-sm font-normal text-grantpicks-black-950">
 									Ends{` `}
-									{moment(
-										new Date(Number(doc.voting_end_ms) as number),
-									).fromNow()}
+									{moment(new Date(doc.voting_end || '')).fromNow()}
 								</p>
 							</div>
 						) : selectedRoundType === 'upcoming' && doc.allow_applications ? (
 							<div className="flex flex-1 items-center space-x-1">
 								<IconClock size={18} className="fill-grantpicks-black-400" />
 								<p className="text-sm font-normal text-grantpicks-black-950">
-									{new Date().getTime() < Number(doc.application_start_ms)
+									{new Date().getTime() <
+									new Date(doc.application_start || '').getTime()
 										? 'Open'
 										: 'Closed'}{' '}
-									{new Date().getTime() < Number(doc.application_start_ms)
+									{new Date().getTime() <
+									new Date(doc.application_start || '').getTime()
 										? moment(
-												new Date(Number(doc.application_start_ms) as number),
+												new Date(doc.application_start || '').getTime(),
 											).fromNow()
 										: moment(
-												new Date(Number(doc.application_end_ms) as number),
+												new Date(doc.application_end || '').getTime(),
 											).fromNow()}{' '}
 								</p>
 							</div>
 						) : (
 							<p className="text-lg flex-1 md:text-xl font-normal text-grantpicks-black-950">
-								{formatStroopToXlm(doc.expected_amount)}{' '}
+								{formatStroopToXlm(BigInt(doc.expected_amount))}{' '}
 								<span className="text-sm font-normal text-grantpicks-black-600">
 									XLM
 								</span>
@@ -263,7 +262,7 @@ const RoundDetailDrawer = ({
 					<div className="flex items-center mb-4 md:mb-5">
 						<div className="flex-1">
 							<p className="font-semibold text-lg md:text-xl text-grantpicks-black-950">
-								{formatStroopToXlm(doc.current_vault_balance)} XLM
+								{formatStroopToXlm(BigInt(doc.current_vault_balance))} XLM
 							</p>
 							<p className="font-semibold text-xs text-grantpicks-black-600">
 								AVAILABLE FUNDS
@@ -271,7 +270,7 @@ const RoundDetailDrawer = ({
 						</div>
 						<div className="flex-1">
 							<p className="font-semibold text-lg md:text-xl text-grantpicks-black-950">
-								{formatStroopToXlm(doc.expected_amount)} XLM
+								{formatStroopToXlm(BigInt(doc.expected_amount))} XLM
 							</p>
 							<p className="font-semibold text-xs text-grantpicks-black-600">
 								EXPECTED FUNDS
@@ -344,11 +343,13 @@ const RoundDetailDrawer = ({
 							}}
 							isDisabled={
 								!doc.allow_applications ||
-								new Date().getTime() > Number(doc.application_end_ms)
+								new Date().getTime() >
+									new Date(doc.application_end || '').getTime()
 							}
 							className="!py-3 flex-1"
 						>
-							{new Date().getTime() > Number(doc.application_end_ms) ||
+							{new Date().getTime() >
+								new Date(doc.application_end || '').getTime() ||
 							!doc.allow_applications
 								? 'Application Closed'
 								: 'Apply'}

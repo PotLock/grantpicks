@@ -37,4 +37,10 @@ export interface GPRound {
 	use_vault: null | boolean
 	num_picks_per_voter: number
 	max_participants: number
+	contacts: GPRoundContact[]
+}
+
+export interface GPRoundContact {
+	name: string
+	value: string
 }

@@ -17,19 +17,13 @@ import IconProject from '@/app/components/svgs/IconProject'
 import IconStellar from '@/app/components/svgs/IconStellar'
 import { useModalContext } from '@/app/providers/ModalProvider'
 import { useWallet } from '@/app/providers/WalletProvider'
-import { LIMIT_SIZE } from '@/constants/query'
-import Contracts from '@/lib/contracts'
-import CMDWallet from '@/lib/wallet'
-import {
-	getMyVotedRounds,
-	getRoundApplication,
-	getRounds,
-	HasVotedRoundParams,
-	isHasVotedRound,
-} from '@/services/on-chain/round'
+import { LIMIT_SIZE, LIMIT_SIZE_CONTRACT } from '@/constants/query'
+import { GPRound } from '@/models/round'
+import { getMyVotedRounds } from '@/services/on-chain/round'
+import { usePotlockService } from '@/services/potlock'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import useRoundStore from '@/stores/zustand/useRoundStore'
-import { IGetRoundsResponse, Network } from '@/types/on-chain'
+import { IGetRoundsResponse } from '@/types/on-chain'
 import { formatStroopToXlm } from '@/utils/helper'
 import clsx from 'clsx'
 import moment from 'moment'
@@ -43,7 +37,7 @@ const ApplicationRoundsItem = ({
 	doc,
 	mutateRounds,
 }: {
-	doc: IGetRoundsResponse
+	doc: GPRound
 	mutateRounds: any
 }) => {
 	const router = useRouter()
@@ -55,21 +49,22 @@ const ApplicationRoundsItem = ({
 	const { setApplyProjectInitProps, setVoteConfirmationProps } =
 		useModalContext()
 	const { connectedWallet, stellarPubKey } = useWallet()
-	const [isUserApplied, setIsUserApplied] = useState<boolean>(false)
-	const [hasVoted, setHasVoted] = useState<boolean>(false)
 
 	const getSpecificTime = () => {
 		if (selectedRoundType === 'upcoming') {
-			if (new Date().getTime() < Number(doc.application_start_ms)) {
+			if (
+				new Date().getTime() < new Date(doc.application_start || '').getTime()
+			) {
 				return `upcoming`
 			} else if (
-				Number(doc.application_start_ms) <= new Date().getTime() &&
-				new Date().getTime() < Number(doc.application_end_ms)
+				new Date(doc.application_start || '').getTime() <=
+					new Date().getTime() &&
+				new Date().getTime() < new Date(doc.application_end || '').getTime()
 			) {
 				return `upcoming-open`
 			} else if (
-				Number(doc.application_end_ms) <= new Date().getTime() &&
-				new Date().getTime() < Number(doc.voting_start_ms)
+				new Date(doc.application_end || '').getTime() <= new Date().getTime() &&
+				new Date().getTime() < new Date(doc.voting_start || '').getTime()
 			) {
 				return `upcoming-closed`
 			}
@@ -188,9 +183,7 @@ const ApplicationRoundsItem = ({
 						<IconClock size={18} className="fill-grantpicks-black-400" />
 						<p className="text-sm font-normal text-grantpicks-black-950">
 							Ends{` `}
-							{moment(
-								new Date(Number(doc.application_end_ms) as number),
-							).fromNow()}
+							{moment(new Date(doc.application_end || '')).fromNow()}
 						</p>
 					</div>
 				) : selectedRoundType === 'upcoming' ? (
@@ -199,10 +192,7 @@ const ApplicationRoundsItem = ({
 							<div className="flex items-center space-x-1">
 								<IconClock size={18} className="fill-grantpicks-black-400" />
 								<p className="text-sm font-normal text-grantpicks-black-950">
-									Open{' '}
-									{moment(
-										new Date(Number(doc.application_start_ms) as number),
-									).fromNow()}
+									Open {moment(new Date(doc.application_start || '')).fromNow()}
 								</p>
 							</div>
 						)}
@@ -210,10 +200,7 @@ const ApplicationRoundsItem = ({
 							<div className="flex items-center space-x-1">
 								<IconClock size={18} className="fill-grantpicks-black-400" />
 								<p className="text-sm font-normal text-grantpicks-black-950">
-									Closed{' '}
-									{moment(
-										new Date(Number(doc.application_end_ms) as number),
-									).fromNow()}
+									Closed {moment(new Date(doc.application_end || '')).fromNow()}
 								</p>
 							</div>
 						)}
@@ -228,7 +215,7 @@ const ApplicationRoundsItem = ({
 					</>
 				) : (
 					<p className="text-lg md:text-xl font-normal text-grantpicks-black-950">
-						{formatStroopToXlm(doc.expected_amount)}{' '}
+						{formatStroopToXlm(BigInt(doc.expected_amount))}{' '}
 						<span className="text-sm font-normal text-grantpicks-black-600">
 							{connectedWallet === 'near' ? 'NEAR' : 'XLM'}
 						</span>
@@ -283,8 +270,8 @@ const ApplicationRoundsItem = ({
 
 const MyVotesPage = () => {
 	const { stellarPubKey, connectedWallet } = useWallet()
-	const [roundsData, setRoundsData] = useState<IGetRoundsResponse[]>([])
 	const storage = useAppStorage()
+	const service = usePotlockService()
 
 	const onFetchMyVotedRounds = async (key: {
 		url: string
@@ -297,11 +284,21 @@ const MyVotesPage = () => {
 			return
 		}
 
+		let result: GPRound[] = []
 		const res = await getMyVotedRounds(
 			{ from_index: key.skip, limit: key.limit, voter: stellarPubKey },
 			contracts,
 		)
-		return res
+
+		for (let i = 0; i < res.length; i++) {
+			let round = res[i]
+			let roundId = Number(round.id)
+			let roundDetail = await service.getRound(roundId)
+			result.push(roundDetail)
+		}
+
+		console.log(result)
+		return result
 	}
 
 	const getKey = (
@@ -313,7 +310,7 @@ const MyVotesPage = () => {
 		return {
 			url: `get-my-voted-rounds`,
 			skip: pageIndex,
-			limit: LIMIT_SIZE,
+			limit: LIMIT_SIZE_CONTRACT,
 		}
 	}
 	const { data, size, setSize, isValidating, isLoading, mutate } =
@@ -321,11 +318,9 @@ const MyVotesPage = () => {
 			revalidateFirstPage: false,
 		})
 	const rounds = data
-		? ([] as IGetRoundsResponse[]).concat(
-				...(data as any as IGetRoundsResponse[]),
-			)
+		? ([] as GPRound[]).concat(...(data as any as GPRound[]))
 		: []
-	const hasMore = data ? data.length >= LIMIT_SIZE : false
+	const hasMore = data ? data.length >= LIMIT_SIZE_CONTRACT : false
 
 	return (
 		<MyVotesLayout>

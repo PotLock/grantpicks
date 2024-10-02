@@ -16,7 +16,6 @@ import FundRoundModal from './FundRoundModal'
 import { useModalContext } from '@/app/providers/ModalProvider'
 import {
 	getRoundApplication,
-	getRounds,
 	HasVotedRoundParams,
 	isHasVotedRound,
 } from '@/services/on-chain/round'
@@ -33,12 +32,14 @@ import IconStellar from '../../svgs/IconStellar'
 import { useRouter } from 'next/navigation'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import useAppStorage from '@/stores/zustand/useAppStorage'
+import { usePotlockService } from '@/services/potlock'
+import { GPRound } from '@/models/round'
 
 const ApplicationRoundsItem = ({
 	doc,
 	mutateRounds,
 }: {
-	doc: IGetRoundsResponse
+	doc: GPRound
 	mutateRounds: any
 }) => {
 	const router = useRouter()
@@ -50,39 +51,56 @@ const ApplicationRoundsItem = ({
 	const { setApplyProjectInitProps, setVoteConfirmationProps } =
 		useModalContext()
 	const { connectedWallet, stellarPubKey, stellarKit } = useWallet()
+	const [totalApprovedProjects, setTotalApprovedProjects] = useState<number>(0)
 	const [isUserApplied, setIsUserApplied] = useState<boolean>(false)
-	const [approvedCount, setApprovedCount] = useState<number>()
 	const { setShowMenu } = useGlobalContext()
 	const [hasVoted, setHasVoted] = useState<boolean>(false)
 	const storage = useAppStorage()
 
-	const fetchApprovedCount = async () => {
+	const fetchOnChainRound = async () => {
+		const contracts = storage.getStellarContracts()
+
+		if (!contracts) return
+
 		try {
-			const contracts = storage.getStellarContracts()
-
-			if (!contracts) return
-
-			const projects = (
-				await contracts.round_contract.get_approved_projects({
-					round_id: doc.id,
+			const round = (
+				await contracts.round_contract.get_round({
+					round_id: BigInt(doc.on_chain_id),
 				})
 			).result
-			const count = projects.length
-			setApprovedCount(count)
+
+			let rounds = storage.roundes
+			rounds.set(doc.on_chain_id.toString(), round)
+			storage.setRoundes(rounds)
 		} catch (error: any) {
-			console.log('error fetch project applicant', error)
+			console.log('error fetching on chain round', error)
+		}
+	}
+
+	const fetchTotalApprovedProjects = async () => {
+		const contracts = storage.getStellarContracts()
+
+		if (!contracts) return
+
+		try {
+			const res = await contracts.round_contract.get_approved_projects({
+				round_id: BigInt(doc.on_chain_id),
+			})
+			setTotalApprovedProjects(res.result.length)
+		} catch (error: any) {
+			console.log('error fetching total approved projects', error)
 		}
 	}
 
 	const fetchRoundApplication = async () => {
-		if (stellarPubKey) {
+		if (stellarPubKey && doc.allow_applications) {
 			try {
 				const contracts = storage.getStellarContracts()
 
 				if (!contracts) return
 
 				const res = await getRoundApplication(
-					{ round_id: doc.id as bigint, applicant: stellarPubKey },
+					{ round_id: BigInt(doc.on_chain_id), applicant: stellarPubKey },
 					contracts,
 				)
 				//@ts-ignore
@@ -98,13 +116,14 @@ const ApplicationRoundsItem = ({
 	const getSpecificTime = () => {
 		if (selectedRoundType === 'upcoming') {
 			if (
-				new Date().getTime() >= Number(doc.application_start_ms) &&
-				new Date().getTime() < Number(doc.application_end_ms)
+				new Date().getTime() >=
+					new Date(doc.application_start || '').getTime() &&
+				new Date().getTime() < new Date(doc.application_end || '').getTime()
 			) {
 				return `upcoming-open`
 			} else if (
-				new Date().getTime() >= Number(doc.application_end_ms) &&
-				new Date().getTime() < Number(doc.voting_start_ms)
+				new Date().getTime() >= new Date(doc.application_end || '').getTime() &&
+				new Date().getTime() < new Date(doc.voting_start).getTime()
 			) {
 				return `upcoming-closed`
 			} else if (doc.allow_applications) {
@@ -115,7 +134,7 @@ const ApplicationRoundsItem = ({
 		} else if (selectedRoundType === 'on-going') {
 			return `on-going`
 		} else {
-			if (doc.round_complete_ms != undefined) {
+			if (doc.round_complete != null) {
 				return `ended`
 			} else {
 				return `payout-pending`
@@ -131,7 +150,7 @@ const ApplicationRoundsItem = ({
 				if (!contracts) return
 
 				const params: HasVotedRoundParams = {
-					round_id: doc.id,
+					round_id: BigInt(doc.on_chain_id),
 					voter: stellarPubKey,
 				}
 				const hasVoted = await isHasVotedRound(params, contracts)
@@ -146,8 +165,9 @@ const ApplicationRoundsItem = ({
 
 	useEffect(() => {
 		fetchRoundApplication()
-		fetchApprovedCount()
 		checkIfUserHasVoted()
+		fetchOnChainRound()
+		fetchTotalApprovedProjects()
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [doc.id, connectedWallet, stellarPubKey])
 
@@ -264,7 +284,7 @@ const ApplicationRoundsItem = ({
 					<div className="flex items-center space-x-1">
 						<IconProject size={18} className="fill-grantpicks-black-400" />
 						<p className="text-sm font-normal text-grantpicks-black-950">
-							{approvedCount ? approvedCount : '--'} Projects
+							{totalApprovedProjects} Projects
 						</p>
 					</div>
 				)}
@@ -273,7 +293,7 @@ const ApplicationRoundsItem = ({
 						<IconClock size={18} className="fill-grantpicks-black-400" />
 						<p className="text-sm font-normal text-grantpicks-black-950">
 							Ends{` `}
-							{moment(new Date(Number(doc.voting_end_ms) as number)).fromNow()}
+							{moment(new Date(doc.voting_end)).fromNow()}
 						</p>
 					</div>
 				) : selectedRoundType === 'upcoming' ? (
@@ -282,10 +302,7 @@ const ApplicationRoundsItem = ({
 							<div className="flex items-center space-x-1">
 								<IconClock size={18} className="fill-grantpicks-black-400" />
 								<p className="text-sm font-normal text-grantpicks-black-950">
-									Open{' '}
-									{moment(
-										new Date(Number(doc.application_start_ms) as number),
-									).fromNow()}
+									Open {moment(new Date(doc.application_start || '')).fromNow()}
 								</p>
 							</div>
 						)}
@@ -293,10 +310,7 @@ const ApplicationRoundsItem = ({
 							<div className="flex items-center space-x-1">
 								<IconClock size={18} className="fill-grantpicks-black-400" />
 								<p className="text-sm font-normal text-grantpicks-black-950">
-									Closed{' '}
-									{moment(
-										new Date(Number(doc.application_end_ms) as number),
-									).fromNow()}
+									Closed {moment(new Date(doc.application_end || '')).fromNow()}
 								</p>
 							</div>
 						)}
@@ -304,17 +318,14 @@ const ApplicationRoundsItem = ({
 							<div className="flex items-center space-x-1">
 								<IconClock size={18} className="fill-grantpicks-black-400" />
 								<p className="text-sm font-normal text-grantpicks-black-950">
-									Voting{' '}
-									{moment(
-										new Date(Number(doc.voting_start_ms) as number),
-									).fromNow()}
+									Voting {moment(new Date(doc.voting_start)).fromNow()}
 								</p>
 							</div>
 						)}
 					</>
 				) : (
 					<p className="text-lg md:text-xl font-normal text-grantpicks-black-950">
-						{formatStroopToXlm(doc.expected_amount)}{' '}
+						{formatStroopToXlm(BigInt(doc.expected_amount))}{' '}
 						<span className="text-sm font-normal text-grantpicks-black-600">
 							{connectedWallet === 'near' ? 'NEAR' : 'XLM'}
 						</span>
@@ -337,7 +348,7 @@ const ApplicationRoundsItem = ({
 							setApplyProjectInitProps((prev) => ({
 								...prev,
 								isOpen: true,
-								round_id: doc.id,
+								round_id: BigInt(doc.on_chain_id),
 								roundData: doc,
 							}))
 						} else {
@@ -351,11 +362,11 @@ const ApplicationRoundsItem = ({
 					isDisabled={
 						getSpecificTime() === 'upcoming' ||
 						getSpecificTime() === 'upcoming-closed' ||
-						isUserApplied ||
+						(isUserApplied && getSpecificTime() == 'upcoming-open') ||
 						(selectedRoundType === 'on-going' && hasVoted)
 					}
 				>
-					{isUserApplied
+					{isUserApplied && getSpecificTime() === 'upcoming-open'
 						? `You're already a part of this round.`
 						: getSpecificTime() === 'on-going'
 							? hasVoted
@@ -407,22 +418,12 @@ const ApplicationRoundsItem = ({
 
 const ApplicationRounds = () => {
 	const { selectedRoundType, setSelectedRoundType } = useRoundStore()
-	const [roundsData, setRoundsData] = useState<IGetRoundsResponse[]>([])
-	const storage = useAppStorage()
+	const [roundsData, setRoundsData] = useState<GPRound[]>([])
+	const potlockApi = usePotlockService()
 	const { connectedWallet } = useWallet()
 
-	const onFetchRounds = async (key: {
-		url: string
-		skip: number
-		limit: number
-	}) => {
-		let contracts = storage.getStellarContracts()
-
-		if (!contracts) {
-			return
-		}
-
-		const res = await getRounds({ skip: key.skip, limit: key.limit }, contracts)
+	const onFetchRounds = async (key: { url: string; page: number }) => {
+		const res = await potlockApi.getRounds(key.page + 1)
 		return res
 	}
 
@@ -433,8 +434,7 @@ const ApplicationRounds = () => {
 		if (previousPageData && !previousPageData.length) return null
 		return {
 			url: `get-rounds`,
-			skip: pageIndex,
-			limit: LIMIT_SIZE,
+			page: pageIndex,
 		}
 	}
 	const { data, size, setSize, isValidating, isLoading, mutate } =
@@ -442,9 +442,7 @@ const ApplicationRounds = () => {
 			revalidateFirstPage: false,
 		})
 	const rounds = data
-		? ([] as IGetRoundsResponse[]).concat(
-				...(data as any as IGetRoundsResponse[]),
-			)
+		? ([] as GPRound[]).concat(...(data as any as GPRound[]))
 		: []
 	const hasMore = data ? data.length >= LIMIT_SIZE : false
 
@@ -453,17 +451,17 @@ const ApplicationRounds = () => {
 			let temp = [...rounds]
 			if (selectedRoundType === 'upcoming') {
 				temp = temp.filter(
-					(t) => new Date().getTime() < Number(t.voting_start_ms),
+					(t) => new Date().getTime() < new Date(t.voting_start).getTime(),
 				)
 			} else if (selectedRoundType === 'on-going') {
 				temp = temp.filter(
 					(t) =>
-						Number(t.voting_start_ms) <= new Date().getTime() &&
-						new Date().getTime() < Number(t.voting_end_ms),
+						new Date(t.voting_start).getTime() <= new Date().getTime() &&
+						new Date().getTime() < new Date(t.voting_end).getTime(),
 				)
 			} else if (selectedRoundType === 'ended') {
 				temp = temp.filter(
-					(t) => Number(t.voting_end_ms) <= new Date().getTime(),
+					(t) => new Date(t.voting_end).getTime() <= new Date().getTime(),
 				)
 			}
 			setRoundsData(temp)

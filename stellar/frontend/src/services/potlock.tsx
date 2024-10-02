@@ -1,3 +1,5 @@
+'use client'
+
 import axios, { AxiosInstance } from 'axios'
 import React from 'react'
 
@@ -9,9 +11,36 @@ export class PotlockService {
 		})
 	}
 
-	async getRounds(skip: number = 0, limit: number = 0) {
-    
-  }
+	async getRounds(page: number = 1) {
+		const result = await this._axios?.get(
+			`/rounds?sort=deployed_at&page=${page}`,
+		)
+		return result?.data.results
+	}
+
+	async getRound(roundId: number) {
+		const result = await this._axios?.get(`/round/${roundId}`)
+		return result?.data
+	}
+
+	async getApplications(roundId: number, page: number = 1) {
+		const result = await this._axios?.get(
+			`/rounds/${roundId}/applications?page=${page}`,
+		)
+		return result?.data.results
+	}
+
+	async getVotes(roundId: number, project_id: number, page: number = 1) {
+		const result = await this._axios?.get(
+			`/round/${roundId}/${project_id}/votes?page=${page}`,
+		)
+		return result?.data.results
+	}
+
+	async getProjectByOwner(owner: string) {
+		const result = await this._axios?.get(`/projects?owner=${owner}`)
+		return result?.data.results
+	}
 }
 
 export const PotlockServiceContext = React.createContext<PotlockService>(

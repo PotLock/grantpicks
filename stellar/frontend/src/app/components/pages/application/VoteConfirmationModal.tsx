@@ -4,11 +4,6 @@ import { BaseModalProps } from '@/types/dialog'
 import IconNear from '../../svgs/IconNear'
 import IconStellar from '../../svgs/IconStellar'
 import { useWallet } from '@/app/providers/WalletProvider'
-import {
-	IGetRoundApplicationsResponse,
-	IGetRoundsResponse,
-	Network,
-} from '@/types/on-chain'
 import useRoundStore from '@/stores/zustand/useRoundStore'
 import IconCube from '../../svgs/IconCube'
 import IconGroup from '../../svgs/IconGroup'
@@ -17,16 +12,14 @@ import moment from 'moment'
 import { formatStroopToXlm } from '@/utils/helper'
 import Button from '../../commons/Button'
 import { getPairsRound, getRoundApplications } from '@/services/on-chain/round'
-import { LIMIT_SIZE } from '@/constants/query'
-import CMDWallet from '@/lib/wallet'
-import Contracts from '@/lib/contracts'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
 import useAppStorage from '@/stores/zustand/useAppStorage'
+import { GPRound } from '@/models/round'
 
 interface VoteConfirmationModalProps extends BaseModalProps {
-	data?: IGetRoundsResponse
+	data?: GPRound
 }
 
 const VoteConfirmationModal = ({
@@ -48,7 +41,10 @@ const VoteConfirmationModal = ({
 				return
 			}
 
-			const newRes = await getPairsRound(data?.id as bigint, contracts)
+			const newRes = await getPairsRound(
+				BigInt(data?.on_chain_id || ''),
+				contracts,
+			)
 			const uniqueProjects = new Set()
 			newRes.map((pair) => {
 				uniqueProjects.add(pair.projects[0].toString())
@@ -103,16 +99,15 @@ const VoteConfirmationModal = ({
 						<IconClock size={18} className="fill-grantpicks-black-400" />
 						<p className="text-sm font-normal text-grantpicks-black-950">
 							Ends{` `}
-							{moment(
-								new Date(Number(data?.voting_end_ms) as number),
-							).fromNow()}
+							{moment(new Date(data?.voting_end || '')).fromNow()}
 						</p>
 					</div>
 				</div>
 				<div className="flex items-center mb-6 md:mb-8 lg:mb-10">
 					<div className="flex-1">
 						<p className="font-semibold text-lg md:text-xl text-grantpicks-black-950">
-							{formatStroopToXlm(data?.current_vault_balance || BigInt(0))} XLM
+							{formatStroopToXlm(BigInt(data?.current_vault_balance || '0'))}{' '}
+							XLM
 						</p>
 						<p className="font-semibold text-xs text-grantpicks-black-600">
 							AVAILABLE FUNDS
@@ -120,7 +115,7 @@ const VoteConfirmationModal = ({
 					</div>
 					<div className="flex-1">
 						<p className="font-semibold text-lg md:text-xl text-grantpicks-black-950">
-							{formatStroopToXlm(data?.expected_amount || BigInt(0))} XLM
+							{formatStroopToXlm(BigInt(data?.expected_amount || '0'))} XLM
 						</p>
 						<p className="font-semibold text-xs text-grantpicks-black-600">
 							EXPECTED FUNDS

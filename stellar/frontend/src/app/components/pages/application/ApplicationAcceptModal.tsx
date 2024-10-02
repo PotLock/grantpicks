@@ -1,17 +1,16 @@
 import { BaseModalProps } from '@/types/dialog'
-import {
-	IGetRoundApplicationsResponse,
-	IGetRoundsResponse,
-} from '@/types/on-chain'
+import { IGetRoundApplicationsResponse } from '@/types/on-chain'
 import React, { useState } from 'react'
 import Modal from '../../commons/Modal'
 import IconClose from '../../svgs/IconClose'
 import InputTextArea from '../../commons/InputTextArea'
 import Button from '../../commons/Button'
+import { GPRound } from '@/models/round'
+import { GPApplication } from '@/models/application'
 
 interface ApplicationAcceptModalProps extends BaseModalProps {
-	roundData: IGetRoundsResponse
-	applicationData: IGetRoundApplicationsResponse
+	roundData: GPRound
+	applicationData: GPApplication
 	mutate?: any
 	onConfirm: (note: string) => Promise<void>
 }
@@ -19,8 +18,6 @@ interface ApplicationAcceptModalProps extends BaseModalProps {
 const ApplicationAcceptModal = ({
 	isOpen,
 	onClose,
-	roundData,
-	applicationData,
 	onConfirm,
 }: ApplicationAcceptModalProps) => {
 	const [note, setNote] = useState<string>('')

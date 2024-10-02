@@ -23,19 +23,11 @@ const ResultItem = ({
 	const projectData = store.projects.get(data.project_id.toString())
 	let totalVoting = store.getTotalVoting()
 
-	const myVote = (Number(data.voting_count) / totalVoting) * 100
+	const myVote =
+		data.voting_count > 0 && totalVoting > 0
+			? (Number(data.voting_count) / totalVoting) * 100
+			: 0
 	let amountToDistribute = 0
-
-	if (roundData?.use_vault) {
-		amountToDistribute =
-			(Number(formatStroopToXlm(roundData?.vault_total_deposits || BigInt(0))) *
-				myVote) /
-			100
-	} else {
-		amountToDistribute =
-			Number(formatStroopToXlm(roundData?.expected_amount || BigInt(0))) /
-			(store.current_results.length || 0)
-	}
 
 	if (store.current_round_payouts.length > 0) {
 		const payout = store.current_round_payouts.find(
@@ -97,7 +89,12 @@ const ResultItem = ({
 			</div>
 			<div className="flex items-center w-[12%]">
 				<p className="text-xs md:text-sm font-semibold text-grantpicks-black-950 text-right mr-1">
-					{amountToDistribute.toFixed(2)}
+					{amountToDistribute > 0
+						? amountToDistribute.toFixed(2)
+						: store.current_round_payouts.length > 0
+							? '0.00'
+							: '-'}{' '}
+					XLM
 				</p>
 				<IconStellar size={14} className="fill-grantpicks-black-600" />
 			</div>

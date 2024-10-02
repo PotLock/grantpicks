@@ -13,6 +13,7 @@ import { IGetRoundsResponse } from './on-chain'
 import { Livepeer } from 'livepeer'
 import { RoundApplication } from 'round-client'
 import { Project } from 'project-registry-client'
+import { GPRound } from '@/models/round'
 
 export interface IWalletContext {
 	connectedWallet: 'near' | 'stellar' | null
@@ -36,7 +37,7 @@ export interface IModalContextProps {
 }
 
 export interface IVoteConfirmationModalContextProps extends IModalContextProps {
-	doc?: IGetRoundsResponse
+	doc?: GPRound
 }
 
 export interface IVideoPlayerModalProps extends IModalContextProps {
@@ -44,7 +45,7 @@ export interface IVideoPlayerModalProps extends IModalContextProps {
 }
 
 export interface ISuccessCreateRoundModalProps extends IModalContextProps {
-	createRoundRes: IGetRoundsResponse | undefined
+	createRoundRes: GPRound | undefined
 	txHash?: string
 }
 
@@ -59,20 +60,20 @@ export interface ISuccessUpdateRoundModalProps extends IModalContextProps {
 }
 
 export interface ISuccessFundRoundModalProps extends IModalContextProps {
-	doc: IGetRoundsResponse | undefined
+	doc: GPRound | undefined
 	txHash?: string
 	amount: string
 }
 
 export interface IApplyProjectToRoundModalProps extends IModalContextProps {
 	round_id: bigint | undefined
-	roundData: IGetRoundsResponse | undefined
+	roundData: GPRound | undefined
 }
 
 export interface ISuccessAppplyProjectToRoundModalProps
 	extends IModalContextProps {
 	applyProjectRes: RoundApplication | undefined
-	roundData?: IGetRoundsResponse
+	roundData?: GPRound
 	txHash?: string
 }
 

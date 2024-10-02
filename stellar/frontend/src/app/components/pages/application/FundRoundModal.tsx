@@ -4,21 +4,18 @@ import { BaseModalProps } from '@/types/dialog'
 import IconClose from '../../svgs/IconClose'
 import InputText from '../../commons/InputText'
 import IconStellar from '../../svgs/IconStellar'
-import { getPriceCrypto } from '@/services/common'
 import Button from '../../commons/Button'
 import { useModalContext } from '@/app/providers/ModalProvider'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
-import { IGetRoundsResponse, Network } from '@/types/on-chain'
 import { formatStroopToXlm, parseToStroop } from '@/utils/helper'
 import { depositFundRound } from '@/services/on-chain/round'
 import { useWallet } from '@/app/providers/WalletProvider'
-import CMDWallet from '@/lib/wallet'
-import Contracts from '@/lib/contracts'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import useAppStorage from '@/stores/zustand/useAppStorage'
+import { GPRound } from '@/models/round'
 
 interface FundROundModalProps extends BaseModalProps {
-	doc: IGetRoundsResponse
+	doc: GPRound
 	mutateRounds: any
 }
 
@@ -69,7 +66,7 @@ const FundRoundModal = ({
 
 			const tx = await depositFundRound(
 				{
-					round_id: doc.id,
+					round_id: BigInt(doc.on_chain_id),
 					caller: stellarPubKey,
 					amount: BigInt(parseToStroop(amount)),
 					memo: '',
@@ -123,12 +120,13 @@ const FundRoundModal = ({
 				</div>
 				<div className="p-4 bg-grantpicks-alpha-50/5 rounded-xl mb-4 md:mb-6">
 					<p className="text-sm font-normal text-grantpicks-black-950">
-						We’ve raised XLM {formatStroopToXlm(doc.current_vault_balance)} and
-						have reached{' '}
+						We’ve raised XLM{' '}
+						{formatStroopToXlm(BigInt(doc.current_vault_balance))} and have
+						reached{' '}
 						<span className="font-semibold text-grantpicks-green-800">
 							{(
 								(BigInt(doc.current_vault_balance) * BigInt(100)) /
-								doc.expected_amount
+								BigInt(doc.expected_amount)
 							).toString()}
 							% of our expected funds.
 						</span>

@@ -5,6 +5,9 @@ import React from 'react'
 import { useMyProject } from './MyProjectProvider'
 import { formatStroopToXlm } from '@/utils/helper'
 
+/*
+TODO: backend not provided enough information to implement this function
+*/
 const MyProjectHeader = () => {
 	const { projectData } = useMyProject()
 	return (

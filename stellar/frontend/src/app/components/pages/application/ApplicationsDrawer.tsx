@@ -10,15 +10,7 @@ import IconCheckCircle from '../../svgs/IconCheckCircle'
 import { useWallet } from '@/app/providers/WalletProvider'
 import useSWRInfinite from 'swr/infinite'
 import { LIMIT_SIZE } from '@/constants/query'
-import CMDWallet from '@/lib/wallet'
-import Contracts from '@/lib/contracts'
 import {
-	IGetRoundApplicationsResponse,
-	IGetRoundsResponse,
-	Network,
-} from '@/types/on-chain'
-import {
-	getRoundApplications,
 	ReviewApplicationParams,
 	reviewApplicationRound,
 } from '@/services/on-chain/round'
@@ -34,9 +26,13 @@ import ApplicationAcceptModal from './ApplicationAcceptModal'
 import ApplicationRejectModal from './ApplicationRejectModal'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import Image from 'next/image'
+import { GPRound } from '@/models/round'
+import { usePotlockService } from '@/services/potlock'
+import { GPApplication } from '@/models/application'
+import { RoundApplication } from 'round-client'
 
 interface ApplicationsDrawerProps extends IDrawerProps {
-	doc: IGetRoundsResponse
+	doc: GPRound
 }
 
 const ApplicationItem = ({
@@ -46,10 +42,10 @@ const ApplicationItem = ({
 	roundData,
 	mutate,
 }: {
-	type: 'Pending' | 'Approved' | 'Rejected' | 'Blacklisted'
+	type: string
 	index: number
-	item: IGetRoundApplicationsResponse
-	roundData: IGetRoundsResponse
+	item: GPApplication
+	roundData: GPRound
 	mutate: any
 }) => {
 	const { stellarPubKey, stellarKit } = useWallet()
@@ -57,6 +53,29 @@ const ApplicationItem = ({
 	const [openAcceptModal, setOpenAcceptModal] = useState<boolean>(false)
 	const [openRejectModal, setOpenRejectModal] = useState<boolean>(false)
 	const storage = useAppStorage()
+
+	const onFetchRoundApplications = async () => {
+		const contract = storage.getStellarContracts()
+
+		if (!contract) {
+			return
+		}
+
+		try {
+			const application = (
+				await contract.round_contract.get_application({
+					round_id: BigInt(roundData.on_chain_id),
+					applicant: item.applicant.id,
+				})
+			).result
+
+			let applications = storage.applications
+			applications.set(application.applicant_id, application)
+			storage.setApplications(applications)
+		} catch (error) {
+			console.log('error get application', error)
+		}
+	}
 
 	const onAcceptReject = async (type: 'accept' | 'reject', note: string) => {
 		try {
@@ -68,9 +87,9 @@ const ApplicationItem = ({
 			}
 
 			const params: ReviewApplicationParams = {
-				round_id: roundData.id,
+				round_id: BigInt(roundData.on_chain_id),
 				caller: stellarPubKey,
-				applicant: item.applicant_id,
+				applicant: item.applicant.id,
 				status: {
 					tag: type === 'accept' ? 'Approved' : 'Rejected',
 					values: void 0,
@@ -105,6 +124,11 @@ const ApplicationItem = ({
 		}
 	}
 
+	useEffect(() => {
+		onFetchRoundApplications()
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [item])
+
 	return (
 		<div className="bg-grantpicks-black-50 rounded-xl border border-grantpicks-black-200">
 			{type === 'Pending' ? (
@@ -112,10 +136,10 @@ const ApplicationItem = ({
 					<div className="flex items-center space-x-1 py-1">
 						<IconCalendar size={18} className="fill-grantpicks-black-400" />
 						<p className="text-sm font-normal text-grantpicks-black-950">
-							Applied {moment(new Date(Number(item.submited_ms))).fromNow()}
+							Applied {moment(new Date(item.submitted_at)).fromNow()}
 						</p>
 					</div>
-					{roundData.owner === stellarPubKey && (
+					{roundData.owner.id === stellarPubKey && (
 						<div className="flex items-center space-x-2">
 							<button
 								onClick={() => setOpenAcceptModal(true)}
@@ -162,37 +186,37 @@ const ApplicationItem = ({
 						</p>
 					</div>
 					<p className="text-sm font-normal text-grantpicks-black-950">
-						{moment(new Date(Number(item.submited_ms))).fromNow()}
+						{moment(new Date(item.submitted_at)).fromNow()}
 					</p>
 				</div>
 			)}
 			<div className="flex items-center space-x-3 px-3 md:px-4 py-2">
 				<Image
-					src={`https://www.tapback.co/api/avatar/${item.applicant_id}`}
+					src={`https://www.tapback.co/api/avatar/${item.applicant.id}`}
 					alt="applicant"
 					width={24}
 					height={24}
 				/>
 				<p>
 					<span className="text-base font-bold text-grantpicks-black-950 mr-1">
-						{prettyTruncate(item.applicant_id, 20, 'address')}
+						{prettyTruncate(item.applicant.id, 20, 'address')}
 					</span>
 				</p>
 			</div>
 			<div className=" px-3 md:px-4 py-2">
 				<p className="text-base font-normal text-grantpicks-black-600">
-					{item.applicant_note}
+					{item.message}
 				</p>
 			</div>
-			{item.review_note && (
+			{storage.applications.has(item.applicant.id) && (
 				<div className="px-3 md:px-4 pt-2 pb-4">
 					<div className="border border-grantpicks-black-200 rounded-xl p-3 bg-white">
 						<p className="text-sm font-semibold text-grantpicks-black-950">
 							admin@
-							{prettyTruncate(roundData.owner, 10, 'address') || 'Reviewer'}
+							{prettyTruncate(roundData.owner.id, 10, 'address') || 'Reviewer'}
 						</p>
 						<p className="text-sm font-normal text-grantpicks-black-600">
-							{item.review_note || ''}
+							{storage.applications.get(item.applicant.id)?.review_note || ''}
 						</p>
 					</div>
 				</div>
@@ -221,49 +245,35 @@ const ApplicationsDrawer = ({
 	doc,
 }: ApplicationsDrawerProps) => {
 	const [tab, setTab] = useState<TApplicationDrawerTab>('all')
-	const [roundAppsData, setRoundAppsData] = useState<
-		IGetRoundApplicationsResponse[]
-	>([])
+	const [roundAppsData, setRoundAppsData] = useState<GPApplication[]>([])
 	const containerScrollRef = useRef<HTMLDivElement>(null)
-	const storage = useAppStorage()
+	const potlockService = usePotlockService()
 
 	const onFetchRoundApplications = async (key: {
 		url: string
-		skip: number
-		limit: number
+		page: number
 	}) => {
-		let contracts = storage.getStellarContracts()
-
-		if (!contracts) {
-			return
-		}
-
-		const res = await getRoundApplications(
-			{ round_id: BigInt(doc.id), skip: key.skip, limit: key.limit },
-			contracts,
-		)
-		return res
+		const res = await potlockService.getApplications(doc.id, key.page + 1)
+		return res.map((item: GPApplication) => {
+			item.status = item.status.replaceAll("['", '').replaceAll("']", '')
+			return item
+		})
 	}
 
-	const getKey = (
-		pageIndex: number,
-		previousPageData: IGetRoundApplicationsResponse[],
-	) => {
+	const getKey = (pageIndex: number, previousPageData: GPApplication[]) => {
 		if (previousPageData && !previousPageData.length) return null
 		return {
 			url: `get-round-applications-${doc.id}`,
-			skip: pageIndex,
-			limit: LIMIT_SIZE,
+			page: pageIndex,
 		}
 	}
 	const { data, size, setSize, isValidating, isLoading, mutate } =
 		useSWRInfinite(getKey, async (key) => await onFetchRoundApplications(key), {
 			revalidateFirstPage: false,
 		})
+
 	const applications = data
-		? ([] as IGetRoundApplicationsResponse[]).concat(
-				...(data as any as IGetRoundApplicationsResponse[]),
-			)
+		? ([] as GPApplication[]).concat(...(data as any as GPApplication[]))
 		: []
 	const hasMore = data ? data.length >= LIMIT_SIZE : false
 
@@ -273,11 +283,11 @@ const ApplicationsDrawer = ({
 			if (tab === 'all') {
 				temp = temp
 			} else if (tab === 'approved') {
-				temp = temp.filter((t) => t.status.tag === 'Approved')
+				temp = temp.filter((t) => t.status === 'Approved')
 			} else if (tab === 'pending') {
-				temp = temp.filter((t) => t.status.tag === 'Pending')
+				temp = temp.filter((t) => t.status === 'Pending')
 			} else if (tab === 'rejected') {
-				temp = temp.filter((t) => t.status.tag === 'Rejected')
+				temp = temp.filter((t) => t.status === 'Rejected')
 			}
 			setRoundAppsData(temp)
 		}
@@ -348,7 +358,7 @@ const ApplicationsDrawer = ({
 							<span className="text-sm font-bold text-grantpicks-black-950 mr-1">
 								{roundAppsData.length}
 							</span>
-							{tab === 'all' ? 'applications' : 'pending'}
+							{tab === 'all' ? 'applications' : tab}
 						</p>
 					</div>
 					<InfiniteScroll
@@ -368,7 +378,7 @@ const ApplicationsDrawer = ({
 								roundAppsData?.map((item, idx) => (
 									<ApplicationItem
 										key={idx}
-										type={item.status.tag}
+										type={item.status}
 										index={idx}
 										item={item}
 										roundData={doc}
@@ -377,7 +387,7 @@ const ApplicationsDrawer = ({
 								))}
 							{tab === 'pending' &&
 								roundAppsData
-									?.filter((app) => app.status.tag === 'Pending')
+									?.filter((app) => app.status == 'Pending')
 									.map((item, idx) => (
 										<ApplicationItem
 											key={idx}
@@ -390,7 +400,7 @@ const ApplicationsDrawer = ({
 									))}
 							{tab === 'approved' &&
 								roundAppsData
-									?.filter((app) => app.status.tag === 'Approved')
+									?.filter((app) => app.status == 'Approved')
 									.map((item, idx) => (
 										<ApplicationItem
 											key={idx}
@@ -403,7 +413,7 @@ const ApplicationsDrawer = ({
 									))}
 							{tab === 'rejected' &&
 								roundAppsData
-									?.filter((app) => app.status.tag === 'Rejected')
+									?.filter((app) => app.status == 'Rejected')
 									.map((item, idx) => (
 										<ApplicationItem
 											key={idx}

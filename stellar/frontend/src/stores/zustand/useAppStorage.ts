@@ -9,6 +9,7 @@ import {
 	PayoutInput,
 	PayoutsChallenge,
 	ProjectVotingResult,
+	RoundApplication,
 	RoundDetail,
 } from 'round-client'
 import { create } from 'zustand'
@@ -18,6 +19,7 @@ interface AppRepo {
 	my_address: string | null
 	projects: Map<string, Project>
 	roundes: Map<string, RoundDetail>
+	applications: Map<string, RoundApplication>
 	current_payout_inputs: Map<string, number>
 	current_manager_weight: number
 	current_pairwise_weight: number
@@ -54,6 +56,7 @@ interface AppRepo {
 	getPayoutTableItems: (project_id: string) => PayoutTableItem
 	setPayoutDone: (isPayoutDone: boolean) => void
 	clear: () => void
+	setApplications: (applications: Map<string, RoundApplication>) => void
 }
 
 const useAppStorage = create<AppRepo>((set, get) => ({
@@ -102,6 +105,7 @@ const useAppStorage = create<AppRepo>((set, get) => ({
 	},
 	clear: () =>
 		set(() => ({
+			applications: new Map(),
 			projects: new Map(),
 			current_round: null,
 			current_project: null,
@@ -118,28 +122,20 @@ const useAppStorage = create<AppRepo>((set, get) => ({
 	setCurrentResults: (results: ProjectVotingResult[]) =>
 		set(() => ({ current_results: results })),
 	getAllocation: (project_id: string) => {
-		const project = get().current_results.find(
-			(result) => result.project_id.toString() === project_id,
-		)
-		const round = get().current_round
-		if (project && round) {
-			const totalVoting = get().current_results.reduce(
-				(acc, result) => acc + Number(result.voting_count.toString()),
-				0,
-			)
-			const myVote = (Number(project.voting_count) / totalVoting) * 100
+		const project = get().projects.get(project_id)
+
+		if (project) {
 			let amountToDistribute = 0
 
-			if (round.use_vault) {
-				amountToDistribute =
-					(Number(formatStroopToXlm(round.vault_total_deposits || BigInt(0))) *
-						myVote) /
-					100
+			const payout = get().current_round_payouts.find(
+				(p) => p.recipient_id === project?.owner,
+			)
+			if (payout) {
+				amountToDistribute = Number(formatStroopToXlm(payout.amount))
 			} else {
-				amountToDistribute =
-					Number(formatStroopToXlm(round.expected_amount || BigInt(0))) /
-					(get().current_results.length || 0)
+				amountToDistribute = 0
 			}
+
 			return amountToDistribute
 		}
 
@@ -251,6 +247,9 @@ const useAppStorage = create<AppRepo>((set, get) => ({
 	},
 	isPayoutDone: false,
 	setPayoutDone: (isPayoutDone: boolean) => set(() => ({ isPayoutDone })),
+	applications: new Map(),
+	setApplications: (applications: Map<string, RoundApplication>) =>
+		set(() => ({ applications: applications })),
 }))
 
 export default useAppStorage

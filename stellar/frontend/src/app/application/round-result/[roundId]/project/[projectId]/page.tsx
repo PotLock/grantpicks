@@ -9,12 +9,15 @@ import IconDollar from '@/app/components/svgs/IconDollar'
 import IconProject from '@/app/components/svgs/IconProject'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import { useWallet } from '@/app/providers/WalletProvider'
+import { getArithmeticIndex } from '@/lib/pair'
+import { usePotlockService } from '@/services/potlock'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import clsx from 'clsx'
 import { useParams, useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+import { PickResult } from 'round-client'
 
 const RoundResultProjectDetailPage = () => {
 	const router = useRouter()
@@ -23,7 +26,9 @@ const RoundResultProjectDetailPage = () => {
 	const params = useParams<{ roundId: string; projectId: string }>()
 	const { stellarPubKey, stellarKit } = useWallet()
 	const [showFlagModal, setShowFlagModal] = useState(false)
+	const [numberOfProjects, setNumberOfProjects] = useState(0)
 	const storage = useAppStorage()
+	const potlockService = usePotlockService()
 
 	const fetchVotingResultRound = async () => {
 		if (params.roundId) {
@@ -70,6 +75,8 @@ const RoundResultProjectDetailPage = () => {
 							}
 						}
 					})
+
+					setNumberOfProjects(votingResults.length)
 				}
 			}
 		}
@@ -150,10 +157,75 @@ const RoundResultProjectDetailPage = () => {
 		}
 	}
 
+	const getDetailPickResult = (pick: PickResult) => {
+		const numberOfProjects = storage.current_results.length
+		const pair = getArithmeticIndex(numberOfProjects, pick.pair_id)
+		const projects = pair.map((index) => {
+			try {
+				const project_id = storage.current_results[index].project_id.toString()
+				const project = storage.projects.get(project_id)
+
+				return project
+			} catch (e) {
+				return null
+			}
+		})
+
+		return {
+			pair,
+			projects,
+			selected: pick.project_id,
+		}
+	}
+
+	/*
+  TODO: backend not provided enough information to implement this function
+  */
+	const fetchVotesRound = async () => {
+		if (params.roundId && params.projectId) {
+			const contracts = storage.getStellarContracts()
+			if (!contracts) {
+				return
+			}
+
+			const roundId = params.roundId || ''
+			const projectId = params.projectId || ''
+			let votingResults = await potlockService.getVotes(
+				Number(roundId),
+				Number(projectId),
+			)
+
+			const detailVotes = votingResults.map(async (vote: any) => {
+				const voter = vote.voter.id || ''
+				const onChainVote = (
+					await contracts.round_contract.get_my_vote_for_round({
+						round_id: BigInt(roundId),
+						voter: voter,
+					})
+				).result
+
+				const detailedPicks = onChainVote.picks.map((pick: PickResult) => {
+					return getDetailPickResult(pick)
+				})
+
+				console.log('detailedPicks', detailedPicks)
+
+				return {
+					voter,
+					picks: await Promise.all(detailedPicks),
+				}
+			})
+
+			const votes = await Promise.all(detailVotes)
+
+			console.log('votes', votes)
+		}
+	}
+
 	const initPage = async () => {
 		global.openPageLoading()
-		await fetchVotingResultRound()
-		await fetchRoundInfo()
+		await Promise.all([fetchVotingResultRound(), fetchRoundInfo()])
+		// await fetchVotesRound()
 		global.dismissPageLoading()
 	}
 

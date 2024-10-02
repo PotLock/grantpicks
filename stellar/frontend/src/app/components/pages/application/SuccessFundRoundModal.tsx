@@ -3,15 +3,15 @@ import { BaseModalProps } from '@/types/dialog'
 import Modal from '@/app/components/commons/Modal'
 import IconCheck from '@/app/components/svgs/IconCheck'
 import IconClose from '@/app/components/svgs/IconClose'
-import { IGetRoundsResponse } from '@/types/on-chain'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import { prettyTruncate } from '@/utils/helper'
 import Link from 'next/link'
 import IconExternalLink from '../../svgs/IconExternalLink'
+import { GPRound } from '@/models/round'
 
 interface SuccessFundRoundModalProps extends BaseModalProps {
 	amount: string
-	doc?: IGetRoundsResponse
+	doc?: GPRound
 	txHash?: string
 }
 

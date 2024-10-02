@@ -14,9 +14,10 @@ import RoundDetailDrawer from '../application/RoundDetailDrawer'
 import { useModalContext } from '@/app/providers/ModalProvider'
 import FundRoundModal from '../application/FundRoundModal'
 import ApplicationsDrawer from '../application/ApplicationsDrawer'
+import { GPRound } from '@/models/round'
 
 interface SuccessCreateRoundModalProps extends BaseModalProps {
-	createRoundRes?: IGetRoundsResponse
+	createRoundRes?: GPRound
 	txHash?: string
 }
 
@@ -59,13 +60,11 @@ const SuccessCreateRoundModal = ({
 							<IconClock size={18} className="fill-grantpicks-black-600" />
 							<p className="text-sm font-normal text-grantpicks-black-600">
 								Starting{' '}
-								{moment(
-									Number(createRoundRes?.voting_start_ms) as number,
-								).format('l')}{' '}
-								and Ending{' '}
-								{moment(Number(createRoundRes?.voting_end_ms) as number).format(
+								{moment(new Date(createRoundRes?.voting_start || '')).format(
 									'l',
-								)}
+								)}{' '}
+								and Ending{' '}
+								{moment(new Date(createRoundRes?.voting_end || '')).format('l')}
 							</p>
 						</div>
 						<Button

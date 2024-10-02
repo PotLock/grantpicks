@@ -295,15 +295,17 @@ const RoundResultPage = () => {
 	}
 
 	const initPage = async () => {
-		global.openPageLoading()
-		storage.clear()
-		storage.setMyAddress(stellarPubKey)
-		await Promise.all([
-			fetchRoundInfo(),
-			fetchVotingResultRound(),
-			fetchPayoutChallenge(),
-		])
-		global.dismissPageLoading()
+		if (params.roundId) {
+			global.openPageLoading()
+			storage.clear()
+			storage.setMyAddress(stellarPubKey)
+			await Promise.all([
+				fetchRoundInfo(),
+				fetchVotingResultRound(),
+				fetchPayoutChallenge(),
+			])
+			global.dismissPageLoading()
+		}
 	}
 
 	const roundData = storage.current_round
@@ -549,7 +551,7 @@ const RoundResultPage = () => {
 						<ResultItem key={index} index={index} data={voted} />
 					))}
 				</div>
-				{storage.isAdminRound && storage.current_round?.use_vault && (
+				{storage.isAdminRound && (
 					<div className="pt-4 flex items-center w-full justify-between">
 						{!storage.isPayoutDone && (
 							<div
@@ -601,7 +603,7 @@ const RoundResultPage = () => {
 							</Button>
 						)}
 
-						{(storage.isPayoutDone || !storage.current_round?.use_vault) &&
+						{storage.isPayoutDone &&
 							!storage.current_round?.round_complete_ms && (
 								<>
 									{canRedistribute && (

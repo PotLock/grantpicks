@@ -1,7 +1,5 @@
 import React from 'react'
 import { BaseModalProps } from '@/types/dialog'
-import { IGetRoundsResponse } from '@/types/on-chain'
-import moment from 'moment'
 import { useRouter } from 'next/navigation'
 import { prettyTruncate } from '@/utils/helper'
 import Link from 'next/link'
@@ -11,10 +9,11 @@ import Button from '@/app/components/commons/Button'
 import IconEye from '@/app/components/svgs/IconEye'
 import IconExternalLink from '@/app/components/svgs/IconExternalLink'
 import { RoundApplication } from 'round-client'
+import { GPRound } from '@/models/round'
 
 interface SuccessApplyProjectModalProps extends BaseModalProps {
 	applyProjectRes?: RoundApplication
-	roundData?: IGetRoundsResponse
+	roundData?: GPRound
 	txHash?: string
 }
 
@@ -49,7 +48,7 @@ const SuccessApplyProjectModal = ({
 						{roundData?.name}
 					</p>
 					<p className="text-xs font-normal text-grantpicks-black-600 text-center mb-4">
-						{roundData?.owner}
+						{roundData?.owner.id}
 					</p>
 					<p className="text-sm font-normal text-grantpicks-black-600 text-center mb-4">
 						{roundData?.description}

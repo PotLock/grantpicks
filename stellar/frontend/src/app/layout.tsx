@@ -4,10 +4,8 @@ import Head from 'next/head' // Import Head
 import './globals.css'
 import 'react-datepicker/dist/react-datepicker.css'
 import '@near-wallet-selector/modal-ui/styles.css'
-import WalletProvider from './providers/WalletProvider'
-import ModalProvider from './providers/ModalProvider'
 import { Toaster } from 'react-hot-toast'
-import GlobalProvider from './providers/GlobalProvider'
+import Providers from './providers'
 
 const titiliumWeb = Titillium_Web({
 	subsets: ['latin'],
@@ -17,7 +15,8 @@ const titiliumWeb = Titillium_Web({
 })
 export const metadata: Metadata = {
 	title: 'GrantPicks',
-	description: 'Grants made fun! QUICKLY PICK YOUR FAVORITE PROJECTS, GET THEM FUNDED, AND WIN POINTS!',
+	description:
+		'Grants made fun! QUICKLY PICK YOUR FAVORITE PROJECTS, GET THEM FUNDED, AND WIN POINTS!',
 }
 
 export default function RootLayout({
@@ -31,22 +30,27 @@ export default function RootLayout({
 				<title>{String(metadata.title)}</title>
 				<meta name="description" content={String(metadata.description)} />
 				<meta property="og:title" content={String(metadata.title)} />
-				<meta property="og:description" content={String(metadata.description)} />
-				<meta property="og:image" content="https://grantpicks.com/assets/images/GrantPicksMeta.png" />
+				<meta
+					property="og:description"
+					content={String(metadata.description)}
+				/>
+				<meta
+					property="og:image"
+					content="https://grantpicks.com/assets/images/GrantPicksMeta.png"
+				/>
 				<meta property="og:url" content="https://grantpicks.com" />
 				<meta property="og:type" content="website" />
 				<meta name="twitter:card" content="summary_large_image" />
-				<meta name="twitter:image" content="https://grantpicks.com/assets/images/GrantPicksMeta.png" />
+				<meta
+					name="twitter:image"
+					content="https://grantpicks.com/assets/images/GrantPicksMeta.png"
+				/>
 			</Head>
 			<body className={titiliumWeb.className}>
-				<GlobalProvider>
-					<WalletProvider>
-						<ModalProvider>
-							{children}
-							<Toaster />
-						</ModalProvider>
-					</WalletProvider>
-				</GlobalProvider>
+				<Providers>
+					{children}
+					<Toaster />
+				</Providers>
 			</body>
 		</html>
 	)

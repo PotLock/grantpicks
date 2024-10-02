@@ -9,6 +9,7 @@ import { useModalContext } from '@/app/providers/ModalProvider'
 import { useWallet } from '@/app/providers/WalletProvider'
 import Contracts from '@/lib/contracts'
 import CMDWallet from '@/lib/wallet'
+import { GPRound } from '@/models/round'
 import { getProjectApplicant } from '@/services/on-chain/project-registry'
 import {
 	applyProjectToRound,
@@ -25,7 +26,7 @@ import React, { useEffect, useState } from 'react'
 
 interface ApplyProjectToRoundModalProps extends BaseModalProps {
 	round_id?: bigint
-	roundData?: IGetRoundsResponse
+	roundData?: GPRound
 }
 
 const ApplyProjectModal = ({
@@ -74,15 +75,11 @@ const ApplyProjectModal = ({
 			const applyParams: ApplyProjectToRoundParams = {
 				round_id: round_id as bigint,
 				caller: stellarPubKey,
-				applicant: stellarPubKey,
 				note: applyNote,
-				review_note: '',
 			}
-			const txApplyProject = await applyProjectToRound(
-				applyParams,
-				true,
-				contracts,
-			)
+
+			const txApplyProject = await applyProjectToRound(applyParams, contracts)
+
 			const txHashApplyProject = await contracts.signAndSendTx(
 				stellarKit as StellarWalletsKit,
 				txApplyProject.toXDR(),

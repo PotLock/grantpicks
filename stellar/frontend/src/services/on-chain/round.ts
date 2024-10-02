@@ -5,6 +5,7 @@ import {
 } from '@/types/on-chain'
 import {
 	AssembledTransaction,
+	Option,
 	u128,
 	u32,
 	u64,
@@ -138,9 +139,7 @@ export interface DepositFundRoundParams {
 export interface ApplyProjectToRoundParams {
 	round_id: u128
 	caller: string
-	applicant?: string
 	note?: string
-	review_note?: string
 }
 
 export interface ChallengePayoutParams {
@@ -346,15 +345,14 @@ export const depositFundRound = async (
 
 export const applyProjectToRound = async (
 	params: ApplyProjectToRoundParams,
-	is_owner_round: boolean,
 	contract: Contracts,
 ) => {
 	let res = await contract.round_contract.apply_to_round({
 		round_id: params.round_id,
 		caller: params.caller,
-		applicant: is_owner_round ? undefined : params.applicant,
+		applicant: undefined as Option<string>,
 		note: params.note,
-		review_note: params.review_note,
+		review_note: undefined as Option<string>,
 	})
 	return res
 }

@@ -115,13 +115,10 @@ export const submitTx = async ({
 		}
 
 		getTx = await server.getTransaction(sendResponse.hash)
-
 		while (sendResponse.status == 'PENDING' && getTx.status == 'NOT_FOUND') {
 			getTx = await server.getTransaction(sendResponse.hash)
 			await sleep(200)
 		}
-
-		// TODO: Handle other sendResponse.status
 
 		return sendResponse.hash
 	} else if (server instanceof Horizon.Server) {

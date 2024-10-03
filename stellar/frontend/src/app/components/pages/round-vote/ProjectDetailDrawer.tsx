@@ -9,6 +9,7 @@ import Button from '../../commons/Button'
 import IconArrowOutward from '../../svgs/IconArrowOutward'
 import Link from 'next/link'
 import { Project } from 'project-registry-client'
+import Image from 'next/image'
 
 interface ProjectDetailDrawerProps extends IDrawerProps {
 	projectData?: Project
@@ -47,7 +48,13 @@ const ProjectDetailDrawer = ({
 		<Drawer onClose={onClose} isOpen={isOpen}>
 			<div className="bg-white flex flex-col w-full h-full overflow-y-auto text-grantpicks-black-950">
 				<div className="bg-grantpicks-black-50 flex flex-col items-center justify-center pt-10 md:pt-12 px-3 md:px-5 pb-6">
-					<div className="w-14 h-14 rounded-full bg-grantpicks-black-400 mb-2 md:mb-3" />
+					<Image
+						src="/assets/images/ava-1.png"
+						alt=""
+						className="rounded-full object-fill mb-2 md:mb-3"
+						width={56}
+						height={56}
+					/>
 					<p className="text-[25px] font-semibold text-center">
 						{projectData?.name}
 					</p>
@@ -129,7 +136,12 @@ const ProjectDetailDrawer = ({
 						<div className="space-y-3 md:space-y-4">
 							{projectData?.admins.map((admin, index) => (
 								<div className="flex items-center space-x-2" key={index}>
-									<div className="rounded-full bg-grantpicks-black-400" />
+									<Image
+										src={`https://www.tapback.co/api/avatar/${admin}`}
+										alt="admin"
+										width={24}
+										height={24}
+									/>
 									<div>
 										<p className="text-sm md:text-base font-bold">
 											{prettyTruncate(admin, 20, 'address')}

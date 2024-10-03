@@ -13,6 +13,7 @@ import IconCopy from '../../svgs/IconCopy'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
 import IconLogout from '../../svgs/IconLogout'
+import Image from 'next/image'
 
 const UserMenu = ({
 	onShowChooseWallet,
@@ -33,7 +34,16 @@ const UserMenu = ({
 			<div className="p-4 rounded-t-2xl md:rounded-2xl bg-white shadow-xl border border-grantpicks-black-200 min-w-[320px]">
 				<div className="flex items-center justify-between mb-4">
 					<div className="flex items-center space-x-2">
-						<div className="bg-grantpicks-black-200 rounded-full w-10 h-10" />
+						<Image
+							src={`https://www.tapback.co/api/avatar/${
+								connectedWallet === 'near'
+									? nearAccounts[0]?.accountId
+									: stellarPubKey
+							}`}
+							alt="image"
+							width={40}
+							height={40}
+						/>
 						<div>
 							<div className="flex items-center space-x-2">
 								<p className="text-sm font-semibold text-grantpicks-black-950">

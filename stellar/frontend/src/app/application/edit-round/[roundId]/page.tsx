@@ -71,6 +71,7 @@ import {
 } from '@/constants/regex'
 import { subDays } from 'date-fns'
 import useAppStorage from '@/stores/zustand/useAppStorage'
+import Image from 'next/image'
 
 const EditRoundPage = () => {
 	const router = useRouter()
@@ -1021,7 +1022,13 @@ const EditRoundPage = () => {
 									className="bg-grantpicks-alpha-50/5 p-1 rounded-full flex items-center justify-between"
 								>
 									<div className="flex items-center space-x-2">
-										<div className="bg-grantpicks-black-400 rounded-full w-6 h-6" />
+										<Image
+											src="/assets/images/ava-1.png"
+											alt=""
+											className="rounded-full object-fill"
+											width={24}
+											height={24}
+										/>
 										<p className="text-sm font-semibold text-grantpicks-black-950">
 											{selected.name}
 										</p>
@@ -1077,7 +1084,12 @@ const EditRoundPage = () => {
 									className="bg-grantpicks-alpha-50/5 p-1 rounded-full flex items-center justify-between"
 								>
 									<div className="flex items-center space-x-2">
-										<div className="bg-grantpicks-black-400 rounded-full w-6 h-6" />
+										<Image
+											src={`https://www.tapback.co/api/avatar/${selected}`}
+											alt="admin"
+											width={24}
+											height={24}
+										/>
 										<p className="text-sm font-semibold text-grantpicks-black-950">
 											{prettyTruncate(selected, 10, 'address')}
 										</p>

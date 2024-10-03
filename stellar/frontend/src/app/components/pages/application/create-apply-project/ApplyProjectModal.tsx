@@ -171,7 +171,12 @@ const ApplyProjectModal = ({
 					) : (
 						<>
 							<div className="flex items-center space-x-2 mt-6">
-								<div className="bg-grantpicks-black-400 rounded-full w-10 h-10" />
+								<Image
+									src={`https://www.tapback.co/api/avatar/${projectData.owner}`}
+									alt="owner"
+									width={40}
+									height={40}
+								/>
 								<div>
 									<p className="text-sm font-bold text-grantpicks-black-950">
 										{prettyTruncate(projectData.owner, 18, 'address')}

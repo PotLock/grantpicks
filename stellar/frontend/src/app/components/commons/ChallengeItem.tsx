@@ -110,6 +110,12 @@ const ChallengeItem = ({
 			<div className="flex items-center justify-between space-x-2 mb-2 w-full py-2">
 				<div className="flex justify-center">
 					<div className="bg-grantpicks-black-200 rounded-full w-10 h-10" />
+					<Image
+						src={`https://www.tapback.co/api/avatar/${challenge.challenger_id}`}
+						alt="challenger"
+						width={40}
+						height={40}
+					/>
 				</div>
 				<p className="text-sm font-semibold">
 					{prettyTruncate(challenge.challenger_id, 10, 'address')}

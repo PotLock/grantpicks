@@ -56,6 +56,7 @@ import {
 	TWITTER_USERNAME_REGEX,
 } from '@/constants/regex'
 import useAppStorage from '@/stores/zustand/useAppStorage'
+import Image from 'next/image'
 import { usePotlockService } from '@/services/potlock'
 
 const CreateRoundPage = () => {
@@ -943,7 +944,7 @@ const CreateRoundPage = () => {
 
 					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
 						<div className="flex items-center justify-between pb-4 border-b border-black/10">
-							<div className="flex items-center space-x-2 z-50">
+							<div className="flex items-center space-x-2 z-10">
 								<p className="text-base font-semibold">Require Compliance</p>
 								<a
 									data-tooltip-id="require_compliance_tooltip"
@@ -1065,7 +1066,7 @@ const CreateRoundPage = () => {
 
 					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
 						<div className="flex items-center justify-between pb-4 border-b border-black/10">
-							<div className="flex items-center space-x-2 z-50">
+							<div className="flex items-center space-x-2 z-10">
 								<p className="text-base font-semibold">
 									Remaining Funds Redistribution
 								</p>
@@ -1147,7 +1148,13 @@ const CreateRoundPage = () => {
 									className="bg-grantpicks-alpha-50/5 p-1 rounded-full flex items-center justify-between"
 								>
 									<div className="flex items-center space-x-2">
-										<div className="bg-grantpicks-black-400 rounded-full w-6 h-6" />
+										<Image
+											src="/assets/images/ava-1.png"
+											alt=""
+											className="rounded-full object-fill"
+											width={24}
+											height={24}
+										/>
 										<p className="text-sm font-semibold text-grantpicks-black-950">
 											{prettyTruncate(selected.name, 15, 'address')}
 										</p>
@@ -1204,7 +1211,12 @@ const CreateRoundPage = () => {
 									className="bg-grantpicks-alpha-50/5 p-1 rounded-full flex items-center justify-between"
 								>
 									<div className="flex items-center space-x-2">
-										<div className="bg-grantpicks-black-400 rounded-full w-6 h-6" />
+										<Image
+											src={`https://www.tapback.co/api/avatar/${selected}`}
+											alt="admin"
+											width={24}
+											height={24}
+										/>
 										<p className="text-sm font-semibold text-grantpicks-black-950">
 											{prettyTruncate(selected, 10, 'address')}
 										</p>

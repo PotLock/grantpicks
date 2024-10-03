@@ -22,6 +22,7 @@ import toast from 'react-hot-toast'
 import { useMyProject } from './MyProjectProvider'
 import { StrKey } from 'round-client'
 import useAppStorage from '@/stores/zustand/useAppStorage'
+import Image from 'next/image'
 
 const MyProjectTeam = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()
@@ -183,7 +184,13 @@ const MyProjectTeam = () => {
 									setMembers((prev) => prev.filter((p) => p !== member))
 								}}
 							/>
-							<div className="bg-grantpicks-black-400 w-16 h-16 mb-2 rounded-full" />
+							<Image
+								src={`https://www.tapback.co/api/avatar/${member}`}
+								alt="member"
+								width={64}
+								height={64}
+								className="mb-2"
+							/>
 							<p className="text-base font-normal text-grantpicks-black-950">
 								{prettyTruncate(member, 15, 'address')}
 							</p>

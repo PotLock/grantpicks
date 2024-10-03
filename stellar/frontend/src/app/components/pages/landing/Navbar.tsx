@@ -61,7 +61,7 @@ const Navbar = () => {
 				)}
 				<button
 					onClick={() => {
-						router.push('/application')
+						router.push('/')
 					}}
 					className="flex items-center gap-x-[2px] px-[10px]"
 				>
@@ -99,8 +99,9 @@ const Navbar = () => {
 				onClick={() => {
 					router.push('/application')
 				}}
+				isDisabled
 			>
-				Launch App
+				Coming Soon
 			</Button>
 		</div>
 	)

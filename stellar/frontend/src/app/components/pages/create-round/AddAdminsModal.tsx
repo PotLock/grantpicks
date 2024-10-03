@@ -11,6 +11,7 @@ import { CreateRoundData } from '@/types/form'
 import { StrKey } from 'round-client'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
+import Image from 'next/image'
 
 interface AddAdminsModalProps extends BaseModalProps {
 	selectedAdmins: string[]
@@ -125,7 +126,12 @@ const AddAdminsModal = ({
 								className="py-2 flex items-center justify-between"
 							>
 								<div className="flex items-center space-x-2">
-									<div className="rounded-full bg-grantpicks-black-400 w-6 h-6" />
+									<Image
+										src={`https://www.tapback.co/api/avatar/${admin}`}
+										alt="admin"
+										width={24}
+										height={24}
+									/>
 									<p className="text-base font-normal text-grantpicks-black-950">
 										{prettyTruncate(admin, 18, 'address')}
 									</p>

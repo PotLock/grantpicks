@@ -24,6 +24,7 @@ import IconTwitter from '../../svgs/IconTwitter'
 import IconEmail from '../../svgs/IconEmail'
 import Link from 'next/link'
 import useAppStorage from '@/stores/zustand/useAppStorage'
+import Image from 'next/image'
 import { GPRound } from '@/models/round'
 
 interface RoundDetailDrawerProps extends IDrawerProps {
@@ -294,7 +295,12 @@ const RoundDetailDrawer = ({
 							<div className="grid grid-cols-2 gap-4 pt-3">
 								{admins?.map((adminKey, idx) => (
 									<div key={idx} className="flex items-center space-x-2">
-										<div className="bg-grantpicks-black-600 rounded-full w-10 h-10" />
+										<Image
+											src={`https://www.tapback.co/api/avatar/${adminKey}`}
+											alt="admin"
+											width={40}
+											height={40}
+										/>
 										<div>
 											<p className="text-base font-bold text-grantpicks-black-950">
 												{prettyTruncate(adminKey, 8, 'address')}

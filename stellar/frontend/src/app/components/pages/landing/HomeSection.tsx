@@ -50,8 +50,9 @@ const HomeSection = () => {
 						onClick={() => {
 							router.push('/application')
 						}}
+						isDisabled
 					>
-						Launch App
+						Coming Soon
 					</Button>
 					<Link
 						href={'https://docs.potlock.io/'}

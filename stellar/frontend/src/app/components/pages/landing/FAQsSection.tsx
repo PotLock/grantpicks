@@ -55,9 +55,12 @@ const FAQsSection = () => {
 			<div className="w-full space-y-4 z-10">
 				{faqs.map((faq, index) => (
 					<div key={index} className="bg-grantpicks-purple-100 rounded-2xl">
-						<div className="flex justify-between items-center w-full py-8 px-9 text-left">
+						<button
+							onClick={() => toggleAccordion(index)}
+							className="flex justify-between items-center w-full py-8 px-9 text-left"
+						>
 							<p className="text-xl font-bold text-[#0A0A0A]">{faq.question}</p>
-							<button onClick={() => toggleAccordion(index)}>
+							<div>
 								{openIndex === index ? (
 									<IconClose
 										size={12}
@@ -69,8 +72,8 @@ const FAQsSection = () => {
 										className="fill-[#1E1E1E] stroke-[#1E1E1E] cursor-pointer"
 									/>
 								)}
-							</button>
-						</div>
+							</div>
+						</button>
 						{openIndex === index && (
 							<div className="pb-8 px-9 bg-grantpicks-purple-100 rounded-2xl">
 								<p className="text-lg font-semibold text-[#171717]">

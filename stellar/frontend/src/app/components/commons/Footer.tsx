@@ -55,15 +55,24 @@ const Footer = () => {
 			</div>
 			<div className="z-10 grid content-start justify-items-center md:justify-items-start gap-y-[14px]">
 				<p className="font-semibold text-xl text-[#171717]">Built By</p>
-				<div className="flex items-center gap-x-2">
-					<div className="text-xl">🫕</div> <IconPotlock />
-				</div>
+				<Link href={`https://www.potlock.org/`} target="_blank">
+					<div className="flex items-center gap-x-2">
+						<div className="text-xl">🫕</div> <IconPotlock />
+					</div>
+				</Link>
 			</div>
 			<div className="z-10 grid content-start justify-items-center md:justify-items-start gap-y-[14px]">
 				<p className="font-semibold text-xl text-[#171717]">Inspired By</p>
 				<div className="flex gap-x-6">
-					<IconDorg />
-					<IconColony />
+					<Link href={`https://pairdrop.daodrops.io/`} target="_blank">
+						<IconDorg />
+					</Link>
+					<Link
+						href={`https://uploads-ssl.webflow.com/61840fafb9a4c433c1470856/639b50ee30b729cb016806c1_BudgetingBoxes.pdf`}
+						target="_blank"
+					>
+						<IconColony />
+					</Link>
 				</div>
 			</div>
 		</div>

@@ -55,7 +55,7 @@ const HomeSection = () => {
 						Coming Soon
 					</Button>
 					<Link
-						href={'https://docs.potlock.io/'}
+						href={'https://docs.grantpicks.com/'}
 						target="_blank"
 						className="w-full md:w-auto"
 					>

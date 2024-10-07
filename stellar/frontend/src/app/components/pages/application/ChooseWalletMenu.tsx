@@ -56,8 +56,11 @@ const ChooseWalletMenu = ({
 						</p>
 					</div>
 					<div
-						onClick={() => {}}
-						className="border opacity-50 cursor-not-allowed border-grantpicks-black-200 rounded-xl flex-1 px-8 py-4 flex flex-col items-center justify-center transition"
+						onClick={() => {
+							onOpenNearWallet()
+							onClose()
+						}}
+						className="border border-grantpicks-black-200 rounded-xl flex-1 px-8 py-4 flex flex-col items-center justify-center cursor-pointer hover:bg-grantpicks-black-200/10 transition"
 					>
 						<IconNear size={32} className="fill-grantpicks-black-400 mb-2" />
 						<p className="text-base font-normal text-grantpicks-black-950">

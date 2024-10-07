@@ -39,8 +39,6 @@ pub trait IsRound {
     fn update_round(env: &Env,caller: Address, round_id: u128, round_detail: UpdateRoundParams) -> RoundDetail;
     fn delete_round(env: &Env, round_id: u128) -> RoundDetail;
     fn apply_to_round_batch(env: &Env, caller: Address, round_id: u128, review_notes: Vec<Option<String>>, applicants: Vec<Address>) -> Vec<RoundApplication>;
-    fn add_whitelists(env: &Env, round_id: u128, caller: Address, users: Vec<Address>);
-    fn remove_from_whitelists(env: &Env, round_id: u128, caller: Address, users: Vec<Address>);
     fn get_payouts(env: &Env, from_index: Option<u64>, limit: Option<u64>) -> Vec<Payout>;
     fn get_votes_for_round(env: &Env, round_id: u128, from_index: Option<u64>, limit: Option<u64>) -> Vec<VotingResult>;
     fn can_vote(env: &Env, round_id: u128, voter: Address) -> bool;
@@ -63,7 +61,6 @@ pub trait IsRound {
     fn get_deposits_for_round(env: &Env, round_id: u128, from_index: Option<u64>, limit: Option<u64>) -> Vec<Deposit>;
     fn get_voting_results_for_round(env: &Env, round_id: u128) -> Vec<ProjectVotingResult>;
     fn blacklisted_voters(env: &Env, round_id: u128) -> Vec<Address>;
-    fn whitelisted_voters(env: &Env, round_id: u128) -> Vec<Address>;
     fn get_my_vote_for_round(env: &Env, round_id: u128, voter: Address) -> VotingResult;
     fn get_voted_rounds(env: &Env, voter: Address, from_index: Option<u64>, limit: Option<u64>) -> Vec<RoundDetail>;
 }

@@ -12,7 +12,6 @@ pub enum ContractKey {
     PayoutInfo(u128),
     DepositInfo(u128),
     RoundInfo(u128),
-    WhiteList(u128),
     BlackList(u128),
     ProjectApplicants(u128),
     ApprovedProjects(u128),

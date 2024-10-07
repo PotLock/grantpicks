@@ -25,7 +25,6 @@ pub fn extend_round(env: &Env, round_id: u128) {
     extend_persistent(env, &ContractKey::PayoutChallenges(round_id));
     extend_persistent(env, &ContractKey::ApprovedProjects(round_id));
     extend_persistent(env, &ContractKey::FlaggedProjects(round_id));
-    extend_persistent(env, &ContractKey::WhiteList(round_id));
     extend_persistent(env, &ContractKey::BlackList(round_id));
     extend_persistent(env, &ContractKey::Deposit(round_id));
 
@@ -77,7 +76,6 @@ pub fn clear_round(env: &Env, round_id: u128) {
     delete_persistent(env, &ContractKey::Admin(round_id));
     delete_persistent(env, &ContractKey::Payouts(round_id));
     delete_persistent(env, &ContractKey::ProjectApplicants(round_id));
-    delete_persistent(env, &ContractKey::WhiteList(round_id));
     delete_persistent(env, &ContractKey::BlackList(round_id));
     delete_persistent(env, &ContractKey::PayoutChallenges(round_id));
     delete_persistent(env, &ContractKey::Deposit(round_id));

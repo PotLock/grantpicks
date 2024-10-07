@@ -102,7 +102,7 @@ fn generate_fake_project(
 
     project_team_members.push_back(project_registry::ProjectTeamMember {
         name: String::from_str(&env, "team member name"),
-        value: String::from_str(&env, "root.near"),
+        value: String::from_str(&env, "root"),
     });
 
     project_repositories.push_back(project_registry::ProjectRepository {
@@ -181,6 +181,7 @@ fn test_round_create() {
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
+        wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -252,6 +253,7 @@ fn test_apply_applications() {
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
+        wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -326,6 +328,7 @@ fn test_review_application() {
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
+        wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -392,8 +395,12 @@ fn test_whitelist_applicant() {
     let project_contract = deploy_registry_contract(&env, &admin);
     let list_contract = deploy_list_contract(&env, &admin);
     let projects = generate_fake_project(&env, &project_contract, 5);
+
+    let wl_list = list_contract.create_list(&admin, &String::from_str(&env, "wl"), &list_contract::RegistrationStatus::Approved, &None, &None, &None, &None);
+
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
+    
 
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
@@ -407,6 +414,7 @@ fn test_whitelist_applicant() {
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(true),
+        wl_list_id: Some(wl_list.id),
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -459,6 +467,8 @@ fn test_whitelist_voters() {
     let project_contract = deploy_registry_contract(&env, &admin);
     let list_contract = deploy_list_contract(&env, &admin);
     let projects = generate_fake_project(&env, &project_contract, 5);
+    let wl_list = list_contract.create_list(&admin, &String::from_str(&env, "wl"), &list_contract::RegistrationStatus::Approved, &None, &None, &None, &None);
+
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -474,6 +484,7 @@ fn test_whitelist_voters() {
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(true),
+        wl_list_id: Some(wl_list.id),
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -501,10 +512,8 @@ fn test_whitelist_voters() {
     let created_round = round.create_round(&admin, &round_detail);
     let project_id = 1;
     let applicant = Address::generate(&env);
-    let mut whitelist: Vec<Address> = Vec::new(&env);
-    whitelist.push_back(applicant.clone());
 
-    round.add_whitelists(&created_round.id, &admin, &whitelist);
+    list_contract.register_batch(&applicant, &wl_list.id, &None, &None);
 
     round.apply_to_round(
         &created_round.id,
@@ -530,9 +539,9 @@ fn test_whitelist_voters() {
     });
     round.vote(&created_round.id, &voter, &picks);
 
-    let whitelistes = round.whitelisted_voters(&created_round.id);
+    let whitelisted = list_contract.is_registered(&Some(wl_list.id), &applicant, &Some(list_contract::RegistrationStatus::Approved));
 
-    assert_eq!(whitelistes.len(), 1);
+    assert_eq!(whitelisted, true);
 }
 
 /*
@@ -568,6 +577,7 @@ fn test_blacklist() {
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
+        wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -674,6 +684,7 @@ fn test_voting() {
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
+        wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -827,6 +838,7 @@ fn test_add_remove_admin() {
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
+        wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -905,6 +917,7 @@ fn test_voting_deposit_and_payout() {
         expected_amount: 10 * deposit,
         admins: admins.clone(),
         use_whitelist: Some(false),
+        wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -1057,6 +1070,7 @@ fn test_get_all_pairs() {
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
+        wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: false,
@@ -1157,6 +1171,7 @@ fn test_change_number_of_votes() {
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
+        wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -1218,6 +1233,7 @@ fn test_change_amount() {
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
+        wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -1279,6 +1295,7 @@ fn test_set_voting_period() {
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
+        wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -1342,6 +1359,7 @@ fn test_application_period() {
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
+        wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -1417,6 +1435,7 @@ fn test_update_round() {
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
+        wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -1453,6 +1472,7 @@ fn test_update_round() {
         application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
         expected_amount: 1000000,
         use_whitelist: Some(false),
+        wl_list_id: None,
         use_vault: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(100),
@@ -1495,6 +1515,7 @@ fn test_change_allow_applications() {
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist: Some(false),
+        wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -1565,6 +1586,7 @@ fn test_unapply_from_round() {
         expected_amount: 10 * 10u128.pow(7),
         admins: admins.clone(),
         use_whitelist: Some(false),
+        wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -1634,6 +1656,7 @@ fn test_apply_to_round_batch() {
         expected_amount: 10 * 10u128.pow(7),
         admins: admins.clone(),
         use_whitelist: Some(false),
+        wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,

@@ -17,6 +17,7 @@ export default async function createRandomRounds(params: string[], app: App) {
 			max_participants: 10,
 			num_picks_per_voter: 2,
 			use_whitelist: false,
+      wl_list_id: undefined,
 			contacts: [],
 			owner: app.wallet.account.publicKey,
 			compliance_period_ms: BigInt(1000 * 60 * 60 * 24 * 7),

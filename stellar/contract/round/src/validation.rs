@@ -1,5 +1,5 @@
 use crate::{
-    admin_writer::is_admin, approval_writer::{is_project_approved, read_approved_projects}, config_writer::read_config, data_type::{CreateRoundParams, RoundDetail, UpdateRoundParams}, error::{ApplicationError, Error, RoundError, VoteError}, external::ProjectRegistryClient, utils::get_ledger_second_as_millis, voter_writer::{is_blacklisted, is_whitelisted}, voting_writer::get_voting_state_done
+    admin_writer::is_admin, approval_writer::{is_project_approved, read_approved_projects}, config_writer::read_config, data_type::{CreateRoundParams, RoundDetail, UpdateRoundParams}, error::{ApplicationError, Error, RoundError, VoteError}, external::{ListsClient, ProjectRegistryClient, RegistrationStatus}, round_writer::read_round_info, utils::get_ledger_second_as_millis, voter_writer::is_blacklisted, voting_writer::get_voting_state_done
 };
 use soroban_sdk::{panic_with_error, Address, Env, String, Vec};
 
@@ -204,8 +204,11 @@ pub fn validate_not_blacklist(env: &Env, round_id: u128, voter: &Address) {
 }
 
 pub fn validate_whitelist(env: &Env, round_id: u128, voter: &Address) {
-    let is_whitelisted = is_whitelisted(env, round_id, voter.clone());
-
+    let round = read_round_info(env, round_id);
+    let list_id = round.wl_list_id.unwrap();
+    let list_contract = read_config(env).list_contract;
+    let list_client = ListsClient::new(env, &list_contract);
+    let is_whitelisted = list_client.is_registered(&Some(list_id), &voter, &Some(RegistrationStatus::Approved));
     if !is_whitelisted {
         panic_with_error!(env, RoundError::UserNotWhitelisted);
     }

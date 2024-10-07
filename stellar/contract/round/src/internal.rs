@@ -13,7 +13,7 @@ use crate::{
         increment_deposit_id, read_deposit, read_deposit_from_round, write_deposit,
         write_deposit_id_to_round,
     }, error::{ApplicationError, Error, RoundError, VoteError}, events::{
-        log_create_app, log_create_deposit, log_create_payout, log_create_round, log_create_vote, log_delete_app, log_update_admin, log_update_app, log_update_approved_projects, log_update_payout, log_update_round, log_update_user_flag, log_update_whitelist
+        log_create_app, log_create_deposit, log_create_payout, log_create_round, log_create_vote, log_delete_app, log_update_admin, log_update_app, log_update_approved_projects, log_update_payout, log_update_round, log_update_user_flag
     }, external::{ListsClient, ProjectRegistryClient, RegistrationStatus}, factory::RoundCreator, pair::{get_all_pairs, get_all_rounds, get_pair_by_index, get_random_pairs}, payout_writer::{
         add_payout_id_to_project_payout_ids, clear_payouts, clear_project_payout_ids, has_paid, increment_payout_id, read_payout_challenge, read_payout_challenges, read_payout_info, read_payouts, read_project_payout_ids_for_project, remove_payout_challenge, remove_payout_info, write_payout_challenge, write_payout_challenges, write_payout_info, write_payouts
     }, round_writer::{increment_round_number, is_initialized, read_round_info, write_round_info}, storage::{clear_round, extend_instance, extend_round}, utils::{calculate_protocol_fee, count_total_available_pairs, get_ledger_second_as_millis}, validation::{
@@ -25,7 +25,7 @@ use crate::{
         validate_round_detail_update, validate_specify_applicant, validate_vault_fund,
         validate_voting_not_started, validate_voting_period, validate_whitelist,
     }, voter_writer::{
-        add_to_blacklist, add_to_whitelist, add_voted_round, get_voted_rounds_for_voter, is_blacklisted, is_whitelisted, read_all_blacklist, read_all_whitelist, remove_from_blacklist, remove_from_whitelist
+        add_to_blacklist, add_voted_round, get_voted_rounds_for_voter, is_blacklisted, read_all_blacklist, remove_from_blacklist
     }, voting_writer::{
         find_voting_result, get_voting_state, get_voting_state_done, read_voting_count, read_voting_results, read_voting_state, set_voting_state, write_voting_count, write_voting_results
     }
@@ -100,6 +100,7 @@ impl RoundCreator for RoundContract {
             application_end_ms: round_detail.application_end_ms,
             expected_amount: round_detail.expected_amount,
             use_whitelist: round_detail.use_whitelist.unwrap_or(false),
+            wl_list_id: round_detail.wl_list_id,
             num_picks_per_voter,
             max_participants: round_detail.max_participants.unwrap_or(10),
             current_vault_balance: 0,
@@ -286,11 +287,7 @@ impl IsRound for RoundContract {
             validate_voting_not_started(env, &round);
         } else {
             validate_application_period(env, &round);
-
-            if round.use_whitelist {
-                validate_whitelist(env, round_id, &caller);
-            }
-
+            
             validate_blacklist(env, round_id, &caller);
         }
 
@@ -714,7 +711,13 @@ impl IsRound for RoundContract {
 
         if round.voting_start_ms <= current_ms && current_ms <= round.voting_end_ms {
             if round.use_whitelist {
-                let is_whitelisted = is_whitelisted(env, round_id, voter.clone());
+                if round.wl_list_id.is_none() {
+                    return true;
+                }
+                let list_id = round.wl_list_id.unwrap();
+                let list_contract = read_config(env).list_contract;
+                let list_client = ListsClient::new(env, &list_contract);
+                let is_whitelisted = list_client.is_registered(&Some(list_id), &voter, &Some(RegistrationStatus::Approved));
                 return is_whitelisted;
             }
 
@@ -825,44 +828,14 @@ impl IsRound for RoundContract {
         extend_round(env, round_id);
     }
 
-    fn add_whitelists(env: &Env, round_id: u128, caller: Address, users: Vec<Address>) {
-        caller.require_auth();
-
-        let round = read_round_info(env, round_id);
-
-        validate_owner_or_admin(env, &caller, &round);
-
-        users.iter().for_each(|user| {
-            let is_blacklisted = is_blacklisted(env, round_id, user.clone());
-            if is_blacklisted {
-                panic_with_error!(env, RoundError::UserBlacklisted);
-            }
-
-            add_to_whitelist(env, round_id, user.clone());
-            log_update_whitelist(env, round.id, user.clone(), true);
-        });
-
-        extend_round(env, round_id);
-    }
-
-    fn remove_from_whitelists(env: &Env, round_id: u128, caller: Address, users: Vec<Address>) {
-        caller.require_auth();
-
-        let round = read_round_info(env, round_id);
-
-        validate_owner_or_admin(env, &caller, &round);
-
-        users.iter().for_each(|user| {
-            remove_from_whitelist(env, round_id, user.clone());
-            log_update_whitelist(env, round.id, user.clone(), false);
-        });
-
-        extend_instance(env);
-        extend_round(env, round_id);
-    }
-
     fn whitelist_status(env: &Env, round_id: u128, address: Address) -> bool {
-        is_whitelisted(env, round_id, address)
+        let round = read_round_info(env, round_id);
+        let list_id = round.wl_list_id.unwrap();
+        let list_contract = read_config(env).list_contract;
+        let list_client = ListsClient::new(env, &list_contract);
+        let is_whitelisted = list_client.is_registered(&Some(list_id), &address, &Some(RegistrationStatus::Approved));
+      
+        is_whitelisted
     }
 
     fn blacklist_status(env: &Env, round_id: u128, address: Address) -> bool {
@@ -904,6 +877,7 @@ impl IsRound for RoundContract {
         round.num_picks_per_voter = num_picks_per_voter;
 
         write_round_info(env, round_id, &round);
+        log_update_round(env, round.clone());
         extend_round(env, round_id);
         extend_instance(env);
     }
@@ -1058,10 +1032,11 @@ impl IsRound for RoundContract {
         round.description = round_detail.description;
         round.max_participants = round_detail.max_participants.unwrap_or(10);
         round.name = round_detail.name;
+        round.wl_list_id = round_detail.wl_list_id;
 
         write_round_info(env, round_id, &round);
         extend_instance(env);
-        log_create_round(env, round.clone());
+        log_update_round(env, round.clone());
 
         round.clone()
     }
@@ -1280,6 +1255,7 @@ impl IsRound for RoundContract {
         round.round_complete_ms = Some(get_ledger_second_as_millis(env));
 
         write_round_info(env, round_id, &round);
+        log_update_round(env, round.clone());
         extend_instance(env);
         extend_round(env, round_id);
 
@@ -1488,8 +1464,9 @@ impl IsRound for RoundContract {
         validate_owner_or_admin(env, &caller, &round);
 
         round.cooldown_period_ms = cooldown_period_ms;
-
+        log_update_round(env, round.clone());
         write_round_info(env, round_id, &round);
+        
         extend_instance(env);
         extend_round(env, round_id);
 
@@ -1512,6 +1489,7 @@ impl IsRound for RoundContract {
         round.compliance_period_ms = compliance_period_ms;
 
         write_round_info(env, round_id, &round);
+        log_update_round(env, round.clone());
         extend_instance(env);
         extend_round(env, round_id);
 
@@ -1530,18 +1508,6 @@ impl IsRound for RoundContract {
 
         result
     }
-    fn whitelisted_voters(env: &Env, round_id: u128) -> Vec<Address> {
-        let whitelisted_voters = read_all_whitelist(env, round_id);
-        extend_instance(env);
-        extend_round(env, round_id);
-
-        let mut result: Vec<Address> = Vec::new(env);
-        whitelisted_voters.keys().iter().for_each(|voter| {
-            result.push_back(voter.clone());
-        });
-
-        result
-    }
 
     fn set_redistribution_config(env: &Env, round_id: u128, caller: Address, allow_remaining_dist: bool, remaining_dist_address: Option<Address>) -> RoundDetail{
       caller.require_auth();
@@ -1553,6 +1519,7 @@ impl IsRound for RoundContract {
       round.remaining_dist_address = remaining_dist_address.unwrap_or(round.clone().owner);
 
       write_round_info(env, round_id, &round);
+      log_update_round(env, round.clone());
       extend_instance(env);
 
       round.clone()

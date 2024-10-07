@@ -8,7 +8,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CDOK73JXIY33H4OOAT6YFACIV3J26TXXNI7WSTLTLVN6YIHMVA4DWAES";
+        readonly contractId: "CCVVNTUD6CFPKZ2C4JAZIQGCAK2S6D6KPP5IELGHTHHJPYV2B62GPJTK";
     };
 };
 export type ApplicationStatus = {
@@ -65,6 +65,7 @@ export interface RoundDetail {
     vault_total_deposits: u128;
     voting_end_ms: u64;
     voting_start_ms: u64;
+    wl_list_id: Option<u128>;
 }
 export interface CreateRoundParams {
     admins: Array<string>;
@@ -89,6 +90,7 @@ export interface CreateRoundParams {
     use_whitelist: Option<boolean>;
     voting_end_ms: u64;
     voting_start_ms: u64;
+    wl_list_id: Option<u128>;
 }
 export interface UpdateRoundParams {
     allow_applications: boolean;
@@ -105,6 +107,7 @@ export interface UpdateRoundParams {
     use_whitelist: Option<boolean>;
     voting_end_ms: u64;
     voting_start_ms: u64;
+    wl_list_id: Option<u128>;
 }
 export interface RoundApplication {
     applicant_id: string;
@@ -405,9 +408,6 @@ export type ContractKey = {
     values: readonly [u128];
 } | {
     tag: 'RoundInfo';
-    values: readonly [u128];
-} | {
-    tag: 'WhiteList';
     values: readonly [u128];
 } | {
     tag: 'BlackList';
@@ -1097,48 +1097,6 @@ export interface Client {
         simulate?: boolean;
     }) => Promise<AssembledTransaction<null>>;
     /**
-     * Construct and simulate a add_whitelists transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
-     */
-    add_whitelists: ({ round_id, caller, users }: {
-        round_id: u128;
-        caller: string;
-        users: Array<string>;
-    }, options?: {
-        /**
-         * The fee to pay for the transaction. Default: BASE_FEE
-         */
-        fee?: number;
-        /**
-         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
-         */
-        timeoutInSeconds?: number;
-        /**
-         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
-         */
-        simulate?: boolean;
-    }) => Promise<AssembledTransaction<null>>;
-    /**
-     * Construct and simulate a remove_from_whitelists transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
-     */
-    remove_from_whitelists: ({ round_id, caller, users }: {
-        round_id: u128;
-        caller: string;
-        users: Array<string>;
-    }, options?: {
-        /**
-         * The fee to pay for the transaction. Default: BASE_FEE
-         */
-        fee?: number;
-        /**
-         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
-         */
-        timeoutInSeconds?: number;
-        /**
-         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
-         */
-        simulate?: boolean;
-    }) => Promise<AssembledTransaction<null>>;
-    /**
      * Construct and simulate a whitelist_status transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
     whitelist_status: ({ round_id, address }: {
@@ -1695,25 +1653,6 @@ export interface Client {
         simulate?: boolean;
     }) => Promise<AssembledTransaction<Array<string>>>;
     /**
-     * Construct and simulate a whitelisted_voters transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
-     */
-    whitelisted_voters: ({ round_id }: {
-        round_id: u128;
-    }, options?: {
-        /**
-         * The fee to pay for the transaction. Default: BASE_FEE
-         */
-        fee?: number;
-        /**
-         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
-         */
-        timeoutInSeconds?: number;
-        /**
-         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
-         */
-        simulate?: boolean;
-    }) => Promise<AssembledTransaction<Array<string>>>;
-    /**
      * Construct and simulate a set_redistribution_config transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
     set_redistribution_config: ({ round_id, caller, allow_remaining_dist, remaining_dist_address, }: {
@@ -1896,8 +1835,6 @@ export declare class Client extends ContractClient {
         user_has_vote: (json: string) => AssembledTransaction<boolean>;
         add_approved_project: (json: string) => AssembledTransaction<null>;
         remove_approved_project: (json: string) => AssembledTransaction<null>;
-        add_whitelists: (json: string) => AssembledTransaction<null>;
-        remove_from_whitelists: (json: string) => AssembledTransaction<null>;
         whitelist_status: (json: string) => AssembledTransaction<boolean>;
         blacklist_status: (json: string) => AssembledTransaction<boolean>;
         get_all_pairs_for_round: (json: string) => AssembledTransaction<Pair[]>;
@@ -1925,7 +1862,6 @@ export declare class Client extends ContractClient {
         set_cooldown_config: (json: string) => AssembledTransaction<RoundDetail>;
         set_compliance_config: (json: string) => AssembledTransaction<RoundDetail>;
         blacklisted_voters: (json: string) => AssembledTransaction<string[]>;
-        whitelisted_voters: (json: string) => AssembledTransaction<string[]>;
         set_redistribution_config: (json: string) => AssembledTransaction<RoundDetail>;
         get_my_vote_for_round: (json: string) => AssembledTransaction<VotingResult>;
         get_voted_rounds: (json: string) => AssembledTransaction<RoundDetail[]>;

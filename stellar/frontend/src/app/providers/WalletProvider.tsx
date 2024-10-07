@@ -10,17 +10,30 @@ import {
 	WalletSelector,
 } from '@near-wallet-selector/core'
 import { setupModal, WalletSelectorModal } from '@near-wallet-selector/modal-ui'
-import { setupNearWallet } from '@near-wallet-selector/near-wallet'
 import { setupMyNearWallet } from '@near-wallet-selector/my-near-wallet'
 import { setupMeteorWallet } from '@near-wallet-selector/meteor-wallet'
 import { setupHereWallet } from '@near-wallet-selector/here-wallet'
 import { setupOKXWallet } from '@near-wallet-selector/okx-wallet'
 import { setupCoin98Wallet } from '@near-wallet-selector/coin98-wallet'
 import { setupSender } from '@near-wallet-selector/sender'
+import { setupBitgetWallet } from '@near-wallet-selector/bitget-wallet'
+import { setupMathWallet } from '@near-wallet-selector/math-wallet'
+import { setupNightly } from '@near-wallet-selector/nightly'
+import { setupNarwallets } from '@near-wallet-selector/narwallets'
+import { setupWelldoneWallet } from '@near-wallet-selector/welldone-wallet'
+import { setupLedger } from '@near-wallet-selector/ledger'
+import { setupWalletConnect } from '@near-wallet-selector/wallet-connect'
+import { setupNeth } from '@near-wallet-selector/neth'
+import { setupXDEFI } from '@near-wallet-selector/xdefi'
+import { setupRamperWallet } from '@near-wallet-selector/ramper-wallet'
+import { setupNearMobileWallet } from '@near-wallet-selector/near-mobile-wallet'
+import { setupMintbaseWallet } from '@near-wallet-selector/mintbase-wallet'
+import { setupBitteWallet } from '@near-wallet-selector/bitte-wallet'
 import { localStorageConfigs } from '@/configs/local-storage'
 import {
 	Account,
 	SignMessageMethod,
+	WalletModuleFactory,
 } from '@near-wallet-selector/core/src/lib/wallet'
 import {
 	xBullModule,
@@ -58,13 +71,41 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 			const selector = await setupWalletSelector({
 				network: envVarConfigs.NETWORK_ENV as NetworkId,
 				modules: [
-					setupNearWallet(),
-					setupMyNearWallet(),
-					setupMeteorWallet(),
-					setupSender(),
-					setupHereWallet(),
-					setupOKXWallet(),
-					setupCoin98Wallet(),
+					setupMyNearWallet() as WalletModuleFactory,
+					setupMeteorWallet() as WalletModuleFactory,
+					setupSender() as WalletModuleFactory,
+					setupHereWallet() as WalletModuleFactory<Wallet>,
+					setupOKXWallet() as WalletModuleFactory<Wallet>,
+					setupCoin98Wallet() as WalletModuleFactory<Wallet>,
+					setupBitgetWallet() as WalletModuleFactory<Wallet>,
+					setupMathWallet() as WalletModuleFactory<Wallet>,
+					setupNightly() as WalletModuleFactory<Wallet>,
+					setupNarwallets() as WalletModuleFactory<Wallet>,
+					setupWelldoneWallet() as WalletModuleFactory<Wallet>,
+					setupLedger() as WalletModuleFactory<Wallet>,
+					setupNeth() as WalletModuleFactory<Wallet>,
+					setupXDEFI() as WalletModuleFactory<Wallet>,
+					setupRamperWallet() as WalletModuleFactory<Wallet>,
+					setupWalletConnect({
+						projectId: 'c4f79cc...',
+						metadata: {
+							name: 'NEAR Wallet Selector',
+							description: 'Example dApp used by NEAR Wallet Selector',
+							url: 'https://github.com/near/wallet-selector',
+							icons: ['https://avatars.githubusercontent.com/u/37784886'],
+						},
+					}) as WalletModuleFactory<Wallet>,
+					setupNearMobileWallet() as WalletModuleFactory<Wallet>,
+					setupMintbaseWallet({
+						walletUrl: 'https://wallet.mintbase.xyz',
+						callbackUrl: 'https://www.mywebsite.com',
+						deprecated: false,
+					}) as WalletModuleFactory<Wallet>,
+					setupBitteWallet({
+						walletUrl: 'https://wallet.bitte.ai',
+						callbackUrl: 'https://www.mywebsite.com',
+						deprecated: false,
+					}) as WalletModuleFactory<Wallet>,
 				],
 			})
 

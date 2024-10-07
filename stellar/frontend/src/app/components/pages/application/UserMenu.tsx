@@ -55,7 +55,11 @@ const UserMenu = ({
 									size={16}
 									className="stroke-grantpicks-black-600 cursor-pointer hover:opacity-70 transition"
 									onClick={async () => {
-										await navigator.clipboard.writeText(stellarPubKey)
+										await navigator.clipboard.writeText(
+											connectedWallet === 'near'
+												? nearAccounts[0]?.accountId
+												: stellarPubKey,
+										)
 										toast.success('Addess is copied', {
 											style: toastOptions.success.style,
 										})

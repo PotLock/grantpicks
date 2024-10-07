@@ -41,6 +41,13 @@ export class PotlockService {
 		const result = await this._axios?.get(`/projects?owner=${owner}`)
 		return result?.data.results
 	}
+
+	async getProjectStats(projectId: number, owner: string) {
+		const result = await this._axios?.get(
+			`/${owner}/${projectId}/project-stats`,
+		)
+		return result?.data
+	}
 }
 
 export const PotlockServiceContext = React.createContext<PotlockService>(

@@ -15,6 +15,8 @@ import { Project } from 'project-registry-client'
 import IconClose from '@/app/components/svgs/IconClose'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import useAppStorage from '@/stores/zustand/useAppStorage'
+import { GPProjectStats } from '@/models/stats'
+import { usePotlockService } from '@/services/potlock'
 
 const MyProjectContext = createContext<IMyProjectContext>({
 	projectData: undefined,
@@ -31,8 +33,14 @@ const MyProjectProvider = () => {
 	)
 	const [noProject, setNoProject] = useState<boolean>(false)
 	const { setCreateProjectFormMainProps } = useModalContext()
+	const [stats, setStats] = useState<GPProjectStats>({
+		total_funds_received: 0,
+		rounds_participated: 0,
+		total_votes: 0,
+	})
 	const { setShowMenu } = useGlobalContext()
 	const storage = useAppStorage()
+	const potlockService = usePotlockService()
 
 	const fetchProjectApplicant = async () => {
 		try {
@@ -47,6 +55,14 @@ const MyProjectProvider = () => {
 			if (!res?.error) {
 				setProjectData(res)
 				setProjectDataModel(res)
+
+				if (res) {
+					const projectStats = await potlockService.getProjectStats(
+						Number(res.id),
+						stellarPubKey,
+					)
+					setStats(projectStats)
+				}
 			} else {
 				setNoProject(true)
 			}
@@ -101,7 +117,7 @@ const MyProjectProvider = () => {
 					</div>
 				) : (
 					<>
-						<MyProjectHeader />
+						<MyProjectHeader stats={stats} />
 						<MyProjectSection />
 					</>
 				)}

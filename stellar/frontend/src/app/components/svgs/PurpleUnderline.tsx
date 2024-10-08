@@ -21,8 +21,8 @@ const PurpleUnderline = ({ className }: { className?: string }) => {
 					gradientUnits="userSpaceOnUse"
 					gradientTransform="translate(133.815) rotate(90) scale(16.223 212.967)"
 				>
-					<stop stop-color="#7B3AED" />
-					<stop offset="0.996031" stop-color="#5A21B6" />
+					<stop stopColor="#7B3AED" />
+					<stop offset="0.996031" stopColor="#5A21B6" />
 				</radialGradient>
 			</defs>
 		</svg>

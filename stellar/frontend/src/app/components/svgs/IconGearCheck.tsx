@@ -32,8 +32,8 @@ const IconGearCheck = () => {
 					gradientUnits="userSpaceOnUse"
 					gradientTransform="translate(14.3083 1) rotate(90) scale(33.8001 20.4239)"
 				>
-					<stop stop-color="#7B3AED" />
-					<stop offset="0.996031" stop-color="#5A21B6" />
+					<stop stopColor="#7B3AED" />
+					<stop offset="0.996031" stopColor="#5A21B6" />
 				</radialGradient>
 				<radialGradient
 					id="paint1_radial_2935_14024"
@@ -43,8 +43,8 @@ const IconGearCheck = () => {
 					gradientUnits="userSpaceOnUse"
 					gradientTransform="translate(18.348 9.11865) rotate(90) scale(22.8204 14.3942)"
 				>
-					<stop stop-color="#7B3AED" />
-					<stop offset="0.996031" stop-color="#5A21B6" />
+					<stop stopColor="#7B3AED" />
+					<stop offset="0.996031" stopColor="#5A21B6" />
 				</radialGradient>
 			</defs>
 		</svg>

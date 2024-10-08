@@ -11,7 +11,7 @@ const VotingSvg = () => {
 			xmlnsXlink="http://www.w3.org/1999/xlink"
 		>
 			<g filter="url(#filter0_ddd_2814_48351)">
-				<g clip-path="url(#clip0_2814_48351)">
+				<g clipPath="url(#clip0_2814_48351)">
 					<path
 						d="M4 10.5C4 6.08172 7.58172 2.5 12 2.5H249C253.418 2.5 257 6.08172 257 10.5V138.5H4V10.5Z"
 						fill="white"
@@ -41,7 +41,7 @@ const VotingSvg = () => {
 						rx="2.51429"
 						fill="#F2F2F2"
 					/>
-					<g clip-path="url(#clip1_2814_48351)">
+					<g clipPath="url(#clip1_2814_48351)">
 						<rect
 							x="28.0286"
 							y="77.9189"
@@ -73,7 +73,7 @@ const VotingSvg = () => {
 						transform="translate(28.0286 85.4617)"
 						fill="white"
 					/>
-					<g clip-path="url(#clip2_2814_48351)">
+					<g clipPath="url(#clip2_2814_48351)">
 						<rect
 							x="28.0284"
 							y="86.7188"
@@ -142,7 +142,7 @@ const VotingSvg = () => {
 						rx="2.51429"
 						fill="#F2F2F2"
 					/>
-					<g clip-path="url(#clip3_2814_48351)">
+					<g clipPath="url(#clip3_2814_48351)">
 						<rect
 							x="154.953"
 							y="77.9189"
@@ -174,7 +174,7 @@ const VotingSvg = () => {
 						transform="translate(154.953 85.4617)"
 						fill="white"
 					/>
-					<g clip-path="url(#clip4_2814_48351)">
+					<g clipPath="url(#clip4_2814_48351)">
 						<rect
 							x="154.953"
 							y="86.7188"

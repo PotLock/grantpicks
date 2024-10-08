@@ -47,11 +47,15 @@ import {
 import { distinctUntilChanged, map } from 'rxjs'
 import CMDWallet from '@/lib/wallet'
 import useAppStorage from '@/stores/zustand/useAppStorage'
+import { IAccount } from '@/types/account'
+import { usePotlockService } from '@/services/potlock'
 
 const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 	const [connectedWallet, setConnectedWallet] = useState<
 		'near' | 'stellar' | null
 	>(null)
+	const [profileData, setProfileData] = useState<IAccount>()
+	const potlockService = usePotlockService()
 	//near
 	const [nearSelector, setNearSelector] = useState<WalletSelector | null>(null)
 	const [nearModal, setNearModal] = useState<WalletSelectorModal | null>(null)
@@ -283,6 +287,22 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 		}
 	}, [nearSelector])
 
+	const fetchProfileData = async () => {
+		try {
+			const profileData = await potlockService.getAccounts(
+				connectedWallet === 'near' ? nearAccounts[0]?.accountId : stellarPubKey,
+			)
+			setProfileData(profileData)
+		} catch {
+			console.log('Account not found')
+		}
+	}
+
+	useEffect(() => {
+		fetchProfileData()
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [stellarPubKey, nearAccounts])
+
 	if (!isInit) {
 		return (
 			<WalletContext.Provider
@@ -299,6 +319,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 					stellarPubKey,
 					onOpenStellarWallet,
 					currentBalance,
+					profileData,
 				}}
 			>
 				{children}

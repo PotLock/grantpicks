@@ -1,10 +1,17 @@
-import React, { useState } from 'react'
-import InputText from '../../commons/InputText'
+import React, { useEffect } from 'react'
 import Image from 'next/image'
-import Button from '../../commons/Button'
 
 const StayUpdatedSection = () => {
-	const [emailInput, setEmailInput] = useState<string>('')
+	useEffect(() => {
+		const script = document.createElement('script')
+		script.src = 'https://embeds.beehiiv.com/attribution.js'
+		script.async = true
+		document.body.appendChild(script)
+
+		return () => {
+			document.body.removeChild(script)
+		}
+	}, [])
 
 	return (
 		<div className="pt-20 md:pt-24 xl:pt-32 flex flex-col w-full mx-auto">
@@ -17,22 +24,16 @@ const StayUpdatedSection = () => {
 						Receive the latest news, updates, and insights from GrantPicks. Be
 						the first to know about new funding rounds and project highlights!
 					</p>
-					<div className="grid sm:flex lg:grid xl:flex gap-5 w-full">
-						<div className="flex-1">
-							<InputText
-								type="email"
-								placeholder="Enter Your Email"
-								value={emailInput}
-								onChange={(e) => {
-									setEmailInput(e.target.value)
-								}}
-								className="!rounded-full"
-							/>
-						</div>
-						<Button color="purple" className="px-[58px]" onClick={() => {}}>
-							Submit
-						</Button>
-					</div>
+					<iframe
+						src="https://embeds.beehiiv.com/fe6499f8-35e3-4351-bba7-a4ba4c03ee41?slim=true"
+						data-test-id="beehiiv-embed"
+						height="52"
+						style={{
+							margin: 0,
+							borderRadius: '0px',
+							backgroundColor: 'transparent',
+						}}
+					></iframe>
 				</div>
 				<div className="lg:shrink-0 flex justify-center">
 					<Image

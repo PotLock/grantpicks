@@ -521,8 +521,8 @@ const ApplicationRounds = () => {
 					Round results
 				</button>
 			</div>
-			<div className="mb-6 md:mb-7 lg:mb-8 grid grid-cols-4 gap-x-8">
-				<div className="col-span-3" />
+			<div className="mb-6 md:mb-7 lg:mb-8 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-x-8">
+				<div className="md:col-span-2 lg:col-span-3" />
 				<div className="relative">
 					<div
 						onClick={() => setShowSortType(true)}

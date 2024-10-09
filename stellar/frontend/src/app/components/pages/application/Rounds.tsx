@@ -34,6 +34,8 @@ import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { usePotlockService } from '@/services/potlock'
 import { GPRound } from '@/models/round'
+import IconUnfoldMore from '../../svgs/IconUnfoldMore'
+import Menu from '../../commons/Menu'
 
 const ApplicationRoundsItem = ({
 	doc,
@@ -421,9 +423,16 @@ const ApplicationRounds = () => {
 	const [roundsData, setRoundsData] = useState<GPRound[]>([])
 	const potlockApi = usePotlockService()
 	const { connectedWallet } = useWallet()
+	const [showSortType, setShowSortType] = useState<boolean>(false)
+	const [sortType, setSortType] = useState<string>('Most Recent')
 
 	const onFetchRounds = async (key: { url: string; page: number }) => {
-		const res = await potlockApi.getRounds(key.page + 1)
+		const res = await potlockApi.getRounds(
+			key.page + 1,
+			sortType === 'Vault Total Deposits'
+				? 'vault_total_deposits'
+				: 'deployed_at',
+		)
 		return res
 	}
 
@@ -435,6 +444,7 @@ const ApplicationRounds = () => {
 		return {
 			url: `get-rounds`,
 			page: pageIndex,
+			sortType,
 		}
 	}
 	const { data, size, setSize, isValidating, isLoading, mutate } =
@@ -468,6 +478,11 @@ const ApplicationRounds = () => {
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [selectedRoundType, data, connectedWallet])
+
+	useEffect(() => {
+		setSize(1)
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [sortType])
 
 	return (
 		<div>
@@ -505,6 +520,48 @@ const ApplicationRounds = () => {
 				>
 					Round results
 				</button>
+			</div>
+			<div className="mb-6 md:mb-7 lg:mb-8 grid grid-cols-4 gap-x-8">
+				<div className="col-span-3" />
+				<div className="relative">
+					<div
+						onClick={() => setShowSortType(true)}
+						className="border border-grantpicks-black-200 rounded-full py-3 px-3 flex items-center justify-between cursor-pointer hover:opacity-80 transition"
+					>
+						<p className="text-sm font-normal text-grantpicks-black-950">
+							{sortType}
+						</p>
+						<IconUnfoldMore size={24} className="fill-grantpicks-black-400" />
+					</div>
+					{showSortType && (
+						<Menu
+							isOpen={showSortType}
+							onClose={() => setShowSortType(false)}
+							position="right-0 left-0 -bottom-20"
+						>
+							<div className="border border-black/10 p-3 rounded-xl space-y-3 bg-white">
+								<p
+									onClick={() => {
+										setSortType('Most Recent')
+										setShowSortType(false)
+									}}
+									className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
+								>
+									Most Recent
+								</p>
+								<p
+									onClick={() => {
+										setSortType('Vault Total Deposits')
+										setShowSortType(false)
+									}}
+									className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
+								>
+									Vault Total Deposits
+								</p>
+							</div>
+						</Menu>
+					)}
+				</div>
 			</div>
 			<div className="min-h-96">
 				<InfiniteScroll

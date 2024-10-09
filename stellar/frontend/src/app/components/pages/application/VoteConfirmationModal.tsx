@@ -28,7 +28,7 @@ const VoteConfirmationModal = ({
 	data,
 }: VoteConfirmationModalProps) => {
 	const router = useRouter()
-	const { connectedWallet, stellarPubKey } = useWallet()
+	const { connectedWallet, stellarPubKey, nearAccounts } = useWallet()
 	const { selectedRoundType } = useRoundStore()
 	const [totalProjects, setTotalProjects] = useState<number>(0)
 	const storage = useAppStorage()
@@ -141,7 +141,7 @@ const VoteConfirmationModal = ({
 							color="black-950"
 							isFullWidth
 							onClick={() => {
-								if (!stellarPubKey) {
+								if (!stellarPubKey && !nearAccounts[0]?.accountId) {
 									toast.error('Please connect your wallet to vote', {
 										style: toastOptions.error.style,
 									})

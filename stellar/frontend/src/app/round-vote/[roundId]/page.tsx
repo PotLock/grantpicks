@@ -37,7 +37,7 @@ const RoundVotePage = () => {
 	const [showProjectDetailDrawer, setShowProjectDetailDrawer] =
 		useState<IProjectDetailOwner>({ isOpen: false, project: null })
 	const [hasVoted, setHasVoted] = useState<boolean>(false)
-	const { stellarPubKey } = useWallet()
+	const { stellarPubKey, nearAccounts } = useWallet()
 	const [isEligible, setIsEligible] = useState<boolean>(true)
 	const [pairsData, setPairsData] = useState<Pair[]>([])
 	const storage = useAppStorage()
@@ -125,7 +125,7 @@ const RoundVotePage = () => {
 		const localStellarPubKey = localStorage.getItem(
 			localStorageConfigs.STELLAR_PUBLIC_KEY,
 		)
-		if (!localStellarPubKey) {
+		if (!localStellarPubKey && !nearAccounts[0]?.accountId) {
 			router.push('/application')
 			toast.error('Please connect your wallet to vote', {
 				style: toastOptions.error.style,

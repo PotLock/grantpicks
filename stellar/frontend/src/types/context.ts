@@ -14,9 +14,11 @@ import { Livepeer } from 'livepeer'
 import { RoundApplication } from 'round-client'
 import { Project } from 'project-registry-client'
 import { GPRound } from '@/models/round'
+import { IAccount } from './account'
 
 export interface IWalletContext {
 	connectedWallet: 'near' | 'stellar' | null
+	profileData: IAccount | undefined
 	//near
 	nearSelector: WalletSelector | null
 	nearModal: WalletSelectorModal | null

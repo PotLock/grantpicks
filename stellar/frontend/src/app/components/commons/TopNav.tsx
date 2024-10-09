@@ -11,7 +11,8 @@ import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import Image from 'next/image'
 
 const TopNav = () => {
-	const { connectedWallet, nearAccounts, stellarPubKey } = useWallet()
+	const { connectedWallet, nearAccounts, stellarPubKey, profileData } =
+		useWallet()
 	const { showMenu, setShowMenu } = useGlobalContext()
 
 	const router = useRouter()
@@ -42,11 +43,13 @@ const TopNav = () => {
 						>
 							<div className="md:pr-2">
 								<Image
-									src={`https://www.tapback.co/api/avatar/${
+									src={
 										connectedWallet === 'near'
-											? nearAccounts[0]?.accountId
-											: stellarPubKey
-									}`}
+											? profileData?.near_social_profile_data?.image.nft
+													.media ||
+												`https://www.tapback.co/api/avatar/${nearAccounts[0]?.accountId}`
+											: `https://www.tapback.co/api/avatar/${stellarPubKey}`
+									}
 									alt="image"
 									width={40}
 									height={40}
@@ -57,7 +60,8 @@ const TopNav = () => {
 									<div>
 										<p className="text-sm font-semibold text-grantpicks-black-950">
 											{connectedWallet === 'near'
-												? nearAccounts[0]?.accountId
+												? profileData?.near_social_profile_data?.name ||
+													nearAccounts[0]?.accountId
 												: prettyTruncate(stellarPubKey, 10, 'address')}
 										</p>
 										<p className="text-sm font-normal text-grantpicks-black-600">

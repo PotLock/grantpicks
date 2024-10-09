@@ -27,26 +27,40 @@ const UserMenu = ({
 	onClose: () => void
 }) => {
 	const router = useRouter()
-	const { connectedWallet, nearAccounts, onSignOut, stellarPubKey } =
-		useWallet()
+	const {
+		connectedWallet,
+		nearAccounts,
+		onSignOut,
+		stellarPubKey,
+		profileData,
+	} = useWallet()
+
 	return (
 		<Menu isOpen={isOpen} onClose={onClose} position={`right-0 -bottom-72`}>
 			<div className="p-4 rounded-t-2xl md:rounded-2xl bg-white shadow-xl border border-grantpicks-black-200 min-w-[320px]">
 				<div className="flex items-center justify-between mb-4">
 					<div className="flex items-center space-x-2">
 						<Image
-							src={`https://www.tapback.co/api/avatar/${
+							src={
 								connectedWallet === 'near'
-									? nearAccounts[0]?.accountId
-									: stellarPubKey
-							}`}
+									? profileData?.near_social_profile_data?.image.nft.media ||
+										`https://www.tapback.co/api/avatar/${nearAccounts[0]?.accountId}`
+									: `https://www.tapback.co/api/avatar/${stellarPubKey}`
+							}
 							alt="image"
 							width={40}
 							height={40}
 						/>
 						<div>
+							<p className="text-sm font-semibold text-grantpicks-black-950">
+								{connectedWallet === 'near'
+									? profileData?.near_social_profile_data?.name ||
+										nearAccounts[0]?.accountId
+									: prettyTruncate(stellarPubKey, 10, 'address')}
+							</p>
 							<div className="flex items-center space-x-2">
-								<p className="text-sm font-semibold text-grantpicks-black-950">
+								<p className="text-sm font-normal text-grantpicks-black-600">
+									@
 									{connectedWallet === 'near'
 										? nearAccounts[0]?.accountId
 										: prettyTruncate(stellarPubKey, 10, 'address')}
@@ -66,12 +80,6 @@ const UserMenu = ({
 									}}
 								/>
 							</div>
-							<p className="text-sm font-normal text-grantpicks-black-600">
-								@
-								{connectedWallet === 'near'
-									? nearAccounts[0]?.accountId
-									: prettyTruncate(stellarPubKey, 10, 'address')}
-							</p>
 						</div>
 					</div>
 					<div>

@@ -48,6 +48,11 @@ export class PotlockService {
 		)
 		return result?.data
 	}
+
+	async getAccounts(accountId: string) {
+		const result = await this._axios?.get(`/accounts/${accountId}`)
+		return result?.data
+	}
 }
 
 export const PotlockServiceContext = React.createContext<PotlockService>(

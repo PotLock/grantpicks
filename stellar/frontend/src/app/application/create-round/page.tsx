@@ -883,6 +883,7 @@ const CreateRoundPage = () => {
 														watch().max_participants + 1,
 													)
 												}
+												isDisabled={!watch().allow_application}
 											>
 												<IconAdd
 													size={24}
@@ -1384,18 +1385,16 @@ const CreateRoundPage = () => {
 						/>
 					</div>
 
-					<div className="rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
-						<div className="px-5 py-3 bg-grantpicks-black-50 rounded-t-2xl">
-							<p className="font-semibold text-sm text-grantpicks-black-950">
-								Voter Requirements
-							</p>
+					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
+						<div className="flex items-center justify-between pb-4 border-b border-black/10">
+							<p className="text-base font-semibold">Voter Requirements</p>
 						</div>
 						<div>
 							<button
 								onClick={() => {
 									setShowLists(!showLists)
 								}}
-								className="flex justify-between w-full items-center px-5 py-[14px] border-b border-grantpicks-black-100"
+								className="flex justify-between w-full items-center py-[14px]"
 							>
 								<p className="font-semibold text-sm text-grantpicks-black-950">
 									List
@@ -1446,7 +1445,7 @@ const CreateRoundPage = () => {
 												{lists?.map((list) => (
 													<div
 														key={list.id}
-														className="px-5 py-4 flex items-center gap-x-4"
+														className="py-4 flex items-center gap-x-4"
 													>
 														<Checkbox
 															checked={checkedListIds.includes(list.id)}

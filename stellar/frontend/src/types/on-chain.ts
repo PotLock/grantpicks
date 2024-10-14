@@ -1,4 +1,4 @@
-import CMDWallet from '@/lib/wallet';
+import { ListExternal } from 'lists-client'
 import {
 	Horizon,
 	RoundApplication,
@@ -14,6 +14,8 @@ export type ApplicationStatus =
 	| { tag: 'Rejected'; values: void }
 
 export interface IGetRoundsResponse extends RoundDetail {}
+
+export interface IGetListExternalResponse extends ListExternal {}
 
 export interface IGetRoundApplicationsResponse extends RoundApplication {}
 

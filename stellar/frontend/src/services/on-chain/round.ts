@@ -74,6 +74,7 @@ export interface CreateRoundParams {
 	voting_end_ms: u64
 	voting_start_ms: u64
 	use_vault?: boolean
+	checked_list_ids?: bigint[]
 }
 
 export interface ReviewApplicationParams {
@@ -159,6 +160,11 @@ export interface UpdateChallengePayoutParams {
 export interface SetAdminsRoundParams {
 	round_id: u128
 	round_admin: string[]
+}
+
+interface GetListsParams {
+	skip: number
+	limit: number
 }
 
 export const getRounds: (
@@ -501,6 +507,20 @@ export const setAdminsRound = async (
 		round_admin: params.round_admin,
 	})
 	return round
+}
+
+export const getLists: (
+	params: GetListsParams,
+	contract: Contracts,
+) => Promise<any[]> = async (params: GetListsParams, contract: Contracts) => {
+	let limit = params.limit ? params.limit : 10
+	let skip = params.skip ? params.skip * limit : 0
+
+	let lists = await contract.lists_contract.get_lists({
+		from_index: BigInt(skip),
+		limit: BigInt(limit),
+	})
+	return lists.result
 }
 
 // export const getChallengePayoutRound: (

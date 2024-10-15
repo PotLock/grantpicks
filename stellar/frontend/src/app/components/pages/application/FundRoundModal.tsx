@@ -13,6 +13,8 @@ import { useWallet } from '@/app/providers/WalletProvider'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { GPRound } from '@/models/round'
+import IconNear from '../../svgs/IconNear'
+import { formatNearAmount, parseNearAmount } from 'near-api-js/lib/utils/format'
 
 interface FundROundModalProps extends BaseModalProps {
 	doc: GPRound
@@ -29,64 +31,108 @@ const FundRoundModal = ({
 	const [amountUsd, setAmountUsd] = useState<string>('0.00')
 	const [fee, setFee] = useState<string>('0.00')
 	const { setSuccessFundRoundModalProps } = useModalContext()
-	const { stellarPrice, openPageLoading, dismissPageLoading } =
+	const { stellarPrice, openPageLoading, dismissPageLoading, nearPrice } =
 		useGlobalContext()
-	const { stellarPubKey, stellarKit, currentBalance } = useWallet()
+	const { stellarPubKey, stellarKit, currentBalance, nearWallet } = useWallet()
 	const storage = useAppStorage()
 
 	const getFee = async () => {
-		const contracts = storage.getStellarContracts()
-
-		if (!contracts) {
-			return
-		}
-
-		try {
-			const config = (await contracts.round_contract.get_config()).result
-
-			if (config) {
-				const newFee =
-					(Number(config.protocol_fee_basis_points.toString()) * 100) / 10000
-
-				setFee(newFee.toFixed(2).toString())
-			}
-		} catch (error: any) {
-			console.log('error', error)
-		}
-	}
-
-	const onDepositFundRound = async () => {
-		try {
-			openPageLoading()
+		if (storage.chainId === 'stellar') {
 			const contracts = storage.getStellarContracts()
 
 			if (!contracts) {
 				return
 			}
 
-			const tx = await depositFundRound(
-				{
-					round_id: BigInt(doc.on_chain_id),
-					caller: stellarPubKey,
-					amount: BigInt(parseToStroop(amount)),
-					memo: '',
-					referrer_id: undefined,
-				},
-				contracts,
-			)
-			const txHash = await contracts.signAndSendTx(
-				stellarKit as StellarWalletsKit,
-				tx.toXDR(),
-				stellarPubKey,
-			)
-			if (txHash) {
+			try {
+				const config = (await contracts.round_contract.get_config()).result
+
+				if (config) {
+					const newFee =
+						(Number(config.protocol_fee_basis_points.toString()) * 100) / 10000
+
+					setFee(newFee.toFixed(2).toString())
+				}
+			} catch (error: any) {
+				console.log('error', error)
+			}
+		} else {
+			const contracts = storage.getNearContracts(null)
+
+			if (!contracts) {
+				return
+			}
+
+			try {
+				const config = await contracts.round.getConfig()
+
+				if (config) {
+					const newFee = (config.protocol_fee_basis_points * 100) / 10000
+
+					setFee(newFee.toFixed(2).toString())
+				}
+			} catch (error: any) {
+				console.log('error', error)
+			}
+		}
+	}
+
+	const onDepositFundRound = async () => {
+		try {
+			openPageLoading()
+
+			if (storage.chainId === 'stellar') {
+				const contracts = storage.getStellarContracts()
+
+				if (!contracts) {
+					return
+				}
+
+				const tx = await depositFundRound(
+					{
+						round_id: BigInt(doc.on_chain_id),
+						caller: stellarPubKey,
+						amount: BigInt(parseToStroop(amount)),
+						memo: '',
+						referrer_id: undefined,
+					},
+					contracts,
+				)
+				const txHash = await contracts.signAndSendTx(
+					stellarKit as StellarWalletsKit,
+					tx.toXDR(),
+					stellarPubKey,
+				)
+				if (txHash) {
+					dismissPageLoading()
+					setSuccessFundRoundModalProps((prev) => ({
+						...prev,
+						isOpen: true,
+						amount,
+						doc,
+						txHash,
+					}))
+					await mutateRounds()
+					onClose()
+				}
+			} else {
+				const contracts = storage.getNearContracts(nearWallet)
+
+				if (!contracts) {
+					return
+				}
+
+				const depositAmount = parseNearAmount(amount)
+
+				const tx = await contracts.round.deposit(doc.on_chain_id, depositAmount)
+
 				dismissPageLoading()
 				setSuccessFundRoundModalProps((prev) => ({
 					...prev,
 					isOpen: true,
 					amount,
 					doc,
-					txHash,
+					txHash: tx.outcome.transaction_outcome.id,
 				}))
 				await mutateRounds()
 				onClose()
@@ -98,12 +144,9 @@ const FundRoundModal = ({
 	}
 
 	useEffect(() => {
-		if (stellarPubKey) {
-			getFee()
-			storage.setMyAddress(stellarPubKey)
-		}
+		getFee()
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [stellarPubKey])
+	}, [storage.my_address])
 
 	return (
 		<Modal isOpen={isOpen} onClose={onClose}>
@@ -120,12 +163,15 @@ const FundRoundModal = ({
 				</div>
 				<div className="p-4 bg-grantpicks-alpha-50/5 rounded-xl mb-4 md:mb-6">
 					<p className="text-sm font-normal text-grantpicks-black-950">
-						We’ve raised XLM{' '}
-						{formatStroopToXlm(BigInt(doc.current_vault_balance))} and have
-						reached{' '}
+						We’ve raised{' '}
+						{storage.chainId === 'stellar'
+							? formatStroopToXlm(BigInt(doc.current_vault_balance))
+							: formatNearAmount(doc.current_vault_balance)}{' '}
+						{storage.chainId === 'stellar' ? 'XLM' : 'NEAR'} and have reached{' '}
 						<span className="font-semibold text-grantpicks-green-800">
 							{(
-								(BigInt(doc.current_vault_balance) * BigInt(100)) /
+								((BigInt(doc.current_vault_balance) / BigInt(10 ** 24)) *
+									BigInt(100)) /
 								BigInt(doc.expected_amount)
 							).toString()}
 							% of our expected funds.
@@ -140,12 +186,18 @@ const FundRoundModal = ({
 						hintLabel={`included protocol fee ${fee} %`}
 						onChange={(e) => {
 							const calculation =
-								parseFloat(e.target.value || '0') * stellarPrice
+								storage.chainId === 'stellar'
+									? parseFloat(e.target.value || '0') * stellarPrice
+									: parseFloat(e.target.value || '0') * nearPrice
 							setAmountUsd(`${calculation.toFixed(3)}`)
 							setAmount(e.target.value)
 						}}
 						preffixIcon={
-							<IconStellar size={24} className="fill-grantpicks-black-400" />
+							storage.chainId === 'stellar' ? (
+								<IconStellar size={24} className="fill-grantpicks-black-400" />
+							) : (
+								<IconNear size={24} className="fill-grantpicks-black-400" />
+							)
 						}
 						suffixIcon={
 							<div className="flex items-center space-x-2">
@@ -163,7 +215,8 @@ const FundRoundModal = ({
 									Amount <span className="text-grantpicks-red-600">*</span>
 								</p>
 								<p className="text-sm font-semibold text-grantpicks-black-950">
-									{currentBalance} XLM{' '}
+									{currentBalance}{' '}
+									{storage.chainId === 'stellar' ? 'XLM' : 'NEAR'}{' '}
 									<span className="ml-1 text-sm font-normal text-grantpicks-black-600">
 										available
 									</span>

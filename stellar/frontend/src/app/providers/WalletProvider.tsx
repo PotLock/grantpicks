@@ -49,6 +49,7 @@ import CMDWallet from '@/lib/wallet'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { IAccount } from '@/types/account'
 import { usePotlockService } from '@/services/potlock'
+import { formatNearAmount } from 'near-api-js/lib/utils/format'
 
 const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 	const [connectedWallet, setConnectedWallet] = useState<
@@ -169,6 +170,14 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 			const accounts = await wallet.getAccounts()
 			setNearWallet(wallet as Wallet & SignMessageMethod)
 			setNearAccounts(accounts)
+
+			const account = await store
+				.getNearContracts(null)
+				?.round.getBalance(accounts[0]?.accountId)
+
+			setCurrentBalance(
+				Number(formatNearAmount(account?.amount || '0', 2).replace(',', '')),
+			)
 
 			store.setMyAddress(accounts[0]?.accountId || '')
 			store.setChainId('near')

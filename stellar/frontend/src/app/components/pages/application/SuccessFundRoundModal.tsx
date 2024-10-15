@@ -8,6 +8,7 @@ import { prettyTruncate } from '@/utils/helper'
 import Link from 'next/link'
 import IconExternalLink from '../../svgs/IconExternalLink'
 import { GPRound } from '@/models/round'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 
 interface SuccessFundRoundModalProps extends BaseModalProps {
 	amount: string
@@ -22,7 +23,8 @@ const SuccessFundRoundModal = ({
 	txHash,
 	amount,
 }: SuccessFundRoundModalProps) => {
-	const { stellarPrice } = useGlobalContext()
+	const { stellarPrice, nearPrice } = useGlobalContext()
+	const storage = useAppStorage()
 	return (
 		<Modal isOpen={isOpen} onClose={onClose}>
 			<div className="w-11/12 md:w-[340px] mx-auto bg-white rounded-xl shadow-md p-4 md:p-6 relative">
@@ -46,10 +48,14 @@ const SuccessFundRoundModal = ({
 						You’ve Successfully Donated{' '}
 					</p>
 					<p className="text-xl font-semibold text-grantpicks-black-950">
-						{amount} XLM
+						{amount} {storage.chainId === 'stellar' ? 'XLM' : 'NEAR'}
 					</p>
 					<p className="text-sm font-normal text-grantpicks-black-950">
-						~{parseFloat(amount || '0') * stellarPrice} USD
+						~
+						{storage.chainId === 'stellar'
+							? parseFloat(amount || '0') * stellarPrice
+							: parseFloat(amount || '0') * nearPrice}{' '}
+						USD
 					</p>
 				</div>
 				<div className="flex flex-col items-center">
@@ -61,7 +67,13 @@ const SuccessFundRoundModal = ({
 							{prettyTruncate(txHash, 10)}
 						</p>
 						<Link
-							href={`https://stellar.expert/explorer/testnet/tx/${txHash}`}
+							href={
+								storage.chainId === 'stellar'
+									? `https://stellar.expert/explorer/${storage.network}/tx/${txHash}`
+									: storage.network === 'mainnet'
+										? `https://nearblocks.io/txns/${txHash}`
+										: `https://testnet.nearblocks.io/txns/${txHash}`
+							}
 							target="_blank"
 						>
 							<IconExternalLink

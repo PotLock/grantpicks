@@ -1,22 +1,23 @@
 import { NO_DEPOSIT, THIRTY_TGAS } from '@/constants/near'
 import { Wallet } from '@near-wallet-selector/core'
-import { providers, utils, Contract } from 'near-api-js'
+import { providers } from 'near-api-js'
 import {
+	AccountView,
 	CodeResult,
 	FinalExecutionOutcome,
 } from 'near-api-js/lib/providers/provider'
-import { NearCreateRoundParams, NearRound } from './type'
+import { NearConfig, NearCreateRoundParams, NearRound } from './type'
 
 export interface ViewMethodParams {
 	contractId: string
 	method: string
-	args: Object
+	args: object
 }
 
 export interface CallMethodParams {
 	contractId: string
 	method: string
-	args: any
+	args: object
 	gas: string
 	deposit: string
 }
@@ -44,8 +45,6 @@ export class RoundContract {
 			finality: 'optimistic',
 		})
 
-		console.log(res)
-
 		return JSON.parse(Buffer.from((res as CodeResult).result).toString())
 	}
 
@@ -71,10 +70,18 @@ export class RoundContract {
 			],
 		})
 
-		return providers.getTransactionLastResult(outcome as FinalExecutionOutcome)
+		return {
+			result: providers.getTransactionLastResult(
+				outcome as FinalExecutionOutcome,
+			),
+			outcome: outcome as FinalExecutionOutcome,
+		}
 	}
 
-	async createRound(params: NearCreateRoundParams): Promise<NearRound> {
+	async createRound(params: NearCreateRoundParams): Promise<{
+		result: NearRound
+		outcome: FinalExecutionOutcome
+	}> {
 		const result = await this.callMethod({
 			contractId: this.contractId,
 			method: 'create_round',
@@ -82,6 +89,28 @@ export class RoundContract {
 				round_detail: params,
 			} as any,
 			deposit: NO_DEPOSIT,
+			gas: THIRTY_TGAS,
+		})
+
+		return result
+	}
+
+	async deposit(
+		roundId: number,
+		amount: string | null,
+	): Promise<{
+		result: any
+		outcome: FinalExecutionOutcome
+	}> {
+		const result = await this.callMethod({
+			contractId: this.contractId,
+			method: 'deposit_to_round',
+			args: {
+				round_id: parseInt(roundId.toString()),
+				memo: undefined,
+				referral_id: undefined,
+			},
+			deposit: amount || NO_DEPOSIT,
 			gas: THIRTY_TGAS,
 		})
 
@@ -99,5 +128,29 @@ export class RoundContract {
 		})
 
 		return result
+	}
+
+	async getConfig(): Promise<NearConfig> {
+		const result = await this.viewMethod({
+			contractId: this.contractId,
+			method: 'get_config',
+			args: {},
+		})
+
+		return result
+	}
+
+	async getBalance(accountId: string): Promise<AccountView> {
+		const url = `https://rpc.${this.networkId}.near.org`
+
+		const provider = new providers.JsonRpcProvider({ url })
+
+		const res = await provider.query({
+			request_type: 'view_account',
+			account_id: accountId,
+			finality: 'final',
+		})
+
+		return res as AccountView
 	}
 }

@@ -20,7 +20,7 @@ import {
 	createProject,
 	ICreateProjectParams,
 	IGetProjectsResponse,
-} from '@/services/on-chain/project-registry'
+} from '@/services/stellar/project-registry'
 import { useWallet } from '@/app/providers/WalletProvider'
 import CMDWallet from '@/lib/wallet'
 import Contracts from '@/lib/contracts'

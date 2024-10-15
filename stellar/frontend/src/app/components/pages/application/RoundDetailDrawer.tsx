@@ -15,7 +15,7 @@ import { useWallet } from '@/app/providers/WalletProvider'
 import IconNear from '../../svgs/IconNear'
 import moment from 'moment'
 import { formatStroopToXlm, prettyTruncate } from '@/utils/helper'
-import { getRoundAdmins } from '@/services/on-chain/round'
+import { getRoundAdmins } from '@/services/stellar/round'
 import useSWR from 'swr'
 import IconLoading from '../../svgs/IconLoading'
 import { Contact } from 'round-client'
@@ -99,14 +99,16 @@ const RoundDetailDrawer = ({
 	const storage = useAppStorage()
 
 	const onFetchRoundAdmins = async () => {
-		let contracts = storage.getStellarContracts()
+		if (storage.chainId == 'stellar') {
+			let contracts = storage.getStellarContracts()
 
-		if (!contracts) {
-			return
+			if (!contracts) {
+				return
+			}
+
+			const res = await getRoundAdmins({ round_id: BigInt(doc.id) }, contracts)
+			return res
 		}
-
-		const res = await getRoundAdmins({ round_id: BigInt(doc.id) }, contracts)
-		return res
 	}
 
 	const getSpecificTime = () => {

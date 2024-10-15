@@ -14,7 +14,7 @@ import CMDWallet from '@/lib/wallet'
 import { useWallet } from '@/app/providers/WalletProvider'
 import Contracts from '@/lib/contracts'
 import { Network } from '@/types/on-chain'
-import { voteRound, VoteRoundParams } from '@/services/on-chain/round'
+import { voteRound, VoteRoundParams } from '@/services/stellar/round'
 import { useParams } from 'next/navigation'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import toast from 'react-hot-toast'
@@ -43,7 +43,7 @@ const IsNotVotedSection = ({
 	const { setVideoPlayerProps } = useModalContext()
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const { stellarPubKey, stellarKit } = useWallet()
-  const storage = useAppStorage()
+	const storage = useAppStorage()
 
 	const onPreviousBoxing = (currIdx: number) => {
 		if (currIdx > 0) {

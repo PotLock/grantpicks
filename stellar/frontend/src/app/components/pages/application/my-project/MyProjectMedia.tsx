@@ -31,7 +31,7 @@ import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import {
 	IUpdateProjectParams,
 	updateProject,
-} from '@/services/on-chain/project-registry'
+} from '@/services/stellar/project-registry'
 import { DEFAULT_IMAGE_URL } from '@/constants/project'
 import Contracts from '@/lib/contracts'
 import { Network } from '@/types/on-chain'

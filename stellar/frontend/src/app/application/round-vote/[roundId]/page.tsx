@@ -15,7 +15,7 @@ import {
 	HasVotedRoundParams,
 	isAvailableVoteRound,
 	isHasVotedRound,
-} from '@/services/on-chain/round'
+} from '@/services/stellar/round'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { Network } from '@/types/on-chain'
 import { useParams, useRouter } from 'next/navigation'

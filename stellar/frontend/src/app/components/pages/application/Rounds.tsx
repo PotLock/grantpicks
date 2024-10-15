@@ -18,12 +18,12 @@ import {
 	getRoundApplication,
 	HasVotedRoundParams,
 	isHasVotedRound,
-} from '@/services/on-chain/round'
+} from '@/services/stellar/round'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { IGetRoundsResponse, Network } from '@/types/on-chain'
 import useSWRInfinite from 'swr/infinite'
 import InfiniteScroll from 'react-infinite-scroll-component'
-import { LIMIT_SIZE } from '@/constants/query'
+import { LIMIT_SIZE, LIMIT_SIZE_CONTRACT } from '@/constants/query'
 import IconLoading from '../../svgs/IconLoading'
 import Image from 'next/image'
 import moment from 'moment'
@@ -36,6 +36,7 @@ import { usePotlockService } from '@/services/potlock'
 import { GPRound } from '@/models/round'
 import IconUnfoldMore from '../../svgs/IconUnfoldMore'
 import Menu from '../../commons/Menu'
+import { NearRound } from '@/services/near/type'
 
 const ApplicationRoundsItem = ({
 	doc,
@@ -60,57 +61,63 @@ const ApplicationRoundsItem = ({
 	const storage = useAppStorage()
 
 	const fetchOnChainRound = async () => {
-		const contracts = storage.getStellarContracts()
+		if (storage.chainId == 'stellar') {
+			const contracts = storage.getStellarContracts()
 
-		if (!contracts) return
+			if (!contracts) return
 
-		try {
-			const round = (
-				await contracts.round_contract.get_round({
-					round_id: BigInt(doc.on_chain_id),
-				})
-			).result
+			try {
+				const round = (
+					await contracts.round_contract.get_round({
+						round_id: BigInt(doc.on_chain_id),
+					})
+				).result
 
-			let rounds = storage.roundes
-			rounds.set(doc.on_chain_id.toString(), round)
-			storage.setRoundes(rounds)
-		} catch (error: any) {
-			console.log('error fetching on chain round', error)
+				let rounds = storage.roundes
+				rounds.set(doc.on_chain_id.toString(), round)
+				storage.setRoundes(rounds)
+			} catch (error: any) {
+				console.log('error fetching on chain round', error)
+			}
 		}
 	}
 
 	const fetchTotalApprovedProjects = async () => {
-		const contracts = storage.getStellarContracts()
+		if (storage.chainId == 'stellar') {
+			const contracts = storage.getStellarContracts()
 
-		if (!contracts) return
+			if (!contracts) return
 
-		try {
-			const res = await contracts.round_contract.get_approved_projects({
-				round_id: BigInt(doc.on_chain_id),
-			})
-			setTotalApprovedProjects(res.result.length)
-		} catch (error: any) {
-			console.log('error fetching total approved projects', error)
+			try {
+				const res = await contracts.round_contract.get_approved_projects({
+					round_id: BigInt(doc.on_chain_id),
+				})
+				setTotalApprovedProjects(res.result.length)
+			} catch (error: any) {
+				console.log('error fetching total approved projects', error)
+			}
 		}
 	}
 
 	const fetchRoundApplication = async () => {
-		if (stellarPubKey && doc.allow_applications) {
-			try {
-				const contracts = storage.getStellarContracts()
+		if (storage.chainId == 'stellar') {
+			if (stellarPubKey && doc.allow_applications) {
+				try {
+					const contracts = storage.getStellarContracts()
 
-				if (!contracts) return
+					if (!contracts) return
 
-				const res = await getRoundApplication(
-					{ round_id: BigInt(doc.on_chain_id), applicant: stellarPubKey },
-					contracts,
-				)
-				//@ts-ignore
-				if (!res?.error) {
-					if (selectedRoundType === 'upcoming') setIsUserApplied(true)
+					const res = await getRoundApplication(
+						{ round_id: BigInt(doc.on_chain_id), applicant: stellarPubKey },
+						contracts,
+					)
+					//@ts-ignore
+					if (!res?.error) {
+						if (selectedRoundType === 'upcoming') setIsUserApplied(true)
+					}
+				} catch (error: any) {
+					console.log('error fetch project applicant', error)
 				}
-			} catch (error: any) {
-				console.log('error fetch project applicant', error)
 			}
 		}
 	}
@@ -145,23 +152,25 @@ const ApplicationRoundsItem = ({
 	}
 
 	const checkIfUserHasVoted = async () => {
-		if (stellarPubKey) {
-			try {
-				const contracts = storage.getStellarContracts()
+		if (storage.chainId == 'stellar') {
+			if (stellarPubKey) {
+				try {
+					const contracts = storage.getStellarContracts()
 
-				if (!contracts) return
+					if (!contracts) return
 
-				const params: HasVotedRoundParams = {
-					round_id: BigInt(doc.on_chain_id),
-					voter: stellarPubKey,
+					const params: HasVotedRoundParams = {
+						round_id: BigInt(doc.on_chain_id),
+						voter: stellarPubKey,
+					}
+					const hasVoted = await isHasVotedRound(params, contracts)
+					setHasVoted(hasVoted)
+				} catch (error: any) {
+					console.log('error checking if user has voted', error)
 				}
-				const hasVoted = await isHasVotedRound(params, contracts)
-				setHasVoted(hasVoted)
-			} catch (error: any) {
-				console.log('error checking if user has voted', error)
+			} else {
+				setHasVoted(false)
 			}
-		} else {
-			setHasVoted(false)
 		}
 	}
 
@@ -422,29 +431,73 @@ const ApplicationRounds = () => {
 	const { selectedRoundType, setSelectedRoundType } = useRoundStore()
 	const [roundsData, setRoundsData] = useState<GPRound[]>([])
 	const potlockApi = usePotlockService()
-	const { connectedWallet } = useWallet()
+	const storage = useAppStorage()
+	const { connectedWallet, nearWallet } = useWallet()
 	const [showSortType, setShowSortType] = useState<boolean>(false)
+	const { nearPrice } = useGlobalContext()
 	const [sortType, setSortType] = useState<string>('Most Recent')
 
 	const onFetchRounds = async (key: { url: string; page: number }) => {
-		const res = await potlockApi.getRounds(
-			key.page + 1,
-			sortType === 'Vault Total Deposits'
-				? 'vault_total_deposits'
-				: 'deployed_at',
-		)
-		return res
+		if (storage.chainId == 'stellar') {
+			const res = await potlockApi.getRounds(
+				key.page + 1,
+				sortType === 'Vault Total Deposits'
+					? 'vault_total_deposits'
+					: 'deployed_at',
+			)
+			return res
+		} else {
+			const contracts = storage.getNearContracts(nearWallet)
+
+			const rounds = await contracts?.round.getRounds(
+				key.page * LIMIT_SIZE_CONTRACT,
+				LIMIT_SIZE_CONTRACT,
+			)
+
+			return rounds.map((round: NearRound) => {
+				return {
+					...round,
+					id: round.id.toString(),
+					on_chain_id: round.id.toString(),
+					voting_start: round.voting_start_ms,
+					voting_end: round.voting_end_ms,
+					factory_contract: '',
+					deployed_at: '',
+					cooldown_end: round.cooldown_end_ms,
+					compliance_end: round.compliance_end_ms,
+					application_end: round.application_end_ms,
+					application_start: round.application_start_ms,
+					is_video_required: round.application_requires_video,
+					is_whitelist: round.use_whitelist,
+					is_referral: round.use_referrals,
+					is_compliance: round.use_compliance,
+					compliance_req_desc: round.compliance_requirement_description,
+					allow_remaining_dist: round.allow_remaining_funds_redistribution,
+					remaining_dist_address:
+						round.remaining_funds_redistribution_recipient,
+					remaining_dist_memo: round.remaining_funds_redistribution_memo,
+					remaining_dist_by: round.remaining_funds_redistributed_by,
+					remaining_dist_at_ms: round.remaining_funds_redistributed_at_ms,
+					vault_total_deposits: round.vault_total_deposits,
+					approved_projects: [],
+					current_vault_balance: round.current_vault_balance,
+					vault_total_deposits_usd:
+						Number(round.vault_total_deposits || 0) * nearPrice,
+					use_vault: true,
+				} as unknown as GPRound
+			})
+		}
+
+		return []
 	}
 
-	const getKey = (
-		pageIndex: number,
-		previousPageData: IGetRoundsResponse[],
-	) => {
+	const getKey = (pageIndex: number, previousPageData: GPRound[]) => {
 		if (previousPageData && !previousPageData.length) return null
 		return {
 			url: `get-rounds`,
 			page: pageIndex,
 			sortType,
+			address: storage.my_address,
 		}
 	}
 	const { data, size, setSize, isValidating, isLoading, mutate } =

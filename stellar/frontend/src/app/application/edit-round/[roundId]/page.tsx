@@ -40,7 +40,7 @@ import {
 	getRoundInfo,
 	setAdminsRound,
 	UpdateRoundParams,
-} from '@/services/on-chain/round'
+} from '@/services/stellar/round'
 import { useParams, useRouter } from 'next/navigation'
 import CMDWallet from '@/lib/wallet'
 import Contracts from '@/lib/contracts'
@@ -56,7 +56,7 @@ import { LIMIT_SIZE } from '@/constants/query'
 import {
 	getProject,
 	IGetProjectsResponse,
-} from '@/services/on-chain/project-registry'
+} from '@/services/stellar/project-registry'
 import IconStellar from '@/app/components/svgs/IconStellar'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import toast from 'react-hot-toast'

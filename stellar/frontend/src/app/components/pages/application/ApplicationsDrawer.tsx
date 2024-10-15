@@ -13,7 +13,7 @@ import { LIMIT_SIZE } from '@/constants/query'
 import {
 	ReviewApplicationParams,
 	reviewApplicationRound,
-} from '@/services/on-chain/round'
+} from '@/services/stellar/round'
 import InfiniteScroll from 'react-infinite-scroll-component'
 import IconLoading from '../../svgs/IconLoading'
 import moment from 'moment'
@@ -29,7 +29,6 @@ import Image from 'next/image'
 import { GPRound } from '@/models/round'
 import { usePotlockService } from '@/services/potlock'
 import { GPApplication } from '@/models/application'
-import { RoundApplication } from 'round-client'
 
 interface ApplicationsDrawerProps extends IDrawerProps {
 	doc: GPRound
@@ -55,25 +54,27 @@ const ApplicationItem = ({
 	const storage = useAppStorage()
 
 	const onFetchRoundApplications = async () => {
-		const contract = storage.getStellarContracts()
+		if (storage.chainId == 'stellar') {
+			const contract = storage.getStellarContracts()
 
-		if (!contract) {
-			return
-		}
+			if (!contract) {
+				return
+			}
 
-		try {
-			const application = (
-				await contract.round_contract.get_application({
-					round_id: BigInt(roundData.on_chain_id),
-					applicant: item.applicant.id,
-				})
-			).result
+			try {
+				const application = (
+					await contract.round_contract.get_application({
+						round_id: BigInt(roundData.on_chain_id),
+						applicant: item.applicant.id,
+					})
+				).result
 
-			let applications = storage.applications
-			applications.set(application.applicant_id, application)
-			storage.setApplications(applications)
-		} catch (error) {
-			console.log('error get application', error)
+				let applications = storage.applications
+				applications.set(application.applicant_id, application)
+				storage.setApplications(applications)
+			} catch (error) {
+				console.log('error get application', error)
+			}
 		}
 	}
 

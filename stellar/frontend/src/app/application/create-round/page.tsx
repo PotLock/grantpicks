@@ -28,14 +28,14 @@ import IconClose from '@/app/components/svgs/IconClose'
 import AddAdminsModal from '@/app/components/pages/create-round/AddAdminsModal'
 import clsx from 'clsx'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
-import { IGetProjectsResponse } from '@/services/on-chain/project-registry'
+import { IGetProjectsResponse } from '@/services/stellar/project-registry'
 import { useWallet } from '@/app/providers/WalletProvider'
 import {
 	addProjectsRound,
 	createRound,
 	CreateRoundParams,
 	depositFundRound,
-} from '@/services/on-chain/round'
+} from '@/services/stellar/round'
 import { parseToStroop, prettyTruncate, sleep } from '@/utils/helper'
 import { useModalContext } from '@/app/providers/ModalProvider'
 import toast from 'react-hot-toast'
@@ -58,13 +58,14 @@ import {
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import Image from 'next/image'
 import { usePotlockService } from '@/services/potlock'
+import { NearCreateRoundParams } from '@/services/near/type'
 
 const CreateRoundPage = () => {
 	const router = useRouter()
 	const [showContactType, setShowContactType] = useState<boolean>(false)
 	const { nearPrice, stellarPrice, openPageLoading, dismissPageLoading } =
 		useGlobalContext()
-	const { stellarPubKey, stellarKit } = useWallet()
+	const { stellarPubKey, stellarKit, nearWallet } = useWallet()
 	const { setSuccessCreateRoundModalProps } = useModalContext()
 	const [amountUsd, setAmountUsd] = useState<string>('0.00')
 	const [expectAmountUsd, setExpectAmountUsd] = useState<string>('0.00')
@@ -128,161 +129,222 @@ const CreateRoundPage = () => {
 	const storage = useAppStorage()
 
 	const onAddApprovedProjects = async (roundId: bigint) => {
-		try {
-			let contracts = storage.getStellarContracts()
+		if (storage.chainId === 'stellar') {
+			try {
+				let contracts = storage.getStellarContracts()
 
-			if (!contracts) {
-				return
+				if (!contracts) {
+					return
+				}
+
+				const projects = selectedProjects.map((p) => p.id)
+				const txAddProject = await addProjectsRound(
+					BigInt(roundId),
+					stellarPubKey,
+					projects,
+					contracts,
+				)
+				const txHash = await contracts.signAndSendTx(
+					stellarKit as StellarWalletsKit,
+					txAddProject.toXDR(),
+					stellarPubKey,
+				)
+				return txHash
+			} catch (error: any) {
+				dismissPageLoading()
+				console.log('error', error)
 			}
-
-			const projects = selectedProjects.map((p) => p.id)
-			const txAddProject = await addProjectsRound(
-				BigInt(roundId),
-				stellarPubKey,
-				projects,
-				contracts,
-			)
-			const txHash = await contracts.signAndSendTx(
-				stellarKit as StellarWalletsKit,
-				txAddProject.toXDR(),
-				stellarPubKey,
-			)
-			return txHash
-		} catch (error: any) {
-			dismissPageLoading()
-			console.log('error', error)
 		}
 	}
 
 	const onInitialDeposit = async (roundId: bigint) => {
-		try {
-			let contracts = storage.getStellarContracts()
+		if (storage.chainId === 'stellar') {
+			try {
+				let contracts = storage.getStellarContracts()
 
-			if (!contracts) {
-				return
+				if (!contracts) {
+					return
+				}
+
+				const txAddProject = await depositFundRound(
+					{
+						caller: stellarPubKey,
+						round_id: roundId,
+						amount: BigInt(parseToStroop(watch().amount)),
+						memo: '',
+						referrer_id: undefined,
+					},
+					contracts,
+				)
+				const txHash = await contracts.signAndSendTx(
+					stellarKit as StellarWalletsKit,
+					txAddProject.toXDR(),
+					stellarPubKey,
+				)
+				return txHash
+			} catch (error: any) {
+				dismissPageLoading()
+				console.log('error', error)
 			}
-
-			const txAddProject = await depositFundRound(
-				{
-					caller: stellarPubKey,
-					round_id: roundId,
-					amount: BigInt(parseToStroop(watch().amount)),
-					memo: '',
-					referrer_id: undefined,
-				},
-				contracts,
-			)
-			const txHash = await contracts.signAndSendTx(
-				stellarKit as StellarWalletsKit,
-				txAddProject.toXDR(),
-				stellarPubKey,
-			)
-			return txHash
-		} catch (error: any) {
-			dismissPageLoading()
-			console.log('error', error)
 		}
 	}
 
 	const onCreateRound: SubmitHandler<CreateRoundData> = async (data) => {
 		try {
 			openPageLoading()
-			let contracts = storage.getStellarContracts()
 
-			if (!contracts) {
-				return
-			}
+			if (storage.chainId === 'stellar') {
+				let contracts = storage.getStellarContracts()
 
-			const maxParticipants =
-				data.max_participants < 10 ? 10 : data.max_participants
-			const createRoundParams: CreateRoundParams = {
-				owner: stellarPubKey,
-				name: data.title,
-				description: data.description,
-				application_start_ms: data.apply_duration_start
-					? BigInt(data.apply_duration_start?.getTime() as number)
-					: undefined,
-				application_end_ms: data.apply_duration_end
-					? BigInt(data.apply_duration_end?.getTime() as number)
-					: undefined,
-				contacts: [
-					{
-						name: data.contact_type,
-						value: data.contact_address,
-					},
-				],
-				expected_amount: parseToStroop(data.expected_amount),
-				max_participants:
-					selectedProjects.length > maxParticipants // TODO: must change "Max Participants" when adding projects
-						? selectedProjects.length
-						: maxParticipants,
-				num_picks_per_voter:
-					data.vote_per_person < 1 ? 1 : data.vote_per_person,
-				use_whitelist: false,
-				is_video_required: data.is_video_required,
-				allow_applications: data.allow_application,
-				use_vault: data.use_vault,
-				voting_start_ms: BigInt(
-					data.voting_duration_start?.getTime() as number,
-				),
-				voting_end_ms: BigInt(data.voting_duration_end?.getTime() as number),
-				admins:
-					data.admins?.length > 0
-						? data.admins.map((admin) => admin.admin_id)
-						: [],
-				allow_remaining_dist: true,
-				compliance_req_desc: data.compliance_req_desc,
-				compliance_period_ms: data.compliance_period_ms
-					? BigInt(data.compliance_period_ms as number)
-					: undefined,
-				cooldown_period_ms: undefined,
-				remaining_dist_address: data.remaining_dist_address || stellarPubKey,
-				referrer_fee_basis_points: 0,
-			}
-			console.log('debug params', createRoundParams)
-			const txCreateRound = await createRound(
-				stellarPubKey,
-				createRoundParams,
-				contracts,
-			)
-			const txHashCreateRound = await contracts.signAndSendTx(
-				stellarKit as StellarWalletsKit,
-				txCreateRound.toXDR(),
-				stellarPubKey,
-			)
-			if (txHashCreateRound) {
-				let txHashAddProjects, txHashInitialDeposit
-				if (selectedProjects.length > 0) {
-					txHashAddProjects = await onAddApprovedProjects(
-						txCreateRound.result.id,
-					)
-				}
-				if (watch().amount && watch().amount !== '0') {
-					txHashInitialDeposit = await onInitialDeposit(txCreateRound.result.id)
+				if (!contracts) {
+					return
 				}
 
-				let round = null
-
-				while (!round) {
-					try {
-						round = await potlockService.getRound(
-							Number(txCreateRound.result.id),
+				const maxParticipants =
+					data.max_participants < 10 ? 10 : data.max_participants
+				const createRoundParams: CreateRoundParams = {
+					owner: stellarPubKey,
+					name: data.title,
+					description: data.description,
+					application_start_ms: data.apply_duration_start
+						? BigInt(data.apply_duration_start?.getTime() as number)
+						: undefined,
+					application_end_ms: data.apply_duration_end
+						? BigInt(data.apply_duration_end?.getTime() as number)
+						: undefined,
+					contacts: [
+						{
+							name: data.contact_type,
+							value: data.contact_address,
+						},
+					],
+					expected_amount: parseToStroop(data.expected_amount),
+					max_participants:
+						selectedProjects.length > maxParticipants // TODO: must change "Max Participants" when adding projects
+							? selectedProjects.length
+							: maxParticipants,
+					num_picks_per_voter:
+						data.vote_per_person < 1 ? 1 : data.vote_per_person,
+					use_whitelist: false,
+					is_video_required: data.is_video_required,
+					allow_applications: data.allow_application,
+					use_vault: data.use_vault,
+					voting_start_ms: BigInt(
+						data.voting_duration_start?.getTime() as number,
+					),
+					voting_end_ms: BigInt(data.voting_duration_end?.getTime() as number),
+					admins:
+						data.admins?.length > 0
+							? data.admins.map((admin) => admin.admin_id)
+							: [],
+					allow_remaining_dist: data.allow_remaining_dist,
+					compliance_req_desc: data.compliance_req_desc,
+					compliance_period_ms: data.compliance_period_ms
+						? BigInt(data.compliance_period_ms as number)
+						: undefined,
+					cooldown_period_ms: undefined,
+					remaining_dist_address:
+						data.remaining_dist_address || storage.my_address || '',
+					referrer_fee_basis_points: 0,
+				}
+				console.log('debug params', createRoundParams)
+				const txCreateRound = await createRound(
+					stellarPubKey,
+					createRoundParams,
+					contracts,
+				)
+				const txHashCreateRound = await contracts.signAndSendTx(
+					stellarKit as StellarWalletsKit,
+					txCreateRound.toXDR(),
+					stellarPubKey,
+				)
+				if (txHashCreateRound) {
+					let txHashAddProjects, txHashInitialDeposit
+					if (selectedProjects.length > 0) {
+						txHashAddProjects = await onAddApprovedProjects(
+							txCreateRound.result.id,
 						)
-					} catch (e) {
-						console.error(e)
 					}
-					await sleep(3000)
+					if (watch().amount && watch().amount !== '0') {
+						txHashInitialDeposit = await onInitialDeposit(
+							txCreateRound.result.id,
+						)
+					}
+
+					let round = null
+
+					while (!round) {
+						try {
+							round = await potlockService.getRound(
+								Number(txCreateRound.result.id),
+							)
+						} catch (e) {
+							console.error(e)
+						}
+						await sleep(3000)
+					}
+
+					setSuccessCreateRoundModalProps((prev) => ({
+						...prev,
+						isOpen: true,
+						createRoundRes: round,
+						txHash: txHashCreateRound,
+					}))
+					reset()
+					dismissPageLoading()
+					router.push(`/application`)
+				}
+			} else {
+				const params: NearCreateRoundParams = {
+					owner: storage.my_address || '',
+					admins: selectedAdmins,
+					name: data.title,
+					description: data.description,
+					allow_applications: data.allow_application,
+					application_end_ms: data.allow_application
+						? data.apply_duration_end?.getTime()
+						: undefined,
+					application_requires_video: data.is_video_required,
+					application_start_ms: data.allow_application
+						? data.apply_duration_start?.getTime()
+						: undefined,
+					expected_amount: data.expected_amount,
+					contacts: [
+						{
+							name: data.contact_type,
+							value: data.contact_address,
+						},
+					],
+					compliance_period_ms: data.compliance_period_ms || 0,
+					compliance_requirement_description: data.compliance_req_desc,
+					cooldown_period_ms: data.cooldown_period_ms || 0,
+					use_cooldown: data.allow_cooldown || false,
+					use_compliance: data.allow_compliance || false,
+					use_referrals: false,
+					referrer_fee_basis_points: 0,
+					use_whitelist: false,
+					voting_end_ms: data.voting_duration_end?.getTime() || 0,
+					voting_start_ms: data.voting_duration_start?.getTime() || 0,
+					num_picks_per_voter: data.vote_per_person,
+					max_participants: data.max_participants,
+					allow_remaining_funds_redistribution:
+						data.allow_remaining_dist || false,
+					remaining_funds_redistribution_recipient: data.allow_remaining_dist
+						? data.remaining_dist_address
+						: undefined,
 				}
 
-				setSuccessCreateRoundModalProps((prev) => ({
-					...prev,
-					isOpen: true,
-					createRoundRes: round,
-					txHash: txHashCreateRound,
-				}))
-				reset()
-				dismissPageLoading()
-				router.push(`/application`)
+				console.log('params', params)
+				console.log('nearWallet', nearWallet)
+				if (!nearWallet) {
+					return
+				}
+
+				const nearContracts = storage.getNearContracts(nearWallet)
+				console.log('nearContracts', nearContracts)
+				const txNearCreateRound = await nearContracts?.round.createRound(params)
+
+				console.log('txNearCreateRound', txNearCreateRound)
 			}
 		} catch (error: any) {
 			console.error(error)
@@ -587,17 +649,32 @@ const CreateRoundPage = () => {
 									placeholder={isMobile ? '' : 'Enter amount...'}
 									{...register('amount', {
 										onChange: async (e) => {
-											const calculation =
-												parseFloat(e.target.value || '0') * stellarPrice
+											let calculation = 0
+
+											if (storage.chainId === 'stellar') {
+												calculation =
+													parseFloat(e.target.value || '0') * stellarPrice
+											} else {
+												calculation =
+													parseFloat(e.target.value || '0') * nearPrice
+											}
+
 											setAmountUsd(`${calculation.toFixed(3)}`)
 											setValue('amount', e.target.value)
 										},
 									})}
 									preffixIcon={
-										<IconStellar
-											size={24}
-											className="fill-grantpicks-black-400"
-										/>
+										storage.chainId === 'stellar' ? (
+											<IconStellar
+												size={24}
+												className="fill-grantpicks-black-400"
+											/>
+										) : (
+											<IconNear
+												size={24}
+												className="fill-grantpicks-black-400"
+											/>
+										)
 									}
 									textAlign="left"
 									suffixIcon={
@@ -634,10 +711,17 @@ const CreateRoundPage = () => {
 										},
 									})}
 									preffixIcon={
-										<IconStellar
-											size={24}
-											className="fill-grantpicks-black-400"
-										/>
+										storage.chainId === 'stellar' ? (
+											<IconStellar
+												size={24}
+												className="fill-grantpicks-black-400"
+											/>
+										) : (
+											<IconNear
+												size={24}
+												className="fill-grantpicks-black-400"
+											/>
+										)
 									}
 									textAlign="left"
 									suffixIcon={

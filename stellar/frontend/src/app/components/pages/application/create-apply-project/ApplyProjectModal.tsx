@@ -10,11 +10,11 @@ import { useWallet } from '@/app/providers/WalletProvider'
 import Contracts from '@/lib/contracts'
 import CMDWallet from '@/lib/wallet'
 import { GPRound } from '@/models/round'
-import { getProjectApplicant } from '@/services/on-chain/project-registry'
+import { getProjectApplicant } from '@/services/stellar/project-registry'
 import {
 	applyProjectToRound,
 	ApplyProjectToRoundParams,
-} from '@/services/on-chain/round'
+} from '@/services/stellar/round'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { BaseModalProps } from '@/types/dialog'
 import { IGetRoundsResponse, Network } from '@/types/on-chain'

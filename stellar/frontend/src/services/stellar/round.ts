@@ -75,6 +75,7 @@ export interface CreateRoundParams {
 	voting_start_ms: u64
 	use_vault?: boolean
 	checked_list_ids?: bigint[]
+	wl_list_id?: bigint | undefined
 }
 
 export interface ReviewApplicationParams {
@@ -270,7 +271,7 @@ export const createRound = async (
 			max_participants: params.max_participants || undefined,
 			num_picks_per_voter: params.num_picks_per_voter || undefined,
 			use_whitelist: params.use_whitelist || undefined,
-			wl_list_id: undefined,
+			wl_list_id: params.wl_list_id || undefined,
 			referrer_fee_basis_points: params.referrer_fee_basis_points as number,
 			use_vault: params.use_vault || false,
 		},

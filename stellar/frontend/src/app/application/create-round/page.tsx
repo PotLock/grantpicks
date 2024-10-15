@@ -234,7 +234,8 @@ const CreateRoundPage = () => {
 							: maxParticipants,
 					num_picks_per_voter:
 						data.vote_per_person < 1 ? 1 : data.vote_per_person,
-					use_whitelist: false,
+					use_whitelist: checkedListIds.length > 0,
+					wl_list_id: checkedListIds.length > 0 ? checkedListIds[0] : undefined,
 					is_video_required: data.is_video_required,
 					allow_applications: data.allow_application,
 					use_vault: data.use_vault,
@@ -251,7 +252,9 @@ const CreateRoundPage = () => {
 					compliance_period_ms: data.compliance_period_ms
 						? BigInt(data.compliance_period_ms as number)
 						: undefined,
-					cooldown_period_ms: undefined,
+					cooldown_period_ms: data.cooldown_period_ms
+						? BigInt(data.cooldown_period_ms as number)
+						: undefined,
 					remaining_dist_address:
 						data.remaining_dist_address || storage.my_address || '',
 					referrer_fee_basis_points: 0,
@@ -394,12 +397,19 @@ const CreateRoundPage = () => {
 		skip: number
 		limit: number
 	}) => {
-		let contracts = storage.getStellarContracts()
-		if (!contracts) {
-			return
+		if (storage.chainId === 'stellar') {
+			let contracts = storage.getStellarContracts()
+			if (!contracts) {
+				return []
+			}
+			const res = await getLists(
+				{ skip: key.skip, limit: key.limit },
+				contracts,
+			)
+			return res
+		} else {
+			return []
 		}
-		const res = await getLists({ skip: key.skip, limit: key.limit }, contracts)
-		return res
 	}
 
 	const getKey = (
@@ -411,6 +421,7 @@ const CreateRoundPage = () => {
 			url: `get-lists`,
 			skip: pageIndex,
 			limit: LIMIT_SIZE,
+			chain: storage.chainId,
 		}
 	}
 	const { data, size, setSize, isValidating, isLoading } = useSWRInfinite(
@@ -1442,65 +1453,66 @@ const CreateRoundPage = () => {
 											</div>
 										) : (
 											<div>
-												{lists?.map((list) => (
-													<div
-														key={list.id}
-														className="py-4 flex items-center gap-x-4"
-													>
-														<Checkbox
-															checked={checkedListIds.includes(list.id)}
-															onChange={(e) => {
-																if (e.target.checked) {
-																	setCheckedListIds([
-																		...checkedListIds,
-																		list.id,
-																	])
-																} else {
-																	setCheckedListIds(
-																		checkedListIds.filter(
-																			(id) => id !== list.id,
-																		),
-																	)
-																}
-															}}
-														/>
-														<div className="flex justify-between w-full items-center">
-															<div className="flex gap-x-3 items-center">
-																<Image
-																	src="/assets/images/default-list-image.png"
-																	alt="list"
-																	width={72}
-																	height={46}
-																/>
-																<div className="grid gap-y-1">
-																	<p className="font-semibold text-sm text-grantpicks-black-950">
-																		{list.name}
-																	</p>
-																	<p className="text-sm text-grantpicks-black-700">
-																		{list.total_registrations_count.toString()}{' '}
-																		Projects
-																	</p>
+												{lists?.map((list) => {
+													return (
+														<div
+															key={list.id}
+															className="py-4 flex items-center gap-x-4"
+														>
+															<Checkbox
+																checked={checkedListIds.includes(list.id)}
+																onChange={(e) => {
+																	if (e.target.checked) {
+																		setCheckedListIds([list.id])
+																	} else {
+																		setCheckedListIds(
+																			checkedListIds.filter(
+																				(id) => id !== list.id,
+																			),
+																		)
+																	}
+																}}
+																name="wl_list_id"
+																value={list.id.toString()}
+															/>
+															<div className="flex justify-between w-full items-center">
+																<div className="flex gap-x-3 items-center">
+																	<Image
+																		src="/assets/images/default-list-image.png"
+																		alt="list"
+																		width={72}
+																		height={46}
+																	/>
+																	<div className="grid gap-y-1">
+																		<p className="font-semibold text-sm text-grantpicks-black-950">
+																			{list.name}
+																		</p>
+																		<p className="text-sm text-grantpicks-black-700">
+																			{list.total_registrations_count.toString()}{' '}
+																			Voters
+																		</p>
+																	</div>
+																</div>
+																<div className="flex gap-x-1">
+																	{isOwner(list.owner) && (
+																		<div className="px-3 py-[2px] bg-grantpicks-black-950 rounded-full">
+																			<p className="font-semibold text-xs text-white">
+																				Owner
+																			</p>
+																		</div>
+																	)}
+																	{isAdmin(list.admins) && (
+																		<div className="px-3 py-[2px] bg-grantpicks-black-100 rounded-full">
+																			<p className="font-semibold text-xs text-grantpicks-black-950">
+																				Admin
+																			</p>
+																		</div>
+																	)}
 																</div>
 															</div>
-															<div className="flex gap-x-1">
-																{isOwner(list.owner) && (
-																	<div className="px-3 py-[2px] bg-grantpicks-black-950 rounded-full">
-																		<p className="font-semibold text-xs text-white">
-																			Owner
-																		</p>
-																	</div>
-																)}
-																{isAdmin(list.admins) && (
-																	<div className="px-3 py-[2px] bg-grantpicks-black-100 rounded-full">
-																		<p className="font-semibold text-xs text-grantpicks-black-950">
-																			Admin
-																		</p>
-																	</div>
-																)}
-															</div>
 														</div>
-													</div>
-												))}
+													)
+												})}
 											</div>
 										)}
 									</InfiniteScroll>

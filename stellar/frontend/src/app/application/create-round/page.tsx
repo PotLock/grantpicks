@@ -354,6 +354,12 @@ const CreateRoundPage = () => {
 				const txNearCreateRound = await nearContracts?.round.createRound(params)
 
 				console.log('txNearCreateRound', txNearCreateRound)
+
+				//TODO: handle & test after BE indexed by prometheus
+
+				reset()
+				dismissPageLoading()
+				router.push(`/application`)
 			}
 		} catch (error: any) {
 			console.error(error)

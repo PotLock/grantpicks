@@ -14,6 +14,7 @@ import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { GPRound } from '@/models/round'
 import IconNear from '../../svgs/IconNear'
+import { formatNearAmount, parseNearAmount } from 'near-api-js/lib/utils/format'
 
 interface FundROundModalProps extends BaseModalProps {
 	doc: GPRound
@@ -120,6 +121,21 @@ const FundRoundModal = ({
 				if (!contracts) {
 					return
 				}
+
+				const depositAmount = parseNearAmount(amount)
+
+				const tx = await contracts.round.deposit(doc.on_chain_id, depositAmount)
+
+				dismissPageLoading()
+				setSuccessFundRoundModalProps((prev) => ({
+					...prev,
+					isOpen: true,
+					amount,
+					doc,
+					txHash: tx.outcome.transaction_outcome.id,
+				}))
+				await mutateRounds()
+				onClose()
 			}
 		} catch (error: any) {
 			dismissPageLoading()
@@ -150,11 +166,12 @@ const FundRoundModal = ({
 						We’ve raised{' '}
 						{storage.chainId === 'stellar'
 							? formatStroopToXlm(BigInt(doc.current_vault_balance))
-							: doc.current_vault_balance}{' '}
+							: formatNearAmount(doc.current_vault_balance)}{' '}
 						{storage.chainId === 'stellar' ? 'XLM' : 'NEAR'} and have reached{' '}
 						<span className="font-semibold text-grantpicks-green-800">
 							{(
-								(BigInt(doc.current_vault_balance) * BigInt(100)) /
+								((BigInt(doc.current_vault_balance) / BigInt(10 ** 24)) *
+									BigInt(100)) /
 								BigInt(doc.expected_amount)
 							).toString()}
 							% of our expected funds.

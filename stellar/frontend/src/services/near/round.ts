@@ -1,6 +1,6 @@
 import { NO_DEPOSIT, THIRTY_TGAS } from '@/constants/near'
 import { Wallet } from '@near-wallet-selector/core'
-import { providers, utils, Contract } from 'near-api-js'
+import { providers } from 'near-api-js'
 import {
 	AccountView,
 	CodeResult,
@@ -11,13 +11,13 @@ import { NearConfig, NearCreateRoundParams, NearRound } from './type'
 export interface ViewMethodParams {
 	contractId: string
 	method: string
-	args: Object
+	args: object
 }
 
 export interface CallMethodParams {
 	contractId: string
 	method: string
-	args: any
+	args: object
 	gas: string
 	deposit: string
 }
@@ -70,10 +70,18 @@ export class RoundContract {
 			],
 		})
 
-		return providers.getTransactionLastResult(outcome as FinalExecutionOutcome)
+		return {
+			result: providers.getTransactionLastResult(
+				outcome as FinalExecutionOutcome,
+			),
+			outcome: outcome as FinalExecutionOutcome,
+		}
 	}
 
-	async createRound(params: NearCreateRoundParams): Promise<NearRound> {
+	async createRound(params: NearCreateRoundParams): Promise<{
+		result: NearRound
+		outcome: FinalExecutionOutcome
+	}> {
 		const result = await this.callMethod({
 			contractId: this.contractId,
 			method: 'create_round',
@@ -87,7 +95,27 @@ export class RoundContract {
 		return result
 	}
 
-  // async deposit
+	async deposit(
+		roundId: number,
+		amount: string | null,
+	): Promise<{
+		result: any
+		outcome: FinalExecutionOutcome
+	}> {
+		const result = await this.callMethod({
+			contractId: this.contractId,
+			method: 'deposit_to_round',
+			args: {
+				round_id: parseInt(roundId.toString()),
+				memo: undefined,
+				referral_id: undefined,
+			},
+			deposit: amount || NO_DEPOSIT,
+			gas: THIRTY_TGAS,
+		})
+
+		return result
+	}
 
 	async getRounds(from_index: number, limit: number) {
 		const result = await this.viewMethod({

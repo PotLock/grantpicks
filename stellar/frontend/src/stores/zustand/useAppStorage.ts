@@ -1,8 +1,13 @@
 import { PayoutTableItem } from '@/app/components/pages/round-result/EditPayoutModal'
+import { useGlobalContext } from '@/app/providers/GlobalProvider'
+import { useWallet } from '@/app/providers/WalletProvider'
 import Contracts from '@/lib/contracts'
 import CMDWallet from '@/lib/wallet'
+import { RoundContract } from '@/services/near/round'
+import { NearContracts } from '@/services/near/type'
 import { Network } from '@/types/on-chain'
 import { formatStroopToXlm } from '@/utils/helper'
+import { Wallet } from '@near-wallet-selector/core'
 import { Project } from 'project-registry-client'
 import {
 	Payout,
@@ -17,6 +22,7 @@ import { create } from 'zustand'
 interface AppRepo {
 	chainId: string | null
 	my_address: string | null
+	network: string
 	projects: Map<string, Project>
 	roundes: Map<string, RoundDetail>
 	applications: Map<string, RoundApplication>
@@ -43,6 +49,7 @@ interface AppRepo {
 	setCurrentRoundPayoutChallenges: (payouts: PayoutsChallenge[]) => void
 	setChainId: (chainId: string) => void
 	getStellarContracts: () => Contracts | null
+	getNearContracts: (wallet: Wallet | null) => NearContracts | null
 	setCurrentResults: (results: ProjectVotingResult[]) => void
 	getAllocation: (project_id: string) => number
 	getTotalParticipants: () => number
@@ -57,6 +64,7 @@ interface AppRepo {
 	setPayoutDone: (isPayoutDone: boolean) => void
 	clear: () => void
 	setApplications: (applications: Map<string, RoundApplication>) => void
+	setNetwork: (network: string) => void
 }
 
 const useAppStorage = create<AppRepo>((set, get) => ({
@@ -83,12 +91,12 @@ const useAppStorage = create<AppRepo>((set, get) => ({
 	current_round_payout_challenges: [],
 	setCurrentRoundPayoutChallenges: (payouts: PayoutsChallenge[]) =>
 		set(() => ({ current_round_payout_challenges: payouts })),
-	chainId: 'stellar',
+	chainId: null,
 	setChainId: (chainId: string) => set(() => ({ chainId })),
 	getStellarContracts: () => {
 		const chainId = get().chainId
 		if (chainId === 'stellar') {
-			const network = process.env.NETWORK_ENV || 'testnet'
+			const network = get().network
 			const myAddress = get().my_address
 			if (myAddress) {
 				let cmdWallet = new CMDWallet({
@@ -116,7 +124,7 @@ const useAppStorage = create<AppRepo>((set, get) => ({
 			current_round_payouts: [],
 			current_round_payout_challenges: [],
 			current_results: [],
-			chainId: 'stellar',
+			chainId: null,
 		})),
 	current_results: [],
 	setCurrentResults: (results: ProjectVotingResult[]) =>
@@ -250,6 +258,23 @@ const useAppStorage = create<AppRepo>((set, get) => ({
 	applications: new Map(),
 	setApplications: (applications: Map<string, RoundApplication>) =>
 		set(() => ({ applications: applications })),
+	network: 'testnet',
+	setNetwork: (network: string) => set(() => ({ network })),
+	getNearContracts: (wallet: Wallet | null) => {
+		const chainId = get().chainId
+		if (chainId === 'near') {
+			const network = get().network
+			const roundContractId = process.env.NEAR_ROUND_CONTRACT_ID || ''
+			const roundContract = new RoundContract(wallet, network, roundContractId)
+
+			const nearContracts: NearContracts = {
+				round: roundContract,
+			}
+
+			return nearContracts
+		}
+		return null
+	},
 }))
 
 export default useAppStorage

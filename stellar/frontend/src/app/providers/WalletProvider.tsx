@@ -169,13 +169,17 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 			const accounts = await wallet.getAccounts()
 			setNearWallet(wallet as Wallet & SignMessageMethod)
 			setNearAccounts(accounts)
+
+			store.setMyAddress(accounts[0]?.accountId || '')
+			store.setChainId('near')
+			store.setNetwork('testnet')
+
 			return
 		} else if (kit && localStellarPubKey) {
 			const pubKey = (await kit?.getAddress()).address
 			setConnectedWallet('stellar')
 			localStorage.setItem(localStorageConfigs.CONNECTED_WALLET, 'stellar')
 			setStellarPubKey(localStellarPubKey || pubKey)
-			store.setMyAddress(localStellarPubKey || pubKey)
 			localStorage.setItem(
 				localStorageConfigs.STELLAR_PUBLIC_KEY,
 				localStellarPubKey || pubKey,
@@ -189,6 +193,11 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 			)
 			const balances = parseInt(filterXLM[0].balance)
 			setCurrentBalance(balances)
+
+			store.setMyAddress(localStellarPubKey || pubKey)
+			store.setChainId('stellar')
+			store.setNetwork('testnet')
+
 			return
 		} else {
 			setConnectedWallet(null)
@@ -241,11 +250,13 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 			setConnectedWallet(null)
 			setNearWallet(null)
 			setNearAccounts([])
+			store.clear()
 		} else if (connectedWallet === 'stellar') {
 			localStorage.removeItem(localStorageConfigs.CONNECTED_WALLET)
 			localStorage.removeItem(localStorageConfigs.STELLAR_PUBLIC_KEY)
 			setConnectedWallet(null)
 			setStellarPubKey('')
+			store.clear()
 		}
 	}
 

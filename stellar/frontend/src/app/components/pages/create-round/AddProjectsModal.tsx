@@ -13,7 +13,7 @@ import Contracts from '@/lib/contracts'
 import {
 	getProjects,
 	IGetProjectsResponse,
-} from '@/services/on-chain/project-registry'
+} from '@/services/stellar/project-registry'
 import { Network } from '@/types/on-chain'
 import { LIMIT_SIZE } from '@/constants/query'
 import useSWRInfinite from 'swr/infinite'
@@ -54,20 +54,24 @@ const AddProjectsModal = ({
 	const storage = useAppStorage()
 
 	const onFetchProjects = async (key: { skip: number; limit: number }) => {
-		let contracts = storage.getStellarContracts()
+		if (storage.chainId == 'stellar') {
+			let contracts = storage.getStellarContracts()
 
-		if (!contracts) {
-			return
+			if (!contracts) {
+				return
+			}
+
+			const resProjects = await getProjects(
+				{
+					skip: key.skip,
+					limit: key.limit,
+				},
+				contracts,
+			)
+			return resProjects
 		}
 
-		const resProjects = await getProjects(
-			{
-				skip: key.skip,
-				limit: key.limit,
-			},
-			contracts,
-		)
-		return resProjects
+		return []
 	}
 	const getKey = (
 		pageIndex: number,

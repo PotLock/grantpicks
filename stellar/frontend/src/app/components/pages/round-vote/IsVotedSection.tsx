@@ -9,14 +9,14 @@ import clsx from 'clsx'
 import CMDWallet from '@/lib/wallet'
 import Contracts from '@/lib/contracts'
 import { IGetRoundsResponse, Network } from '@/types/on-chain'
-import { getResultVoteRound, getRoundInfo } from '@/services/on-chain/round'
+import { getResultVoteRound, getRoundInfo } from '@/services/stellar/round'
 import { useParams } from 'next/navigation'
 import { Pair, VotingResult } from 'round-client'
 import moment from 'moment'
 import {
 	getProject,
 	GetProjectParams,
-} from '@/services/on-chain/project-registry'
+} from '@/services/stellar/project-registry'
 import { prettyTruncate } from '@/utils/helper'
 import { Project } from 'project-registry-client'
 import useAppStorage from '@/stores/zustand/useAppStorage'
@@ -37,7 +37,7 @@ const IsVotedPairItem = ({
 	const [secondProjectData, setSecondProjectData] = useState<
 		Project | undefined
 	>(undefined)
-  const storage = useAppStorage()
+	const storage = useAppStorage()
 
 	const fetchProjectById = async () => {
 		try {

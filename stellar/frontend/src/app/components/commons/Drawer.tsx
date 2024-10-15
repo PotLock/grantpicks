@@ -28,7 +28,6 @@ const Drawer = ({
 	}, [onClose, closeOnEscape])
 
 	const _bgClick = (e: React.MouseEvent<HTMLDivElement>) => {
-		console.log('lalla')
 		if (e.target === drawerRef.current && closeOnBgClick) {
 			onClose()
 		}

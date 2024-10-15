@@ -16,7 +16,7 @@ import { Pair } from 'round-client'
 import {
 	getProject,
 	GetProjectParams,
-} from '@/services/on-chain/project-registry'
+} from '@/services/stellar/project-registry'
 import CMDWallet from '@/lib/wallet'
 import Contracts from '@/lib/contracts'
 import { Network } from '@/types/on-chain'

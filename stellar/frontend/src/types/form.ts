@@ -1,4 +1,4 @@
-import { IGetProjectsResponse } from '@/services/on-chain/project-registry'
+import { IGetProjectsResponse } from '@/services/stellar/project-registry'
 import { ChangeEvent, HTMLAttributes } from 'react'
 
 export interface InputProps {

@@ -11,7 +11,6 @@ import IconAdd from '@/app/components/svgs/IconAdd'
 import IconNear from '@/app/components/svgs/IconNear'
 import IconRemove from '@/app/components/svgs/IconRemove'
 import IconUnfoldMore from '@/app/components/svgs/IconUnfoldMore'
-import { getPriceCrypto } from '@/services/common'
 import { CreateRoundData } from '@/types/form'
 import React, { ChangeEvent, useEffect, useState } from 'react'
 import {
@@ -35,6 +34,7 @@ import {
 	createRound,
 	CreateRoundParams,
 	depositFundRound,
+	getLists,
 } from '@/services/stellar/round'
 import { parseToStroop, prettyTruncate, sleep } from '@/utils/helper'
 import { useModalContext } from '@/app/providers/ModalProvider'
@@ -59,13 +59,20 @@ import useAppStorage from '@/stores/zustand/useAppStorage'
 import Image from 'next/image'
 import { usePotlockService } from '@/services/potlock'
 import { NearCreateRoundParams } from '@/services/near/type'
+import IconLoading from '@/app/components/svgs/IconLoading'
+import IconExpandLess from '@/app/components/svgs/IconExpandLess'
+import IconExpandMore from '@/app/components/svgs/IconExpandMore'
+import InfiniteScroll from 'react-infinite-scroll-component'
+import { IGetListExternalResponse } from '@/types/on-chain'
+import { LIMIT_SIZE } from '@/constants/query'
+import useSWRInfinite from 'swr/infinite'
 
 const CreateRoundPage = () => {
 	const router = useRouter()
 	const [showContactType, setShowContactType] = useState<boolean>(false)
 	const { nearPrice, stellarPrice, openPageLoading, dismissPageLoading } =
 		useGlobalContext()
-	const { stellarPubKey, stellarKit, nearWallet } = useWallet()
+	const { stellarPubKey, stellarKit, nearWallet, nearAccounts } = useWallet()
 	const { setSuccessCreateRoundModalProps } = useModalContext()
 	const [amountUsd, setAmountUsd] = useState<string>('0.00')
 	const [expectAmountUsd, setExpectAmountUsd] = useState<string>('0.00')
@@ -74,6 +81,8 @@ const CreateRoundPage = () => {
 	const [showAddAdminsModal, setShowAddAdminsModal] = useState<boolean>(false)
 	const [isMobile, setIsMobile] = useState(false)
 	const potlockService = usePotlockService()
+	const [showLists, setShowLists] = useState<boolean>(true)
+	const [checkedListIds, setCheckedListIds] = useState<bigint[]>([])
 	const {
 		control,
 		register,
@@ -379,6 +388,53 @@ const CreateRoundPage = () => {
 
 		return () => window.removeEventListener('resize', checkIfMobile)
 	}, [])
+
+	const onFetchLists = async (key: {
+		url: string
+		skip: number
+		limit: number
+	}) => {
+		let contracts = storage.getStellarContracts()
+		if (!contracts) {
+			return
+		}
+		const res = await getLists({ skip: key.skip, limit: key.limit }, contracts)
+		return res
+	}
+
+	const getKey = (
+		pageIndex: number,
+		previousPageData: IGetListExternalResponse[],
+	) => {
+		if (previousPageData && !previousPageData.length) return null
+		return {
+			url: `get-lists`,
+			skip: pageIndex,
+			limit: LIMIT_SIZE,
+		}
+	}
+	const { data, size, setSize, isValidating, isLoading } = useSWRInfinite(
+		getKey,
+		async (key) => await onFetchLists(key),
+		{
+			revalidateFirstPage: false,
+		},
+	)
+
+	const lists = data
+		? ([] as IGetListExternalResponse[]).concat(
+				...(data as any as IGetListExternalResponse[]),
+			)
+		: []
+	const hasMore = data ? data.length >= LIMIT_SIZE : false
+
+	const isOwner = (listOwnerId: string): boolean => {
+		return (stellarPubKey || nearAccounts[0]?.accountId) === listOwnerId
+	}
+
+	const isAdmin = (adminIds: string[]): boolean => {
+		return adminIds.includes(stellarPubKey || nearAccounts[0]?.accountId)
+	}
 
 	return (
 		<CreateRoundLayout>
@@ -1156,7 +1212,7 @@ const CreateRoundPage = () => {
 								</p>
 								<a
 									data-tooltip-id="remaining_funds_tooltip"
-									data-tooltip-html="Remaining funds for those who haven’t done their compliance<br />check get sent to this address after compliance period is over"
+									data-tooltip-html="Remaining funds for those who haven't done their compliance<br />check get sent to this address after compliance period is over"
 								>
 									<IconInfoCircle
 										size={16}
@@ -1266,7 +1322,7 @@ const CreateRoundPage = () => {
 						/>
 					</div>
 
-					<div className="p-5 rounded-2xl shadow-md bg-white mb-6 lg:mb-10">
+					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
 						<div className="flex items-center justify-between w-full">
 							<div>
 								<p className="text-base font-bold text-grantpicks-black-950">
@@ -1326,6 +1382,132 @@ const CreateRoundPage = () => {
 							append={appendAdmin}
 							remove={removeAdmin}
 						/>
+					</div>
+
+					<div className="rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
+						<div className="px-5 py-3 bg-grantpicks-black-50 rounded-t-2xl">
+							<p className="font-semibold text-sm text-grantpicks-black-950">
+								Voter Requirements
+							</p>
+						</div>
+						<div>
+							<button
+								onClick={() => {
+									setShowLists(!showLists)
+								}}
+								className="flex justify-between w-full items-center px-5 py-[14px] border-b border-grantpicks-black-100"
+							>
+								<p className="font-semibold text-sm text-grantpicks-black-950">
+									List
+								</p>
+								{showLists ? (
+									<IconExpandLess
+										size={24}
+										className="stroke-grantpicks-black-400"
+									/>
+								) : (
+									<IconExpandMore
+										size={24}
+										className="stroke-grantpicks-black-400"
+									/>
+								)}
+							</button>
+							{showLists && (
+								<div className="max-h-[522px] overflow-scroll">
+									<InfiniteScroll
+										dataLength={lists.length}
+										next={() => !isValidating && setSize(size + 1)}
+										hasMore={hasMore}
+										style={{ display: 'flex', flexDirection: 'column' }}
+										loader={
+											<div className="my-2 flex items-center justify-center">
+												<IconLoading
+													size={24}
+													className="fill-grantpicks-black-600"
+												/>
+											</div>
+										}
+									>
+										{isLoading ? (
+											<div className="h-52 flex items-center justify-center w-full">
+												<IconLoading
+													size={40}
+													className="fill-grantpicks-black-600"
+												/>
+											</div>
+										) : lists.length === 0 ? (
+											<div>
+												<p className="text-base font-bold text-grantpicks-black-950 text-center">
+													There are no Lists Contract yet.
+												</p>
+											</div>
+										) : (
+											<div>
+												{lists?.map((list) => (
+													<div
+														key={list.id}
+														className="px-5 py-4 flex items-center gap-x-4"
+													>
+														<Checkbox
+															checked={checkedListIds.includes(list.id)}
+															onChange={(e) => {
+																if (e.target.checked) {
+																	setCheckedListIds([
+																		...checkedListIds,
+																		list.id,
+																	])
+																} else {
+																	setCheckedListIds(
+																		checkedListIds.filter(
+																			(id) => id !== list.id,
+																		),
+																	)
+																}
+															}}
+														/>
+														<div className="flex justify-between w-full items-center">
+															<div className="flex gap-x-3 items-center">
+																<Image
+																	src="/assets/images/default-list-image.png"
+																	alt="list"
+																	width={72}
+																	height={46}
+																/>
+																<div className="grid gap-y-1">
+																	<p className="font-semibold text-sm text-grantpicks-black-950">
+																		{list.name}
+																	</p>
+																	<p className="text-sm text-grantpicks-black-700">
+																		{list.total_registrations_count.toString()}{' '}
+																		Projects
+																	</p>
+																</div>
+															</div>
+															<div className="flex gap-x-1">
+																{isOwner(list.owner) && (
+																	<div className="px-3 py-[2px] bg-grantpicks-black-950 rounded-full">
+																		<p className="font-semibold text-xs text-white">
+																			Owner
+																		</p>
+																	</div>
+																)}
+																{isAdmin(list.admins) && (
+																	<div className="px-3 py-[2px] bg-grantpicks-black-100 rounded-full">
+																		<p className="font-semibold text-xs text-grantpicks-black-950">
+																			Admin
+																		</p>
+																	</div>
+																)}
+															</div>
+														</div>
+													</div>
+												))}
+											</div>
+										)}
+									</InfiniteScroll>
+								</div>
+							)}
+						</div>
 					</div>
 
 					<Button

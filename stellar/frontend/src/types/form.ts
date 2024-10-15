@@ -49,10 +49,13 @@ export interface InputTextAreaProps {
 export interface CheckboxProps {
 	checked: boolean
 	onChange: (e: ChangeEvent<HTMLInputElement>) => void
+	onChecked?: (value: string, checked: boolean) => void
 	parentClassName?: HTMLAttributes<HTMLDivElement>['className']
 	className?: HTMLAttributes<HTMLDivElement>['className']
 	label?: string
 	disabled?: boolean
+	name?: string
+	value?: string
 }
 
 export type IProjectCreateRound = {

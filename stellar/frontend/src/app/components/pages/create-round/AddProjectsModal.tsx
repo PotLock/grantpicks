@@ -83,6 +83,7 @@ const AddProjectsModal = ({
 			url: `get-projects`,
 			skip: pageIndex,
 			limit: LIMIT_SIZE,
+			chainId: storage.chainId,
 		}
 	}
 	const {

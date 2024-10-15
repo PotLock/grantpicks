@@ -1,4 +1,11 @@
-import { RoundContract } from "./round"
+import { RoundContract } from './round'
+
+export type NearConfig = {
+	owner: string
+	protocol_fee_recipient: string
+	protocol_fee_basis_points: number
+	default_page_size: number
+}
 
 export type NearCreateRoundParams = {
 	owner: string
@@ -71,5 +78,5 @@ export type NearRound = {
 }
 
 export type NearContracts = {
-  round: RoundContract
+	round: RoundContract
 }

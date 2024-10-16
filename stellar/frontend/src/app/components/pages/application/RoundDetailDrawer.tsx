@@ -26,6 +26,7 @@ import Link from 'next/link'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import Image from 'next/image'
 import { GPRound } from '@/models/round'
+import { formatNearAmount } from 'near-api-js/lib/utils/format'
 
 interface RoundDetailDrawerProps extends IDrawerProps {
 	doc: GPRound
@@ -108,6 +109,16 @@ const RoundDetailDrawer = ({
 
 			const res = await getRoundAdmins({ round_id: BigInt(doc.id) }, contracts)
 			return res
+		} else {
+			let contracts = storage.getNearContracts(null)
+
+			if (!contracts) {
+				return
+			}
+
+			const res = await contracts.round.getRoundById(doc.on_chain_id)
+
+			return res.admins
 		}
 	}
 
@@ -253,9 +264,11 @@ const RoundDetailDrawer = ({
 							</div>
 						) : (
 							<p className="text-lg flex-1 md:text-xl font-normal text-grantpicks-black-950">
-								{formatStroopToXlm(BigInt(doc.expected_amount))}{' '}
+								{storage.chainId === 'stellar'
+									? formatStroopToXlm(BigInt(doc.expected_amount))
+									: formatNearAmount(doc.expected_amount)}{' '}
 								<span className="text-sm font-normal text-grantpicks-black-600">
-									XLM
+									{storage.chainId === 'stellar' ? 'XLM' : 'NEAR'}
 								</span>
 							</p>
 						)}
@@ -265,7 +278,10 @@ const RoundDetailDrawer = ({
 					<div className="flex items-center mb-4 md:mb-5">
 						<div className="flex-1">
 							<p className="font-semibold text-lg md:text-xl text-grantpicks-black-950">
-								{formatStroopToXlm(BigInt(doc.current_vault_balance))} XLM
+								{storage.chainId === 'stellar'
+									? formatStroopToXlm(BigInt(doc.current_vault_balance))
+									: formatNearAmount(doc.current_vault_balance)}{' '}
+								{storage.chainId === 'stellar' ? 'XLM' : 'NEAR'}
 							</p>
 							<p className="font-semibold text-xs text-grantpicks-black-600">
 								AVAILABLE FUNDS
@@ -273,7 +289,10 @@ const RoundDetailDrawer = ({
 						</div>
 						<div className="flex-1">
 							<p className="font-semibold text-lg md:text-xl text-grantpicks-black-950">
-								{formatStroopToXlm(BigInt(doc.expected_amount))} XLM
+								{storage.chainId === 'stellar'
+									? formatStroopToXlm(BigInt(doc.expected_amount))
+									: doc.expected_amount}{' '}
+								{storage.chainId === 'stellar' ? 'XLM' : 'NEAR'}
 							</p>
 							<p className="font-semibold text-xs text-grantpicks-black-600">
 								EXPECTED FUNDS

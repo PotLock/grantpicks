@@ -130,6 +130,18 @@ export class RoundContract {
 		return result
 	}
 
+	async getRoundById(roundId: number): Promise<NearRound> {
+		const result = await this.viewMethod({
+			contractId: this.contractId,
+			method: 'get_round',
+			args: {
+				round_id: parseInt(roundId.toString()),
+			},
+		})
+
+		return result
+	}
+
 	async getConfig(): Promise<NearConfig> {
 		const result = await this.viewMethod({
 			contractId: this.contractId,

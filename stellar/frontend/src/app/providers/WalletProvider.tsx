@@ -115,10 +115,12 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 			})
 
 			const modal = setupModal(selector, {
-				contractId: 'test.testnet',
+				contractId: process.env.NEAR_ROUND_CONTRACT_ID || '',
 			})
+
 			setNearSelector(selector)
 			setNearModal(modal)
+
 			if (selector && selector.isSignedIn()) {
 				await onCheckConnected(selector)
 			}
@@ -171,6 +173,10 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 			setNearWallet(wallet as Wallet & SignMessageMethod)
 			setNearAccounts(accounts)
 
+			store.setMyAddress(accounts[0]?.accountId || '')
+			store.setChainId('near')
+			store.setNetwork('testnet')
+
 			const account = await store
 				.getNearContracts(null)
 				?.round.getBalance(accounts[0]?.accountId)
@@ -178,10 +184,6 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 			setCurrentBalance(
 				Number(formatNearAmount(account?.amount || '0', 2).replace(',', '')),
 			)
-
-			store.setMyAddress(accounts[0]?.accountId || '')
-			store.setChainId('near')
-			store.setNetwork('testnet')
 
 			return
 		} else if (kit && localStellarPubKey) {

@@ -52,6 +52,7 @@ import { Tooltip } from 'react-tooltip'
 import {
 	EMAIL_VALIDATION_REGEX,
 	INSTAGRAM_USERNAME_REGEX,
+	NEAR_ADDRESS_REGEX,
 	TELEGRAM_USERNAME_REGEX,
 	TWITTER_USERNAME_REGEX,
 } from '@/constants/regex'
@@ -327,9 +328,13 @@ const CreateRoundPage = () => {
 							value: data.contact_address,
 						},
 					],
-					compliance_period_ms: data.compliance_period_ms || 0,
+					compliance_period_ms: parseInt(
+						data.compliance_period_ms?.toString() || '0',
+					),
 					compliance_requirement_description: data.compliance_req_desc,
-					cooldown_period_ms: data.cooldown_period_ms || 0,
+					cooldown_period_ms: parseInt(
+						data.cooldown_period_ms?.toString() || '0',
+					),
 					use_cooldown: data.allow_cooldown || false,
 					use_compliance: data.allow_compliance || false,
 					use_referrals: false,
@@ -346,8 +351,6 @@ const CreateRoundPage = () => {
 						: undefined,
 				}
 
-				console.log('params', params)
-				console.log('nearWallet', nearWallet)
 				if (!nearWallet) {
 					return
 				}
@@ -1261,10 +1264,17 @@ const CreateRoundPage = () => {
 								required={watch().allow_remaining_dist}
 								{...register('remaining_dist_address', {
 									required: watch().allow_remaining_dist === true,
-									validate: (value, formValues) =>
-										watch().allow_remaining_dist
-											? StrKey.isValidEd25519PublicKey(value)
-											: true,
+									validate: (value, formValues) => {
+										if (watch().allow_remaining_dist) {
+											if (storage.chainId === 'stellar') {
+												return StrKey.isValidEd25519PublicKey(value)
+											} else {
+												return NEAR_ADDRESS_REGEX(value)
+											}
+										} else {
+											return true
+										}
+									},
 								})}
 								errorMessage={
 									errors.remaining_dist_address?.type === 'validate' ? (

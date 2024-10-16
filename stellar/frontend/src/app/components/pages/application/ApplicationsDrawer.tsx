@@ -54,7 +54,7 @@ const ApplicationItem = ({
 	const storage = useAppStorage()
 
 	const onFetchRoundApplications = async () => {
-		if (storage.chainId == 'stellar') {
+		if (storage.chainId === 'stellar') {
 			const contract = storage.getStellarContracts()
 
 			if (!contract) {
@@ -249,16 +249,21 @@ const ApplicationsDrawer = ({
 	const [roundAppsData, setRoundAppsData] = useState<GPApplication[]>([])
 	const containerScrollRef = useRef<HTMLDivElement>(null)
 	const potlockService = usePotlockService()
+	const storage = useAppStorage()
 
 	const onFetchRoundApplications = async (key: {
 		url: string
 		page: number
 	}) => {
-		const res = await potlockService.getApplications(doc.id, key.page + 1)
-		return res.map((item: GPApplication) => {
-			item.status = item.status.replaceAll("['", '').replaceAll("']", '')
-			return item
-		})
+		if (storage.chainId === 'stellar') {
+			const res = await potlockService.getApplications(doc.id, key.page + 1)
+			return res.map((item: GPApplication) => {
+				item.status = item.status.replaceAll("['", '').replaceAll("']", '')
+				return item
+			})
+		} else {
+			return []
+		}
 	}
 
 	const getKey = (pageIndex: number, previousPageData: GPApplication[]) => {
@@ -266,6 +271,7 @@ const ApplicationsDrawer = ({
 		return {
 			url: `get-round-applications-${doc.id}`,
 			page: pageIndex,
+			chainId: storage.chainId,
 		}
 	}
 	const { data, size, setSize, isValidating, isLoading, mutate } =

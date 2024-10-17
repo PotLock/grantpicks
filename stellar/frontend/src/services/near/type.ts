@@ -1,4 +1,4 @@
-import { RoundContract } from './round'
+import { ListsContract, RoundContract } from './round'
 
 export type NearConfig = {
 	owner: string
@@ -79,4 +79,5 @@ export type NearRound = {
 
 export type NearContracts = {
 	round: RoundContract
+	lists: ListsContract
 }

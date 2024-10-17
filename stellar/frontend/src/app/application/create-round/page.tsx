@@ -65,7 +65,7 @@ import IconExpandLess from '@/app/components/svgs/IconExpandLess'
 import IconExpandMore from '@/app/components/svgs/IconExpandMore'
 import InfiniteScroll from 'react-infinite-scroll-component'
 import { IGetListExternalResponse } from '@/types/on-chain'
-import { LIMIT_SIZE } from '@/constants/query'
+import { LIMIT_SIZE, LIMIT_SIZE_CONTRACT } from '@/constants/query'
 import useSWRInfinite from 'swr/infinite'
 
 const CreateRoundPage = () => {
@@ -417,7 +417,15 @@ const CreateRoundPage = () => {
 			)
 			return res
 		} else {
-			return []
+			let contracts = storage.getNearContracts(nearWallet)
+			if (!contracts) {
+				return []
+			}
+			const res = await contracts?.round.getListsNear(
+				key.skip * LIMIT_SIZE_CONTRACT,
+				LIMIT_SIZE_CONTRACT,
+			)
+			return res
 		}
 	}
 

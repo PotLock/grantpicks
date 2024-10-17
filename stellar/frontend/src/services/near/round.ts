@@ -165,4 +165,17 @@ export class RoundContract {
 
 		return res as AccountView
 	}
+
+	async getListsNear(from_index: number, limit: number) {
+		const result = await this.viewMethod({
+			contractId: this.contractId,
+			method: 'get_lists',
+			args: {
+				from_index,
+				limit,
+			},
+		})
+
+		return result
+	}
 }

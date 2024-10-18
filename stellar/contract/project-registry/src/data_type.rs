@@ -1,15 +1,6 @@
 use crate::soroban_sdk::{self, contracttype, Address, String, Vec};
 
 #[contracttype]
-#[derive(Debug, Clone, PartialEq, Eq, Copy)]
-pub enum ProjectStatus {
-    New = 0,
-    Approved = 1,
-    Rejected = 2,
-    Completed = 3,
-}
-
-#[contracttype]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Project {
     pub id: u128,
@@ -24,7 +15,6 @@ pub struct Project {
     pub team_members: Vec<ProjectTeamMember>,
     pub repositories: Vec<ProjectRepository>,
     pub funding_histories: Vec<ProjectFundingHistory>,
-    pub status: ProjectStatus,
     pub submited_ms: u64,
     pub updated_ms: Option<u64>,
     pub admins: Vec<Address>,
@@ -94,7 +84,7 @@ pub struct ProjectRepository {
 pub struct ProjectFundingHistory {
     pub source: String,
     pub amount: u128,
-    pub denomiation: String,
+    pub denomination: String,
     pub description: String,
     pub funded_ms: u64,
 }

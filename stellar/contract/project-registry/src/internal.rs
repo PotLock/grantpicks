@@ -1,7 +1,7 @@
 use soroban_sdk::{panic_with_error, BytesN};
 
 use crate::admin::{read_contract_owner, write_contract_owner};
-use crate::data_type::{CreateProjectParams, Project, ProjectStatus, RoundPreCheck, UpdateProjectParams};
+use crate::data_type::{CreateProjectParams, Project, RoundPreCheck, UpdateProjectParams};
 use crate::error::Error;
 use crate::events::{log_create_project_event, log_update_project_event};
 use crate::methods::ProjectRegistryTrait;
@@ -11,7 +11,7 @@ use crate::project_writer::{
 use crate::soroban_sdk::{self, contract, contractimpl, Address, Env, Vec};
 use crate::storage::{extend_instance, extend_project};
 use crate::validation::{
-    validate_applicant, validate_application, validate_contract_owner,
+    validate_applicant, validate_application,
     validate_owner_or_admin, validate_update_project,
 };
 
@@ -50,7 +50,6 @@ impl ProjectRegistryTrait for ProjectRegistry {
             funding_histories: project_params.fundings,
             image_url: project_params.image_url,
             video_url: project_params.video_url,
-            status: ProjectStatus::New,
             submited_ms: env.ledger().timestamp() * 1000,
             updated_ms: None,
             admins: project_params.admins,
@@ -63,33 +62,6 @@ impl ProjectRegistryTrait for ProjectRegistry {
         log_create_project_event(env, project.clone());
 
         project
-    }
-
-    fn change_project_status(
-        env: &Env,
-        contract_owner: Address,
-        project_id: u128,
-        new_status: ProjectStatus,
-    ) {
-        contract_owner.require_auth();
-
-        validate_contract_owner(env, &contract_owner);
-
-        let project = get_project(env, project_id);
-        
-        if project.is_none() {
-            panic_with_error!(env, Error::DataNotFound);
-        }
-
-        let mut uproject = project.unwrap();
-
-        uproject.status = new_status;
-        uproject.updated_ms = Some(env.ledger().timestamp() * 1000);
-
-        log_update_project_event(env, uproject.clone());
-        update_project(env, uproject);
-        extend_project(env, project_id);
-        extend_instance(env);
     }
 
     fn update_project(

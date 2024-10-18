@@ -1,8 +1,8 @@
 # Grantpicks Project Registry contract - Stellar
 
 ## Purpose
-To Save project profile
 
+To Save project profile
 
 ## Storage Structure
 
@@ -19,6 +19,7 @@ pub enum ContractKey {
 ```
 
 ## Contract Error Code
+
 ```rs
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -36,18 +37,9 @@ pub enum Error {
 }
 ```
 
-## Data Type 
+## Data Type
 
 ```rs
-#[contracttype]
-#[derive(Debug, Clone, PartialEq, Eq, Copy)]
-pub enum ProjectStatus {
-    New = 0,
-    Approved  = 1,
-    Rejected  = 2,
-    Completed = 3,
-}
-
 // project information
 #[contracttype]
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -63,7 +55,6 @@ pub struct Project {
     pub contracts: Vec<ProjectContract>,
     pub team_members: Vec<ProjectTeamMember>,
     pub repositories: Vec<ProjectRepository>,
-    pub status: ProjectStatus,
     pub submited_ms: u64,
     pub updated_ms: Option<u64>,
     pub admins: Vec<Address>,
@@ -102,7 +93,7 @@ pub struct ProjectRepository {
 pub struct ProjectFundingHistory {
     pub source: String,
     pub amount: u128,
-    pub denomiation: String,
+    pub denomination: String,
     pub description: String,
     pub funded_ms: u64,
 }
@@ -148,7 +139,7 @@ pub struct UpdateProjectParams {
 // init contract
 fn initialize(env: &Env, contract_owner: Address);
 
-// Project Manipulation 
+// Project Manipulation
 fn apply(env: &Env, applicant: Address, params: CreateProjectParams) -> Project;
 fn update_project(
     env: &Env,
@@ -159,13 +150,6 @@ fn update_project(
 fn add_admin(env: &Env, admin: Address, project_id: u128, new_admin: Address);
 fn remove_admin(env: &Env, admin: Address, project_id: u128, admin_to_remove: Address);
 
-// Change project status
-fn change_project_status(
-    env: &Env,
-    contract_owner: Address,
-    project_id: u128,
-    new_status: ProjectStatus,
-);
 fn upgrade(env: &Env, owner: Address, new_wasm_hash: BytesN<32>);
 
 // VIEW

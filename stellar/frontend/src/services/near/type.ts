@@ -1,4 +1,5 @@
-import { ListsContract, RoundContract } from './round'
+import { ListsContract } from './lists'
+import { RoundContract } from './round'
 
 export type NearConfig = {
 	owner: string

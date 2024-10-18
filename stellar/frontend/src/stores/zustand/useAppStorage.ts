@@ -3,6 +3,7 @@ import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import { useWallet } from '@/app/providers/WalletProvider'
 import Contracts from '@/lib/contracts'
 import CMDWallet from '@/lib/wallet'
+import { ListsContract } from '@/services/near/lists'
 import { RoundContract } from '@/services/near/round'
 import { NearContracts } from '@/services/near/type'
 import { Network } from '@/types/on-chain'
@@ -266,9 +267,12 @@ const useAppStorage = create<AppRepo>((set, get) => ({
 			const network = get().network
 			const roundContractId = process.env.NEAR_ROUND_CONTRACT_ID || ''
 			const roundContract = new RoundContract(wallet, network, roundContractId)
+			const listsContractId = process.env.NEAR_LISTS_CONTRACT_ID || ''
+			const listsContract = new ListsContract(wallet, network, listsContractId)
 
 			const nearContracts: NearContracts = {
 				round: roundContract,
+				lists: listsContract,
 			}
 
 			return nearContracts

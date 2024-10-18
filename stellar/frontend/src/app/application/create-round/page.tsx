@@ -417,7 +417,12 @@ const CreateRoundPage = () => {
 			)
 			return res
 		} else {
-			return []
+			let contracts = storage.getNearContracts(nearWallet)
+			if (!contracts) {
+				return []
+			}
+			const res = await contracts.lists.getLists(key.skip, key.limit)
+			return res
 		}
 	}
 
@@ -428,7 +433,7 @@ const CreateRoundPage = () => {
 		if (previousPageData && !previousPageData.length) return null
 		return {
 			url: `get-lists`,
-			skip: pageIndex,
+			skip: pageIndex * LIMIT_SIZE,
 			limit: LIMIT_SIZE,
 			chain: storage.chainId,
 		}
@@ -446,7 +451,9 @@ const CreateRoundPage = () => {
 				...(data as any as IGetListExternalResponse[]),
 			)
 		: []
-	const hasMore = data ? data.length >= LIMIT_SIZE : false
+	const isEmpty = data?.[0]?.length === 0
+	const isReachingEnd =
+		isEmpty || (data && data[data.length - 1]?.length < LIMIT_SIZE)
 
 	const isOwner = (listOwnerId: string): boolean => {
 		return (stellarPubKey || nearAccounts[0]?.accountId) === listOwnerId
@@ -1439,11 +1446,15 @@ const CreateRoundPage = () => {
 								)}
 							</button>
 							{showLists && (
-								<div className="max-h-[522px] overflow-scroll">
+								<div
+									id="scrollListsContainer"
+									className="max-h-[522px] overflow-scroll"
+								>
 									<InfiniteScroll
+										scrollableTarget="scrollListsContainer"
 										dataLength={lists.length}
 										next={() => !isValidating && setSize(size + 1)}
-										hasMore={hasMore}
+										hasMore={!isReachingEnd}
 										style={{ display: 'flex', flexDirection: 'column' }}
 										loader={
 											<div className="my-2 flex items-center justify-center">
@@ -1455,15 +1466,15 @@ const CreateRoundPage = () => {
 										}
 									>
 										{isLoading ? (
-											<div className="h-52 flex items-center justify-center w-full">
+											<div className="h-20 flex items-center justify-center">
 												<IconLoading
-													size={40}
+													size={24}
 													className="fill-grantpicks-black-600"
 												/>
 											</div>
 										) : lists.length === 0 ? (
 											<div>
-												<p className="text-base font-bold text-grantpicks-black-950 text-center">
+												<p className="text-sm text-grantpicks-black-950 text-center">
 													There are no Lists Contract yet.
 												</p>
 											</div>

@@ -1,3 +1,4 @@
+import { ListsContract } from './lists'
 import { RoundContract } from './round'
 
 export type NearConfig = {
@@ -79,4 +80,5 @@ export type NearRound = {
 
 export type NearContracts = {
 	round: RoundContract
+	lists: ListsContract
 }

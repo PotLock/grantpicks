@@ -31,6 +31,7 @@ import { useModalContext } from '@/app/providers/ModalProvider'
 import IconClose from '@/app/components/svgs/IconClose'
 import { localStorageConfigs } from '@/configs/local-storage'
 import useAppStorage from '@/stores/zustand/useAppStorage'
+import { NearSocialGPProject } from '@/services/near/near-social'
 
 const CreateProjectFormContext = createContext<ICreateProjectFormContext>({
 	data: DEFAULT_CREATE_PROJECT_DATA,
@@ -47,78 +48,138 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 	)
 	const { dismissPageLoading, openPageLoading } = useGlobalContext()
 	const [step, setStep] = useState<number>(1)
-	const { stellarPubKey, stellarKit } = useWallet()
+	const { stellarPubKey, stellarKit, nearWallet } = useWallet()
 	const { setSuccessCreateProjectModalProps } = useModalContext()
 	const storage = useAppStorage()
 
 	const onProceedApply = async () => {
 		try {
 			openPageLoading()
-			const contracts = storage.getStellarContracts()
 
-			if (!contracts) {
-				return
-			}
+			if (storage.chainId === 'stellar') {
+				const contracts = storage.getStellarContracts()
 
-			const params: ICreateProjectParams = {
-				name: dataForm.title,
-				overview: dataForm.description,
-				admins: dataForm.team_member.map((mem) => mem),
-				contacts: dataForm.contacts.map((c) => ({
-					name: c.platform,
-					value: c.link_url,
-				})),
-				contracts: dataForm.smart_contracts.map((sm) => ({
-					name: sm.chain,
-					contract_address: sm.address,
-				})),
-				fundings: dataForm.funding_histories.map((f) => ({
-					source: f.source,
-					denomiation: f.denomination,
-					description: f.description,
-					amount: parseToStroop(f.amount),
-					funded_ms: BigInt(f.date.getTime() as number),
-				})),
-				image_url: DEFAULT_IMAGE_URL,
-				payout_address: stellarPubKey,
-				repositories: dataForm.github_urls.map((g) => ({
-					label: 'github',
-					url: g,
-				})),
-				video_url: dataForm.video.url,
-				team_members: dataForm.team_member.map((mem) => ({
-					name: mem,
-					value: mem,
-				})),
-			}
+				if (!contracts) {
+					return
+				}
 
-			const txCreateProject = await createProject(
-				stellarPubKey,
-				params,
-				contracts,
-			)
+				const params: ICreateProjectParams = {
+					name: dataForm.title,
+					overview: dataForm.description,
+					admins: dataForm.team_member.map((mem) => mem),
+					contacts: dataForm.contacts.map((c) => ({
+						name: c.platform,
+						value: c.link_url,
+					})),
+					contracts: dataForm.smart_contracts.map((sm) => ({
+						name: sm.chain,
+						contract_address: sm.address,
+					})),
+					fundings: dataForm.funding_histories.map((f) => ({
+						source: f.source,
+						denomiation: f.denomination,
+						description: f.description,
+						amount: BigInt(f.amount),
+						funded_ms: BigInt(f.date.getTime() as number),
+					})),
+					image_url: DEFAULT_IMAGE_URL,
+					payout_address: stellarPubKey,
+					repositories: dataForm.github_urls.map((g) => ({
+						label: 'github',
+						url: g,
+					})),
+					video_url: dataForm.video.url,
+					team_members: dataForm.team_member.map((mem) => ({
+						name: mem,
+						value: mem,
+					})),
+				}
 
-			const txHashCreateProject = await contracts.signAndSendTx(
-				stellarKit as StellarWalletsKit,
-				txCreateProject.toXDR(),
-				stellarPubKey,
-			)
-			if (txHashCreateProject) {
-				setSuccessCreateProjectModalProps((prev) => ({
-					...prev,
-					isOpen: true,
-					createProjectRes: txCreateProject.result,
-					txHash: txHashCreateProject,
-				}))
-				setDataForm(DEFAULT_CREATE_PROJECT_DATA)
-				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_1)
-				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_2)
-				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_3)
-				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_4)
-				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_5)
-				dismissPageLoading()
-				onClose()
-			}
+				const txCreateProject = await createProject(
+					stellarPubKey,
+					params,
+					contracts,
+				)
+
+				const txHashCreateProject = await contracts.signAndSendTx(
+					stellarKit as StellarWalletsKit,
+					txCreateProject.toXDR(),
+					stellarPubKey,
+				)
+				if (txHashCreateProject) {
+					setSuccessCreateProjectModalProps((prev) => ({
+						...prev,
+						isOpen: true,
+						createProjectRes: txCreateProject.result,
+						txHash: txHashCreateProject,
+					}))
+					setDataForm(DEFAULT_CREATE_PROJECT_DATA)
+					localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_1)
+					localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_2)
+					localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_3)
+					localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_4)
+					localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_5)
+					dismissPageLoading()
+					onClose()
+				}
+			}else {
+					const contracts = storage.getNearContracts(nearWallet)
+
+					if (!contracts) {
+						return
+					}
+
+					const params: NearSocialGPProject = {
+						name: dataForm.title,
+						overview: dataForm.description,
+						contacts: dataForm.contacts.map((c) => ({
+							name: c.platform,
+							value: c.link_url,
+						})),
+						owner: storage.my_address || '',
+						contracts: dataForm.smart_contracts.map((sm) => ({
+							name: sm.chain,
+							contract_address: sm.address,
+						})),
+						fundings: dataForm.funding_histories.map((f) => ({
+							source: f.source,
+							denomination: f.denomination,
+							description: f.description,
+							amount: f.amount.toString(),
+							funded_ms: parseInt(f.date.getTime().toString()),
+						})),
+						image_url: DEFAULT_IMAGE_URL,
+						payout_address: stellarPubKey,
+						repositories: dataForm.github_urls.map((g) => ({
+							label: 'github',
+							url: g,
+						})),
+						video_url: dataForm.video.url,
+						team_members: dataForm.team_member,
+					}
+
+					const txCreateProject = await contracts.near_social.setProjectData(
+						storage.my_address || '',
+						params,
+					)
+
+					if (txCreateProject) {
+						setSuccessCreateProjectModalProps((prev) => ({
+							...prev,
+							isOpen: true,
+							createProjectRes: txCreateProject.result,
+							txHash: txCreateProject.outcome.transaction_outcome.id,
+						}))
+						setDataForm(DEFAULT_CREATE_PROJECT_DATA)
+						localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_1)
+						localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_2)
+						localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_3)
+						localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_4)
+						localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_5)
+						dismissPageLoading()
+						onClose()
+					}
+				}
 		} catch (error: any) {
 			console.error(error)
 			console.log('error', error?.message)

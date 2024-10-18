@@ -13,6 +13,8 @@ import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
 import { localStorageConfigs } from '@/configs/local-storage'
 import Image from 'next/image'
+import useAppStorage from '@/stores/zustand/useAppStorage'
+import { NEAR_ADDRESS_REGEX } from '@/constants/regex'
 
 const CreateProjectStep2 = () => {
 	const [members, setMembers] = useState<string[]>([])
@@ -27,6 +29,7 @@ const CreateProjectStep2 = () => {
 		setValue,
 		formState: { errors },
 	} = useForm<CreateProjectStep2Data>()
+	const storage = useAppStorage()
 
 	const onNextStep2: SubmitHandler<CreateProjectStep2Data> = (submitData) => {
 		if (members.length === 0) {
@@ -41,10 +44,17 @@ const CreateProjectStep2 = () => {
 	}
 
 	const onAddMember = async () => {
-		if (!StrKey.isValidEd25519PublicKey(watch('member'))) {
-			toast.error('Address is not valid', { style: toastOptions.error.style })
-			return
-		}
+		if(storage.chainId === 'stellar') {
+      if (!StrKey.isValidEd25519PublicKey(watch('member'))) {
+        toast.error('Address is not valid', { style: toastOptions.error.style })
+        return
+      }
+    }else{
+      if (!NEAR_ADDRESS_REGEX(watch('member'))) {
+        toast.error('Address is not valid', { style: toastOptions.error.style })
+        return
+      }
+    }
 		if (members.includes(watch('member'))) {
 			toast.error('This admin is already added', {
 				style: toastOptions.error.style,
@@ -58,11 +68,20 @@ const CreateProjectStep2 = () => {
 
 	useEffect(() => {
 		if (watch('member') !== '') {
-			if (!StrKey.isValidEd25519PublicKey(watch('member'))) {
-				setValidationError(true)
+			if (storage.chainId === 'stellar') {
+				if (!StrKey.isValidEd25519PublicKey(watch('member'))) {
+					setValidationError(true)
+				} else {
+					setValidationError(false)
+				}
 			} else {
-				setValidationError(false)
+				if (NEAR_ADDRESS_REGEX(watch('member'))) {
+					setValidationError(false)
+				} else {
+					setValidationError(true)
+				}
 			}
+
 			if (members.includes(watch('member'))) {
 				setSameMemberError(true)
 			} else {
@@ -163,7 +182,11 @@ const CreateProjectStep2 = () => {
 									</p>
 								) : undefined
 							}
-							hintLabel="You must put a valid STELLAR address that belongs to your team member(s)"
+							hintLabel={
+								storage.chainId === 'stellar'
+									? 'You must put a valid STELLAR address that belongs to your team member(s)'
+									: 'You must put a valid NEAR address that belongs to your team member(s)'
+							}
 						/>
 					</div>
 					<div className="grid grid-cols-2 md:grid-cols-3 gap-4">

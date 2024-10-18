@@ -1,3 +1,4 @@
+import { NearSocial } from './near-social'
 import { RoundContract } from './round'
 
 export type NearConfig = {
@@ -79,4 +80,5 @@ export type NearRound = {
 
 export type NearContracts = {
 	round: RoundContract
+  near_social: NearSocial
 }

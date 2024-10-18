@@ -13,6 +13,7 @@ const nextConfig = {
 		ROUND_CONTRACT_ID: process.env.ROUND_CONTRACT_ID,
 		ROUND_WASM_HASH: process.env.ROUND_WASM_HASH,
 		NEAR_ROUND_CONTRACT_ID: process.env.NEAR_ROUND_CONTRACT_ID,
+		NEAR_SOCIAL_CONTRACT_ID: process.env.NEAR_SOCIAL_CONTRACT_ID,
 	},
 	images: {
 		remotePatterns: [

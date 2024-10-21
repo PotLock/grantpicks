@@ -2,6 +2,7 @@ import { Wallet } from '@near-wallet-selector/core'
 import { BaseContract } from './contract'
 import { NO_DEPOSIT, THIRTY_TGAS } from '@/constants/near'
 import { parseNearAmount } from 'near-api-js/lib/utils/format'
+import { profile } from 'console'
 
 export type NearSocialGPProject = {
 	name: string
@@ -67,7 +68,7 @@ export class NearSocial extends BaseContract {
 		const result = await this.viewMethod({
 			method: 'get',
 			args: {
-				keys: [`${accountId}/gp_project`],
+				keys: [`${accountId}/profile/gp_project`],
 			},
 		})
 		return result
@@ -77,10 +78,15 @@ export class NearSocial extends BaseContract {
 		const result = await this.callMethod({
 			method: 'set',
 			args: {
-				keys: [`${accountId}/gp_project`],
-				data: projectData,
+				data: {
+					[accountId]: {
+						profile: {
+							gp_project: JSON.stringify(projectData),
+						},
+					},
+				},
 			},
-			deposit: parseNearAmount('0.1') || NO_DEPOSIT,
+			deposit: parseNearAmount('0.085') || NO_DEPOSIT,
 			gas: THIRTY_TGAS,
 		})
 

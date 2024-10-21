@@ -248,7 +248,7 @@ const CreateRoundPage = () => {
 						data.admins?.length > 0
 							? data.admins.map((admin) => admin.admin_id)
 							: [],
-					allow_remaining_dist: data.allow_remaining_dist,
+					allow_remaining_dist: data.allow_remaining_dist || false,
 					compliance_req_desc: data.compliance_req_desc,
 					compliance_period_ms: data.compliance_period_ms
 						? BigInt(data.compliance_period_ms as number)

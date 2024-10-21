@@ -4,6 +4,7 @@ import { useWallet } from '@/app/providers/WalletProvider'
 import Contracts from '@/lib/contracts'
 import CMDWallet from '@/lib/wallet'
 import { NearSocial } from '@/services/near/near-social'
+import { ListsContract } from '@/services/near/lists'
 import { RoundContract } from '@/services/near/round'
 import { NearContracts } from '@/services/near/type'
 import { Network } from '@/types/on-chain'
@@ -274,9 +275,13 @@ const useAppStorage = create<AppRepo>((set, get) => ({
 				nearSocialContractId,
 			)
 
+			const listsContractId = process.env.NEAR_LISTS_CONTRACT_ID || ''
+			const listsContract = new ListsContract(wallet, network, listsContractId)
+
 			const nearContracts: NearContracts = {
 				round: roundContract,
 				near_social: nearSocialContract,
+				lists: listsContract,
 			}
 
 			return nearContracts

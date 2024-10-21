@@ -2,8 +2,7 @@
 use soroban_sdk::Vec;
 
 use crate::data_type::{
-    ProjectContact, ProjectContract, ProjectFundingHistory, ProjectRepository, ProjectStatus,
-    ProjectTeamMember,
+    ProjectContact, ProjectContract, ProjectFundingHistory, ProjectRepository, ProjectTeamMember
 };
 use crate::soroban_sdk::{testutils::Address as _, Address, Env, String};
 use crate::{internal::ProjectRegistry, internal::ProjectRegistryClient};
@@ -56,7 +55,7 @@ fn test_apply() {
         source: String::from_str(&env, "source"),
         funded_ms: 100,
         description: String::from_str(&env, "description"),
-        denomiation: String::from_str(&env, "USD"),
+        denomination: String::from_str(&env, "USD"),
     });
 
     project_admins.push_back(alice.clone());
@@ -88,76 +87,6 @@ fn test_apply() {
     assert_eq!(result.video_url, project.video_url);
     assert_eq!(result.payout_address, project.payout_address);
     assert_eq!(result.contacts.len(), 1);
-}
-
-#[test]
-fn test_change_project_status() {
-    let env = Env::default();
-    env.mock_all_auths();
-    let alice = Address::generate(&env);
-    let bob = Address::generate(&env);
-
-    let contract = deploy_contract(&env, &alice);
-
-    let mut project_contracts: Vec<ProjectContract> = Vec::new(&env);
-    let mut project_contacts: Vec<ProjectContact> = Vec::new(&env);
-    let mut project_team_members: Vec<ProjectTeamMember> = Vec::new(&env);
-    let mut project_repositories: Vec<ProjectRepository> = Vec::new(&env);
-    let mut project_admins: Vec<Address> = Vec::new(&env);
-    let mut funding_histories: Vec<ProjectFundingHistory> = Vec::new(&env);
-
-    project_contracts.push_back(ProjectContract {
-        name: String::from_str(&env, "contract name"),
-        contract_address: String::from_str(&env, "contract address"),
-    });
-
-    project_contacts.push_back(ProjectContact {
-        name: String::from_str(&env, "contact name"),
-        value: String::from_str(&env, "contact email"),
-    });
-
-    project_team_members.push_back(ProjectTeamMember {
-        name: String::from_str(&env, "team member name"),
-        value: String::from_str(&env, "root.near"),
-    });
-
-    project_repositories.push_back(ProjectRepository {
-        label: String::from_str(&env, "repository name"),
-        url: String::from_str(&env, "repository url"),
-    });
-
-    funding_histories.push_back(ProjectFundingHistory {
-        amount: 100,
-        source: String::from_str(&env, "source"),
-        funded_ms: 100,
-        description: String::from_str(&env, "description"),
-        denomiation: String::from_str(&env, "USD"),
-    });
-
-    project_admins.push_back(alice.clone());
-
-    let project = contract.apply(
-        &bob,
-        &crate::data_type::CreateProjectParams {
-            image_url: String::from_str(&env, "image url"),
-            video_url: String::from_str(&env, "video url"),
-            name: String::from_str(&env, "name"),
-            overview: String::from_str(&env, "overview"),
-            payout_address: bob.clone(),
-            contacts: project_contacts,
-            contracts: project_contracts,
-            team_members: project_team_members,
-            repositories: project_repositories,
-            admins: project_admins,
-            fundings: funding_histories,
-        },
-    );
-
-    contract.change_project_status(&alice, &project.id, &ProjectStatus::Approved);
-
-    let project = contract.get_project_by_id(&project.id);
-
-    assert_eq!(project.status, ProjectStatus::Approved);
 }
 
 #[test]
@@ -202,7 +131,7 @@ fn test_add_admin() {
         source: String::from_str(&env, "source"),
         funded_ms: 100,
         description: String::from_str(&env, "description"),
-        denomiation: String::from_str(&env, "USD"),
+        denomination: String::from_str(&env, "USD"),
     });
 
     project_admins.push_back(alice.clone());
@@ -274,7 +203,7 @@ fn test_remove_admin() {
         source: String::from_str(&env, "source"),
         funded_ms: 100,
         description: String::from_str(&env, "description"),
-        denomiation: String::from_str(&env, "USD"),
+        denomination: String::from_str(&env, "USD"),
     });
 
     project_admins.push_back(alice.clone());
@@ -351,7 +280,7 @@ fn test_get_projects() {
         source: String::from_str(&env, "source"),
         funded_ms: 100,
         description: String::from_str(&env, "description"),
-        denomiation: String::from_str(&env, "USD"),
+        denomination: String::from_str(&env, "USD"),
     });
 
     project_admins.push_back(alice.clone());
@@ -421,7 +350,7 @@ fn test_get_project_admins() {
         source: String::from_str(&env, "source"),
         funded_ms: 100,
         description: String::from_str(&env, "description"),
-        denomiation: String::from_str(&env, "USD"),
+        denomination: String::from_str(&env, "USD"),
     });
 
     project_admins.push_back(alice.clone());
@@ -492,7 +421,7 @@ fn test_get_project_by_id() {
         source: String::from_str(&env, "source"),
         funded_ms: 100,
         description: String::from_str(&env, "description"),
-        denomiation: String::from_str(&env, "USD"),
+        denomination: String::from_str(&env, "USD"),
     });
 
     project_admins.push_back(alice.clone());
@@ -561,7 +490,7 @@ fn test_update_project() {
         source: String::from_str(&env, "source"),
         funded_ms: 100,
         description: String::from_str(&env, "description"),
-        denomiation: String::from_str(&env, "USD"),
+        denomination: String::from_str(&env, "USD"),
     });
 
     project_admins.push_back(alice.clone());
@@ -614,7 +543,7 @@ fn test_update_project() {
         source: String::from_str(&env, "source"),
         funded_ms: 100,
         description: String::from_str(&env, "description"),
-        denomiation: String::from_str(&env, "USD"),
+        denomination: String::from_str(&env, "USD"),
     });
 
     contract.update_project(

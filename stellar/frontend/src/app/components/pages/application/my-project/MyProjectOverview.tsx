@@ -33,7 +33,7 @@ const MyProjectOverview = () => {
 	} = useForm<CreateProjectStep1Data>({
 		defaultValues: {
 			title: projectData?.name,
-			project_id: projectData?.id.toString(),
+			project_id: projectData?.id ? projectData.id.toString() : '',
 			description: projectData?.overview,
 			considering_desc: projectData?.overview,
 		},
@@ -43,7 +43,11 @@ const MyProjectOverview = () => {
 	const setDefaultData = () => {
 		if (projectData) {
 			setValue('title', projectData.name)
-			setValue('project_id', projectData.id.toString())
+
+			if (projectData.id) {
+				setValue('project_id', projectData.id.toString())
+			}
+
 			setValue('description', projectData.overview)
 			setValue('considering_desc', projectData.overview)
 		}

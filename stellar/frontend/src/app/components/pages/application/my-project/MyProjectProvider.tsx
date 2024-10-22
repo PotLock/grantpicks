@@ -44,27 +44,58 @@ const MyProjectProvider = () => {
 
 	const fetchProjectApplicant = async () => {
 		try {
-			let contracts = storage.getStellarContracts()
+			if (storage.chainId === 'stellar') {
+				let contracts = storage.getStellarContracts()
 
-			if (!contracts) {
-				return
-			}
+				if (!contracts) {
+					return
+				}
 
-			const res = await getProjectApplicant(stellarPubKey, contracts)
-			//@ts-ignore
-			if (!res?.error) {
-				setProjectData(res)
-				setProjectDataModel(res)
+				const res = await getProjectApplicant(stellarPubKey, contracts)
+				//@ts-ignore
+				if (!res?.error) {
+					setProjectData(res)
+					setProjectDataModel(res)
 
-				if (res) {
-					const projectStats = await potlockService.getProjectStats(
-						Number(res.id),
-						stellarPubKey,
-					)
-					setStats(projectStats)
+					if (res) {
+						const projectStats = await potlockService.getProjectStats(
+							Number(res.id),
+							stellarPubKey,
+						)
+						setStats(projectStats)
+					}
+				} else {
+					setNoProject(true)
 				}
 			} else {
-				setNoProject(true)
+				const contracts = storage.getNearContracts(null)
+
+				if (!contracts) {
+					return
+				}
+
+				const data = await contracts.near_social.getProjectData(
+					storage.my_address || '',
+				)
+
+				if (data) {
+					const json =
+						data[`${storage.my_address || ''}`]['profile']['gp_project'] || '{}'
+					const project = JSON.parse(json)
+
+					if (project.fundings) {
+						project.funding_histories = project.fundings
+					}
+
+					if (project.name) {
+						setProjectDataModel(project)
+						setProjectData(project)
+					} else {
+						setNoProject(true)
+					}
+				} else {
+					setNoProject(true)
+				}
 			}
 			//@ts-ignore
 		} catch (error: any) {
@@ -73,10 +104,11 @@ const MyProjectProvider = () => {
 	}
 
 	useEffect(() => {
-		if (!projectData && stellarPubKey) {
+		if (!projectData && storage.my_address) {
 			fetchProjectApplicant()
 		}
-	}, [stellarPubKey])
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [storage.my_address])
 
 	return (
 		<MyProjectContext.Provider

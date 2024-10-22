@@ -23,6 +23,7 @@ import { useMyProject } from './MyProjectProvider'
 import { StrKey } from 'round-client'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import Image from 'next/image'
+import { NEAR_ADDRESS_REGEX } from '@/constants/regex'
 
 const MyProjectTeam = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()
@@ -42,7 +43,7 @@ const MyProjectTeam = () => {
 
 	const setDefaultData = () => {
 		if (projectData) {
-			setMembers(projectData.team_members.map((mem: any) => mem.value))
+			setMembers(projectData.team_members.map((mem: any) => mem))
 		}
 	}
 
@@ -120,11 +121,20 @@ const MyProjectTeam = () => {
 						{...register('member')}
 						onKeyDown={async (e) => {
 							if (e.key == 'Enter') {
-								if (!StrKey.isValidEd25519PublicKey(watch('member'))) {
-									toast.error('Address is not valid', {
-										style: toastOptions.error.style,
-									})
-									return
+								if (storage.chainId === 'stellar') {
+									if (!StrKey.isValidEd25519PublicKey(watch('member'))) {
+										toast.error('Address is not valid', {
+											style: toastOptions.error.style,
+										})
+										return
+									}
+								} else {
+									if (NEAR_ADDRESS_REGEX(watch('member'))) {
+										toast.error('Address is not valid', {
+											style: toastOptions.error.style,
+										})
+										return
+									}
 								}
 								if (members.includes(watch('member'))) {
 									setSameMemberError(true)
@@ -139,12 +149,21 @@ const MyProjectTeam = () => {
 							<button
 								disabled={watch('member') === ''}
 								onClick={() => {
-									if (!StrKey.isValidEd25519PublicKey(watch('member'))) {
-										toast.error('Address is not valid', {
-											style: toastOptions.error.style,
-										})
-										return
-									}
+									if (storage.chainId === 'stellar') {
+										if (!StrKey.isValidEd25519PublicKey(watch('member'))) {
+											toast.error('Address is not valid', {
+												style: toastOptions.error.style,
+											})
+											return
+										}
+									}else{
+                    if (NEAR_ADDRESS_REGEX(watch('member'))) {
+                      toast.error('Address is not valid', {
+                        style: toastOptions.error.style,
+                      })
+                      return
+                    }
+                  }
 									if (members.includes(watch('member'))) {
 										setSameMemberError(true)
 									} else {
@@ -168,7 +187,11 @@ const MyProjectTeam = () => {
 								</p>
 							) : undefined
 						}
-						hintLabel="You must put a valid STELLAR address that belongs to your team member(s)"
+						hintLabel={
+							storage.chainId === 'near'
+								? 'You must put a valid NEAR address that belongs to your team member(s)'
+								: 'You must put a valid STELLAR address that belongs to your team member(s)'
+						}
 					/>
 				</div>
 				<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5 lg:gap-6">

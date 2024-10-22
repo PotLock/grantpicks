@@ -178,7 +178,7 @@ const MyProjectLinks = () => {
 						url: repo.github_url,
 					})) || [],
 				team_members: projectData?.team_members || [],
-				video_url: projectData?.video_url || 'https://video.com/asdfgh',
+				video_url: projectData?.video_url || '',
 			}
 			const txUpdateProject = await updateProject(
 				stellarPubKey,

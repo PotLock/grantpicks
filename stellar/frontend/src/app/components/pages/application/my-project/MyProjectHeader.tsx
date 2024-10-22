@@ -5,12 +5,15 @@ import React from 'react'
 import { useMyProject } from './MyProjectProvider'
 import { formatStroopToXlm } from '@/utils/helper'
 import { GPProjectStats } from '@/models/stats'
+import useAppStorage from '@/stores/zustand/useAppStorage'
+import { formatNearAmount } from 'near-api-js/lib/utils/format'
 
 export interface IMyProjectHeaderProps {
 	stats: GPProjectStats
 }
 
 const MyProjectHeader = ({ stats }: IMyProjectHeaderProps) => {
+	const storage = useAppStorage()
 	return (
 		<>
 			<p className="text-[62px] font-black text-grantpicks-black-950 mb-8 md:mb-10 lg:mb-14">
@@ -32,11 +35,18 @@ const MyProjectHeader = ({ stats }: IMyProjectHeaderProps) => {
 				</div>
 				<div className="p-3 md:p-4 lg:p-5 rounded-xl border border-black/10 flex items-center space-x-4 bg-white">
 					<div className="border border-black/10 p-2 rounded-full">
-						<IconStellar size={24} className="fill-grantpicks-black-400" />
+						{storage.chainId === 'near' ? (
+							<IconNear size={24} className="fill-grantpicks-black-400" />
+						) : (
+							<IconStellar size={24} className="fill-grantpicks-black-400" />
+						)}
 					</div>
 					<div>
 						<p className="text-[25px] font-normal text-grantpicks-black-950">
-							{formatStroopToXlm(BigInt(stats.total_funds_received))} XLM
+							{storage.chainId === 'stellar'
+								? formatStroopToXlm(BigInt(stats.total_funds_received))
+								: formatNearAmount(stats.total_funds_received.toString())}{' '}
+							{storage.chainId === 'near' ? 'NEAR' : 'XLM'}
 						</p>
 						<p className="text-xs font-semibold text-grantpicks-black-600">
 							FUNDING RECEIVED{' '}

@@ -67,6 +67,8 @@ import InfiniteScroll from 'react-infinite-scroll-component'
 import { IGetListExternalResponse } from '@/types/on-chain'
 import { LIMIT_SIZE } from '@/constants/query'
 import useSWRInfinite from 'swr/infinite'
+import { GPRound } from '@/models/round'
+import { parseNearAmount } from 'near-api-js/lib/utils/format'
 
 const CreateRoundPage = () => {
 	const router = useRouter()
@@ -356,12 +358,29 @@ const CreateRoundPage = () => {
 				}
 
 				const nearContracts = storage.getNearContracts(nearWallet)
-				console.log('nearContracts', nearContracts)
+
 				const txNearCreateRound = await nearContracts?.round.createRound(params)
 
-				console.log('txNearCreateRound', txNearCreateRound)
+				if (txNearCreateRound) {
+					if (watch().amount && watch().amount !== '0') {
+						const depositAmount = parseNearAmount(watch().amount)
+						await nearContracts?.round.deposit(
+							Number(txNearCreateRound ? txNearCreateRound.result.id : 0),
+							depositAmount,
+						)
+					}
+				}
 
-				//TODO: handle & test after BE indexed by prometheus
+				setSuccessCreateRoundModalProps((prev) => ({
+					...prev,
+					isOpen: true,
+					createRoundRes: {
+						...txNearCreateRound?.result,
+						id: txNearCreateRound?.result.id.toString(),
+						on_chain_id: txNearCreateRound?.result.id.toString(),
+					} as unknown as GPRound,
+					txHash: txNearCreateRound?.outcome.transaction_outcome.id,
+				}))
 
 				reset()
 				dismissPageLoading()

@@ -37,10 +37,14 @@ import Contracts from '@/lib/contracts'
 import { Network } from '@/types/on-chain'
 import { useMyProject } from './MyProjectProvider'
 import useAppStorage from '@/stores/zustand/useAppStorage'
+import {
+	NearProjectFundingHistory,
+	NearSocialGPProject,
+} from '@/services/near/near-social'
 
 const MyProjectMedia = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()
-	const { stellarKit, stellarPubKey } = useWallet()
+	const { stellarKit, stellarPubKey, nearWallet } = useWallet()
 	const { openPageLoading, dismissPageLoading, livepeer } = useGlobalContext()
 	const {
 		control,
@@ -139,55 +143,96 @@ const MyProjectMedia = () => {
 	const onSaveChanges: SubmitHandler<CreateProjectStep5Data> = async (data) => {
 		try {
 			openPageLoading()
-			let contracts = storage.getStellarContracts()
 
-			if (!contracts) {
-				return
-			}
+			if (storage.chainId === 'stellar') {
+				let contracts = storage.getStellarContracts()
 
-			const params: IUpdateProjectParams = {
-				...projectData,
-				name: projectData?.name || '',
-				overview: projectData?.overview || '',
-				fundings: [],
-				contacts: projectData?.contacts || [],
-				contracts: projectData?.contracts || [],
-				image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
-				payout_address: projectData?.payout_address || '',
-				repositories: projectData?.repositories || [],
-				team_members: projectData?.team_members || [],
-				video_url: watch().video.url || 'https://video.com/asdfgh',
-			}
-			const txUpdateProject = await updateProject(
-				stellarPubKey,
-				projectData?.id as bigint,
-				params,
-				contracts,
-			)
-			const txHashUpdateProject = await contracts.signAndSendTx(
-				stellarKit as StellarWalletsKit,
-				txUpdateProject.toXDR(),
-				stellarPubKey,
-			)
-			if (txHashUpdateProject) {
-				dismissPageLoading()
-				setTimeout(async () => {
-					await fetchProjectApplicant()
-				}, 2000)
-				toast.success(`Update project overview is succeed`, {
-					style: toastOptions.success.style,
-				})
+				if (!contracts) {
+					return
+				}
+
+				const params: IUpdateProjectParams = {
+					...projectData,
+					name: projectData?.name || '',
+					overview: projectData?.overview || '',
+					fundings: [],
+					contacts: projectData?.contacts || [],
+					contracts: projectData?.contracts || [],
+					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
+					payout_address: projectData?.payout_address || '',
+					repositories: projectData?.repositories || [],
+					team_members: projectData?.team_members || [],
+					video_url: watch().video.url || '',
+				}
+				const txUpdateProject = await updateProject(
+					stellarPubKey,
+					projectData?.id as bigint,
+					params,
+					contracts,
+				)
+				const txHashUpdateProject = await contracts.signAndSendTx(
+					stellarKit as StellarWalletsKit,
+					txUpdateProject.toXDR(),
+					stellarPubKey,
+				)
+				if (txHashUpdateProject) {
+					dismissPageLoading()
+					setTimeout(async () => {
+						await fetchProjectApplicant()
+					}, 2000)
+					toast.success(`Update project media is succeed`, {
+						style: toastOptions.success.style,
+					})
+				}
+			} else {
+				const contracts = storage.getNearContracts(nearWallet)
+
+				if (!contracts) {
+					return
+				}
+
+				const params: NearSocialGPProject = {
+					name: projectData?.name || '',
+					overview: projectData?.overview || '',
+					fundings:
+						(projectData?.funding_histories as unknown as NearProjectFundingHistory[]) ||
+						[],
+					contacts: projectData?.contacts || [],
+					contracts: projectData?.contracts || [],
+					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
+					payout_address: projectData?.payout_address || '',
+					repositories: projectData?.repositories || [],
+					team_members:
+						(projectData?.team_members as unknown as string[]) || [],
+					video_url: watch().video.url || '',
+					owner: projectData?.owner || '',
+				}
+
+				const txUpdateProject = await contracts.near_social.setProjectData(
+					storage.my_address || '',
+					params,
+				)
+
+				if (txUpdateProject) {
+					dismissPageLoading()
+					setTimeout(async () => {
+						await fetchProjectApplicant()
+					}, 2000)
+					toast.success(`Update project media is succeed`, {
+						style: toastOptions.success.style,
+					})
+				}
 			}
 		} catch (error: any) {
 			dismissPageLoading()
-			toast.error(`Update project overview is failed`, {
+			toast.error(`Update project media is failed`, {
 				style: toastOptions.error.style,
 			})
-			console.log('error to update overview project', error)
+			console.log('error to update media project', error)
 		}
 	}
 	const setDefaultData = async () => {
-		if (projectData) {
+		if (projectData && projectData.video_url && projectData.video_url !== '') {
 			if (projectData.video_url.includes('youtube')) {
 				const res = await fetchYoutubeIframe(
 					projectData.video_url || '',
@@ -233,7 +278,7 @@ const MyProjectMedia = () => {
 							</p>
 						</div>
 					</div>
-				) : accFiles.length === 0 && !ytIframe ? (
+				) : accFiles.length === 0 && (!ytIframe || ytIframe === '') ? (
 					<div className="bg-white rounded-xl p-4 md:p-6 border border-black/10 w-full">
 						<div
 							{...getRootProps()}

@@ -19,10 +19,14 @@ import { SubmitHandler, useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { useMyProject } from './MyProjectProvider'
 import useAppStorage from '@/stores/zustand/useAppStorage'
+import {
+	NearProjectFundingHistory,
+	NearSocialGPProject,
+} from '@/services/near/near-social'
 
 const MyProjectOverview = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()
-	const { stellarPubKey, stellarKit } = useWallet()
+	const { stellarPubKey, stellarKit, nearWallet } = useWallet()
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const {
 		register,
@@ -62,44 +66,85 @@ const MyProjectOverview = () => {
 	const onSaveChanges: SubmitHandler<CreateProjectStep1Data> = async (data) => {
 		try {
 			openPageLoading()
-			let contracts = storage.getStellarContracts()
 
-			if (!contracts) {
-				return
-			}
+			if (storage.chainId === 'stellar') {
+				let contracts = storage.getStellarContracts()
 
-			const params: IUpdateProjectParams = {
-				...projectData,
-				name: data.title,
-				overview: data.description,
-				fundings: [],
-				contacts: projectData?.contacts || [],
-				contracts: projectData?.contracts || [],
-				image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
-				payout_address: projectData?.payout_address || '',
-				repositories: projectData?.repositories || [],
-				team_members: projectData?.team_members || [],
-				video_url: projectData?.video_url || 'https://video.com/asdfgh',
-			}
-			const txUpdateProject = await updateProject(
-				stellarPubKey,
-				projectData?.id as bigint,
-				params,
-				contracts,
-			)
-			const txHashUpdateProject = await contracts.signAndSendTx(
-				stellarKit as StellarWalletsKit,
-				txUpdateProject.toXDR(),
-				stellarPubKey,
-			)
-			if (txHashUpdateProject) {
-				dismissPageLoading()
-				setTimeout(async () => {
-					await fetchProjectApplicant()
-				}, 2000)
-				toast.success(`Update project overview is succeed`, {
-					style: toastOptions.success.style,
-				})
+				if (!contracts) {
+					return
+				}
+
+				const params: IUpdateProjectParams = {
+					...projectData,
+					name: data.title,
+					overview: data.description,
+					fundings: [],
+					contacts: projectData?.contacts || [],
+					contracts: projectData?.contracts || [],
+					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
+					payout_address: projectData?.payout_address || '',
+					repositories: projectData?.repositories || [],
+					team_members: projectData?.team_members || [],
+					video_url: projectData?.video_url || 'https://video.com/asdfgh',
+				}
+				const txUpdateProject = await updateProject(
+					stellarPubKey,
+					projectData?.id as bigint,
+					params,
+					contracts,
+				)
+				const txHashUpdateProject = await contracts.signAndSendTx(
+					stellarKit as StellarWalletsKit,
+					txUpdateProject.toXDR(),
+					stellarPubKey,
+				)
+				if (txHashUpdateProject) {
+					dismissPageLoading()
+					setTimeout(async () => {
+						await fetchProjectApplicant()
+					}, 2000)
+					toast.success(`Update project overview is succeed`, {
+						style: toastOptions.success.style,
+					})
+				}
+			} else {
+				const contracts = storage.getNearContracts(nearWallet)
+
+				if (!contracts) {
+					return
+				}
+
+				const params: NearSocialGPProject = {
+					name: data.title || '',
+					overview: data.description || '',
+					fundings:
+						(projectData?.funding_histories as unknown as NearProjectFundingHistory[]) ||
+						[],
+					contacts: projectData?.contacts || [],
+					contracts: projectData?.contracts || [],
+					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
+					payout_address: projectData?.payout_address || '',
+					repositories: projectData?.repositories || [],
+					team_members:
+						(projectData?.team_members as unknown as string[]) || [],
+					video_url: projectData?.video_url || '',
+					owner: projectData?.owner || '',
+				}
+
+				const txUpdateProject = await contracts.near_social.setProjectData(
+					storage.my_address || '',
+					params,
+				)
+
+				if (txUpdateProject) {
+					dismissPageLoading()
+					setTimeout(async () => {
+						await fetchProjectApplicant()
+					}, 2000)
+					toast.success(`Update project overview is succeed`, {
+						style: toastOptions.success.style,
+					})
+				}
 			}
 		} catch (error: any) {
 			dismissPageLoading()

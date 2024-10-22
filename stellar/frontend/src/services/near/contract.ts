@@ -1,5 +1,5 @@
 import { NO_DEPOSIT, THIRTY_TGAS } from '@/constants/near'
-import { Wallet } from '@near-wallet-selector/core'
+import {  Wallet } from '@near-wallet-selector/core'
 import { providers } from 'near-api-js'
 import {
 	CodeResult,

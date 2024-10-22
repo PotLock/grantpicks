@@ -1,11 +1,16 @@
 import { NO_DEPOSIT, THIRTY_TGAS } from '@/constants/near'
-import { Wallet } from '@near-wallet-selector/core'
+import { Transaction, Wallet } from '@near-wallet-selector/core'
 import { providers } from 'near-api-js'
 import {
 	AccountView,
 	FinalExecutionOutcome,
 } from 'near-api-js/lib/providers/provider'
-import { NearConfig, NearCreateRoundParams, NearRound } from './type'
+import {
+	NearConfig,
+	NearCreateRoundParams,
+	NearProjectApplication,
+	NearRound,
+} from './type'
 import { BaseContract } from './contract'
 
 export class RoundContract extends BaseContract {
@@ -13,41 +18,75 @@ export class RoundContract extends BaseContract {
 		super(wallet, network, contractId)
 	}
 
-	async createRound(params: NearCreateRoundParams): Promise<{
-		result: NearRound
-		outcome: FinalExecutionOutcome
-	}> {
-		const result = await this.callMethod({
-			method: 'create_round',
-			args: {
-				round_detail: params,
-			} as any,
-			deposit: NO_DEPOSIT,
-			gas: THIRTY_TGAS,
-		})
+	async createRound(
+		params: NearCreateRoundParams,
+		txOnly: boolean = false,
+	): Promise<
+		| {
+				result: NearRound
+				outcome: FinalExecutionOutcome
+		  }
+		| Transaction
+	> {
+		if (!txOnly) {
+			const result = await this.callMethod({
+				method: 'create_round',
+				args: {
+					round_detail: params,
+				} as any,
+				deposit: NO_DEPOSIT,
+				gas: THIRTY_TGAS,
+			})
 
-		return result
+			return result
+		} else {
+			return await this.generateTxOnly({
+				method: 'create_round',
+				args: {
+					round_detail: params,
+				} as any,
+				deposit: NO_DEPOSIT,
+				gas: THIRTY_TGAS,
+			})
+		}
 	}
 
 	async deposit(
 		roundId: number,
 		amount: string | null,
-	): Promise<{
-		result: any
-		outcome: FinalExecutionOutcome
-	}> {
-		const result = await this.callMethod({
-			method: 'deposit_to_round',
-			args: {
-				round_id: parseInt(roundId.toString()),
-				memo: undefined,
-				referral_id: undefined,
-			},
-			deposit: amount || NO_DEPOSIT,
-			gas: THIRTY_TGAS,
-		})
+		txOnly: boolean = false,
+	): Promise<
+		| {
+				result: any
+				outcome: FinalExecutionOutcome
+		  }
+		| Transaction
+	> {
+		if (!txOnly) {
+			const result = await this.callMethod({
+				method: 'deposit_to_round',
+				args: {
+					round_id: parseInt(roundId.toString()),
+					memo: undefined,
+					referral_id: undefined,
+				},
+				deposit: amount || NO_DEPOSIT,
+				gas: THIRTY_TGAS,
+			})
 
-		return result
+			return result
+		} else {
+			return await this.generateTxOnly({
+				method: 'deposit_to_round',
+				args: {
+					round_id: parseInt(roundId.toString()),
+					memo: undefined,
+					referral_id: undefined,
+				},
+				deposit: amount || NO_DEPOSIT,
+				gas: THIRTY_TGAS,
+			})
+		}
 	}
 
 	async getRounds(from_index: number, limit: number) {
@@ -120,7 +159,11 @@ export class RoundContract extends BaseContract {
 		return result
 	}
 
-	async getApplicationsForRound(roundId: number, skip: number, limit: number) {
+	async getApplicationsForRound(
+		roundId: number,
+		skip: number,
+		limit: number,
+	): Promise<NearProjectApplication[]> {
 		const result = await this.viewMethod({
 			method: 'get_applications_for_round',
 			args: {
@@ -132,4 +175,19 @@ export class RoundContract extends BaseContract {
 
 		return result
 	}
+
+  async getApplicationForRound(
+    roundId: number,
+    accountId: string,
+  ): Promise<NearProjectApplication> {
+    const result = await this.viewMethod({
+      method: 'get_application_for_round',
+      args: {
+        round_id: parseInt(roundId.toString()),
+        applicant_id: accountId,
+      },
+    })
+
+    return result
+  }
 }

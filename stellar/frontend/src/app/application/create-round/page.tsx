@@ -59,7 +59,7 @@ import {
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import Image from 'next/image'
 import { usePotlockService } from '@/services/potlock'
-import { NearCreateRoundParams } from '@/services/near/type'
+import { NearCreateRoundParams, NearRound } from '@/services/near/type'
 import IconLoading from '@/app/components/svgs/IconLoading'
 import IconExpandLess from '@/app/components/svgs/IconExpandLess'
 import IconExpandMore from '@/app/components/svgs/IconExpandMore'
@@ -69,6 +69,7 @@ import { LIMIT_SIZE } from '@/constants/query'
 import useSWRInfinite from 'swr/infinite'
 import { GPRound } from '@/models/round'
 import { parseNearAmount } from 'near-api-js/lib/utils/format'
+import { FinalExecutionOutcome } from '@near-wallet-selector/core'
 
 const CreateRoundPage = () => {
 	const router = useRouter()
@@ -359,7 +360,15 @@ const CreateRoundPage = () => {
 
 				const nearContracts = storage.getNearContracts(nearWallet)
 
-				const txNearCreateRound = await nearContracts?.round.createRound(params)
+				let createOnly = true
+
+				const txNearCreateRound: {
+					result: NearRound
+					outcome: FinalExecutionOutcome
+				} = (await nearContracts?.round.createRound(params)) as {
+					result: NearRound
+					outcome: FinalExecutionOutcome
+				}
 
 				if (txNearCreateRound) {
 					if (watch().amount && watch().amount !== '0') {

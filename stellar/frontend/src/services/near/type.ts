@@ -81,6 +81,17 @@ export type NearRound = {
 
 export type NearContracts = {
 	round: RoundContract
-  near_social: NearSocial
+	near_social: NearSocial
 	lists: ListsContract
+}
+
+export type NearProjectApplication = {
+	round_id: string
+	applicant_id: string
+	applicant_note: string | undefined | null
+	video_url: string | undefined | null
+	status: string
+	review_note: string | undefined | null
+	submited_ms: number
+	updated_ms: number | undefined | null
 }

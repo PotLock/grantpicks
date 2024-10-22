@@ -1,5 +1,5 @@
 import { NO_DEPOSIT, THIRTY_TGAS } from '@/constants/near'
-import {  Wallet } from '@near-wallet-selector/core'
+import { Transaction, Wallet } from '@near-wallet-selector/core'
 import { providers } from 'near-api-js'
 import {
 	CodeResult,
@@ -71,5 +71,33 @@ export class BaseContract {
 			),
 			outcome: outcome as FinalExecutionOutcome,
 		}
+	}
+
+	async sendTransactions(transactions: any[]) {
+		await this._wallet?.signAndSendTransactions({
+			transactions: transactions,
+		})
+	}
+
+	async generateTxOnly({
+		method,
+		args,
+		gas = THIRTY_TGAS,
+		deposit = NO_DEPOSIT,
+	}: CallMethodParams) {
+		return {
+			receiverId: this.contractId,
+			actions: [
+				{
+					type: 'FunctionCall',
+					params: {
+						methodName: method,
+						args,
+						gas,
+						deposit,
+					},
+				},
+			],
+		} as Transaction
 	}
 }

@@ -486,6 +486,9 @@ const ApplicationRounds = () => {
 					vault_total_deposits_usd:
 						Number(round.vault_total_deposits || 0) * nearPrice,
 					use_vault: true,
+					owner: {
+						id: round.owner,
+					},
 				} as unknown as GPRound
 			})
 		}

@@ -29,6 +29,7 @@ import Image from 'next/image'
 import { GPRound } from '@/models/round'
 import { usePotlockService } from '@/services/potlock'
 import { GPApplication } from '@/models/application'
+import { NearProjectApplication } from '@/services/near/type'
 
 interface ApplicationsDrawerProps extends IDrawerProps {
 	doc: GPRound
@@ -75,6 +76,9 @@ const ApplicationItem = ({
 			} catch (error) {
 				console.log('error get application', error)
 			}
+		} else {
+			console.log('roundData', roundData)
+			return []
 		}
 	}
 
@@ -140,7 +144,7 @@ const ApplicationItem = ({
 							Applied {moment(new Date(item.submitted_at)).fromNow()}
 						</p>
 					</div>
-					{roundData.owner.id === stellarPubKey && (
+					{roundData.owner.id === storage.my_address && (
 						<div className="flex items-center space-x-2">
 							<button
 								onClick={() => setOpenAcceptModal(true)}
@@ -254,7 +258,7 @@ const ApplicationsDrawer = ({
 	const onFetchRoundApplications = async (key: {
 		url: string
 		page: number
-	}) => {
+	}): Promise<GPApplication[]> => {
 		if (storage.chainId === 'stellar') {
 			const res = await potlockService.getApplications(doc.id, key.page + 1)
 			return res.map((item: GPApplication) => {
@@ -262,7 +266,30 @@ const ApplicationsDrawer = ({
 				return item
 			})
 		} else {
-			return []
+			const contracts = storage.getNearContracts(null)
+
+			if (!contracts) {
+				return []
+			}
+
+			const result = await contracts.round.getApplicationsForRound(
+				doc.on_chain_id,
+				key.page * LIMIT_SIZE,
+				LIMIT_SIZE,
+			)
+
+			return result.map((item: NearProjectApplication, index) => {
+				return {
+					id: key.page * LIMIT_SIZE + index,
+					message: item.applicant_note || '',
+					status: item.status,
+					submitted_at: new Date(item.submited_ms).toISOString(),
+					round: doc,
+					applicant: {
+						id: item.applicant_id,
+					},
+				} as GPApplication
+			})
 		}
 	}
 

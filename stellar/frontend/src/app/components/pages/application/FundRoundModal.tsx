@@ -15,6 +15,7 @@ import useAppStorage from '@/stores/zustand/useAppStorage'
 import { GPRound } from '@/models/round'
 import IconNear from '../../svgs/IconNear'
 import { formatNearAmount, parseNearAmount } from 'near-api-js/lib/utils/format'
+import { FinalExecutionOutcome } from '@near-wallet-selector/core'
 
 interface FundROundModalProps extends BaseModalProps {
 	doc: GPRound
@@ -124,7 +125,13 @@ const FundRoundModal = ({
 
 				const depositAmount = parseNearAmount(amount)
 
-				const tx = await contracts.round.deposit(doc.on_chain_id, depositAmount)
+				const tx: {
+					result: any
+					outcome: FinalExecutionOutcome
+				} = (await contracts.round.deposit(doc.on_chain_id, depositAmount)) as {
+					result: any
+					outcome: FinalExecutionOutcome
+				}
 
 				dismissPageLoading()
 				setSuccessFundRoundModalProps((prev) => ({

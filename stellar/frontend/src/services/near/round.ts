@@ -3,79 +3,14 @@ import { Wallet } from '@near-wallet-selector/core'
 import { providers } from 'near-api-js'
 import {
 	AccountView,
-	CodeResult,
 	FinalExecutionOutcome,
 } from 'near-api-js/lib/providers/provider'
 import { NearConfig, NearCreateRoundParams, NearRound } from './type'
+import { BaseContract } from './contract'
 
-export interface ViewMethodParams {
-	contractId: string
-	method: string
-	args: object
-}
-
-export interface CallMethodParams {
-	contractId: string
-	method: string
-	args: object
-	gas: string
-	deposit: string
-}
-
-export class RoundContract {
-	private _wallet: Wallet | null
-	private networkId: string
-	private contractId: string
+export class RoundContract extends BaseContract {
 	constructor(wallet: Wallet | null, network: string, contractId: string) {
-		this._wallet = wallet
-		this.networkId = network
-		this.contractId = contractId
-	}
-
-	async viewMethod({ contractId, method, args }: ViewMethodParams) {
-		const url = `https://rpc.${this.networkId}.near.org`
-
-		const provider = new providers.JsonRpcProvider({ url })
-
-		const res = await provider.query({
-			request_type: 'call_function',
-			account_id: contractId,
-			method_name: method,
-			args_base64: Buffer.from(JSON.stringify(args)).toString('base64'),
-			finality: 'optimistic',
-		})
-
-		return JSON.parse(Buffer.from((res as CodeResult).result).toString())
-	}
-
-	async callMethod({
-		contractId,
-		method,
-		args,
-		gas = THIRTY_TGAS,
-		deposit = NO_DEPOSIT,
-	}: CallMethodParams) {
-		const outcome = await this._wallet?.signAndSendTransaction({
-			receiverId: contractId,
-			actions: [
-				{
-					type: 'FunctionCall',
-					params: {
-						methodName: method,
-						args,
-						gas,
-						deposit,
-					},
-				},
-			],
-		})
-
-		return {
-			result: providers.getTransactionLastResult(
-				outcome as FinalExecutionOutcome,
-			),
-			outcome: outcome as FinalExecutionOutcome,
-		}
+		super(wallet, network, contractId)
 	}
 
 	async createRound(params: NearCreateRoundParams): Promise<{
@@ -83,7 +18,6 @@ export class RoundContract {
 		outcome: FinalExecutionOutcome
 	}> {
 		const result = await this.callMethod({
-			contractId: this.contractId,
 			method: 'create_round',
 			args: {
 				round_detail: params,
@@ -103,7 +37,6 @@ export class RoundContract {
 		outcome: FinalExecutionOutcome
 	}> {
 		const result = await this.callMethod({
-			contractId: this.contractId,
 			method: 'deposit_to_round',
 			args: {
 				round_id: parseInt(roundId.toString()),
@@ -119,7 +52,6 @@ export class RoundContract {
 
 	async getRounds(from_index: number, limit: number) {
 		const result = await this.viewMethod({
-			contractId: this.contractId,
 			method: 'get_rounds',
 			args: {
 				from_index,
@@ -132,7 +64,6 @@ export class RoundContract {
 
 	async getRoundById(roundId: number): Promise<NearRound> {
 		const result = await this.viewMethod({
-			contractId: this.contractId,
 			method: 'get_round',
 			args: {
 				round_id: parseInt(roundId.toString()),
@@ -144,7 +75,6 @@ export class RoundContract {
 
 	async getConfig(): Promise<NearConfig> {
 		const result = await this.viewMethod({
-			contractId: this.contractId,
 			method: 'get_config',
 			args: {},
 		})
@@ -164,5 +94,42 @@ export class RoundContract {
 		})
 
 		return res as AccountView
+	}
+
+	async applyProjectToRound(
+		roundId: number,
+		note: string,
+		videoUrl: string,
+		accountId?: string,
+	) {
+		const result = await this.callMethod({
+			method: 'apply_to_round',
+			args: {
+				round_id: parseInt(roundId.toString()),
+				note,
+				video_url: videoUrl,
+				review_note: accountId
+					? `Added By Admin/Owner ${accountId}`
+					: undefined,
+				applicant: accountId ? accountId : undefined,
+			},
+			deposit: NO_DEPOSIT,
+			gas: THIRTY_TGAS,
+		})
+
+		return result
+	}
+
+	async getApplicationsForRound(roundId: number, skip: number, limit: number) {
+		const result = await this.viewMethod({
+			method: 'get_applications_for_round',
+			args: {
+				round_id: parseInt(roundId.toString()),
+				skip,
+				limit,
+			},
+		})
+
+		return result
 	}
 }

@@ -252,6 +252,23 @@ const MyProjectMedia = () => {
 		}
 	}
 
+	const onProcessYoutubeInput = async () => {
+		setIsDirtyInput(true)
+		if (!YOUTUBE_URL_REGEX.test(linkInput)) {
+			setYtIframe('')
+			return
+		}
+		const ytRes = await fetchYoutubeIframe(
+			linkInput,
+			embededYtHtmlRef.current?.clientWidth || 0,
+		)
+		setYtIframe(ytRes?.html)
+		setValue('video', {
+			url: linkInput || '',
+			file: undefined,
+		})
+	}
+
 	useEffect(() => {
 		if (projectData) {
 			setDefaultData()
@@ -308,9 +325,9 @@ const MyProjectMedia = () => {
 								<InputText
 									value={linkInput}
 									onChange={(e) => setLinkInput(e.target.value)}
-									onKeyDown={(e) => {
+									onKeyDown={async (e) => {
 										if (e.key === 'Enter') {
-											setIsDirtyInput(true)
+											await onProcessYoutubeInput()
 										}
 									}}
 									placeholder="Paste video link here"
@@ -323,6 +340,18 @@ const MyProjectMedia = () => {
 												Invalid link
 											</p>
 										) : undefined
+									}
+									suffixIcon={
+										<Button
+											color="transparent"
+											className="!text-sm !font-semibold !bg-white"
+											onClick={async (e) => {
+												e.stopPropagation()
+												await onProcessYoutubeInput()
+											}}
+										>
+											Add
+										</Button>
 									}
 								/>
 							</div>

@@ -22,6 +22,7 @@ export type NearCreateRoundParams = {
 	application_requires_video: boolean
 	expected_amount: string
 	use_whitelist: boolean | undefined
+	whitelisted_voters: string[]
 	num_picks_per_voter: number
 	max_participants: number | undefined
 	use_cooldown: boolean

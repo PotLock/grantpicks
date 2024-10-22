@@ -339,7 +339,11 @@ const CreateRoundPage = () => {
 					use_compliance: data.allow_compliance || false,
 					use_referrals: false,
 					referrer_fee_basis_points: 0,
-					use_whitelist: false,
+					use_whitelist: checkedListIds.length > 0,
+					whitelisted_voters:
+						checkedListIds.length > 0
+							? checkedListIds.map((id) => id.toString())
+							: [],
 					voting_end_ms: data.voting_duration_end?.getTime() || 0,
 					voting_start_ms: data.voting_duration_start?.getTime() || 0,
 					num_picks_per_voter: data.vote_per_person,

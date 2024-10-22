@@ -480,6 +480,8 @@ const ApplicationRounds = () => {
 					remaining_dist_at_ms: round.remaining_funds_redistributed_at_ms,
 					vault_total_deposits: round.vault_total_deposits,
 					approved_projects: [],
+					name: round.name,
+					description: round.description,
 					current_vault_balance: round.current_vault_balance,
 					vault_total_deposits_usd:
 						Number(round.vault_total_deposits || 0) * nearPrice,
@@ -487,8 +489,6 @@ const ApplicationRounds = () => {
 				} as unknown as GPRound
 			})
 		}
-
-		return []
 	}
 
 	const getKey = (pageIndex: number, previousPageData: GPRound[]) => {

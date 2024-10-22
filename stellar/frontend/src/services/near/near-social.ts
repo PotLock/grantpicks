@@ -64,7 +64,7 @@ export class NearSocial extends BaseContract {
 		return result
 	}
 
-	async getProjectData(accountId: string) {
+	async getProjectData(accountId: string): Promise<any | null | undefined> {
 		const result = await this.viewMethod({
 			method: 'get',
 			args: {

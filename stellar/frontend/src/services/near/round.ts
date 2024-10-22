@@ -95,4 +95,41 @@ export class RoundContract extends BaseContract {
 
 		return res as AccountView
 	}
+
+	async applyProjectToRound(
+		roundId: number,
+		note: string,
+		videoUrl: string,
+		accountId?: string,
+	) {
+		const result = await this.callMethod({
+			method: 'apply_to_round',
+			args: {
+				round_id: parseInt(roundId.toString()),
+				note,
+				video_url: videoUrl,
+				review_note: accountId
+					? `Added By Admin/Owner ${accountId}`
+					: undefined,
+				applicant: accountId ? accountId : undefined,
+			},
+			deposit: NO_DEPOSIT,
+			gas: THIRTY_TGAS,
+		})
+
+		return result
+	}
+
+	async getApplicationsForRound(roundId: number, skip: number, limit: number) {
+		const result = await this.viewMethod({
+			method: 'get_applications_for_round',
+			args: {
+				round_id: parseInt(roundId.toString()),
+				skip,
+				limit,
+			},
+		})
+
+		return result
+	}
 }

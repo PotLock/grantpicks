@@ -36,7 +36,7 @@ const ApplyProjectModal = ({
 	roundData,
 }: ApplyProjectToRoundModalProps) => {
 	const { setCreateProjectFormMainProps } = useModalContext()
-	const { stellarPubKey, stellarKit } = useWallet()
+	const { stellarPubKey, stellarKit, nearWallet } = useWallet()
 	const [isProjectMissingInfo, setIsProjectMissingInfo] =
 		useState<boolean>(false)
 	const [projectData, setProjectData] = useState<Project | undefined>(undefined)
@@ -47,17 +47,37 @@ const ApplyProjectModal = ({
 
 	const fetchProjectApplicant = async () => {
 		try {
-			let contracts = storage.getStellarContracts()
+			if (storage.chainId === 'stellar') {
+				const contracts = storage.getStellarContracts()
 
-			if (!contracts) {
-				return
+				if (!contracts) {
+					return
+				}
+
+				const res = await getProjectApplicant(stellarPubKey, contracts)
+				//@ts-ignore
+				if (!res?.error) setProjectData(res)
+				//@ts-ignore
+				console.log('res project applicant', res, res?.error)
+			} else {
+				const contracts = storage.getNearContracts(null)
+
+				if (!contracts) {
+					return
+				}
+
+				const data = await contracts.near_social.getProjectData(
+					storage.my_address || '',
+				)
+
+				if (data) {
+					const json =
+						data[`${storage.my_address || ''}`]['profile']['gp_project'] || '{}'
+					const project = JSON.parse(json)
+					setProjectData(project)
+					console.log('project', project)
+				}
 			}
-
-			const res = await getProjectApplicant(stellarPubKey, contracts)
-			//@ts-ignore
-			if (!res?.error) setProjectData(res)
-			//@ts-ignore
-			console.log('res project applicant', res, res?.error)
 		} catch (error: any) {
 			console.log('error fetch project applicant', error)
 		}
@@ -66,35 +86,62 @@ const ApplyProjectModal = ({
 	const onApplyProjectToRound = async () => {
 		try {
 			openPageLoading()
-			let contracts = storage.getStellarContracts()
 
-			if (!contracts) {
-				return
-			}
+			if (storage.chainId === 'stellar') {
+				let contracts = storage.getStellarContracts()
 
-			const applyParams: ApplyProjectToRoundParams = {
-				round_id: round_id as bigint,
-				caller: stellarPubKey,
-				note: applyNote,
-			}
+				if (!contracts) {
+					return
+				}
 
-			const txApplyProject = await applyProjectToRound(applyParams, contracts)
+				const applyParams: ApplyProjectToRoundParams = {
+					round_id: round_id as bigint,
+					caller: stellarPubKey,
+					note: applyNote,
+				}
 
-			const txHashApplyProject = await contracts.signAndSendTx(
-				stellarKit as StellarWalletsKit,
-				txApplyProject.toXDR(),
-				stellarPubKey,
-			)
-			if (txHashApplyProject) {
-				dismissPageLoading()
-				setSuccessApplyProjectInitProps((prev) => ({
-					...prev,
-					isOpen: true,
-					applyProjectRes: txApplyProject.result,
-					txHash: txHashApplyProject,
-					roundData,
-				}))
-				onClose()
+				const txApplyProject = await applyProjectToRound(applyParams, contracts)
+
+				const txHashApplyProject = await contracts.signAndSendTx(
+					stellarKit as StellarWalletsKit,
+					txApplyProject.toXDR(),
+					stellarPubKey,
+				)
+				if (txHashApplyProject) {
+					dismissPageLoading()
+					setSuccessApplyProjectInitProps((prev) => ({
+						...prev,
+						isOpen: true,
+						applyProjectRes: txApplyProject.result,
+						txHash: txHashApplyProject,
+						roundData,
+					}))
+					onClose()
+				}
+			} else {
+				const contracts = storage.getNearContracts(nearWallet)
+
+				if (!contracts) {
+					return
+				}
+
+				const txApplyProject = await contracts.round.applyProjectToRound(
+					roundData?.on_chain_id as number,
+					applyNote,
+					projectData?.video_url || '',
+				)
+
+				if (txApplyProject) {
+					dismissPageLoading()
+					setSuccessApplyProjectInitProps((prev) => ({
+						...prev,
+						isOpen: true,
+						applyProjectRes: txApplyProject.result,
+						txHash: txApplyProject.outcome.transaction_outcome.id,
+						roundData,
+					}))
+					onClose()
+				}
 			}
 		} catch (error: any) {
 			dismissPageLoading()
@@ -106,7 +153,8 @@ const ApplyProjectModal = ({
 		if (isOpen && !projectData) {
 			fetchProjectApplicant()
 		}
-	}, [isOpen])
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isOpen, storage.my_address, storage.chainId])
 
 	return (
 		<Modal
@@ -125,7 +173,7 @@ const ApplyProjectModal = ({
 					}}
 				/>
 				<p className="text-base md:text-lg lg:text-xl font-semibold text-grantpicks-black-950 text-center">
-					Apply to {projectData?.name}
+					Apply to {roundData?.name}
 				</p>
 				{projectData ? (
 					isProjectMissingInfo ? (

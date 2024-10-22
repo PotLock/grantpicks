@@ -278,27 +278,31 @@ const MyVotesPage = () => {
 		skip: number
 		limit: number
 	}) => {
-		let contracts = storage.getStellarContracts()
+		if (storage.chainId === 'stellar') {
+			let contracts = storage.getStellarContracts()
 
-		if (!contracts) {
-			return
+			if (!contracts) {
+				return
+			}
+
+			let result: GPRound[] = []
+			const res = await getMyVotedRounds(
+				{ from_index: key.skip, limit: key.limit, voter: stellarPubKey },
+				contracts,
+			)
+
+			for (let i = 0; i < res.length; i++) {
+				let round = res[i]
+				let roundId = Number(round.id)
+				let roundDetail = await service.getRound(roundId)
+				result.push(roundDetail)
+			}
+
+			console.log(result)
+			return result
+		} else {
+			return []
 		}
-
-		let result: GPRound[] = []
-		const res = await getMyVotedRounds(
-			{ from_index: key.skip, limit: key.limit, voter: stellarPubKey },
-			contracts,
-		)
-
-		for (let i = 0; i < res.length; i++) {
-			let round = res[i]
-			let roundId = Number(round.id)
-			let roundDetail = await service.getRound(roundId)
-			result.push(roundDetail)
-		}
-
-		console.log(result)
-		return result
 	}
 
 	const getKey = (

@@ -9,14 +9,11 @@ import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { DEFAULT_IMAGE_URL } from '@/constants/project'
 import { toastOptions } from '@/constants/style'
-import Contracts from '@/lib/contracts'
-import CMDWallet from '@/lib/wallet'
 import {
 	IUpdateProjectParams,
 	updateProject,
 } from '@/services/stellar/project-registry'
 import { CreateProjectStep4Data } from '@/types/form'
-import { Network } from '@/types/on-chain'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import React, { useEffect, useState } from 'react'
 import DatePicker from 'react-datepicker'
@@ -29,6 +26,11 @@ import {
 import toast from 'react-hot-toast'
 import { useMyProject } from './MyProjectProvider'
 import useAppStorage from '@/stores/zustand/useAppStorage'
+import { ProjectFundingHistory } from 'project-registry-client'
+import {
+	NearProjectFundingHistory,
+	NearSocialGPProject,
+} from '@/services/near/near-social'
 
 interface IFunding {
 	id: string
@@ -41,7 +43,7 @@ interface IFunding {
 
 const MyProjectFundingRaised = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()
-	const { stellarPubKey, stellarKit } = useWallet()
+	const { stellarPubKey, stellarKit, nearWallet } = useWallet()
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const [currentFunding, setCurrentFunding] = useState<IFunding[]>([])
 	const [currentHaventRaised, setCurrentHaventRaised] = useState<boolean>(false)
@@ -103,51 +105,102 @@ const MyProjectFundingRaised = () => {
 	const onSaveChanges: SubmitHandler<CreateProjectStep4Data> = async (data) => {
 		try {
 			openPageLoading()
-			let contracts = storage.getStellarContracts()
 
-			if (!contracts) {
-				return
-			}
+			if (storage.chainId === 'stellar') {
+				let contracts = storage.getStellarContracts()
 
-			const params: IUpdateProjectParams = {
-				...projectData,
-				name: projectData?.name || '',
-				overview: projectData?.overview || '',
-				fundings: [],
-				contacts: projectData?.contacts || [],
-				contracts: projectData?.contracts || [],
-				image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
-				payout_address: projectData?.payout_address || '',
-				repositories: projectData?.repositories || [],
-				team_members: projectData?.team_members || [],
-				video_url: projectData?.video_url || 'https://video.com/asdfgh',
-			}
-			const txUpdateProject = await updateProject(
-				stellarPubKey,
-				projectData?.id as bigint,
-				params,
-				contracts,
-			)
-			const txHashUpdateProject = await contracts.signAndSendTx(
-				stellarKit as StellarWalletsKit,
-				txUpdateProject.toXDR(),
-				stellarPubKey,
-			)
-			if (txHashUpdateProject) {
-				dismissPageLoading()
-				setTimeout(async () => {
-					await fetchProjectApplicant()
-				}, 2000)
-				toast.success(`Update project overview is succeed`, {
-					style: toastOptions.success.style,
-				})
+				if (!contracts) {
+					return
+				}
+
+				const params: IUpdateProjectParams = {
+					...projectData,
+					name: projectData?.name || '',
+					overview: projectData?.overview || '',
+					fundings: data.funding_histories.map((f) => ({
+						source: f.source,
+						denomiation: f.denomination,
+						description: f.description,
+						amount: BigInt(f.amount),
+						funded_ms: BigInt(f.date.getTime() as number),
+					})),
+					contacts: projectData?.contacts || [],
+					contracts: projectData?.contracts || [],
+					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
+					payout_address: projectData?.payout_address || '',
+					repositories: projectData?.repositories || [],
+					team_members: projectData?.team_members || [],
+					video_url: projectData?.video_url || '',
+				}
+				const txUpdateProject = await updateProject(
+					stellarPubKey,
+					projectData?.id as bigint,
+					params,
+					contracts,
+				)
+				const txHashUpdateProject = await contracts.signAndSendTx(
+					stellarKit as StellarWalletsKit,
+					txUpdateProject.toXDR(),
+					stellarPubKey,
+				)
+				if (txHashUpdateProject) {
+					dismissPageLoading()
+					setTimeout(async () => {
+						await fetchProjectApplicant()
+					}, 2000)
+					toast.success(`Update project funding raised is succeed`, {
+						style: toastOptions.success.style,
+					})
+				}
+			} else {
+				const contracts = storage.getNearContracts(nearWallet)
+
+				if (!contracts) {
+					return
+				}
+
+				const params: NearSocialGPProject = {
+					name: projectData?.name || '',
+					overview: projectData?.overview || '',
+					fundings: data.funding_histories.map((f) => ({
+						source: f.source,
+						denomination: f.denomination,
+						description: f.description,
+						amount: f.amount.toString(),
+						funded_ms: parseInt(f.date.getTime().toString()),
+					})),
+					contacts: projectData?.contacts || [],
+					contracts: projectData?.contracts || [],
+					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
+					payout_address: projectData?.payout_address || '',
+					repositories: projectData?.repositories || [],
+					team_members:
+						(projectData?.team_members as unknown as string[]) || [],
+					video_url: projectData?.video_url || '',
+					owner: projectData?.owner || '',
+				}
+
+				const txUpdateProject = await contracts.near_social.setProjectData(
+					storage.my_address || '',
+					params,
+				)
+
+				if (txUpdateProject) {
+					dismissPageLoading()
+					setTimeout(async () => {
+						await fetchProjectApplicant()
+					}, 2000)
+					toast.success(`Update project media is succeed`, {
+						style: toastOptions.success.style,
+					})
+				}
 			}
 		} catch (error: any) {
 			dismissPageLoading()
-			toast.error(`Update project overview is failed`, {
+			toast.error(`Update project funding raised is failed`, {
 				style: toastOptions.error.style,
 			})
-			console.log('error to update overview project', error)
+			console.log('error to update funding raised project', error)
 		}
 	}
 

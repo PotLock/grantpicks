@@ -23,15 +23,19 @@ import { useMyProject } from './MyProjectProvider'
 import { StrKey } from 'round-client'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import Image from 'next/image'
+import { NEAR_ADDRESS_REGEX } from '@/constants/regex'
+import {
+	NearProjectFundingHistory,
+	NearSocialGPProject,
+} from '@/services/near/near-social'
 
 const MyProjectTeam = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()
-	const { stellarPubKey, stellarKit } = useWallet()
+	const { stellarPubKey, stellarKit, nearWallet } = useWallet()
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const [members, setMembers] = useState<string[]>([])
 	const [sameMemberError, setSameMemberError] = useState<boolean>(false)
 	const {
-		control,
 		register,
 		watch,
 		handleSubmit,
@@ -42,58 +46,98 @@ const MyProjectTeam = () => {
 
 	const setDefaultData = () => {
 		if (projectData) {
-			setMembers(projectData.team_members.map((mem: any) => mem.value))
+			setMembers(projectData.team_members.map((mem: any) => mem))
 		}
 	}
 
 	const onSaveChanges: SubmitHandler<CreateProjectStep2Data> = async (data) => {
 		try {
 			openPageLoading()
-			let contracts = storage.getStellarContracts()
 
-			if (!contracts) {
-				return
-			}
+			if (storage.chainId === 'stellar') {
+				let contracts = storage.getStellarContracts()
 
-			const params: IUpdateProjectParams = {
-				...projectData,
-				name: projectData?.name || '',
-				overview: projectData?.overview || '',
-				fundings: [],
-				contacts: projectData?.contacts || [],
-				contracts: projectData?.contracts || [],
-				image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
-				payout_address: projectData?.payout_address || '',
-				repositories: projectData?.repositories || [],
-				team_members: members.map((mem) => ({ name: mem, value: mem })),
-				video_url: projectData?.video_url || 'https://video.com/asdfgh',
-			}
-			const txUpdateProject = await updateProject(
-				stellarPubKey,
-				projectData?.id as bigint,
-				params,
-				contracts,
-			)
-			const txHashUpdateProject = await contracts.signAndSendTx(
-				stellarKit as StellarWalletsKit,
-				txUpdateProject.toXDR(),
-				stellarPubKey,
-			)
-			if (txHashUpdateProject) {
-				dismissPageLoading()
-				setTimeout(async () => {
-					await fetchProjectApplicant()
-				}, 2000)
-				toast.success(`Update project overview is succeed`, {
-					style: toastOptions.success.style,
-				})
+				if (!contracts) {
+					return
+				}
+
+				const params: IUpdateProjectParams = {
+					...projectData,
+					name: projectData?.name || '',
+					overview: projectData?.overview || '',
+					fundings: projectData?.funding_histories || [],
+					contacts: projectData?.contacts || [],
+					contracts: projectData?.contracts || [],
+					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
+					payout_address: projectData?.payout_address || '',
+					repositories: projectData?.repositories || [],
+					team_members: members.map((mem) => ({ name: mem, value: mem })),
+					video_url: projectData?.video_url || '',
+				}
+				const txUpdateProject = await updateProject(
+					stellarPubKey,
+					projectData?.id as bigint,
+					params,
+					contracts,
+				)
+				const txHashUpdateProject = await contracts.signAndSendTx(
+					stellarKit as StellarWalletsKit,
+					txUpdateProject.toXDR(),
+					stellarPubKey,
+				)
+				if (txHashUpdateProject) {
+					dismissPageLoading()
+					setTimeout(async () => {
+						await fetchProjectApplicant()
+					}, 2000)
+					toast.success(`Update project team is succeed`, {
+						style: toastOptions.success.style,
+					})
+				}
+			} else {
+				const contracts = storage.getNearContracts(nearWallet)
+
+				if (!contracts) {
+					return
+				}
+
+				const params: NearSocialGPProject = {
+					name: projectData?.name || '',
+					overview: projectData?.overview || '',
+					fundings:
+						(projectData?.funding_histories as unknown as NearProjectFundingHistory[]) ||
+						[],
+					contacts: projectData?.contacts || [],
+					contracts: projectData?.contracts || [],
+					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
+					payout_address: projectData?.payout_address || '',
+					repositories: projectData?.repositories || [],
+					team_members: members,
+					video_url: projectData?.video_url || '',
+					owner: projectData?.owner || '',
+				}
+
+				const txUpdateProject = await contracts.near_social.setProjectData(
+					storage.my_address || '',
+					params,
+				)
+
+				if (txUpdateProject) {
+					dismissPageLoading()
+					setTimeout(async () => {
+						await fetchProjectApplicant()
+					}, 2000)
+					toast.success(`Update project team is succeed`, {
+						style: toastOptions.success.style,
+					})
+				}
 			}
 		} catch (error: any) {
 			dismissPageLoading()
-			toast.error(`Update project overview is failed`, {
+			toast.error(`Update project team is failed`, {
 				style: toastOptions.error.style,
 			})
-			console.log('error to update overview project', error)
+			console.log('error to update team project', error)
 		}
 	}
 	useEffect(() => {
@@ -120,12 +164,22 @@ const MyProjectTeam = () => {
 						{...register('member')}
 						onKeyDown={async (e) => {
 							if (e.key == 'Enter') {
-								if (!StrKey.isValidEd25519PublicKey(watch('member'))) {
-									toast.error('Address is not valid', {
-										style: toastOptions.error.style,
-									})
-									return
+								if (storage.chainId === 'stellar') {
+									if (!StrKey.isValidEd25519PublicKey(watch('member'))) {
+										toast.error('Address is not valid', {
+											style: toastOptions.error.style,
+										})
+										return
+									}
+								} else {
+									if (!NEAR_ADDRESS_REGEX(watch('member'))) {
+										toast.error('Address is not valid', {
+											style: toastOptions.error.style,
+										})
+										return
+									}
 								}
+
 								if (members.includes(watch('member'))) {
 									setSameMemberError(true)
 								} else {
@@ -139,12 +193,22 @@ const MyProjectTeam = () => {
 							<button
 								disabled={watch('member') === ''}
 								onClick={() => {
-									if (!StrKey.isValidEd25519PublicKey(watch('member'))) {
-										toast.error('Address is not valid', {
-											style: toastOptions.error.style,
-										})
-										return
+									if (storage.chainId === 'stellar') {
+										if (!StrKey.isValidEd25519PublicKey(watch('member'))) {
+											toast.error('Address is not valid', {
+												style: toastOptions.error.style,
+											})
+											return
+										}
+									} else {
+										if (!NEAR_ADDRESS_REGEX(watch('member'))) {
+											toast.error('Address is not valid', {
+												style: toastOptions.error.style,
+											})
+											return
+										}
 									}
+
 									if (members.includes(watch('member'))) {
 										setSameMemberError(true)
 									} else {
@@ -168,7 +232,11 @@ const MyProjectTeam = () => {
 								</p>
 							) : undefined
 						}
-						hintLabel="You must put a valid STELLAR address that belongs to your team member(s)"
+						hintLabel={
+							storage.chainId === 'near'
+								? 'You must put a valid NEAR address that belongs to your team member(s)'
+								: 'You must put a valid STELLAR address that belongs to your team member(s)'
+						}
 					/>
 				</div>
 				<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5 lg:gap-6">

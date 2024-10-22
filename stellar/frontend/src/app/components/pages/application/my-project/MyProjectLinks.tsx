@@ -34,6 +34,10 @@ import {
 	TWITTER_USERNAME_REGEX,
 } from '@/constants/regex'
 import useAppStorage from '@/stores/zustand/useAppStorage'
+import {
+	NearProjectFundingHistory,
+	NearSocialGPProject,
+} from '@/services/near/near-social'
 
 interface IContract {
 	id: string
@@ -54,7 +58,7 @@ interface IContact {
 
 const MyProjectLinks = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()
-	const { stellarPubKey, stellarKit } = useWallet()
+	const { stellarPubKey, stellarKit, nearWallet } = useWallet()
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const [showContractMenu, setShowContractMenu] = useState<boolean[]>([])
 	const [showContactMenu, setShowContactMenu] = useState<boolean[]>([])
@@ -151,61 +155,110 @@ const MyProjectLinks = () => {
 	const onSaveChanges: SubmitHandler<CreateProjectStep3Data> = async (data) => {
 		try {
 			openPageLoading()
-			let contracts = storage.getStellarContracts()
 
-			if (!contracts) {
-				return
-			}
+			if (storage.chainId === 'stellar') {
+				let contracts = storage.getStellarContracts()
 
-			const params: IUpdateProjectParams = {
-				...projectData,
-				name: projectData?.name || '',
-				overview: projectData?.overview || '',
-				fundings: [],
-				contacts: data.contacts.map((c) => ({
-					name: c.platform,
-					value: c.link_url,
-				})),
-				contracts: data.smart_contracts.map((contract) => ({
-					name: contract.chain,
-					contract_address: contract.address,
-				})),
-				image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
-				payout_address: projectData?.payout_address || '',
-				repositories:
-					data.github_urls.map((repo) => ({
+				if (!contracts) {
+					return
+				}
+
+				const params: IUpdateProjectParams = {
+					...projectData,
+					name: projectData?.name || '',
+					overview: projectData?.overview || '',
+					fundings: projectData?.funding_histories || [],
+					contacts: data.contacts.map((c) => ({
+						name: c.platform,
+						value: c.link_url,
+					})),
+					contracts: data.smart_contracts.map((contract) => ({
+						name: contract.chain,
+						contract_address: contract.address,
+					})),
+					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
+					payout_address: projectData?.payout_address || '',
+					repositories:
+						data.github_urls.map((repo) => ({
+							label: repo.id,
+							url: repo.github_url,
+						})) || [],
+					team_members: projectData?.team_members || [],
+					video_url: projectData?.video_url || '',
+				}
+				const txUpdateProject = await updateProject(
+					stellarPubKey,
+					projectData?.id as bigint,
+					params,
+					contracts,
+				)
+				const txHashUpdateProject = await contracts.signAndSendTx(
+					stellarKit as StellarWalletsKit,
+					txUpdateProject.toXDR(),
+					stellarPubKey,
+				)
+				if (txHashUpdateProject) {
+					dismissPageLoading()
+					setTimeout(async () => {
+						await fetchProjectApplicant()
+					}, 2000)
+					toast.success(`Update project links is succeed`, {
+						style: toastOptions.success.style,
+					})
+				}
+			} else {
+				const contracts = storage.getNearContracts(nearWallet)
+
+				if (!contracts) {
+					return
+				}
+
+				const params: NearSocialGPProject = {
+					name: projectData?.name || '',
+					overview: projectData?.overview || '',
+					fundings:
+						projectData?.funding_histories as unknown as NearProjectFundingHistory[],
+					contacts: data.contacts.map((c) => ({
+						name: c.platform,
+						value: c.link_url,
+					})),
+					owner: projectData?.owner || '',
+					contracts: data.smart_contracts.map((contract) => ({
+						name: contract.chain,
+						contract_address: contract.address,
+					})),
+					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
+					payout_address: projectData?.payout_address || '',
+					repositories: data.github_urls.map((repo) => ({
 						label: repo.id,
 						url: repo.github_url,
-					})) || [],
-				team_members: projectData?.team_members || [],
-				video_url: projectData?.video_url || 'https://video.com/asdfgh',
-			}
-			const txUpdateProject = await updateProject(
-				stellarPubKey,
-				projectData?.id as bigint,
-				params,
-				contracts,
-			)
-			const txHashUpdateProject = await contracts.signAndSendTx(
-				stellarKit as StellarWalletsKit,
-				txUpdateProject.toXDR(),
-				stellarPubKey,
-			)
-			if (txHashUpdateProject) {
-				dismissPageLoading()
-				setTimeout(async () => {
-					await fetchProjectApplicant()
-				}, 2000)
-				toast.success(`Update project overview is succeed`, {
-					style: toastOptions.success.style,
-				})
+					})),
+					team_members:
+						(projectData?.team_members as unknown as string[]) || [],
+					video_url: projectData?.video_url || '',
+				}
+
+				const txUpdateProject = await contracts.near_social.setProjectData(
+					storage.my_address || '',
+					params,
+				)
+
+				if (txUpdateProject) {
+					dismissPageLoading()
+					setTimeout(async () => {
+						await fetchProjectApplicant()
+					}, 2000)
+					toast.success(`Update project links is succeed`, {
+						style: toastOptions.success.style,
+					})
+				}
 			}
 		} catch (error: any) {
 			dismissPageLoading()
-			toast.error(`Update project overview is failed`, {
+			toast.error(`Update project links is failed`, {
 				style: toastOptions.error.style,
 			})
-			console.log('error to update overview project', error)
+			console.log('error to update links project', error)
 		}
 	}
 

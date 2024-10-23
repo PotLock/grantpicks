@@ -248,7 +248,7 @@ const EditRoundPage = () => {
 				setValue(
 					'amount',
 					formatStroopToXlm(BigInt(resRoundInfo?.current_vault_balance)) === '0'
-						? ''
+						? '0'
 						: formatStroopToXlm(BigInt(resRoundInfo?.current_vault_balance)),
 				)
 				setValue('expected_amount', resRoundInfo?.expected_amount as string)
@@ -831,7 +831,7 @@ const EditRoundPage = () => {
 							<div className="flex-1">
 								<InputText
 									type="number"
-									disabled={!watch().use_vault}
+									disabled
 									label="Amount"
 									placeholder="Enter amount..."
 									{...register('amount', {
@@ -866,13 +866,13 @@ const EditRoundPage = () => {
 											</p>
 										</div>
 									}
-									errorMessage={
-										parseFloat(watch().amount) <= 0 ? (
-											<p className="text-red-500 text-xs mt-1 ml-2">
-												Initial deposit cannot be less than or equal to 0
-											</p>
-										) : undefined
-									}
+									// errorMessage={
+									// 	parseFloat(watch().amount) <= 0 ? (
+									// 		<p className="text-red-500 text-xs mt-1 ml-2">
+									// 			Initial deposit cannot be less than or equal to 0
+									// 		</p>
+									// 	) : undefined
+									// }
 								/>
 							</div>
 							<div className="flex-1">
@@ -932,7 +932,7 @@ const EditRoundPage = () => {
 								/>
 							</div>
 						</div>
-						<div className="flex items-center">
+						{/* <div className="flex items-center">
 							<Checkbox
 								label="Open Funding Pool"
 								checked={watch().use_vault}
@@ -941,7 +941,7 @@ const EditRoundPage = () => {
 									setValue('amount', '')
 								}}
 							/>
-						</div>
+						</div> */}
 					</div>
 
 					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">

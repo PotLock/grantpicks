@@ -5,6 +5,7 @@ import IconNear from '../../svgs/IconNear'
 import { useWallet } from '@/app/providers/WalletProvider'
 import clsx from 'clsx'
 import Menu from '../../commons/Menu'
+import { useRouter } from 'next/navigation'
 
 const ChooseWalletMenu = ({
 	isOpen,
@@ -17,6 +18,7 @@ const ChooseWalletMenu = ({
 	onBack: () => void
 	isConnected: boolean
 }) => {
+	const router = useRouter()
 	const { onOpenNearWallet, onOpenStellarWallet } = useWallet()
 
 	return (
@@ -47,6 +49,7 @@ const ChooseWalletMenu = ({
 						onClick={() => {
 							onOpenStellarWallet()
 							onClose()
+							router.push('/application')
 						}}
 						className="border border-grantpicks-black-200 rounded-xl flex-1 px-8 py-4 flex flex-col items-center justify-center cursor-pointer hover:bg-grantpicks-black-200/10 transition"
 					>
@@ -59,6 +62,7 @@ const ChooseWalletMenu = ({
 						onClick={() => {
 							onOpenNearWallet()
 							onClose()
+							router.push('/application')
 						}}
 						className="border border-grantpicks-black-200 rounded-xl flex-1 px-8 py-4 flex flex-col items-center justify-center cursor-pointer hover:bg-grantpicks-black-200/10 transition"
 					>

@@ -21,6 +21,7 @@ import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
 import { IProjectDetailOwner } from '@/app/round-vote/[roundId]/page'
 import useAppStorage from '@/stores/zustand/useAppStorage'
+import { NearPair } from '@/services/near/type'
 
 const IsNotVotedSection = ({
 	setShowEvalGuide,
@@ -31,7 +32,7 @@ const IsNotVotedSection = ({
 	setShowEvalGuide: Dispatch<SetStateAction<boolean>>
 	setShowProjectDetailDrawer: Dispatch<SetStateAction<IProjectDetailOwner>>
 	setHasVoted: Dispatch<SetStateAction<boolean>>
-	pairsData: Pair[]
+	pairsData: Pair[] | NearPair[]
 }) => {
 	const params = useParams<{ roundId: string }>()
 	const [currBoxing, setCurrBoxing] = useState<number>(0)
@@ -65,40 +66,36 @@ const IsNotVotedSection = ({
 		try {
 			openPageLoading()
 
-			let contracts = storage.getStellarContracts()
+			if (storage.chainId === 'stellar') {
+				let contracts = storage.getStellarContracts()
 
-			if (!contracts) {
-				return
-			}
+				if (!contracts) {
+					return
+				}
 
-			const voteParams: VoteRoundParams = {
-				round_id: BigInt(params.roundId),
-				voter: stellarPubKey,
-				picks: selectedVotes.map((selected, index) => ({
-					pair_id: pairsData[index].pair_id,
-					voted_project_id: BigInt(selected),
-				})),
-			}
-			console.log('vote params', voteParams)
-			const txVoteProject = await voteRound(voteParams, contracts)
-			const txHashApplyProject = await contracts.signAndSendTx(
-				stellarKit as StellarWalletsKit,
-				txVoteProject.toXDR(),
-				stellarPubKey,
-			)
-			if (txVoteProject) {
-				dismissPageLoading()
-				toast.success('Round is voted successfully', {
-					style: toastOptions.success.style,
-				})
-				setHasVoted(true)
-				// setSuccessApplyProjectInitProps((prev) => ({
-				// 	...prev,
-				// 	isOpen: true,
-				// 	applyProjectRes: txApplyProject.result,
-				// 	txHash: txHashApplyProject,
-				// 	roundData,
-				// }))
+				const voteParams: VoteRoundParams = {
+					round_id: BigInt(params.roundId),
+					voter: stellarPubKey,
+					picks: selectedVotes.map((selected, index) => ({
+						pair_id: pairsData[index].pair_id as number,
+						voted_project_id: BigInt(selected),
+					})),
+				}
+				console.log('vote params', voteParams)
+				const txVoteProject = await voteRound(voteParams, contracts)
+
+				await contracts.signAndSendTx(
+					stellarKit as StellarWalletsKit,
+					txVoteProject.toXDR(),
+					stellarPubKey,
+				)
+				if (txVoteProject) {
+					dismissPageLoading()
+					toast.success('Round is voted successfully', {
+						style: toastOptions.success.style,
+					})
+					setHasVoted(true)
+				}
 			}
 		} catch (error: any) {
 			dismissPageLoading()

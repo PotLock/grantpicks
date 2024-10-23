@@ -6,6 +6,7 @@ import IsVotedSection from '@/app/components/pages/round-vote/IsVotedSection'
 import ProjectDetailDrawer from '@/app/components/pages/round-vote/ProjectDetailDrawer'
 import RoundVoteLayout from '@/app/components/pages/round-vote/RoundVoteLayout'
 import { useWallet } from '@/app/providers/WalletProvider'
+import { NearPair } from '@/services/near/type'
 import {
 	AvailableVoteRoundParams,
 	getPairsRound,
@@ -34,7 +35,7 @@ const RoundVotePage = () => {
 	const [hasVoted, setHasVoted] = useState<boolean>(false)
 	const { stellarPubKey } = useWallet()
 	const [isEligible, setIsEligible] = useState<boolean>(true)
-	const [pairsData, setPairsData] = useState<Pair[]>([])
+	const [pairsData, setPairsData] = useState<Pair[] | NearPair[]>([])
 	const storage = useAppStorage()
 
 	const checkVoterIsEligible = async () => {

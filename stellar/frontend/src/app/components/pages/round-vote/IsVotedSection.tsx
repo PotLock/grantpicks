@@ -20,6 +20,7 @@ import {
 import { prettyTruncate } from '@/utils/helper'
 import { Project } from 'project-registry-client'
 import useAppStorage from '@/stores/zustand/useAppStorage'
+import { NearPair } from '@/services/near/type'
 
 const IsVotedPairItem = ({
 	index,
@@ -27,7 +28,7 @@ const IsVotedPairItem = ({
 	votingResult,
 }: {
 	index: number
-	pair: Pair
+	pair: Pair | NearPair
 	votingResult?: VotingResult
 }) => {
 	const { connectedWallet, stellarPubKey, stellarKit } = useWallet()
@@ -41,22 +42,27 @@ const IsVotedPairItem = ({
 
 	const fetchProjectById = async () => {
 		try {
-			let contracts = storage.getStellarContracts()
+			if (storage.chainId === 'stellar') {
+				let contracts = storage.getStellarContracts()
 
-			if (!contracts) {
-				return
-			}
+				if (!contracts) {
+					return
+				}
 
-			const get1stProjectParams: GetProjectParams = {
-				project_id: pair.projects[0],
+				const get1stProjectParams: GetProjectParams = {
+					project_id: pair.projects[0] as bigint,
+				}
+				const get2ndProjectParams: GetProjectParams = {
+					project_id: pair.projects[1] as bigint,
+				}
+				const [firstRes, secondRes] = await Promise.all([
+					getProject(get1stProjectParams, contracts),
+					getProject(get2ndProjectParams, contracts),
+				])
+        
+				setFirstProjectData(firstRes)
+				setSecondProjectData(secondRes)
 			}
-			const get2ndProjectParams: GetProjectParams = {
-				project_id: pair.projects[1],
-			}
-			const firstRes = await getProject(get1stProjectParams, contracts)
-			const secondRes = await getProject(get2ndProjectParams, contracts)
-			setFirstProjectData(firstRes)
-			setSecondProjectData(secondRes)
 		} catch (error: any) {
 			console.log('error project by id', error)
 		}
@@ -118,7 +124,7 @@ const IsVotedSection = ({
 	pairsData,
 }: {
 	hasVoted: boolean
-	pairsData: Pair[]
+	pairsData: Pair[] | NearPair[]
 }) => {
 	const params = useParams<{ roundId: string }>()
 	const { connectedWallet, stellarPubKey, stellarKit } = useWallet()

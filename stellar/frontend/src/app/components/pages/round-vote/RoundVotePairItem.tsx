@@ -25,12 +25,13 @@ import { IProjectDetailOwner } from '@/app/round-vote/[roundId]/page'
 import { fetchYoutubeIframe, prettyTruncate } from '@/utils/helper'
 import { Project } from 'project-registry-client'
 import useAppStorage from '@/stores/zustand/useAppStorage'
+import { NearPair } from '@/services/near/type'
 
 interface RoundVotePairItemProps {
 	index: number
 	selectedPairs: string[]
 	setSelectedPairs: Dispatch<SetStateAction<string[]>>
-	data: Pair
+	data: Pair | NearPair
 	setShowProjectDetailDrawer: Dispatch<SetStateAction<IProjectDetailOwner>>
 }
 
@@ -61,42 +62,44 @@ const RoundVotePairItem = ({
 
 	const fetchProjectById = async () => {
 		try {
-			let contracts = storage.getStellarContracts()
+			if (storage.chainId === 'stellar') {
+				let contracts = storage.getStellarContracts()
 
-			if (!contracts) {
-				return
-			}
+				if (!contracts) {
+					return
+				}
 
-			const get1stProjectParams: GetProjectParams = {
-				project_id: data.projects[0],
-			}
-			const get2ndProjectParams: GetProjectParams = {
-				project_id: data.projects[1],
-			}
-			const firstRes = await getProject(get1stProjectParams, contracts)
-			const secondRes = await getProject(get2ndProjectParams, contracts)
-			console.log(
-				'res first second',
-				firstRes,
-				secondRes,
-				Math.floor(wrapper1Ref.current?.clientWidth || 0),
-				Math.floor(wrapper2Ref.current?.clientWidth || 0),
-			)
-			setFirstProjectData(firstRes)
-			setSecondProjectData(secondRes)
-			if (firstRes?.video_url.includes('youtube')) {
-				const res = await fetchYoutubeIframe(
-					firstRes.video_url || '',
-					wrapper1Ref.current?.clientWidth || 0,
+				const get1stProjectParams: GetProjectParams = {
+					project_id: data.projects[0] as bigint,
+				}
+				const get2ndProjectParams: GetProjectParams = {
+					project_id: data.projects[1] as bigint,
+				}
+				const firstRes = await getProject(get1stProjectParams, contracts)
+				const secondRes = await getProject(get2ndProjectParams, contracts)
+				console.log(
+					'res first second',
+					firstRes,
+					secondRes,
+					Math.floor(wrapper1Ref.current?.clientWidth || 0),
+					Math.floor(wrapper2Ref.current?.clientWidth || 0),
 				)
-				setYtIframe1(res?.html)
-			}
-			if (secondRes?.video_url.includes('youtube')) {
-				const res = await fetchYoutubeIframe(
-					secondRes.video_url || '',
-					wrapper2Ref.current?.clientWidth || 0,
-				)
-				setYtIframe2(res?.html)
+				setFirstProjectData(firstRes)
+				setSecondProjectData(secondRes)
+				if (firstRes?.video_url.includes('youtube')) {
+					const res = await fetchYoutubeIframe(
+						firstRes.video_url || '',
+						wrapper1Ref.current?.clientWidth || 0,
+					)
+					setYtIframe1(res?.html)
+				}
+				if (secondRes?.video_url.includes('youtube')) {
+					const res = await fetchYoutubeIframe(
+						secondRes.video_url || '',
+						wrapper2Ref.current?.clientWidth || 0,
+					)
+					setYtIframe2(res?.html)
+				}
 			}
 		} catch (error: any) {
 			console.log('error project by id', error)

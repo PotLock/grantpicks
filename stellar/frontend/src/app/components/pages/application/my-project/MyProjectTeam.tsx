@@ -46,7 +46,11 @@ const MyProjectTeam = () => {
 
 	const setDefaultData = () => {
 		if (projectData) {
-			setMembers(projectData.team_members.map((mem: any) => mem))
+			if (storage.chainId === 'stellar') {
+				setMembers(projectData.team_members.map((mem: any) => mem.value))
+			} else {
+				setMembers(projectData.team_members.map((mem: any) => mem))
+			}
 		}
 	}
 

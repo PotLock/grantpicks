@@ -27,12 +27,16 @@ export const prettyTruncate = (str = '', len = 8, type?: string) => {
 	return str
 }
 
-export const formatNearAddress = (address: string) => {
-	if (address.includes('near') || address.includes('testnet')) {
-		return address
-	} else {
-		return prettyTruncate(address, 10, 'address')
+export const formatNearAddress = (address: string | undefined) => {
+	if (address) {
+		if (address.includes('near') || address.includes('testnet')) {
+			return address
+		} else {
+			return prettyTruncate(address, 10, 'address')
+		}
 	}
+
+	return ''
 }
 
 export const formatStroopToXlm = (amount: bigint) => {

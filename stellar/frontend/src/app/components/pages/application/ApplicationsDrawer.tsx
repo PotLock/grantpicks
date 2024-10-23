@@ -48,7 +48,7 @@ const ApplicationItem = ({
 	roundData: GPRound
 	mutate: any
 }) => {
-	const { stellarPubKey, stellarKit } = useWallet()
+	const { stellarPubKey, stellarKit, nearWallet } = useWallet()
 	const { dismissPageLoading, openPageLoading } = useGlobalContext()
 	const [openAcceptModal, setOpenAcceptModal] = useState<boolean>(false)
 	const [openRejectModal, setOpenRejectModal] = useState<boolean>(false)
@@ -85,39 +85,65 @@ const ApplicationItem = ({
 	const onAcceptReject = async (type: 'accept' | 'reject', note: string) => {
 		try {
 			openPageLoading()
-			let contracts = storage.getStellarContracts()
 
-			if (!contracts) {
-				return
-			}
+			if (storage.chainId === 'stellar') {
+				let contracts = storage.getStellarContracts()
 
-			const params: ReviewApplicationParams = {
-				round_id: BigInt(roundData.on_chain_id),
-				caller: stellarPubKey,
-				applicant: item.applicant.id,
-				status: {
-					tag: type === 'accept' ? 'Approved' : 'Rejected',
-					values: void 0,
-				},
-				note,
-			}
-			const txChangeProjectStatus = await reviewApplicationRound(
-				params,
-				contracts,
-			)
-			const txHash = await contracts.signAndSendTx(
-				stellarKit as StellarWalletsKit,
-				txChangeProjectStatus.toXDR(),
-				stellarPubKey,
-			)
-			if (txHash) {
-				dismissPageLoading()
-				toast.success(`Change status to ${type} is succeed`, {
-					style: toastOptions.success.style,
-				})
-				if (type === 'accept') setOpenAcceptModal(false)
-				else setOpenRejectModal(false)
-				await mutate()
+				if (!contracts) {
+					return
+				}
+
+				const params: ReviewApplicationParams = {
+					round_id: BigInt(roundData.on_chain_id),
+					caller: stellarPubKey,
+					applicant: item.applicant.id,
+					status: {
+						tag: type === 'accept' ? 'Approved' : 'Rejected',
+						values: void 0,
+					},
+					note,
+				}
+				const txChangeProjectStatus = await reviewApplicationRound(
+					params,
+					contracts,
+				)
+				const txHash = await contracts.signAndSendTx(
+					stellarKit as StellarWalletsKit,
+					txChangeProjectStatus.toXDR(),
+					stellarPubKey,
+				)
+				if (txHash) {
+					dismissPageLoading()
+					toast.success(`Change status to ${type} is succeed`, {
+						style: toastOptions.success.style,
+					})
+					if (type === 'accept') setOpenAcceptModal(false)
+					else setOpenRejectModal(false)
+					await mutate()
+				}
+			} else {
+				const contracts = storage.getNearContracts(nearWallet)
+
+				if (!contracts) {
+					return
+				}
+
+				const txReviewApplication = await contracts.round.reviewApplication(
+					roundData.on_chain_id,
+					item.applicant.id,
+					note,
+					type === 'accept' ? 'Approved' : 'Rejected',
+				)
+
+				if (txReviewApplication) {
+					dismissPageLoading()
+					toast.success(`Change status to ${type} is succeed`, {
+						style: toastOptions.success.style,
+					})
+					if (type === 'accept') setOpenAcceptModal(false)
+					else setOpenRejectModal(false)
+					await mutate()
+				}
 			}
 		} catch (error: any) {
 			dismissPageLoading()
@@ -130,6 +156,7 @@ const ApplicationItem = ({
 	}
 
 	useEffect(() => {
+		console.log(roundData)
 		onFetchRoundApplications()
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [item])

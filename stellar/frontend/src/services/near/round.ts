@@ -224,19 +224,36 @@ export class RoundContract extends BaseContract {
 		}
 	}
 
-  async reviewApplication(roundId: number, applicantId: string, note: string, status: string) {
-    const result = await this.callMethod({
-      method: 'review_application',
-      args: {
-        round_id: parseInt(roundId.toString()),
-        applicant: applicantId,
-        note,
-        status,
-      },
-      deposit: NO_DEPOSIT,
-      gas: THIRTY_TGAS,
-    })
+	async reviewApplication(
+		roundId: number,
+		applicantId: string,
+		note: string,
+		status: string,
+	) {
+		const result = await this.callMethod({
+			method: 'review_application',
+			args: {
+				round_id: parseInt(roundId.toString()),
+				applicant: applicantId,
+				note,
+				status,
+			},
+			deposit: NO_DEPOSIT,
+			gas: THIRTY_TGAS,
+		})
 
-    return result
-  }
+		return result
+	}
+
+	async canVote(roundId: number, accountId: string) {
+		const result = await this.viewMethod({
+			method: 'can_vote',
+			args: {
+				round_id: roundId,
+				voter: accountId,
+			},
+		})
+
+		return result
+	}
 }

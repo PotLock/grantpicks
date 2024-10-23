@@ -6,8 +6,6 @@ import IsVotedSection from '@/app/components/pages/round-vote/IsVotedSection'
 import ProjectDetailDrawer from '@/app/components/pages/round-vote/ProjectDetailDrawer'
 import RoundVoteLayout from '@/app/components/pages/round-vote/RoundVoteLayout'
 import { useWallet } from '@/app/providers/WalletProvider'
-import Contracts from '@/lib/contracts'
-import CMDWallet from '@/lib/wallet'
 import {
 	AvailableVoteRoundParams,
 	getPairsRound,
@@ -17,7 +15,6 @@ import {
 	isHasVotedRound,
 } from '@/services/stellar/round'
 import useAppStorage from '@/stores/zustand/useAppStorage'
-import { Network } from '@/types/on-chain'
 import { useParams, useRouter } from 'next/navigation'
 import { Project } from 'project-registry-client'
 import React, { useEffect, useRef, useState } from 'react'

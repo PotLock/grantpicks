@@ -87,21 +87,22 @@ const AddProjectsModal = ({
 				(project: any) => project.registrant_id,
 			)
 
-			const resProjectsDetail = projectAddresses.map(
-				async (address: string) => {
-					const data = await contracts.near_social.getProjectData(address)
-					const json =
-						data[`${storage.my_address || ''}`]['profile']['gp_project'] || '{}'
-					const project = JSON.parse(json)
+			const getProjectsDetail = projectAddresses.map((address: string) => {
+				return contracts.near_social.getProjectData(address)
+			})
 
-					return project
-				},
-			)
+			const resProjectsDetail = await Promise.all(getProjectsDetail)
 
-			return await Promise.all(resProjectsDetail)
+			const formated = resProjectsDetail.map((data: any, index: number) => {
+				const json =
+					data[`${projectAddresses[index]}`]['profile']['gp_project'] || '{}'
+				const project = JSON.parse(json)
+
+				return project
+			})
+
+			return formated
 		}
-
-		return []
 	}
 	const getKey = (
 		pageIndex: number,

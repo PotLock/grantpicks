@@ -69,7 +69,8 @@ import { LIMIT_SIZE } from '@/constants/query'
 import useSWRInfinite from 'swr/infinite'
 import { GPRound } from '@/models/round'
 import { parseNearAmount } from 'near-api-js/lib/utils/format'
-import { FinalExecutionOutcome } from '@near-wallet-selector/core'
+import { FinalExecutionOutcome, Transaction } from '@near-wallet-selector/core'
+import { create } from 'domain'
 
 const CreateRoundPage = () => {
 	const router = useRouter()
@@ -362,6 +363,14 @@ const CreateRoundPage = () => {
 
 				let createOnly = true
 
+				if (watch().amount && watch().amount !== '0') {
+					createOnly = false
+				}
+
+				if (selectedProjects.length > 0) {
+					createOnly = false
+				}
+
 				const txNearCreateRound: {
 					result: NearRound
 					outcome: FinalExecutionOutcome
@@ -370,14 +379,32 @@ const CreateRoundPage = () => {
 					outcome: FinalExecutionOutcome
 				}
 
-				if (txNearCreateRound) {
+				if (!createOnly) {
+					const txs: Transaction[] = []
+
 					if (watch().amount && watch().amount !== '0') {
 						const depositAmount = parseNearAmount(watch().amount)
-						await nearContracts?.round.deposit(
+
+						const depostTx = await nearContracts?.round.deposit(
 							Number(txNearCreateRound ? txNearCreateRound.result.id : 0),
 							depositAmount,
+							true,
 						)
+
+						txs.push(depostTx as Transaction)
 					}
+
+					if (selectedProjects.length > 0) {
+						const addProjectsTx = await nearContracts?.round.addProjectsToRound(
+							Number(txNearCreateRound ? txNearCreateRound.result.id : 0),
+							selectedProjects.map((p) => p.owner),
+							true,
+						)
+
+						txs.push(addProjectsTx as Transaction)
+					}
+
+					await nearContracts?.round.sendTransactions(txs)
 				}
 
 				setSuccessCreateRoundModalProps((prev) => ({
@@ -1352,7 +1379,7 @@ const CreateRoundPage = () => {
 								>
 									<div className="flex items-center space-x-2">
 										<Image
-											src="/assets/images/ava-1.png"
+											src={`https://www.tapback.co/api/avatar/${selected.owner}`}
 											alt=""
 											className="rounded-full object-fill"
 											width={24}

@@ -15,6 +15,7 @@ const nextConfig = {
 		NEAR_ROUND_CONTRACT_ID: process.env.NEAR_ROUND_CONTRACT_ID,
 		NEAR_SOCIAL_CONTRACT_ID: process.env.NEAR_SOCIAL_CONTRACT_ID,
 		NEAR_LISTS_CONTRACT_ID: process.env.NEAR_LISTS_CONTRACT_ID,
+		NEAR_PROJECTS_LIST_ID: process.env.NEAR_PROJECTS_LIST_ID,
 	},
 	images: {
 		remotePatterns: [

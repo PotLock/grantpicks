@@ -74,22 +74,43 @@ export class NearSocial extends BaseContract {
 		return result
 	}
 
-	async setProjectData(accountId: string, projectData: NearSocialGPProject) {
-		const result = await this.callMethod({
-			method: 'set',
-			args: {
-				data: {
-					[accountId]: {
-						profile: {
-							gp_project: JSON.stringify(projectData),
+	async setProjectData(
+		accountId: string,
+		projectData: NearSocialGPProject,
+		txOnly: boolean = false,
+	) {
+		if (!txOnly) {
+			const result = await this.callMethod({
+				method: 'set',
+				args: {
+					data: {
+						[accountId]: {
+							profile: {
+								gp_project: JSON.stringify(projectData),
+							},
 						},
 					},
 				},
-			},
-			deposit: parseNearAmount('0.085') || NO_DEPOSIT,
-			gas: THIRTY_TGAS,
-		})
+				deposit: parseNearAmount('0.085') || NO_DEPOSIT,
+				gas: THIRTY_TGAS,
+			})
 
-		return result
+			return result
+		}else{
+      return await this.generateTxOnly({
+        method: 'set',
+        args: {
+          data: {
+            [accountId]: {
+              profile: {
+                gp_project: JSON.stringify(projectData),
+              },
+            },
+          },
+        },
+        deposit: parseNearAmount('0.085') || NO_DEPOSIT,
+        gas: THIRTY_TGAS,
+      })
+    }
 	}
 }

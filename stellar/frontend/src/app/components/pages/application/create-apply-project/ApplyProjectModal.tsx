@@ -61,15 +61,12 @@ const ApplyProjectModal = ({
 				console.log('res project applicant', res, res?.error)
 			} else {
 				const contracts = storage.getNearContracts(null)
-
 				if (!contracts) {
 					return
 				}
-
 				const data = await contracts.near_social.getProjectData(
 					storage.my_address || '',
 				)
-
 				if (data) {
 					const json =
 						data[`${storage.my_address || ''}`]['profile']['gp_project'] || '{}'

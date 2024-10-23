@@ -176,18 +176,50 @@ export class RoundContract extends BaseContract {
 		return result
 	}
 
-  async getApplicationForRound(
-    roundId: number,
-    accountId: string,
-  ): Promise<NearProjectApplication> {
-    const result = await this.viewMethod({
-      method: 'get_application_for_round',
-      args: {
-        round_id: parseInt(roundId.toString()),
-        applicant_id: accountId,
-      },
-    })
+	async getApplicationForRound(
+		roundId: number,
+		accountId: string,
+	): Promise<NearProjectApplication> {
+		const result = await this.viewMethod({
+			method: 'get_application_for_round',
+			args: {
+				round_id: parseInt(roundId.toString()),
+				applicant_id: accountId,
+			},
+		})
 
-    return result
-  }
+		return result
+	}
+
+	async addProjectsToRound(
+		roundId: number,
+		addresses: string[],
+		txOnly: boolean = false,
+	) {
+		if (!txOnly) {
+			const result = await this.callMethod({
+				method: 'apply_to_round_batch',
+				args: {
+					round_id: parseInt(roundId.toString()),
+					applicants: addresses,
+					review_notes: addresses.map(() => 'Added By Admin/Owner'),
+				},
+				deposit: NO_DEPOSIT,
+				gas: THIRTY_TGAS,
+			})
+
+			return result
+		} else {
+			return await this.generateTxOnly({
+				method: 'apply_to_round_batch',
+				args: {
+					round_id: parseInt(roundId.toString()),
+					applicants: addresses,
+					review_notes: addresses.map(() => 'Added By Admin/Owner'),
+				},
+				deposit: NO_DEPOSIT,
+				gas: THIRTY_TGAS,
+			})
+		}
+	}
 }

@@ -1,52 +1,57 @@
 import { Wallet } from '@near-wallet-selector/core'
-import { providers } from 'near-api-js'
-import { CodeResult } from 'near-api-js/lib/providers/provider'
+import { BaseContract } from './contract'
+import { NO_DEPOSIT, THIRTY_TGAS } from '@/constants/near'
 
-export interface ViewMethodParams {
-	contractId: string
-	method: string
-	args: object
-}
-
-export interface CallMethodParams {
-	contractId: string
-	method: string
-	args: object
-	gas: string
-	deposit: string
-}
-
-export class ListsContract {
-	private _wallet: Wallet | null
-	private networkId: string
-	private contractId: string
+export class ListsContract extends BaseContract {
 	constructor(wallet: Wallet | null, network: string, contractId: string) {
-		this._wallet = wallet
-		this.networkId = network
-		this.contractId = contractId
-	}
-
-	async viewMethod({ contractId, method, args }: ViewMethodParams) {
-		const url = `https://rpc.${this.networkId}.near.org`
-
-		const provider = new providers.JsonRpcProvider({ url })
-
-		const res = await provider.query({
-			request_type: 'call_function',
-			account_id: contractId,
-			method_name: method,
-			args_base64: Buffer.from(JSON.stringify(args)).toString('base64'),
-			finality: 'optimistic',
-		})
-
-		return JSON.parse(Buffer.from((res as CodeResult).result).toString())
+		super(wallet, network, contractId)
 	}
 
 	async getLists(from_index: number, limit: number) {
 		const result = await this.viewMethod({
-			contractId: this.contractId,
 			method: 'get_lists',
 			args: {
+				from_index,
+				limit,
+			},
+		})
+
+		return result
+	}
+
+	async registerList(listId: string, txOnly: boolean = false) {
+		if (!txOnly) {
+			const result = await this.callMethod({
+				method: 'register_batch',
+				args: {
+					list_id: parseInt(listId),
+				} as any,
+				deposit: NO_DEPOSIT,
+				gas: THIRTY_TGAS,
+			})
+
+			return result
+		} else {
+			return await this.generateTxOnly({
+				method: 'register_batch',
+				args: {
+					list_id: parseInt(listId),
+				} as any,
+				deposit: '17830000000000000000000',
+				gas: THIRTY_TGAS,
+			})
+		}
+	}
+
+	async getRegistrations(
+		listId: string,
+		from_index: number,
+		limit: number,
+	): Promise<any> {
+		const result = await this.viewMethod({
+			method: 'get_registrations_for_list',
+			args: {
+				list_id: parseInt(listId),
 				from_index,
 				limit,
 			},

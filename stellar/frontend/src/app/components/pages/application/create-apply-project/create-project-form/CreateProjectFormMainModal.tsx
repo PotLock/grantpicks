@@ -122,64 +122,75 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 					dismissPageLoading()
 					onClose()
 				}
-			}else {
-					const contracts = storage.getNearContracts(nearWallet)
+			} else {
+				const contracts = storage.getNearContracts(nearWallet)
 
-					if (!contracts) {
-						return
-					}
-
-					const params: NearSocialGPProject = {
-						name: dataForm.title,
-						overview: dataForm.description,
-						contacts: dataForm.contacts.map((c) => ({
-							name: c.platform,
-							value: c.link_url,
-						})),
-						owner: storage.my_address || '',
-						contracts: dataForm.smart_contracts.map((sm) => ({
-							name: sm.chain,
-							contract_address: sm.address,
-						})),
-						fundings: dataForm.funding_histories.map((f) => ({
-							source: f.source,
-							denomination: f.denomination,
-							description: f.description,
-							amount: f.amount.toString(),
-							funded_ms: parseInt(f.date.getTime().toString()),
-						})),
-						image_url: DEFAULT_IMAGE_URL,
-						payout_address: stellarPubKey,
-						repositories: dataForm.github_urls.map((g) => ({
-							label: 'github',
-							url: g,
-						})),
-						video_url: dataForm.video.url,
-						team_members: dataForm.team_member,
-					}
-
-					const txCreateProject = await contracts.near_social.setProjectData(
-						storage.my_address || '',
-						params,
-					)
-
-					if (txCreateProject) {
-						setSuccessCreateProjectModalProps((prev) => ({
-							...prev,
-							isOpen: true,
-							createProjectRes: txCreateProject.result,
-							txHash: txCreateProject.outcome.transaction_outcome.id,
-						}))
-						setDataForm(DEFAULT_CREATE_PROJECT_DATA)
-						localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_1)
-						localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_2)
-						localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_3)
-						localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_4)
-						localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_5)
-						dismissPageLoading()
-						onClose()
-					}
+				if (!contracts) {
+					return
 				}
+
+				const params: NearSocialGPProject = {
+					name: dataForm.title,
+					overview: dataForm.description,
+					contacts: dataForm.contacts.map((c) => ({
+						name: c.platform,
+						value: c.link_url,
+					})),
+					owner: storage.my_address || '',
+					contracts: dataForm.smart_contracts.map((sm) => ({
+						name: sm.chain,
+						contract_address: sm.address,
+					})),
+					fundings: dataForm.funding_histories.map((f) => ({
+						source: f.source,
+						denomination: f.denomination,
+						description: f.description,
+						amount: f.amount.toString(),
+						funded_ms: parseInt(f.date.getTime().toString()),
+					})),
+					image_url: DEFAULT_IMAGE_URL,
+					payout_address: stellarPubKey,
+					repositories: dataForm.github_urls.map((g) => ({
+						label: 'github',
+						url: g,
+					})),
+					video_url: dataForm.video.url,
+					team_members: dataForm.team_member,
+				}
+
+				const txCreateProject = await contracts.near_social.setProjectData(
+					storage.my_address || '',
+					params,
+					true,
+				)
+
+				const listId = process.env.NEAR_PROJECTS_LIST_ID || '1'
+
+				const txRegisterList = await contracts.lists.registerList(listId, true)
+
+				console.log('txCreateProject', txCreateProject)
+				console.log('txRegisterList', txRegisterList)
+
+				await contracts.near_social.sendTransactions([
+					txRegisterList,
+					txCreateProject,
+				])
+
+				setSuccessCreateProjectModalProps((prev) => ({
+					...prev,
+					isOpen: true,
+					createProjectRes: params as unknown as IGetProjectsResponse,
+					txHash: undefined,
+				}))
+				setDataForm(DEFAULT_CREATE_PROJECT_DATA)
+				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_1)
+				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_2)
+				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_3)
+				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_4)
+				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_5)
+				dismissPageLoading()
+				onClose()
+			}
 		} catch (error: any) {
 			console.error(error)
 			console.log('error', error?.message)

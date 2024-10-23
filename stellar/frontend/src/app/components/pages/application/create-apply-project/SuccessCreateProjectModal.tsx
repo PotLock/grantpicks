@@ -77,31 +77,33 @@ const SuccessCreateProjectModal = ({
 						</div>
 					</Button>
 				</div>
-				<div className="flex flex-col items-center">
-					<p className="text-xs font-normal text-grantpicks-black-600 mb-2">
-						Transaction ID
-					</p>
-					<div className="py-2 px-3 bg-grantpicks-black-50 flex items-center justify-center space-x-2 rouxl">
-						<p className="text-sm font-semibold text-grantpicks-black-950">
-							{prettyTruncate(txHash, 25)}
+				{txHash && (
+					<div className="flex flex-col items-center">
+						<p className="text-xs font-normal text-grantpicks-black-600 mb-2">
+							Transaction ID
 						</p>
-						<Link
-							href={
-								storage.chainId === 'stellar'
-									? `https://stellar.expert/explorer/${storage.network}/tx/${txHash}`
-									: storage.network === 'mainnet'
-										? `https://nearblocks.io/txns/${txHash}`
-										: `https://testnet.nearblocks.io/txns/${txHash}`
-							}
-							target="_blank"
-						>
-							<IconExternalLink
-								size={24}
-								className="stroke-grantpicks-black-950"
-							/>
-						</Link>
+						<div className="py-2 px-3 bg-grantpicks-black-50 flex items-center justify-center space-x-2 rouxl">
+							<p className="text-sm font-semibold text-grantpicks-black-950">
+								{prettyTruncate(txHash, 25)}
+							</p>
+							<Link
+								href={
+									storage.chainId === 'stellar'
+										? `https://stellar.expert/explorer/${storage.network}/tx/${txHash}`
+										: storage.network === 'mainnet'
+											? `https://nearblocks.io/txns/${txHash}`
+											: `https://testnet.nearblocks.io/txns/${txHash}`
+								}
+								target="_blank"
+							>
+								<IconExternalLink
+									size={24}
+									className="stroke-grantpicks-black-950"
+								/>
+							</Link>
+						</div>
 					</div>
-				</div>
+				)}
 			</div>
 		</Modal>
 	)

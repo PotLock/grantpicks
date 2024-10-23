@@ -10,6 +10,7 @@ import {
 	NearCreateRoundParams,
 	NearProjectApplication,
 	NearRound,
+	NearUpdateRoundParams,
 } from './type'
 import { BaseContract } from './contract'
 import { parseNearAmount } from 'near-api-js/lib/utils/format'
@@ -47,6 +48,35 @@ export class RoundContract extends BaseContract {
 					round_detail: params,
 				} as any,
 				deposit: parseNearAmount('0.085') || NO_DEPOSIT,
+				gas: THIRTY_TGAS,
+			})
+		}
+	}
+
+	async editRound(
+		params: NearUpdateRoundParams,
+		txOnly: boolean = false,
+	): Promise<
+		| {
+				result: NearRound
+				outcome: FinalExecutionOutcome
+		  }
+		| Transaction
+	> {
+		if (!txOnly) {
+			const result = await this.callMethod({
+				method: 'update_round',
+				args: params as any,
+				deposit: NO_DEPOSIT,
+				gas: THIRTY_TGAS,
+			})
+
+			return result
+		} else {
+			return await this.generateTxOnly({
+				method: 'update_round',
+				args: params as any,
+				deposit: NO_DEPOSIT,
 				gas: THIRTY_TGAS,
 			})
 		}

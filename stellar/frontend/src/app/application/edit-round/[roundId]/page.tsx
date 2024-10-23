@@ -40,11 +40,16 @@ import {
 	getRoundInfo,
 	setAdminsRound,
 	UpdateRoundParams,
+	getLists,
 } from '@/services/stellar/round'
 import { useParams, useRouter } from 'next/navigation'
 import CMDWallet from '@/lib/wallet'
 import Contracts from '@/lib/contracts'
-import { IGetRoundApplicationsResponse, Network } from '@/types/on-chain'
+import {
+	IGetListExternalResponse,
+	IGetRoundApplicationsResponse,
+	Network,
+} from '@/types/on-chain'
 import { useWallet } from '@/app/providers/WalletProvider'
 import {
 	formatStroopToXlm,
@@ -72,6 +77,12 @@ import {
 import { subDays } from 'date-fns'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import Image from 'next/image'
+import IconExpandLess from '@/app/components/svgs/IconExpandLess'
+import IconExpandMore from '@/app/components/svgs/IconExpandMore'
+import InfiniteScroll from 'react-infinite-scroll-component'
+import useSWRInfinite from 'swr/infinite'
+import IconLoading from '@/app/components/svgs/IconLoading'
+import { NearUpdateRoundParams } from '@/services/near/type'
 
 const EditRoundPage = () => {
 	const router = useRouter()
@@ -83,8 +94,10 @@ const EditRoundPage = () => {
 	const [expectAmountUsd, setExpectAmountUsd] = useState<string>('0.00')
 	const [showAddProjectsModal, setShowAddProjectsModal] =
 		useState<boolean>(false)
-	const { stellarPubKey, stellarKit } = useWallet()
+	const { stellarPubKey, stellarKit, nearWallet, nearAccounts } = useWallet()
 	const [showAddAdminsModal, setShowAddAdminsModal] = useState<boolean>(false)
+	const [showLists, setShowLists] = useState<boolean>(true)
+	const [checkedListIds, setCheckedListIds] = useState<bigint[]>([])
 	const {
 		control,
 		register,
@@ -135,31 +148,47 @@ const EditRoundPage = () => {
 	const storage = useAppStorage()
 
 	const onFetchAdmins = async () => {
-		let contracts = storage.getStellarContracts()
-
-		if (!contracts) {
-			return
+		if (storage.chainId === 'stellar') {
+			let contracts = storage.getStellarContracts()
+			if (!contracts) {
+				return
+			}
+			const res = await getRoundAdmins(
+				{ round_id: BigInt(params.roundId) },
+				contracts,
+			)
+			return res
+		} else {
+			let contracts = storage.getNearContracts(nearWallet)
+			if (!contracts) {
+				return
+			}
+			const res = await contracts.round.getRoundById(parseInt(params.roundId))
+			return res.admins
 		}
-
-		const res = await getRoundAdmins(
-			{ round_id: BigInt(params.roundId) },
-			contracts,
-		)
-		return res
 	}
 
 	const onFetchRoundInfo = async () => {
-		let contracts = storage.getStellarContracts()
-
-		if (!contracts) {
-			return
+		if (storage.chainId === 'stellar') {
+			let contracts = storage.getStellarContracts()
+			if (!contracts) {
+				return
+			}
+			const resRoundInfo = await getRoundInfo(
+				{ round_id: BigInt(params.roundId) },
+				contracts,
+			)
+			return resRoundInfo
+		} else {
+			let contracts = storage.getNearContracts(nearWallet)
+			if (!contracts) {
+				return
+			}
+			const resRoundInfo = await contracts.round.getRoundById(
+				parseInt(params.roundId),
+			)
+			return resRoundInfo
 		}
-
-		const resRoundInfo = await getRoundInfo(
-			{ round_id: BigInt(params.roundId) },
-			contracts,
-		)
-		return resRoundInfo
 	}
 
 	const onFetchRoundApplications = async () => {
@@ -218,17 +247,15 @@ const EditRoundPage = () => {
 				setValue('vote_per_person', resRoundInfo?.num_picks_per_voter)
 				setValue(
 					'amount',
-					formatStroopToXlm(resRoundInfo?.current_vault_balance) === '0'
+					formatStroopToXlm(BigInt(resRoundInfo?.current_vault_balance)) === '0'
 						? ''
-						: formatStroopToXlm(resRoundInfo?.current_vault_balance),
+						: formatStroopToXlm(BigInt(resRoundInfo?.current_vault_balance)),
 				)
-				setValue(
-					'expected_amount',
-					formatStroopToXlm(resRoundInfo?.expected_amount),
-				)
+				setValue('expected_amount', resRoundInfo?.expected_amount as string)
 				const calculation =
-					parseFloat(formatStroopToXlm(resRoundInfo?.expected_amount) || '0') *
-					stellarPrice
+					parseFloat(
+						formatStroopToXlm(BigInt(resRoundInfo?.expected_amount)) || '0',
+					) * stellarPrice
 				setExpectAmountUsd(`${calculation.toFixed(3)}`)
 				setValue('use_vault', resRoundInfo.use_vault || false)
 				setValue('is_video_required', resRoundInfo.is_video_required || false)
@@ -298,7 +325,9 @@ const EditRoundPage = () => {
 						'voting_duration_end',
 						new Date(Number(resRoundInfo.voting_end_ms)),
 					)
-					setValue('is_video_required', resRoundInfo?.is_video_required)
+					if ('is_video_required' in resRoundInfo) {
+						setValue('is_video_required', resRoundInfo.is_video_required)
+					}
 				}
 				// if (resProjects.length > 0) {
 				// 	setValue(`projects`, resProjects)
@@ -310,6 +339,11 @@ const EditRoundPage = () => {
 						resRoundAdmins.map((admin) => ({ admin_id: admin })),
 					)
 				}
+				setCheckedListIds(
+					Array.isArray(resRoundInfo.wl_list_id)
+						? resRoundInfo.wl_list_id.map((id) => BigInt(id))
+						: [],
+				)
 				dismissPageLoading()
 			}
 		} catch (error: any) {
@@ -401,72 +435,122 @@ const EditRoundPage = () => {
 	const onEditRound: SubmitHandler<UpdateRoundData> = async (data) => {
 		try {
 			openPageLoading()
-			let contracts = storage.getStellarContracts()
 
-			if (!contracts) {
-				return
-			}
+			if (storage.chainId === 'stellar') {
+				let contracts = storage.getStellarContracts()
 
-			const udpateRoundParams: UpdateRoundParams = {
-				name: data.title,
-				description: data.description,
-				application_start_ms: BigInt(
-					data.apply_duration_start?.getTime() as number,
-				),
-				application_end_ms: BigInt(
-					data.apply_duration_end?.getTime() as number,
-				),
-				contacts: [
-					{
-						name: data.contact_type,
-						value: data.contact_address,
-					},
-				],
-				expected_amount: parseToStroop(data.expected_amount),
-				max_participants:
-					selectedProjects.length > data.max_participants // TODO: must change "Max Participants" when adding projects
-						? selectedProjects.length
-						: data.max_participants,
-				num_picks_per_voter: data.vote_per_person,
-				use_whitelist: false,
-				is_video_required: data.is_video_required,
-				allow_applications: data.allow_application,
-				voting_start_ms: BigInt(
-					data.voting_duration_start?.getTime() as number,
-				),
-				voting_end_ms: BigInt(data.voting_duration_end?.getTime() as number),
-				use_vault: data.use_vault,
-			}
-			console.log('update round params', udpateRoundParams)
-			const txUpdateRound = await editRound(
-				stellarPubKey,
-				BigInt(params.roundId),
-				udpateRoundParams,
-				contracts,
-			)
-			console.log('tx update round', txUpdateRound)
-			const txHashUpdateRound = await contracts.signAndSendTx(
-				stellarKit as StellarWalletsKit,
-				txUpdateRound.toXDR(),
-				stellarPubKey,
-			)
-			console.log('tx hash update round', txUpdateRound)
-			if (txHashUpdateRound) {
-				let txHashAddProjects
-				let txHashAddAdmins
-				if (selectedProjects.length > 0) {
+				if (!contracts) {
+					return
+				}
+
+				const udpateRoundParams: UpdateRoundParams = {
+					name: data.title,
+					description: data.description,
+					application_start_ms: BigInt(
+						data.apply_duration_start?.getTime() as number,
+					),
+					application_end_ms: BigInt(
+						data.apply_duration_end?.getTime() as number,
+					),
+					contacts: [
+						{
+							name: data.contact_type,
+							value: data.contact_address,
+						},
+					],
+					expected_amount: parseToStroop(data.expected_amount),
+					max_participants:
+						selectedProjects.length > data.max_participants // TODO: must change "Max Participants" when adding projects
+							? selectedProjects.length
+							: data.max_participants,
+					num_picks_per_voter: data.vote_per_person,
+					use_whitelist: checkedListIds.length > 0,
+					wl_list_id: checkedListIds.length > 0 ? checkedListIds[0] : undefined,
+					is_video_required: data.is_video_required,
+					allow_applications: data.allow_application,
+					voting_start_ms: BigInt(
+						data.voting_duration_start?.getTime() as number,
+					),
+					voting_end_ms: BigInt(data.voting_duration_end?.getTime() as number),
+					use_vault: data.use_vault,
+				}
+				console.log('update round params', udpateRoundParams)
+				const txUpdateRound = await editRound(
+					stellarPubKey,
+					BigInt(params.roundId),
+					udpateRoundParams,
+					contracts,
+				)
+				console.log('tx update round', txUpdateRound)
+				const txHashUpdateRound = await contracts.signAndSendTx(
+					stellarKit as StellarWalletsKit,
+					txUpdateRound.toXDR(),
+					stellarPubKey,
+				)
+				console.log('tx hash update round', txUpdateRound)
+				if (txHashUpdateRound) {
+					let txHashAddProjects
+					let txHashAddAdmins
+					if (selectedProjects.length > 0) {
+						txHashAddProjects = await onAddApprovedProjects(
+							txUpdateRound.result.id,
+						)
+					}
 					txHashAddProjects = await onAddApprovedProjects(
 						txUpdateRound.result.id,
 					)
+					txHashAddAdmins = await onSetAdmins(BigInt(params.roundId))
+					setSuccessUpdateRoundModalProps((prev) => ({
+						...prev,
+						isOpen: true,
+						updateRoundRes: txUpdateRound.result,
+						txHash: txHashUpdateRound,
+					}))
+					reset()
+					dismissPageLoading()
+					router.push(`/application`)
 				}
-				txHashAddProjects = await onAddApprovedProjects(txUpdateRound.result.id)
-				txHashAddAdmins = await onSetAdmins(BigInt(params.roundId))
-				setSuccessUpdateRoundModalProps((prev) => ({
-					...prev,
-					isOpen: true,
-					updateRoundRes: txUpdateRound.result,
-					txHash: txHashUpdateRound,
-				}))
+			} else {
+				const udpateRoundParams: NearUpdateRoundParams = {
+					round_id: parseInt(params.roundId),
+					name: data.title,
+					description: data.description,
+					allow_applications: data.allow_application,
+					application_end_ms: data.allow_application
+						? data.apply_duration_end?.getTime()
+						: undefined,
+					application_start_ms: data.allow_application
+						? data.apply_duration_start?.getTime()
+						: undefined,
+					expected_amount: data.expected_amount,
+					contacts: [
+						{
+							name: data.contact_type,
+							value: data.contact_address,
+						},
+					],
+					use_whitelist: checkedListIds.length > 0,
+					wl_list_id: checkedListIds.length > 0 ? checkedListIds[0] : undefined,
+					voting_end_ms: data.voting_duration_end?.getTime() || 0,
+					voting_start_ms: data.voting_duration_start?.getTime() || 0,
+					num_picks_per_voter: data.vote_per_person,
+					max_participants: data.max_participants,
+					application_requires_video: data.is_video_required,
+				}
+
+				if (!nearWallet) {
+					return
+				}
+
+				const nearContracts = storage.getNearContracts(nearWallet)
+				console.log('nearContracts', nearContracts)
+				const txNearEditRound =
+					await nearContracts?.round.editRound(udpateRoundParams)
+
+				console.log('txNearCreateRound', txNearEditRound)
+
+				//TODO: handle & test after BE indexed by prometheus
+
 				reset()
 				dismissPageLoading()
 				router.push(`/application`)
@@ -482,7 +566,69 @@ const EditRoundPage = () => {
 
 	useEffect(() => {
 		onFetchDefaultValue()
-	}, [])
+	}, [nearWallet])
+
+	const onFetchLists = async (key: {
+		url: string
+		skip: number
+		limit: number
+	}) => {
+		if (storage.chainId === 'stellar') {
+			let contracts = storage.getStellarContracts()
+			if (!contracts) {
+				return []
+			}
+			const res = await getLists(
+				{ skip: key.skip, limit: key.limit },
+				contracts,
+			)
+			return res
+		} else {
+			let contracts = storage.getNearContracts(nearWallet)
+			if (!contracts) {
+				return []
+			}
+			const res = await contracts.lists.getLists(key.skip, key.limit)
+			return res
+		}
+	}
+
+	const getKey = (
+		pageIndex: number,
+		previousPageData: IGetListExternalResponse[],
+	) => {
+		if (previousPageData && !previousPageData.length) return null
+		return {
+			url: `get-lists`,
+			skip: pageIndex * LIMIT_SIZE,
+			limit: LIMIT_SIZE,
+			chain: storage.chainId,
+		}
+	}
+	const { data, size, setSize, isValidating, isLoading } = useSWRInfinite(
+		getKey,
+		async (key) => await onFetchLists(key),
+		{
+			revalidateFirstPage: false,
+		},
+	)
+
+	const lists = data
+		? ([] as IGetListExternalResponse[]).concat(
+				...(data as any as IGetListExternalResponse[]),
+			)
+		: []
+	const isEmpty = data?.[0]?.length === 0
+	const isReachingEnd =
+		isEmpty || (data && data[data.length - 1]?.length < LIMIT_SIZE)
+
+	const isOwner = (listOwnerId: string): boolean => {
+		return (stellarPubKey || nearAccounts[0]?.accountId) === listOwnerId
+	}
+
+	const isAdmin = (adminIds: string[]): boolean => {
+		return adminIds.includes(stellarPubKey || nearAccounts[0]?.accountId)
+	}
 
 	return (
 		<CreateRoundLayout>
@@ -697,10 +843,17 @@ const EditRoundPage = () => {
 										},
 									})}
 									preffixIcon={
-										<IconStellar
-											size={24}
-											className="fill-grantpicks-black-400"
-										/>
+										storage.chainId === 'stellar' ? (
+											<IconStellar
+												size={24}
+												className="fill-grantpicks-black-400"
+											/>
+										) : (
+											<IconNear
+												size={24}
+												className="fill-grantpicks-black-400"
+											/>
+										)
 									}
 									textAlign="left"
 									suffixIcon={
@@ -737,10 +890,17 @@ const EditRoundPage = () => {
 										},
 									})}
 									preffixIcon={
-										<IconStellar
-											size={24}
-											className="fill-grantpicks-black-400"
-										/>
+										storage.chainId === 'stellar' ? (
+											<IconStellar
+												size={24}
+												className="fill-grantpicks-black-400"
+											/>
+										) : (
+											<IconNear
+												size={24}
+												className="fill-grantpicks-black-400"
+											/>
+										)
 									}
 									textAlign="left"
 									suffixIcon={
@@ -1114,6 +1274,135 @@ const EditRoundPage = () => {
 							append={appendAdmin}
 							remove={removeAdmin}
 						/>
+					</div>
+
+					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
+						<div className="flex items-center justify-between pb-4 border-b border-black/10">
+							<p className="text-base font-semibold">Voter Requirements</p>
+						</div>
+						<div>
+							<button
+								onClick={() => {
+									setShowLists(!showLists)
+								}}
+								className="flex justify-between w-full items-center py-[14px]"
+							>
+								<p className="font-semibold text-sm text-grantpicks-black-950">
+									List
+								</p>
+								{showLists ? (
+									<IconExpandLess
+										size={24}
+										className="stroke-grantpicks-black-400"
+									/>
+								) : (
+									<IconExpandMore
+										size={24}
+										className="stroke-grantpicks-black-400"
+									/>
+								)}
+							</button>
+							{showLists && (
+								<div
+									id="scrollListsContainer"
+									className="max-h-[522px] overflow-scroll"
+								>
+									<InfiniteScroll
+										scrollableTarget="scrollListsContainer"
+										dataLength={lists.length}
+										next={() => !isValidating && setSize(size + 1)}
+										hasMore={!isReachingEnd}
+										style={{ display: 'flex', flexDirection: 'column' }}
+										loader={
+											<div className="my-2 flex items-center justify-center">
+												<IconLoading
+													size={24}
+													className="fill-grantpicks-black-600"
+												/>
+											</div>
+										}
+									>
+										{isLoading ? (
+											<div className="h-20 flex items-center justify-center">
+												<IconLoading
+													size={24}
+													className="fill-grantpicks-black-600"
+												/>
+											</div>
+										) : lists.length === 0 ? (
+											<div>
+												<p className="text-sm text-grantpicks-black-950 text-center">
+													There are no Lists Contract yet.
+												</p>
+											</div>
+										) : (
+											<div>
+												{lists?.map((list) => {
+													return (
+														<div
+															key={list.id}
+															className="py-4 flex items-center gap-x-4"
+														>
+															<Checkbox
+																checked={checkedListIds.includes(list.id)}
+																onChange={(e) => {
+																	if (e.target.checked) {
+																		setCheckedListIds([list.id])
+																	} else {
+																		setCheckedListIds(
+																			checkedListIds.filter(
+																				(id) => id !== list.id,
+																			),
+																		)
+																	}
+																}}
+																name="wl_list_id"
+																value={list.id.toString()}
+															/>
+															<div className="flex justify-between w-full items-center">
+																<div className="flex gap-x-3 items-center">
+																	<Image
+																		src="/assets/images/default-list-image.png"
+																		alt="list"
+																		width={72}
+																		height={46}
+																	/>
+																	<div className="grid gap-y-1">
+																		<p className="font-semibold text-sm text-grantpicks-black-950">
+																			{list.name}
+																		</p>
+																		<p className="text-sm text-grantpicks-black-700">
+																			{list.total_registrations_count.toString()}{' '}
+																			Voters
+																		</p>
+																	</div>
+																</div>
+																<div className="flex gap-x-1">
+																	{isOwner(list.owner) && (
+																		<div className="px-3 py-[2px] bg-grantpicks-black-950 rounded-full">
+																			<p className="font-semibold text-xs text-white">
+																				Owner
+																			</p>
+																		</div>
+																	)}
+																	{isAdmin(list.admins) && (
+																		<div className="px-3 py-[2px] bg-grantpicks-black-100 rounded-full">
+																			<p className="font-semibold text-xs text-grantpicks-black-950">
+																				Admin
+																			</p>
+																		</div>
+																	)}
+																</div>
+															</div>
+														</div>
+													)
+												})}
+											</div>
+										)}
+									</InfiniteScroll>
+								</div>
+							)}
+						</div>
 					</div>
 
 					<Button

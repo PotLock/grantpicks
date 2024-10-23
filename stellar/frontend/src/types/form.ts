@@ -67,6 +67,7 @@ export type IAdminCreateRound = {
 }
 
 export type CreateRoundData = {
+	id: number
 	title: string
 	description: string
 	vote_per_person: number
@@ -97,6 +98,7 @@ export type CreateRoundData = {
 }
 
 export type UpdateRoundData = {
+	id: number
 	title: string
 	description: string
 	vote_per_person: number

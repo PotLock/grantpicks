@@ -128,6 +128,7 @@ export interface UpdateRoundParams {
 	voting_end_ms: u64
 	voting_start_ms: u64
 	use_vault?: boolean
+	wl_list_id: bigint | undefined
 }
 
 export interface DepositFundRoundParams {

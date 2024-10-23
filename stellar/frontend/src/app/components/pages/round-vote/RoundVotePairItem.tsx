@@ -57,7 +57,6 @@ const RoundVotePairItem = ({
 	const [secondProjectData, setSecondProjectData] = useState<
 		Project | undefined
 	>(undefined)
-	const { stellarPubKey } = useWallet()
 	const storage = useAppStorage()
 
 	const fetchProjectById = async () => {
@@ -77,13 +76,7 @@ const RoundVotePairItem = ({
 				}
 				const firstRes = await getProject(get1stProjectParams, contracts)
 				const secondRes = await getProject(get2ndProjectParams, contracts)
-				console.log(
-					'res first second',
-					firstRes,
-					secondRes,
-					Math.floor(wrapper1Ref.current?.clientWidth || 0),
-					Math.floor(wrapper2Ref.current?.clientWidth || 0),
-				)
+
 				setFirstProjectData(firstRes)
 				setSecondProjectData(secondRes)
 				if (firstRes?.video_url.includes('youtube')) {
@@ -96,6 +89,44 @@ const RoundVotePairItem = ({
 				if (secondRes?.video_url.includes('youtube')) {
 					const res = await fetchYoutubeIframe(
 						secondRes.video_url || '',
+						wrapper2Ref.current?.clientWidth || 0,
+					)
+					setYtIframe2(res?.html)
+				}
+			} else {
+				const contracts = storage.getNearContracts(null)
+
+				if (!contracts) {
+					return
+				}
+
+				const [firstRes, secondRes] = await Promise.all([
+					contracts.near_social.getProjectData(data.projects[0] as string),
+					contracts.near_social.getProjectData(data.projects[1] as string),
+				])
+
+				const project1JSON =
+					firstRes[`${storage.my_address || ''}`]['profile']['gp_project'] ||
+					'{}'
+				const project2JSON =
+					secondRes[`${storage.my_address || ''}`]['profile']['gp_project'] ||
+					'{}'
+				const firstProject = JSON.parse(project1JSON)
+				const secondProject = JSON.parse(project2JSON)
+
+				setFirstProjectData(firstProject)
+				setSecondProjectData(secondProject)
+
+				if (firstProject?.video_url.includes('youtube')) {
+					const res = await fetchYoutubeIframe(
+						firstProject.video_url || '',
+						wrapper1Ref.current?.clientWidth || 0,
+					)
+					setYtIframe1(res?.html)
+				}
+				if (secondProject?.video_url.includes('youtube')) {
+					const res = await fetchYoutubeIframe(
+						secondProject.video_url || '',
 						wrapper2Ref.current?.clientWidth || 0,
 					)
 					setYtIframe2(res?.html)

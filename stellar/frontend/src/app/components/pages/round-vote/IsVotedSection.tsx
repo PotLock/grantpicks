@@ -59,9 +59,32 @@ const IsVotedPairItem = ({
 					getProject(get1stProjectParams, contracts),
 					getProject(get2ndProjectParams, contracts),
 				])
-        
+
 				setFirstProjectData(firstRes)
 				setSecondProjectData(secondRes)
+			} else {
+				const contracts = storage.getNearContracts(null)
+
+				if (!contracts) {
+					return
+				}
+
+				const [firstRes, secondRes] = await Promise.all([
+					contracts.near_social.getProjectData(pair.projects[0] as string),
+					contracts.near_social.getProjectData(pair.projects[1] as string),
+				])
+
+				const project1JSON =
+					firstRes[`${storage.my_address || ''}`]['profile']['gp_project'] ||
+					'{}'
+				const project2JSON =
+					secondRes[`${storage.my_address || ''}`]['profile']['gp_project'] ||
+					'{}'
+				const firstProject = JSON.parse(project1JSON)
+				const secondProject = JSON.parse(project2JSON)
+
+				setFirstProjectData(firstProject)
+				setSecondProjectData(secondProject)
 			}
 		} catch (error: any) {
 			console.log('error project by id', error)

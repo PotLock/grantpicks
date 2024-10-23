@@ -12,6 +12,7 @@ import {
 	NearRound,
 } from './type'
 import { BaseContract } from './contract'
+import { parseNearAmount } from 'near-api-js/lib/utils/format'
 
 export class RoundContract extends BaseContract {
 	constructor(wallet: Wallet | null, network: string, contractId: string) {
@@ -34,7 +35,7 @@ export class RoundContract extends BaseContract {
 				args: {
 					round_detail: params,
 				} as any,
-				deposit: NO_DEPOSIT,
+				deposit: parseNearAmount('0.085') || NO_DEPOSIT,
 				gas: THIRTY_TGAS,
 			})
 
@@ -45,7 +46,7 @@ export class RoundContract extends BaseContract {
 				args: {
 					round_detail: params,
 				} as any,
-				deposit: NO_DEPOSIT,
+				deposit: parseNearAmount('0.085') || NO_DEPOSIT,
 				gas: THIRTY_TGAS,
 			})
 		}
@@ -222,4 +223,20 @@ export class RoundContract extends BaseContract {
 			})
 		}
 	}
+
+  async reviewApplication(roundId: number, applicantId: string, note: string, status: string) {
+    const result = await this.callMethod({
+      method: 'review_application',
+      args: {
+        round_id: parseInt(roundId.toString()),
+        applicant: applicantId,
+        note,
+        status,
+      },
+      deposit: NO_DEPOSIT,
+      gas: THIRTY_TGAS,
+    })
+
+    return result
+  }
 }

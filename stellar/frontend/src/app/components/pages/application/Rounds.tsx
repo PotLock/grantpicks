@@ -450,8 +450,8 @@ const ApplicationRounds = () => {
 			const contracts = storage.getNearContracts(nearWallet)
 
 			const rounds = await contracts?.round.getRounds(
-				key.page * LIMIT_SIZE_CONTRACT,
-				LIMIT_SIZE_CONTRACT,
+				key.page * LIMIT_SIZE,
+				LIMIT_SIZE,
 			)
 
 			return rounds.map((round: NearRound) => {

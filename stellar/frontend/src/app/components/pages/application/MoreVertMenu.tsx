@@ -27,7 +27,7 @@ const MoreVertMenu = ({
 	onFundRound: () => void
 }) => {
 	const { selectedRoundType } = useRoundStore()
-	const { stellarPubKey } = useWallet()
+	const { stellarPubKey, nearAccounts } = useWallet()
 	const router = useRouter()
 
 	const generateLink = () => {
@@ -71,7 +71,8 @@ const MoreVertMenu = ({
 						</div>
 					)}
 				{selectedRoundType === 'upcoming' &&
-					data.owner.id === stellarPubKey && (
+					(data.owner.id === stellarPubKey ||
+						data.owner.id === nearAccounts[0]?.accountId) && (
 						<div
 							className="p-2 flex items-center space-x-2 cursor-pointer hover:opacity-70 transition"
 							onClick={() =>

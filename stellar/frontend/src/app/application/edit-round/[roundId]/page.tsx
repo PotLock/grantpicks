@@ -843,10 +843,17 @@ const EditRoundPage = () => {
 										},
 									})}
 									preffixIcon={
-										<IconStellar
-											size={24}
-											className="fill-grantpicks-black-400"
-										/>
+										storage.chainId === 'stellar' ? (
+											<IconStellar
+												size={24}
+												className="fill-grantpicks-black-400"
+											/>
+										) : (
+											<IconNear
+												size={24}
+												className="fill-grantpicks-black-400"
+											/>
+										)
 									}
 									textAlign="left"
 									suffixIcon={
@@ -883,10 +890,17 @@ const EditRoundPage = () => {
 										},
 									})}
 									preffixIcon={
-										<IconStellar
-											size={24}
-											className="fill-grantpicks-black-400"
-										/>
+										storage.chainId === 'stellar' ? (
+											<IconStellar
+												size={24}
+												className="fill-grantpicks-black-400"
+											/>
+										) : (
+											<IconNear
+												size={24}
+												className="fill-grantpicks-black-400"
+											/>
+										)
 									}
 									textAlign="left"
 									suffixIcon={

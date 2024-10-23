@@ -77,7 +77,13 @@ const CreateRoundPage = () => {
 	const [showContactType, setShowContactType] = useState<boolean>(false)
 	const { nearPrice, stellarPrice, openPageLoading, dismissPageLoading } =
 		useGlobalContext()
-	const { stellarPubKey, stellarKit, nearWallet, nearAccounts } = useWallet()
+	const {
+		stellarPubKey,
+		stellarKit,
+		nearWallet,
+		nearAccounts,
+		connectedWallet,
+	} = useWallet()
 	const { setSuccessCreateRoundModalProps } = useModalContext()
 	const [amountUsd, setAmountUsd] = useState<string>('0.00')
 	const [expectAmountUsd, setExpectAmountUsd] = useState<string>('0.00')
@@ -518,6 +524,15 @@ const CreateRoundPage = () => {
 		return adminIds.includes(stellarPubKey || nearAccounts[0]?.accountId)
 	}
 
+	useEffect(() => {
+		if (connectedWallet === 'near') {
+			setValue('use_vault', true)
+		} else {
+			setValue('use_vault', false)
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [connectedWallet])
+
 	return (
 		<CreateRoundLayout>
 			<TopNav />
@@ -826,9 +841,9 @@ const CreateRoundPage = () => {
 										</div>
 									}
 									errorMessage={
-										parseFloat(watch().amount) <= 0 ? (
+										parseFloat(watch().amount) < 0 ? (
 											<p className="text-red-500 text-xs mt-1 ml-2">
-												Initial deposit cannot be less than or equal to 0
+												Initial deposit cannot be less than 0
 											</p>
 										) : undefined
 									}
@@ -891,16 +906,20 @@ const CreateRoundPage = () => {
 								/>
 							</div>
 						</div>
-						<div className="flex items-center">
-							<Checkbox
-								label="Open Funding Pool"
-								checked={watch().use_vault}
-								onChange={(e) => {
-									setValue('use_vault', e.target.checked)
-									setValue('amount', '')
-								}}
-							/>
-						</div>
+						{connectedWallet === 'stellar' ? (
+							<div className="flex items-center">
+								<Checkbox
+									label="Open Funding Pool"
+									checked={watch().use_vault}
+									onChange={(e) => {
+										setValue('use_vault', e.target.checked)
+										setValue('amount', '')
+									}}
+								/>
+							</div>
+						) : (
+							<></>
+						)}
 					</div>
 
 					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">

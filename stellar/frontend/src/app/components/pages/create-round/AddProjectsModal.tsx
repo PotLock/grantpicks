@@ -55,10 +55,10 @@ const AddProjectsModal = ({
 
 	const onFetchProjects = async (key: { skip: number; limit: number }) => {
 		if (storage.chainId == 'stellar') {
-			let contracts = storage.getStellarContracts()
+			const contracts = storage.getStellarContracts()
 
 			if (!contracts) {
-				return
+				return []
 			}
 
 			const resProjects = await getProjects(
@@ -69,6 +69,36 @@ const AddProjectsModal = ({
 				contracts,
 			)
 			return resProjects
+		} else {
+			const contracts = storage.getNearContracts(null)
+			if (!contracts) {
+				return []
+			}
+
+			const listId = process.env.NEAR_PROJECTS_LIST_ID || '1'
+
+			const resProjects = await contracts.lists.getRegistrations(
+				listId,
+				key.skip,
+				key.limit,
+			)
+
+			const projectAddresses = resProjects.map(
+				(project: any) => project.registrant_id,
+			)
+
+			const resProjectsDetail = projectAddresses.map(
+				async (address: string) => {
+					const data = await contracts.near_social.getProjectData(address)
+					const json =
+						data[`${storage.my_address || ''}`]['profile']['gp_project'] || '{}'
+					const project = JSON.parse(json)
+
+					return project
+				},
+			)
+
+			return await Promise.all(resProjectsDetail)
 		}
 
 		return []
@@ -139,7 +169,7 @@ const AddProjectsModal = ({
 								>
 									<div className="flex items-center space-x-2">
 										<Image
-											src="/assets/images/ava-1.png"
+											src={`https://www.tapback.co/api/avatar/${selected.owner}`}
 											alt=""
 											className="rounded-full object-fill"
 											width={24}
@@ -220,8 +250,8 @@ const AddProjectsModal = ({
 									.filter(
 										(project) =>
 											!tempSelectedProjects
-												.map((tsp) => BigInt(tsp.id).toString())
-												.includes(BigInt(project.id).toString()),
+												.map((tsp) => tsp.owner)
+												.includes(project.owner),
 									)
 									?.map((project, index) => (
 										<div
@@ -239,7 +269,7 @@ const AddProjectsModal = ({
 											}
 										>
 											<Image
-												src={`/assets/images/ava-1.png`}
+												src={`https://www.tapback.co/api/avatar/${project.owner}`}
 												alt=""
 												className="rounded-full object-fill"
 												width={24}

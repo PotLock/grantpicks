@@ -27,6 +27,14 @@ export const prettyTruncate = (str = '', len = 8, type?: string) => {
 	return str
 }
 
+export const formatNearAddress = (address: string) => {
+	if (address.includes('near') || address.includes('testnet')) {
+		return address
+	} else {
+		return prettyTruncate(address, 10, 'address')
+	}
+}
+
 export const formatStroopToXlm = (amount: bigint) => {
 	const res = (BigInt(amount as bigint) / BigInt(10 ** 7)).toString()
 	return res

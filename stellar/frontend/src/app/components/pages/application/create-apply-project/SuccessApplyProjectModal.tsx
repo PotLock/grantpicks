@@ -10,6 +10,7 @@ import IconEye from '@/app/components/svgs/IconEye'
 import IconExternalLink from '@/app/components/svgs/IconExternalLink'
 import { RoundApplication } from 'round-client'
 import { GPRound } from '@/models/round'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 
 interface SuccessApplyProjectModalProps extends BaseModalProps {
 	applyProjectRes?: RoundApplication
@@ -25,6 +26,8 @@ const SuccessApplyProjectModal = ({
 	txHash,
 }: SuccessApplyProjectModalProps) => {
 	const router = useRouter()
+	const storage = useAppStorage()
+
 	return (
 		<Modal isOpen={isOpen} onClose={onClose} closeOnBgClick>
 			<div className="w-11/12 md:w-[60vw] lg:w-[45vw] mx-auto bg-white rounded-xl shadow-md p-4 md:p-6">
@@ -77,7 +80,13 @@ const SuccessApplyProjectModal = ({
 							{prettyTruncate(txHash, 25)}
 						</p>
 						<Link
-							href={`https://stellar.expert/explorer/testnet/tx/${txHash}`}
+							href={
+								storage.chainId === 'stellar'
+									? `https://stellar.expert/explorer/${storage.network}/tx/${txHash}`
+									: storage.network === 'mainnet'
+										? `https://nearblocks.io/txns/${txHash}`
+										: `https://testnet.nearblocks.io/txns/${txHash}`
+							}
 							target="_blank"
 						>
 							<IconExternalLink

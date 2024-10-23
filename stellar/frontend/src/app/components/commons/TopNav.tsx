@@ -5,7 +5,7 @@ import { useWallet } from '@/app/providers/WalletProvider'
 import UserMenu from '../pages/application/UserMenu'
 import IconExpandMore from '../svgs/IconExpandMore'
 import IconExpandLess from '../svgs/IconExpandLess'
-import { prettyTruncate } from '@/utils/helper'
+import { formatNearAddress, prettyTruncate } from '@/utils/helper'
 import { useRouter } from 'next/navigation'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import Image from 'next/image'
@@ -45,8 +45,8 @@ const TopNav = () => {
 								<Image
 									src={
 										connectedWallet === 'near'
-											? profileData?.near_social_profile_data?.image.nft
-													.media ||
+											? // profileData?.near_social_profile_data?.image.nft
+												// 		.media ||
 												`https://www.tapback.co/api/avatar/${nearAccounts[0]?.accountId}`
 											: `https://www.tapback.co/api/avatar/${stellarPubKey}`
 									}
@@ -61,13 +61,13 @@ const TopNav = () => {
 										<p className="text-sm font-semibold text-grantpicks-black-950">
 											{connectedWallet === 'near'
 												? profileData?.near_social_profile_data?.name ||
-													nearAccounts[0]?.accountId
+													formatNearAddress(nearAccounts[0]?.accountId)
 												: prettyTruncate(stellarPubKey, 10, 'address')}
 										</p>
 										<p className="text-sm font-normal text-grantpicks-black-600">
 											@
 											{connectedWallet === 'near'
-												? nearAccounts[0]?.accountId
+												? formatNearAddress(nearAccounts[0]?.accountId)
 												: prettyTruncate(stellarPubKey, 10, 'address')}
 										</p>
 									</div>

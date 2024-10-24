@@ -6,12 +6,10 @@ import { useWallet } from '@/app/providers/WalletProvider'
 import IconNear from '../../svgs/IconNear'
 import IconStellar from '../../svgs/IconStellar'
 import clsx from 'clsx'
-import CMDWallet from '@/lib/wallet'
-import Contracts from '@/lib/contracts'
 import { IGetRoundsResponse, Network } from '@/types/on-chain'
 import { getResultVoteRound, getRoundInfo } from '@/services/stellar/round'
 import { useParams } from 'next/navigation'
-import { Pair, VotingResult } from 'round-client'
+import { Pair, PickResult, VotingResult } from 'round-client'
 import moment from 'moment'
 import {
 	getProject,
@@ -20,6 +18,7 @@ import {
 import { prettyTruncate } from '@/utils/helper'
 import { Project } from 'project-registry-client'
 import useAppStorage from '@/stores/zustand/useAppStorage'
+import { NearPair } from '@/services/near/type'
 
 const IsVotedPairItem = ({
 	index,
@@ -27,10 +26,9 @@ const IsVotedPairItem = ({
 	votingResult,
 }: {
 	index: number
-	pair: Pair
+	pair: Pair | NearPair
 	votingResult?: VotingResult
 }) => {
-	const { connectedWallet, stellarPubKey, stellarKit } = useWallet()
 	const [firstProjectData, setFirstProjectData] = useState<Project | undefined>(
 		undefined,
 	)
@@ -41,30 +39,62 @@ const IsVotedPairItem = ({
 
 	const fetchProjectById = async () => {
 		try {
-			let contracts = storage.getStellarContracts()
+			if (storage.chainId === 'stellar') {
+				let contracts = storage.getStellarContracts()
 
-			if (!contracts) {
-				return
-			}
+				if (!contracts) {
+					return
+				}
 
-			const get1stProjectParams: GetProjectParams = {
-				project_id: pair.projects[0],
+				const get1stProjectParams: GetProjectParams = {
+					project_id: pair.projects[0] as bigint,
+				}
+				const get2ndProjectParams: GetProjectParams = {
+					project_id: pair.projects[1] as bigint,
+				}
+				const [firstRes, secondRes] = await Promise.all([
+					getProject(get1stProjectParams, contracts),
+					getProject(get2ndProjectParams, contracts),
+				])
+
+				setFirstProjectData(firstRes)
+				setSecondProjectData(secondRes)
+			} else {
+				const contracts = storage.getNearContracts(null)
+
+				if (!contracts) {
+					return
+				}
+
+				const [firstRes, secondRes] = await Promise.all([
+					contracts.near_social.getProjectData(pair.projects[0] as string),
+					contracts.near_social.getProjectData(pair.projects[1] as string),
+				])
+
+				const project1JSON =
+					firstRes[`${storage.my_address || ''}`]['profile']['gp_project'] ||
+					'{}'
+				const project2JSON =
+					secondRes[`${storage.my_address || ''}`]['profile']['gp_project'] ||
+					'{}'
+				const firstProject = JSON.parse(project1JSON)
+				const secondProject = JSON.parse(project2JSON)
+
+				setFirstProjectData(firstProject)
+				setSecondProjectData(secondProject)
 			}
-			const get2ndProjectParams: GetProjectParams = {
-				project_id: pair.projects[1],
-			}
-			const firstRes = await getProject(get1stProjectParams, contracts)
-			const secondRes = await getProject(get2ndProjectParams, contracts)
-			setFirstProjectData(firstRes)
-			setSecondProjectData(secondRes)
 		} catch (error: any) {
 			console.log('error project by id', error)
 		}
 	}
 
-	const selectedPair = votingResult?.picks?.filter(
-		(pick) => pick.pair_id === pair.pair_id,
-	)[0]
+	let selectedPair: PickResult | undefined = undefined
+
+	if (storage.chainId === 'stellar') {
+		selectedPair = votingResult?.picks?.filter(
+			(pick: PickResult) => pick.pair_id === (pair as Pair).pair_id,
+		)[0]
+	}
 
 	useEffect(() => {
 		fetchProjectById()
@@ -77,7 +107,7 @@ const IsVotedPairItem = ({
 					className={clsx(
 						`w-20 md:w-24 lg:w-28 h-20 md:h-24 lg:h-28 rounded-full bg-grantpicks-black-300 mb-4`,
 						pair.projects.map((p) => p.toString())[0] ===
-							(selectedPair?.project_id.toString() as string)
+							(selectedPair && (selectedPair?.project_id.toString() as string))
 							? `border-2 border-grantpicks-purple-500`
 							: `border-2 border-grantpicks-black-300`,
 					)}
@@ -86,7 +116,7 @@ const IsVotedPairItem = ({
 					className={clsx(
 						`w-20 md:w-24 lg:w-28 h-20 md:h-24 lg:h-28 rounded-full bg-grantpicks-black-300 mb-4`,
 						pair.projects.map((p) => p.toString())[1] ===
-							(selectedPair?.project_id.toString() as string)
+							(selectedPair && (selectedPair?.project_id.toString() as string))
 							? `border-2 border-grantpicks-purple-500`
 							: `border-2 border-grantpicks-black-300`,
 					)}
@@ -113,13 +143,7 @@ const IsVotedPairItem = ({
 	)
 }
 
-const IsVotedSection = ({
-	hasVoted,
-	pairsData,
-}: {
-	hasVoted: boolean
-	pairsData: Pair[]
-}) => {
+const IsVotedSection = ({ pairsData }: { pairsData: Pair[] | NearPair[] }) => {
 	const params = useParams<{ roundId: string }>()
 	const { connectedWallet, stellarPubKey, stellarKit } = useWallet()
 	const [votingResult, setVotingResult] = useState<VotingResult | undefined>(
@@ -174,11 +198,9 @@ const IsVotedSection = ({
 	}
 
 	useEffect(() => {
-		if (hasVoted) {
-			fetchResultRound()
-			fetchRoundData()
-		}
-	}, [hasVoted])
+		fetchResultRound()
+		fetchRoundData()
+	}, [])
 
 	return (
 		<div>

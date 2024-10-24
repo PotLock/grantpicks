@@ -71,6 +71,16 @@ export type NearContact = {
 	name: string
 }
 
+export type NearPair = {
+	id: number
+	projects: string[]
+}
+
+export type NearPick = {
+	pair_id: number
+	voted_project: string
+}
+
 export type NearRound = {
 	id: string
 	owner: string

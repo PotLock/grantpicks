@@ -3,8 +3,10 @@ import Modal from '../../commons/Modal'
 import { BaseModalProps } from '@/types/dialog'
 import IconCheckCircle from '../../svgs/IconCheckCircle'
 import Button from '../../commons/Button'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 
 const EvaluationGuideModal = ({ isOpen, onClose }: BaseModalProps) => {
+	const storage = useAppStorage()
 	return (
 		<Modal isOpen={isOpen} onClose={onClose}>
 			<div className="w-11/12 md:w-[480px] mx-auto bg-white rounded-2xl max-h-[80%] overflow-scroll">
@@ -56,8 +58,9 @@ const EvaluationGuideModal = ({ isOpen, onClose }: BaseModalProps) => {
 								className="fill-grantpicks-black-400 shrink-0"
 							/>
 							<p className="text-base font-normal">
-								Make sure you have 2 XLM for the gas fees in your wallet to
-								actually cast vote.
+								Make sure you have{' '}
+								{storage.chainId === 'stellar' ? '2 XLM' : '0.1 NEAR'} for the
+								gas fees in your wallet to actually cast vote.
 							</p>
 						</div>
 					</div>

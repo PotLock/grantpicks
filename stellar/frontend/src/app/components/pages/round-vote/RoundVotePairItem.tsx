@@ -17,20 +17,18 @@ import {
 	getProject,
 	GetProjectParams,
 } from '@/services/stellar/project-registry'
-import CMDWallet from '@/lib/wallet'
-import Contracts from '@/lib/contracts'
-import { Network } from '@/types/on-chain'
-import { useWallet } from '@/app/providers/WalletProvider'
-import { IProjectDetailOwner } from '@/app/round-vote/[roundId]/page'
+import { IProjectDetailOwner } from '@/app/application/round-vote/[roundId]/page'
 import { fetchYoutubeIframe, prettyTruncate } from '@/utils/helper'
 import { Project } from 'project-registry-client'
 import useAppStorage from '@/stores/zustand/useAppStorage'
+import { NearPair } from '@/services/near/type'
+import Image from 'next/image'
 
 interface RoundVotePairItemProps {
 	index: number
 	selectedPairs: string[]
 	setSelectedPairs: Dispatch<SetStateAction<string[]>>
-	data: Pair
+	data: Pair | NearPair
 	setShowProjectDetailDrawer: Dispatch<SetStateAction<IProjectDetailOwner>>
 }
 
@@ -56,47 +54,80 @@ const RoundVotePairItem = ({
 	const [secondProjectData, setSecondProjectData] = useState<
 		Project | undefined
 	>(undefined)
-	const { stellarPubKey } = useWallet()
 	const storage = useAppStorage()
 
 	const fetchProjectById = async () => {
 		try {
-			let contracts = storage.getStellarContracts()
+			if (storage.chainId === 'stellar') {
+				let contracts = storage.getStellarContracts()
 
-			if (!contracts) {
-				return
-			}
+				if (!contracts) {
+					return
+				}
 
-			const get1stProjectParams: GetProjectParams = {
-				project_id: data.projects[0],
-			}
-			const get2ndProjectParams: GetProjectParams = {
-				project_id: data.projects[1],
-			}
-			const firstRes = await getProject(get1stProjectParams, contracts)
-			const secondRes = await getProject(get2ndProjectParams, contracts)
-			console.log(
-				'res first second',
-				firstRes,
-				secondRes,
-				Math.floor(wrapper1Ref.current?.clientWidth || 0),
-				Math.floor(wrapper2Ref.current?.clientWidth || 0),
-			)
-			setFirstProjectData(firstRes)
-			setSecondProjectData(secondRes)
-			if (firstRes?.video_url.includes('youtube')) {
-				const res = await fetchYoutubeIframe(
-					firstRes.video_url || '',
-					wrapper1Ref.current?.clientWidth || 0,
-				)
-				setYtIframe1(res?.html)
-			}
-			if (secondRes?.video_url.includes('youtube')) {
-				const res = await fetchYoutubeIframe(
-					secondRes.video_url || '',
-					wrapper2Ref.current?.clientWidth || 0,
-				)
-				setYtIframe2(res?.html)
+				const get1stProjectParams: GetProjectParams = {
+					project_id: data.projects[0] as bigint,
+				}
+				const get2ndProjectParams: GetProjectParams = {
+					project_id: data.projects[1] as bigint,
+				}
+				const firstRes = await getProject(get1stProjectParams, contracts)
+				const secondRes = await getProject(get2ndProjectParams, contracts)
+
+				setFirstProjectData(firstRes)
+				setSecondProjectData(secondRes)
+				if (firstRes?.video_url.includes('youtube')) {
+					const res = await fetchYoutubeIframe(
+						firstRes.video_url || '',
+						wrapper1Ref.current?.clientWidth || 0,
+					)
+					setYtIframe1(res?.html)
+				}
+				if (secondRes?.video_url.includes('youtube')) {
+					const res = await fetchYoutubeIframe(
+						secondRes.video_url || '',
+						wrapper2Ref.current?.clientWidth || 0,
+					)
+					setYtIframe2(res?.html)
+				}
+			} else {
+				const contracts = storage.getNearContracts(null)
+
+				if (!contracts) {
+					return
+				}
+
+				const [firstRes, secondRes] = await Promise.all([
+					contracts.near_social.getProjectData(data.projects[0] as string),
+					contracts.near_social.getProjectData(data.projects[1] as string),
+				])
+
+				const project1JSON =
+					firstRes[`${data.projects[0] as string}`]['profile']['gp_project'] ||
+					'{}'
+				const project2JSON =
+					secondRes[`${data.projects[1] as string}`]['profile']['gp_project'] ||
+					'{}'
+				const firstProject = JSON.parse(project1JSON)
+				const secondProject = JSON.parse(project2JSON)
+
+				setFirstProjectData(firstProject)
+				setSecondProjectData(secondProject)
+
+				if (firstProject?.video_url.includes('youtube')) {
+					const res = await fetchYoutubeIframe(
+						firstProject.video_url || '',
+						wrapper1Ref.current?.clientWidth || 0,
+					)
+					setYtIframe1(res?.html)
+				}
+				if (secondProject?.video_url.includes('youtube')) {
+					const res = await fetchYoutubeIframe(
+						secondProject.video_url || '',
+						wrapper2Ref.current?.clientWidth || 0,
+					)
+					setYtIframe2(res?.html)
+				}
 			}
 		} catch (error: any) {
 			console.log('error project by id', error)
@@ -224,7 +255,13 @@ const RoundVotePairItem = ({
 				{firstVideoComponent}
 				<div className="md:p-4 lg:p-5">
 					<div className="flex items-center space-x-2 mb-4">
-						<div className="rounded-full w-6 h-6 bg-grantpicks-black-400" />
+						<Image
+							src={`https://www.tapback.co/api/avatar/${firstProjectData?.owner}`}
+							alt=""
+							className="rounded-full object-fill h-6 w-6"
+							width={56}
+							height={56}
+						/>
 						<p className="text-lg lg:text-xl font-semibold">
 							{prettyTruncate(firstProjectData?.name, 30)}
 						</p>
@@ -237,7 +274,7 @@ const RoundVotePairItem = ({
 						className="!border !border-black/10 !rounded-full"
 						isFullWidth
 						onClick={() =>
-							setShowProjectDetailDrawer((prev) => ({
+							setShowProjectDetailDrawer((prev: any) => ({
 								...prev,
 								isOpen: true,
 								project: firstProjectData as Project,
@@ -272,7 +309,13 @@ const RoundVotePairItem = ({
 				{secondVideoComponent}
 				<div className="md:p-4 lg:p-5">
 					<div className="flex items-center space-x-2 mb-4">
-						<div className="rounded-full w-6 h-6 bg-grantpicks-black-400" />
+						<Image
+							src={`https://www.tapback.co/api/avatar/${secondProjectData?.owner}`}
+							alt=""
+							className="rounded-full object-fill h-6 w-6"
+							width={56}
+							height={56}
+						/>
 						<p className="text-lg lg:text-xl font-semibold">
 							{prettyTruncate(secondProjectData?.name, 24, 'address')}
 						</p>
@@ -285,7 +328,7 @@ const RoundVotePairItem = ({
 						className="!border !border-black/10 !rounded-full"
 						isFullWidth
 						onClick={() =>
-							setShowProjectDetailDrawer((prev) => ({
+							setShowProjectDetailDrawer((prev: any) => ({
 								...prev,
 								isOpen: true,
 								project: secondProjectData as Project,

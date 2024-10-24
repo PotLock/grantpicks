@@ -49,7 +49,7 @@ const ProjectDetailDrawer = ({
 			<div className="bg-white flex flex-col w-full h-full overflow-y-auto text-grantpicks-black-950">
 				<div className="bg-grantpicks-black-50 flex flex-col items-center justify-center pt-10 md:pt-12 px-3 md:px-5 pb-6">
 					<Image
-						src="/assets/images/ava-1.png"
+						src={`https://www.tapback.co/api/avatar/${projectData?.owner}`}
 						alt=""
 						className="rounded-full object-fill mb-2 md:mb-3"
 						width={56}
@@ -129,22 +129,39 @@ const ProjectDetailDrawer = ({
 							<p className="text-base md:text-xl font-semibold">
 								Team Size{' '}
 								<span className="text-grantpicks-black-600 ml-2">
-									{(projectData?.admins.length || 0) + 1}
+									{(projectData?.team_members?.length || 0) + 1}
 								</span>
 							</p>
 						</div>
 						<div className="space-y-3 md:space-y-4">
-							{projectData?.admins.map((admin, index) => (
+							<div className="flex items-center space-x-2">
+								<Image
+									src={`https://www.tapback.co/api/avatar/${projectData?.owner}`}
+									alt="admin"
+									width={24}
+									height={24}
+								/>
+								<div>
+									<p className="text-sm md:text-base font-bold">
+										{prettyTruncate(projectData?.owner, 20, 'address')}
+									</p>
+								</div>
+							</div>
+							{projectData?.team_members?.map((admin, index) => (
 								<div className="flex items-center space-x-2" key={index}>
 									<Image
-										src={`https://www.tapback.co/api/avatar/${admin}`}
+										src={`https://www.tapback.co/api/avatar/${admin.value || (String(admin) as string)}`}
 										alt="admin"
 										width={24}
 										height={24}
 									/>
 									<div>
 										<p className="text-sm md:text-base font-bold">
-											{prettyTruncate(admin, 20, 'address')}
+											{prettyTruncate(
+												admin.value || (String(admin) as string),
+												20,
+												'address',
+											)}
 										</p>
 									</div>
 								</div>

@@ -8,12 +8,15 @@ import {
 import {
 	NearConfig,
 	NearCreateRoundParams,
+	NearPair,
+	NearPick,
 	NearProjectApplication,
 	NearRound,
 	NearUpdateRoundParams,
 } from './type'
 import { BaseContract } from './contract'
 import { parseNearAmount } from 'near-api-js/lib/utils/format'
+import { parse } from 'path'
 
 export class RoundContract extends BaseContract {
 	constructor(wallet: Wallet | null, network: string, contractId: string) {
@@ -254,19 +257,73 @@ export class RoundContract extends BaseContract {
 		}
 	}
 
-  async reviewApplication(roundId: number, applicantId: string, note: string, status: string) {
-    const result = await this.callMethod({
-      method: 'review_application',
-      args: {
-        round_id: parseInt(roundId.toString()),
-        applicant: applicantId,
-        note,
-        status,
-      },
-      deposit: NO_DEPOSIT,
-      gas: THIRTY_TGAS,
-    })
+	async reviewApplication(
+		roundId: number,
+		applicantId: string,
+		note: string,
+		status: string,
+	) {
+		const result = await this.callMethod({
+			method: 'review_application',
+			args: {
+				round_id: parseInt(roundId.toString()),
+				applicant: applicantId,
+				note,
+				status,
+			},
+			deposit: NO_DEPOSIT,
+			gas: THIRTY_TGAS,
+		})
 
-    return result
-  }
+		return result
+	}
+
+	async canVote(roundId: number, accountId: string): Promise<boolean> {
+		const result = await this.viewMethod({
+			method: 'can_vote',
+			args: {
+				round_id: parseInt(roundId.toString()),
+				voter: accountId,
+			},
+		})
+
+		return result
+	}
+
+	async hasVote(roundId: number, accountId: string): Promise<boolean> {
+		const result = await this.viewMethod({
+			method: 'has_voted',
+			args: {
+				round_id: parseInt(roundId.toString()),
+				voter: accountId,
+			},
+		})
+
+		return result
+	}
+
+	async getPairsRound(roundId: number): Promise<NearPair[]> {
+		const result = await this.viewMethod({
+			method: 'get_pairs_to_vote',
+			args: {
+				round_id: parseInt(roundId.toString()),
+			},
+		})
+
+		return result
+	}
+
+	async castVote(roundId: number, picks: NearPick[]) {
+		const result = await this.callMethod({
+			method: 'vote',
+			args: {
+				round_id: parseInt(roundId.toString()),
+				picks: picks,
+			},
+			deposit: NO_DEPOSIT,
+			gas: THIRTY_TGAS,
+		})
+
+		return result
+	}
 }

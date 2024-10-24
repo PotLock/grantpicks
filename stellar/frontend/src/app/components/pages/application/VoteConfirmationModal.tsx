@@ -17,6 +17,7 @@ import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { GPRound } from '@/models/round'
+import { formatNearAmount } from 'near-api-js/lib/utils/format'
 
 interface VoteConfirmationModalProps extends BaseModalProps {
 	data?: GPRound
@@ -29,31 +30,52 @@ const VoteConfirmationModal = ({
 }: VoteConfirmationModalProps) => {
 	const router = useRouter()
 	const { connectedWallet, stellarPubKey, nearAccounts } = useWallet()
-	const { selectedRoundType } = useRoundStore()
 	const [totalProjects, setTotalProjects] = useState<number>(0)
 	const storage = useAppStorage()
 
 	const onFetchTotalProjects = async () => {
 		try {
-			let contracts = storage.getStellarContracts()
+			if (storage.chainId === 'stellar') {
+				let contracts = storage.getStellarContracts()
 
-			if (!contracts) {
-				return
+				if (!contracts) {
+					return
+				}
+
+				const newRes = await getPairsRound(
+					BigInt(data?.on_chain_id || ''),
+					contracts,
+				)
+				const uniqueProjects = new Set()
+				newRes.map((pair) => {
+					uniqueProjects.add(pair.projects[0].toString())
+					uniqueProjects.add(pair.projects[1].toString())
+				})
+
+				setTotalProjects(uniqueProjects.size)
+			} else {
+				const contracts = storage.getNearContracts(null)
+
+				if (!contracts) {
+					return
+				}
+
+				const pairs = await contracts.round.getPairsRound(
+					Number(data?.on_chain_id || ''),
+				)
+
+				const uniqueProjects = new Set()
+
+				pairs.map((pair) => {
+					uniqueProjects.add(pair.projects[0])
+					uniqueProjects.add(pair.projects[1])
+				})
+
+				setTotalProjects(uniqueProjects.size)
 			}
-
-			const newRes = await getPairsRound(
-				BigInt(data?.on_chain_id || ''),
-				contracts,
-			)
-			const uniqueProjects = new Set()
-			newRes.map((pair) => {
-				uniqueProjects.add(pair.projects[0].toString())
-				uniqueProjects.add(pair.projects[1].toString())
-			})
-
-			setTotalProjects(uniqueProjects.size)
 		} catch (error: any) {
 			console.log('error', error)
+			setTotalProjects(0)
 		}
 	}
 
@@ -106,8 +128,10 @@ const VoteConfirmationModal = ({
 				<div className="flex items-center mb-6 md:mb-8 lg:mb-10">
 					<div className="flex-1">
 						<p className="font-semibold text-lg md:text-xl text-grantpicks-black-950">
-							{formatStroopToXlm(BigInt(data?.current_vault_balance || '0'))}{' '}
-							XLM
+							{storage.chainId === 'stellar'
+								? formatStroopToXlm(BigInt(data?.current_vault_balance || '0'))
+								: formatNearAmount(data?.current_vault_balance || '0')}{' '}
+							{storage.chainId === 'stellar' ? 'XLM' : 'NEAR'}
 						</p>
 						<p className="font-semibold text-xs text-grantpicks-black-600">
 							AVAILABLE FUNDS
@@ -115,7 +139,10 @@ const VoteConfirmationModal = ({
 					</div>
 					<div className="flex-1">
 						<p className="font-semibold text-lg md:text-xl text-grantpicks-black-950">
-							{formatStroopToXlm(BigInt(data?.expected_amount || '0'))} XLM
+							{storage.chainId === 'stellar'
+								? formatStroopToXlm(BigInt(data?.expected_amount || '0'))
+								: data?.expected_amount || '0'}{' '}
+							{storage.chainId === 'stellar' ? 'XLM' : 'NEAR'}
 						</p>
 						<p className="font-semibold text-xs text-grantpicks-black-600">
 							EXPECTED FUNDS
@@ -146,7 +173,7 @@ const VoteConfirmationModal = ({
 										style: toastOptions.error.style,
 									})
 								} else {
-									router.push(`/round-vote/${data?.id}`)
+									router.push(`/application/round-vote/${data?.id}`)
 								}
 								onClose()
 								// onApplyRound()

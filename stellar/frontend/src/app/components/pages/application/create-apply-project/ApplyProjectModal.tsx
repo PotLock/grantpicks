@@ -72,7 +72,6 @@ const ApplyProjectModal = ({
 						data[`${storage.my_address || ''}`]['profile']['gp_project'] || '{}'
 					const project = JSON.parse(json)
 					setProjectData(project)
-					console.log('project', project)
 				}
 			}
 		} catch (error: any) {

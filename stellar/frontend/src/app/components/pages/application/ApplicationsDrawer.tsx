@@ -77,7 +77,6 @@ const ApplicationItem = ({
 				console.log('error get application', error)
 			}
 		} else {
-			console.log('roundData', roundData)
 			return []
 		}
 	}
@@ -156,7 +155,6 @@ const ApplicationItem = ({
 	}
 
 	useEffect(() => {
-		console.log(roundData)
 		onFetchRoundApplications()
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [item])

@@ -10,9 +10,66 @@ import IconArrowOutward from '../../svgs/IconArrowOutward'
 import Link from 'next/link'
 import { Project } from 'project-registry-client'
 import Image from 'next/image'
+import { Contact } from 'round-client'
+import IconTelegram from '../../svgs/IconTelegram'
+import IconInstagram from '../../svgs/IconInstagram'
+import IconTwitter from '../../svgs/IconTwitter'
+import IconEmail from '../../svgs/IconEmail'
 
 interface ProjectDetailDrawerProps extends IDrawerProps {
 	projectData?: Project
+}
+
+const RoundDetailContact = ({ contact }: { contact: Contact }) => {
+	const generateLink = () => {
+		if (contact.name.toLowerCase().includes('telegram')) {
+			return `https://t.me/${contact.value}`
+		} else if (contact.name.toLowerCase().includes('instagram')) {
+			return `https://instagram.com/${contact.value}`
+		} else if (contact.name.toLowerCase().includes('twitter')) {
+			return `https://x.com/${contact.value}`
+		} else if (contact.name.toLowerCase().includes('email')) {
+			return `mailto:${contact.value}`
+		} else return ``
+	}
+	return (
+		<>
+			<div className="flex items-center space-x-3">
+				<div className="bg-grantpicks-black-50 rounded-full w-10 h-10 flex items-center justify-center">
+					{contact.name.toLowerCase().includes('telegram') && (
+						<IconTelegram size={18} className="fill-grantpicks-black-400" />
+					)}
+					{contact.name.toLowerCase().includes('instagram') && (
+						<IconInstagram size={18} className="stroke-grantpicks-black-400" />
+					)}
+					{contact.name.toLowerCase().includes('twitter') && (
+						<IconTwitter size={18} className="fill-grantpicks-black-400" />
+					)}
+					{contact.name.toLowerCase().includes('email') && (
+						<IconEmail size={18} className="fill-grantpicks-black-400" />
+					)}
+				</div>
+				<p className="text-grantpicks-black-950 font-semibold text-base">
+					{contact.name.toLowerCase().includes('telegram') &&
+						`@${contact.value}`}
+					{contact.name.toLowerCase().includes('instagram') &&
+						`@${contact.value}`}
+					{contact.name.toLowerCase().includes('twitter') &&
+						`@${contact.value}`}
+					{contact.name.toLowerCase().includes('email') && `@${contact.value}`}
+				</p>
+			</div>
+			<Link href={generateLink()} target="_blank">
+				<Button
+					color="alpha-50"
+					onClick={() => {}}
+					className="!text-sm !font-semibold"
+				>
+					Chat
+				</Button>
+			</Link>
+		</>
+	)
 }
 
 const ProjectDetailDrawer = ({
@@ -45,7 +102,7 @@ const ProjectDetailDrawer = ({
 	}, [isOpen])
 
 	return (
-		<Drawer onClose={onClose} isOpen={isOpen}>
+		<Drawer onClose={onClose} isOpen={true}>
 			<div className="bg-white flex flex-col w-full h-full overflow-y-auto text-grantpicks-black-950">
 				<div className="bg-grantpicks-black-50 flex flex-col items-center justify-center pt-10 md:pt-12 px-3 md:px-5 pb-6">
 					<Image
@@ -234,6 +291,24 @@ const ProjectDetailDrawer = ({
 						<div className="flex items-center pb-4 border-b border-black/10">
 							<p className="text-base md:text-xl font-semibold">Contacts</p>
 						</div>
+						{projectData?.contacts.length === 0 ? (
+							<div className="flex items-center justify-center h-20">
+								<p className="text-center text-sm text-grantpicks-black-400">
+									No contacts yet
+								</p>
+							</div>
+						) : (
+							<div>
+								{projectData?.contacts.map((contact, idx) => (
+									<div
+										key={idx}
+										className="flex items-center justify-between pt-3"
+									>
+										<RoundDetailContact contact={contact} />
+									</div>
+								))}
+							</div>
+						)}
 					</div>{' '}
 				</div>
 			</div>

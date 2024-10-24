@@ -17,15 +17,12 @@ import {
 	getProject,
 	GetProjectParams,
 } from '@/services/stellar/project-registry'
-import CMDWallet from '@/lib/wallet'
-import Contracts from '@/lib/contracts'
-import { Network } from '@/types/on-chain'
-import { useWallet } from '@/app/providers/WalletProvider'
-import { IProjectDetailOwner } from '@/app/round-vote/[roundId]/page'
+import { IProjectDetailOwner } from '@/app/application/round-vote/[roundId]/page'
 import { fetchYoutubeIframe, prettyTruncate } from '@/utils/helper'
 import { Project } from 'project-registry-client'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { NearPair } from '@/services/near/type'
+import Image from 'next/image'
 
 interface RoundVotePairItemProps {
 	index: number
@@ -106,10 +103,10 @@ const RoundVotePairItem = ({
 				])
 
 				const project1JSON =
-					firstRes[`${storage.my_address || ''}`]['profile']['gp_project'] ||
+					firstRes[`${data.projects[0] as string}`]['profile']['gp_project'] ||
 					'{}'
 				const project2JSON =
-					secondRes[`${storage.my_address || ''}`]['profile']['gp_project'] ||
+					secondRes[`${data.projects[1] as string}`]['profile']['gp_project'] ||
 					'{}'
 				const firstProject = JSON.parse(project1JSON)
 				const secondProject = JSON.parse(project2JSON)
@@ -258,7 +255,13 @@ const RoundVotePairItem = ({
 				{firstVideoComponent}
 				<div className="md:p-4 lg:p-5">
 					<div className="flex items-center space-x-2 mb-4">
-						<div className="rounded-full w-6 h-6 bg-grantpicks-black-400" />
+						<Image
+							src={`https://www.tapback.co/api/avatar/${firstProjectData?.owner}`}
+							alt=""
+							className="rounded-full object-fill h-6 w-6"
+							width={56}
+							height={56}
+						/>
 						<p className="text-lg lg:text-xl font-semibold">
 							{prettyTruncate(firstProjectData?.name, 30)}
 						</p>
@@ -271,7 +274,7 @@ const RoundVotePairItem = ({
 						className="!border !border-black/10 !rounded-full"
 						isFullWidth
 						onClick={() =>
-							setShowProjectDetailDrawer((prev) => ({
+							setShowProjectDetailDrawer((prev: any) => ({
 								...prev,
 								isOpen: true,
 								project: firstProjectData as Project,
@@ -306,7 +309,13 @@ const RoundVotePairItem = ({
 				{secondVideoComponent}
 				<div className="md:p-4 lg:p-5">
 					<div className="flex items-center space-x-2 mb-4">
-						<div className="rounded-full w-6 h-6 bg-grantpicks-black-400" />
+						<Image
+							src={`https://www.tapback.co/api/avatar/${secondProjectData?.owner}`}
+							alt=""
+							className="rounded-full object-fill h-6 w-6"
+							width={56}
+							height={56}
+						/>
 						<p className="text-lg lg:text-xl font-semibold">
 							{prettyTruncate(secondProjectData?.name, 24, 'address')}
 						</p>
@@ -319,7 +328,7 @@ const RoundVotePairItem = ({
 						className="!border !border-black/10 !rounded-full"
 						isFullWidth
 						onClick={() =>
-							setShowProjectDetailDrawer((prev) => ({
+							setShowProjectDetailDrawer((prev: any) => ({
 								...prev,
 								isOpen: true,
 								project: secondProjectData as Project,

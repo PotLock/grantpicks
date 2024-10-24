@@ -211,6 +211,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 
 			return
 		} else {
+			store.clear()
 			setConnectedWallet(null)
 		}
 	}
@@ -316,7 +317,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 			)
 			setProfileData(profileData)
 		} catch {
-			console.log('Account not found')
+			// console.log('Account not found')
 		}
 	}
 

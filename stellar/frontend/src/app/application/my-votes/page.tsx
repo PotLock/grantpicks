@@ -225,7 +225,7 @@ const ApplicationRoundsItem = ({
 			<div className="w-full">
 				<Button
 					onClick={() => {
-						router.push(`/round-vote/${doc.id}?is_voted=true`)
+						router.push(`/application/round-vote/${doc.id}?is_voted=true`)
 					}}
 					isFullWidth
 					className="!border !border-grantpicks-black-200 !py-2"

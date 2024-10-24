@@ -500,7 +500,7 @@ const ApplicationRounds = () => {
 			url: `get-rounds`,
 			page: pageIndex,
 			sortType,
-			address: storage.my_address,
+			chainId: storage.chainId,
 		}
 	}
 	const { data, size, setSize, isValidating, isLoading, mutate } =

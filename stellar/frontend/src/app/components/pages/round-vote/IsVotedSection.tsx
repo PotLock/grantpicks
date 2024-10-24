@@ -142,13 +142,7 @@ const IsVotedPairItem = ({
 	)
 }
 
-const IsVotedSection = ({
-	hasVoted,
-	pairsData,
-}: {
-	hasVoted: boolean
-	pairsData: Pair[] | NearPair[]
-}) => {
+const IsVotedSection = ({ pairsData }: { pairsData: Pair[] | NearPair[] }) => {
 	const params = useParams<{ roundId: string }>()
 	const { connectedWallet, stellarPubKey, stellarKit } = useWallet()
 	const [votingResult, setVotingResult] = useState<VotingResult | undefined>(
@@ -203,11 +197,9 @@ const IsVotedSection = ({
 	}
 
 	useEffect(() => {
-		if (hasVoted) {
-			fetchResultRound()
-			fetchRoundData()
-		}
-	}, [hasVoted])
+		fetchResultRound()
+		fetchRoundData()
+	}, [])
 
 	return (
 		<div>

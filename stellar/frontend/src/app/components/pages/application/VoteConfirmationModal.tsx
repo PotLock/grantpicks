@@ -59,6 +59,19 @@ const VoteConfirmationModal = ({
 				if (!contracts) {
 					return
 				}
+
+				const pairs = await contracts.round.getPairsRound(
+					Number(data?.on_chain_id || ''),
+				)
+
+				const uniqueProjects = new Set()
+
+				pairs.map((pair) => {
+					uniqueProjects.add(pair.projects[0])
+					uniqueProjects.add(pair.projects[1])
+				})
+
+				setTotalProjects(uniqueProjects.size)
 			}
 		} catch (error: any) {
 			console.log('error', error)
@@ -160,7 +173,7 @@ const VoteConfirmationModal = ({
 										style: toastOptions.error.style,
 									})
 								} else {
-									router.push(`/round-vote/${data?.id}`)
+									router.push(`/application/round-vote/${data?.id}`)
 								}
 								onClose()
 								// onApplyRound()

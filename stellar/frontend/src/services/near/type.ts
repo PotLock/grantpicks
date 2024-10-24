@@ -42,12 +42,12 @@ export type NearContact = {
 }
 
 export type NearPair = {
-	pair_id: string
+	id: number
 	projects: string[]
 }
 
 export type NearPick = {
-	pair_id: string
+	pair_id: number
 	voted_project: string
 }
 

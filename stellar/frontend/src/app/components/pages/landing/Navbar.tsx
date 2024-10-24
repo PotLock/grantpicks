@@ -6,6 +6,7 @@ import Button from '../../commons/Button'
 import IconBurger from '../../svgs/IconBurger'
 import Menu from '../../commons/Menu'
 import IconClose from '../../svgs/IconClose'
+import { envVarConfigs } from '@/configs/env-var'
 
 const Navbar = () => {
 	const router = useRouter()
@@ -99,9 +100,9 @@ const Navbar = () => {
 				onClick={() => {
 					router.push('/application')
 				}}
-				isDisabled
+				isDisabled={envVarConfigs.NETWORK_ENV !== 'testnet'}
 			>
-				Coming Soon
+				{envVarConfigs.NETWORK_ENV === 'testnet' ? 'Launch App' : 'Coming Soon'}
 			</Button>
 		</div>
 	)

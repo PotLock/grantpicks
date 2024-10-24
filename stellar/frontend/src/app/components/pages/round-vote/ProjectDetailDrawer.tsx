@@ -102,7 +102,7 @@ const ProjectDetailDrawer = ({
 	}, [isOpen])
 
 	return (
-		<Drawer onClose={onClose} isOpen={true}>
+		<Drawer onClose={onClose} isOpen={isOpen}>
 			<div className="bg-white flex flex-col w-full h-full overflow-y-auto text-grantpicks-black-950">
 				<div className="bg-grantpicks-black-50 flex flex-col items-center justify-center pt-10 md:pt-12 px-3 md:px-5 pb-6">
 					<Image

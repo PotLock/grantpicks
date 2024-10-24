@@ -9,6 +9,7 @@ import IconGameHandle from '../../svgs/IconGameHandle'
 import IconPoll from '../../svgs/IconPoll'
 import Link from 'next/link'
 import Button from '../../commons/Button'
+import { envVarConfigs } from '@/configs/env-var'
 
 const HomeSection = () => {
 	const router = useRouter()
@@ -50,9 +51,11 @@ const HomeSection = () => {
 						onClick={() => {
 							router.push('/application')
 						}}
-						isDisabled
+						isDisabled={envVarConfigs.NETWORK_ENV !== 'testnet'}
 					>
-						Coming Soon
+						{envVarConfigs.NETWORK_ENV === 'testnet'
+							? 'Launch App'
+							: 'Coming Soon'}
 					</Button>
 					<Link
 						href={'https://docs.grantpicks.com/'}

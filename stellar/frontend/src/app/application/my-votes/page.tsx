@@ -225,7 +225,9 @@ const ApplicationRoundsItem = ({
 			<div className="w-full">
 				<Button
 					onClick={() => {
-						router.push(`/application/round-vote/${doc.id}?is_voted=true`)
+						router.push(
+							`/application/round-vote/${doc.on_chain_id}?is_voted=true`,
+						)
 					}}
 					isFullWidth
 					className="!border !border-grantpicks-black-200 !py-2"
@@ -309,12 +311,11 @@ const MyVotesPage = () => {
 		pageIndex: number,
 		previousPageData: IGetRoundsResponse[],
 	) => {
-		if (!connectedWallet) return null
-		if (previousPageData && !previousPageData.length) return null
 		return {
 			url: `get-my-voted-rounds`,
 			skip: pageIndex,
 			limit: LIMIT_SIZE_CONTRACT,
+			chainId: storage.chainId,
 		}
 	}
 	const { data, size, setSize, isValidating, isLoading, mutate } =

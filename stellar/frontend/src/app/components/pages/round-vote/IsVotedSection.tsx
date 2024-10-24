@@ -6,12 +6,10 @@ import { useWallet } from '@/app/providers/WalletProvider'
 import IconNear from '../../svgs/IconNear'
 import IconStellar from '../../svgs/IconStellar'
 import clsx from 'clsx'
-import CMDWallet from '@/lib/wallet'
-import Contracts from '@/lib/contracts'
 import { IGetRoundsResponse, Network } from '@/types/on-chain'
 import { getResultVoteRound, getRoundInfo } from '@/services/stellar/round'
 import { useParams } from 'next/navigation'
-import { Pair, VotingResult } from 'round-client'
+import { Pair, PickResult, VotingResult } from 'round-client'
 import moment from 'moment'
 import {
 	getProject,
@@ -31,7 +29,6 @@ const IsVotedPairItem = ({
 	pair: Pair | NearPair
 	votingResult?: VotingResult
 }) => {
-	const { connectedWallet, stellarPubKey, stellarKit } = useWallet()
 	const [firstProjectData, setFirstProjectData] = useState<Project | undefined>(
 		undefined,
 	)
@@ -91,9 +88,13 @@ const IsVotedPairItem = ({
 		}
 	}
 
-	const selectedPair = votingResult?.picks?.filter(
-		(pick) => pick.pair_id === pair.pair_id,
-	)[0]
+	let selectedPair: PickResult | undefined = undefined
+
+	if (storage.chainId === 'stellar') {
+		selectedPair = votingResult?.picks?.filter(
+			(pick: PickResult) => pick.pair_id === (pair as Pair).pair_id,
+		)[0]
+	}
 
 	useEffect(() => {
 		fetchProjectById()
@@ -106,7 +107,7 @@ const IsVotedPairItem = ({
 					className={clsx(
 						`w-20 md:w-24 lg:w-28 h-20 md:h-24 lg:h-28 rounded-full bg-grantpicks-black-300 mb-4`,
 						pair.projects.map((p) => p.toString())[0] ===
-							(selectedPair?.project_id.toString() as string)
+							(selectedPair && (selectedPair?.project_id.toString() as string))
 							? `border-2 border-grantpicks-purple-500`
 							: `border-2 border-grantpicks-black-300`,
 					)}
@@ -115,7 +116,7 @@ const IsVotedPairItem = ({
 					className={clsx(
 						`w-20 md:w-24 lg:w-28 h-20 md:h-24 lg:h-28 rounded-full bg-grantpicks-black-300 mb-4`,
 						pair.projects.map((p) => p.toString())[1] ===
-							(selectedPair?.project_id.toString() as string)
+							(selectedPair && (selectedPair?.project_id.toString() as string))
 							? `border-2 border-grantpicks-purple-500`
 							: `border-2 border-grantpicks-black-300`,
 					)}

@@ -321,7 +321,7 @@ const ApplicationsDrawer = ({
 	const getKey = (pageIndex: number, previousPageData: GPApplication[]) => {
 		if (previousPageData && !previousPageData.length) return null
 		return {
-			url: `get-round-applications-${doc.id}`,
+			url: `get-round-applications-${doc.on_chain_id}`,
 			page: pageIndex,
 			chainId: storage.chainId,
 		}

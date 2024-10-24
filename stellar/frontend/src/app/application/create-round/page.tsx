@@ -283,6 +283,7 @@ const CreateRoundPage = () => {
 				)
 				if (txHashCreateRound) {
 					let txHashAddProjects, txHashInitialDeposit
+					let round = null
 					if (selectedProjects.length > 0) {
 						txHashAddProjects = await onAddApprovedProjects(
 							txCreateRound.result.id,
@@ -294,23 +295,18 @@ const CreateRoundPage = () => {
 						)
 					}
 
-					let round = null
-
-					while (!round) {
-						try {
-							round = await potlockService.getRound(
-								Number(txCreateRound.result.id),
-							)
-						} catch (e) {
-							console.error(e)
-						}
-						await sleep(3000)
-					}
-
 					setSuccessCreateRoundModalProps((prev) => ({
 						...prev,
 						isOpen: true,
-						createRoundRes: round,
+						createRoundRes: {
+							...txCreateRound.result,
+							id: txCreateRound.result.id.toString(),
+							on_chain_id: txCreateRound.result.id.toString,
+							voting_start: data.voting_duration_start?.toISOString(),
+							voting_end: data.voting_duration_end?.toISOString(),
+							application_start: data.apply_duration_start?.toISOString(),
+							application_end: data.apply_duration_end?.toISOString(),
+						} as unknown as GPRound,
 						txHash: txHashCreateRound,
 					}))
 					reset()
@@ -420,6 +416,10 @@ const CreateRoundPage = () => {
 						...txNearCreateRound?.result,
 						id: txNearCreateRound?.result.id.toString(),
 						on_chain_id: txNearCreateRound?.result.id.toString(),
+						voting_start: data.voting_duration_start?.toISOString(),
+						voting_end: data.voting_duration_end?.toISOString(),
+						application_start: data.apply_duration_start?.toISOString(),
+						application_end: data.apply_duration_end?.toISOString(),
 					} as unknown as GPRound,
 					txHash: txNearCreateRound?.outcome.transaction_outcome.id,
 				}))

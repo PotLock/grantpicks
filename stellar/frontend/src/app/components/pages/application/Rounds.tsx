@@ -180,7 +180,7 @@ const ApplicationRoundsItem = ({
 		fetchOnChainRound()
 		fetchTotalApprovedProjects()
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [doc.id, connectedWallet, stellarPubKey])
+	}, [doc.on_chain_id, connectedWallet, stellarPubKey])
 
 	return (
 		<div className="p-4 md:p-5 rounded-xl border border-black/10">
@@ -364,7 +364,7 @@ const ApplicationRoundsItem = ({
 							}))
 						} else {
 							storage.clear()
-							router.push(`/application/round-result/${doc.id}`)
+							router.push(`/application/round-result/${doc.on_chain_id}`)
 						}
 					}}
 					isFullWidth

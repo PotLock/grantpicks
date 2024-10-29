@@ -314,17 +314,34 @@ const RoundDetailDrawer = ({
 							</div>
 						) : (
 							<div className="grid grid-cols-2 gap-4 pt-3">
-								{admins?.map((adminKey, idx) => (
+								<div className="flex items-center space-x-2">
+									<Image
+										src={`https://www.tapback.co/api/avatar/${doc.owner.id || (doc.owner as unknown as string)}`}
+										alt="admin"
+										width={40}
+										height={40}
+									/>
+									<div>
+										<p className="text-base font-bold text-grantpicks-black-950">
+											{prettyTruncate(
+												doc.owner.id || (doc.owner as unknown as string),
+												8,
+												'address',
+											)}
+										</p>
+									</div>
+								</div>
+								{admins?.map((admin, idx) => (
 									<div key={idx} className="flex items-center space-x-2">
 										<Image
-											src={`https://www.tapback.co/api/avatar/${adminKey}`}
+											src={`https://www.tapback.co/api/avatar/${admin}`}
 											alt="admin"
 											width={40}
 											height={40}
 										/>
 										<div>
 											<p className="text-base font-bold text-grantpicks-black-950">
-												{prettyTruncate(adminKey, 8, 'address')}
+												{prettyTruncate(admin, 8, 'address')}
 											</p>
 										</div>
 									</div>

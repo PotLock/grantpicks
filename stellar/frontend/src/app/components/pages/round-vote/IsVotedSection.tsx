@@ -19,6 +19,7 @@ import { prettyTruncate } from '@/utils/helper'
 import { Project } from 'project-registry-client'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { NearPair, NearRound } from '@/services/near/type'
+import Image from 'next/image'
 
 const IsVotedPairItem = ({
 	index,
@@ -98,29 +99,39 @@ const IsVotedPairItem = ({
 
 	useEffect(() => {
 		fetchProjectById()
-	}, [])
+		console.log('pair', pair)
+		console.log('selectedPair', votingResult)
+	}, [pair])
 
 	return (
 		<div key={index} className="p-4 md:p-6 rounded-2xl bg-grantpicks-black-50">
 			<div className="relative justify-center flex items-center gap-x-4 md:gap-x-6 mb-4 md:mb-6">
-				<div
+				<Image
 					className={clsx(
 						`w-20 md:w-24 lg:w-28 h-20 md:h-24 lg:h-28 rounded-full bg-grantpicks-black-300 mb-4`,
 						pair.projects.map((p) => p.toString())[0] ===
 							(selectedPair && (selectedPair?.project_id.toString() as string))
-							? `border-2 border-grantpicks-purple-500`
-							: `border-2 border-grantpicks-black-300`,
+							? `border-4 border-grantpicks-purple-500`
+							: `border-4 border-grantpicks-black-300`,
 					)}
-				></div>
-				<div
+					src={`https://www.tapback.co/api/avatar/${firstProjectData?.name}`}
+					alt="Project 1"
+					width={112}
+					height={112}
+				/>
+				<Image
 					className={clsx(
 						`w-20 md:w-24 lg:w-28 h-20 md:h-24 lg:h-28 rounded-full bg-grantpicks-black-300 mb-4`,
 						pair.projects.map((p) => p.toString())[1] ===
 							(selectedPair && (selectedPair?.project_id.toString() as string))
-							? `border-2 border-grantpicks-purple-500`
-							: `border-2 border-grantpicks-black-300`,
+							? `border-4 border-grantpicks-purple-500`
+							: `border-4 border-grantpicks-black-300`,
 					)}
-				></div>
+					src={`https://www.tapback.co/api/avatar/${secondProjectData?.name}`}
+					alt="Project 2"
+					width={112}
+					height={112}
+				/>
 				<div className="absolute inset-0 flex items-center justify-center">
 					<div className="rounded-full w-16 h-16 bg-gradient-to-t from-grantpicks-purple-500 to-grantpicks-purple-100 flex items-center justify-center">
 						<p className="text-[32px] font-black text-white">VS</p>
@@ -190,20 +201,20 @@ const IsVotedSection = ({ pairsData }: { pairsData: Pair[] | NearPair[] }) => {
 
 	const fetchResultRound = async () => {
 		try {
-			if (!stellarPubKey) return
+			if (storage.chainId === 'stellar') {
+				let contracts = storage.getStellarContracts()
 
-			let contracts = storage.getStellarContracts()
+				if (!contracts) {
+					return
+				}
 
-			if (!contracts) {
-				return
-			}
-
-			const votingResultRes = await getResultVoteRound(
-				{ round_id: BigInt(params.roundId), voter: stellarPubKey },
-				contracts,
-			)
-			if (votingResultRes) {
-				setVotingResult(votingResultRes)
+				const votingResultRes = await getResultVoteRound(
+					{ round_id: BigInt(params.roundId), voter: stellarPubKey },
+					contracts,
+				)
+				if (votingResultRes) {
+					setVotingResult(votingResultRes)
+				}
 			}
 		} catch (error: any) {
 			console.log('error fetch pairs', error)

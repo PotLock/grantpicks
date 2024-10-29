@@ -778,7 +778,7 @@ impl IsRound for RoundContract {
         has_paid(env, round_id)
     }
 
-    fn user_has_vote(env: &Env, round_id: u128, voter: Address) -> bool {
+    fn has_voted(env: &Env, round_id: u128, voter: Address) -> bool {
         let state = get_voting_state_done(env, round_id, voter);
 
         state

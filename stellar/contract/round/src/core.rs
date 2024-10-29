@@ -48,7 +48,7 @@ pub trait IsRound {
     fn get_applications_for_round(env: &Env, round_id: u128, from_index: Option<u64>, limit: Option<u64>) -> Vec<RoundApplication>;
     fn get_application(env: &Env, round_id: u128, applicant: Address) -> RoundApplication;
     fn is_payout_done(env: &Env, round_id: u128) -> bool;
-    fn user_has_vote(env: &Env, round_id: u128, voter: Address) -> bool;
+    fn has_voted(env: &Env, round_id: u128, voter: Address) -> bool;
     fn get_pairs_to_vote(env: &Env, round_id: u128) -> Vec<Pair>;
     fn whitelist_status(env: &Env, round_id: u128, address: Address) -> bool;
     fn blacklist_status(env: &Env, round_id: u128, address: Address) -> bool;

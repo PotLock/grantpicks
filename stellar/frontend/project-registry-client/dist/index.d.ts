@@ -78,7 +78,7 @@ export interface ProjectRepository {
 }
 export interface ProjectFundingHistory {
     amount: u128;
-    denomiation: string;
+    denomination: string;
     description: string;
     funded_ms: u64;
     source: string;

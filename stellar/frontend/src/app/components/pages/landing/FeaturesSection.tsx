@@ -161,8 +161,8 @@ const FeaturesSection = () => {
 			<div key={data.title} className="grid gap-y-6 content-start">
 				{data.icon}
 				<div>
-					<p className="font-medium text-[#171717]">{data.title}</p>
-					<p className="text-[#171717]/50">{data.description}</p>
+					<p className="font-medium text-[#171717] text-xl">{data.title}</p>
+					<p className="text-[#171717]/50 text-lg">{data.description}</p>
 				</div>
 			</div>
 		))

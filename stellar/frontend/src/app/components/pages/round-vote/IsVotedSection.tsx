@@ -18,7 +18,7 @@ import {
 import { prettyTruncate } from '@/utils/helper'
 import { Project } from 'project-registry-client'
 import useAppStorage from '@/stores/zustand/useAppStorage'
-import { NearPair } from '@/services/near/type'
+import { NearPair, NearRound } from '@/services/near/type'
 
 const IsVotedPairItem = ({
 	index,
@@ -72,10 +72,10 @@ const IsVotedPairItem = ({
 				])
 
 				const project1JSON =
-					firstRes[`${storage.my_address || ''}`]['profile']['gp_project'] ||
+					firstRes[`${pair.projects[0] as string}`]['profile']['gp_project'] ||
 					'{}'
 				const project2JSON =
-					secondRes[`${storage.my_address || ''}`]['profile']['gp_project'] ||
+					secondRes[`${pair.projects[1] as string}`]['profile']['gp_project'] ||
 					'{}'
 				const firstProject = JSON.parse(project1JSON)
 				const secondProject = JSON.parse(project2JSON)
@@ -149,25 +149,38 @@ const IsVotedSection = ({ pairsData }: { pairsData: Pair[] | NearPair[] }) => {
 	const [votingResult, setVotingResult] = useState<VotingResult | undefined>(
 		undefined,
 	)
-	const [roundData, setRoundData] = useState<IGetRoundsResponse | undefined>(
-		undefined,
-	)
+	const [roundData, setRoundData] = useState<
+		IGetRoundsResponse | NearRound | undefined
+	>(undefined)
 	const storage = useAppStorage()
 
 	const fetchRoundData = async () => {
 		try {
-			if (!stellarPubKey) return
-			let contracts = storage.getStellarContracts()
+			if (storage.chainId === 'stellar') {
+				let contracts = storage.getStellarContracts()
 
-			if (!contracts) {
-				return
-			}
+				if (!contracts) {
+					return
+				}
 
-			const roundRes = await getRoundInfo(
-				{ round_id: BigInt(params.roundId) },
-				contracts,
-			)
-			if (roundRes) {
+				const roundRes = await getRoundInfo(
+					{ round_id: BigInt(params.roundId) },
+					contracts,
+				)
+				if (roundRes) {
+					setRoundData(roundRes)
+				}
+			} else {
+				const contracts = storage.getNearContracts(null)
+
+				if (!contracts) {
+					return
+				}
+
+				const roundRes = await contracts.round.getRoundById(
+					Number(params.roundId),
+				)
+
 				setRoundData(roundRes)
 			}
 		} catch (error: any) {

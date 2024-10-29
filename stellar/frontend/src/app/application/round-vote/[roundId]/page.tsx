@@ -108,6 +108,10 @@ const RoundVotePage = () => {
 					storage.my_address || '',
 				)
 
+				if (hasVoted) {
+					setShowEvalGuide(false)
+				}
+
 				setHasVoted(hasVoted)
 			}
 

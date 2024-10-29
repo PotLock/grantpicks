@@ -300,10 +300,43 @@ const MyVotesPage = () => {
 				result.push(roundDetail)
 			}
 
-			console.log(result)
 			return result
 		} else {
-			return []
+			let contracts = storage.getNearContracts(null)
+
+			if (!contracts) {
+				return
+			}
+
+			let result: GPRound[] = []
+
+			const rounds = await contracts.round.getVotedRound(
+				storage.my_address || '',
+			)
+
+			console.log('rounds', rounds)
+
+			for (let i = 0; i < rounds.length; i++) {
+				let round = rounds[i]
+				let roundId = Number(round.id)
+				let roundDetail = {
+					...round,
+					on_chain_id: roundId,
+					id: roundId,
+					voting_start: new Date(round.voting_start_ms).toISOString(),
+					voting_end: new Date(round.voting_end_ms).toISOString(),
+					application_start: new Date(
+						round.application_start_ms || '',
+					).toISOString(),
+					application_end: new Date(
+						round.application_end_ms || '',
+					).toISOString(),
+				} as unknown as GPRound
+
+				result.push(roundDetail)
+			}
+
+			return result
 		}
 	}
 
@@ -316,6 +349,7 @@ const MyVotesPage = () => {
 			skip: pageIndex,
 			limit: LIMIT_SIZE_CONTRACT,
 			chainId: storage.chainId,
+			address: storage.my_address,
 		}
 	}
 	const { data, size, setSize, isValidating, isLoading, mutate } =

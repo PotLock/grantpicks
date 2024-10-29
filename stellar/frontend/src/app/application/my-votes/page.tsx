@@ -9,7 +9,6 @@ import RoundDetailDrawer from '@/app/components/pages/application/RoundDetailDra
 import IconClock from '@/app/components/svgs/IconClock'
 import IconCube from '@/app/components/svgs/IconCube'
 import IconDollar from '@/app/components/svgs/IconDollar'
-import IconGroup from '@/app/components/svgs/IconGroup'
 import IconLoading from '@/app/components/svgs/IconLoading'
 import IconMoreVert from '@/app/components/svgs/IconMoreVert'
 import IconNear from '@/app/components/svgs/IconNear'
@@ -17,19 +16,16 @@ import IconProject from '@/app/components/svgs/IconProject'
 import IconStellar from '@/app/components/svgs/IconStellar'
 import { useModalContext } from '@/app/providers/ModalProvider'
 import { useWallet } from '@/app/providers/WalletProvider'
-import { LIMIT_SIZE, LIMIT_SIZE_CONTRACT } from '@/constants/query'
+import { LIMIT_SIZE_CONTRACT } from '@/constants/query'
 import { GPRound } from '@/models/round'
-import { getMyVotedRounds } from '@/services/stellar/round'
-import { usePotlockService } from '@/services/potlock'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import useRoundStore from '@/stores/zustand/useRoundStore'
 import { IGetRoundsResponse } from '@/types/on-chain'
-import { formatStroopToXlm } from '@/utils/helper'
 import clsx from 'clsx'
 import moment from 'moment'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import InfiniteScroll from 'react-infinite-scroll-component'
 import useSWRInfinite from 'swr/infinite'
 
@@ -53,25 +49,29 @@ const ApplicationRoundsItem = ({
 	const getSpecificTime = () => {
 		if (selectedRoundType === 'upcoming') {
 			if (
-				new Date().getTime() < new Date(doc.application_start || '').getTime()
-			) {
-				return `upcoming`
-			} else if (
-				new Date(doc.application_start || '').getTime() <=
-					new Date().getTime() &&
+				new Date().getTime() >=
+					new Date(doc.application_start || '').getTime() &&
 				new Date().getTime() < new Date(doc.application_end || '').getTime()
 			) {
 				return `upcoming-open`
 			} else if (
-				new Date(doc.application_end || '').getTime() <= new Date().getTime() &&
-				new Date().getTime() < new Date(doc.voting_start || '').getTime()
+				new Date().getTime() >= new Date(doc.application_end || '').getTime() &&
+				new Date().getTime() < new Date(doc.voting_start).getTime()
 			) {
+				return `upcoming-closed`
+			} else if (doc.allow_applications) {
+				return `upcoming`
+			} else {
 				return `upcoming-closed`
 			}
 		} else if (selectedRoundType === 'on-going') {
 			return `on-going`
 		} else {
-			return `ended`
+			if (doc.round_complete != null) {
+				return `ended`
+			} else {
+				return `payout-pending`
+			}
 		}
 	}
 
@@ -93,7 +93,8 @@ const ApplicationRoundsItem = ({
 								getSpecificTime() === 'on-going'
 								? `border-grantpicks-green-400 text-grantpicks-green-700 bg-grantpicks-green-50`
 								: getSpecificTime() === 'upcoming' ||
-									  getSpecificTime() === 'upcoming-closed'
+									  getSpecificTime() === 'upcoming-closed' ||
+									  getSpecificTime() == 'ended'
 									? `border-grantpicks-black-400 text-grantpicks-black-950 bg-grantpicks-black-50`
 									: `border-grantpicks-amber-400 text-grantpicks-amber-700 bg-grantpicks-amber-50`,
 						)}
@@ -105,6 +106,8 @@ const ApplicationRoundsItem = ({
 						) : getSpecificTime() === 'upcoming' ||
 						  getSpecificTime() === 'upcoming-closed' ? (
 							<IconProject size={18} className="fill-grantpicks-black-950" />
+						) : getSpecificTime() === 'ended' ? (
+							<IconDollar size={18} className="fill-grantpicks-black-950" />
 						) : (
 							<IconDollar size={18} className="fill-grantpicks-amber-400" />
 						)}
@@ -117,7 +120,9 @@ const ApplicationRoundsItem = ({
 										? `application open`
 										: getSpecificTime() === 'upcoming-closed'
 											? `application closed`
-											: `payout pending`}
+											: getSpecificTime() === 'ended'
+												? `completed`
+												: `payout pending`}
 						</p>
 					</div>
 					{(getSpecificTime() === 'on-going' ||
@@ -155,72 +160,21 @@ const ApplicationRoundsItem = ({
 				{doc.name}
 			</p>
 			<div className="flex items-center justify-between mb-6">
-				{selectedRoundType === 'on-going' ? (
-					<div className="flex items-center space-x-1">
-						<IconCube size={18} className="fill-grantpicks-black-400" />
-						<p className="text-sm font-normal text-grantpicks-black-950">
-							{doc.num_picks_per_voter} Vote{doc.num_picks_per_voter > 1 && `s`}{' '}
-							per person
-						</p>
-					</div>
-				) : selectedRoundType === 'upcoming' ? (
-					<div className="flex items-center space-x-1">
-						<IconGroup size={18} className="fill-grantpicks-black-400" />
-						<p className="text-sm font-normal text-grantpicks-black-950">
-							Max. {doc.max_participants} Applicant
-						</p>
-					</div>
-				) : (
-					<div className="flex items-center space-x-1">
-						<IconProject size={18} className="fill-grantpicks-black-400" />
-						<p className="text-sm font-normal text-grantpicks-black-950">
-							-- Projects
-						</p>
-					</div>
-				)}
-				{selectedRoundType === 'on-going' ? (
-					<div className="flex items-center space-x-1">
-						<IconClock size={18} className="fill-grantpicks-black-400" />
-						<p className="text-sm font-normal text-grantpicks-black-950">
-							Ends{` `}
-							{moment(new Date(doc.application_end || '')).fromNow()}
-						</p>
-					</div>
-				) : selectedRoundType === 'upcoming' ? (
-					<>
-						{getSpecificTime() === 'upcoming' && (
-							<div className="flex items-center space-x-1">
-								<IconClock size={18} className="fill-grantpicks-black-400" />
-								<p className="text-sm font-normal text-grantpicks-black-950">
-									Open {moment(new Date(doc.application_start || '')).fromNow()}
-								</p>
-							</div>
-						)}
-						{getSpecificTime() === 'upcoming-open' && (
-							<div className="flex items-center space-x-1">
-								<IconClock size={18} className="fill-grantpicks-black-400" />
-								<p className="text-sm font-normal text-grantpicks-black-950">
-									Closed {moment(new Date(doc.application_end || '')).fromNow()}
-								</p>
-							</div>
-						)}
-						{getSpecificTime() === 'upcoming-closed' && (
-							<div className="flex items-center space-x-1">
-								<IconClock size={18} className="fill-grantpicks-black-400" />
-								<p className="text-sm font-normal text-grantpicks-black-950">
-									Closed{' '}
-								</p>
-							</div>
-						)}
-					</>
-				) : (
-					<p className="text-lg md:text-xl font-normal text-grantpicks-black-950">
-						{formatStroopToXlm(BigInt(doc.expected_amount))}{' '}
-						<span className="text-sm font-normal text-grantpicks-black-600">
-							{connectedWallet === 'near' ? 'NEAR' : 'XLM'}
-						</span>
+				<div className="flex items-center space-x-1">
+					<IconCube size={18} className="fill-grantpicks-black-400" />
+					<p className="text-sm font-normal text-grantpicks-black-950">
+						{doc.num_picks_per_voter} Vote
+						{doc.num_picks_per_voter > 1 && `s`} per person
 					</p>
-				)}
+				</div>
+
+				<div className="flex items-center space-x-1">
+					<IconClock size={18} className="fill-grantpicks-black-400" />
+					<p className="text-sm font-normal text-grantpicks-black-950">
+						Ends{` `}
+						{moment(new Date(doc.voting_end)).fromNow()}
+					</p>
+				</div>
 			</div>
 			<div className="w-full">
 				<Button
@@ -271,9 +225,8 @@ const ApplicationRoundsItem = ({
 }
 
 const MyVotesPage = () => {
-	const { stellarPubKey, connectedWallet } = useWallet()
+	const { connectedWallet } = useWallet()
 	const storage = useAppStorage()
-	const service = usePotlockService()
 
 	const onFetchMyVotedRounds = async (key: {
 		url: string
@@ -288,15 +241,34 @@ const MyVotesPage = () => {
 			}
 
 			let result: GPRound[] = []
-			const res = await getMyVotedRounds(
-				{ from_index: key.skip, limit: key.limit, voter: stellarPubKey },
-				contracts,
-			)
+
+			const res = (
+				await contracts.round_contract.get_voted_rounds({
+					voter: storage.my_address || '',
+					from_index: BigInt(key.skip),
+					limit: BigInt(key.limit),
+				})
+			).result
 
 			for (let i = 0; i < res.length; i++) {
 				let round = res[i]
 				let roundId = Number(round.id)
-				let roundDetail = await service.getRound(roundId)
+				let roundDetail = {
+					...round,
+					on_chain_id: roundId,
+					id: roundId,
+					voting_start: new Date(
+						Number(round.voting_start_ms || ''),
+					).toISOString(),
+					voting_end: new Date(Number(round.voting_end_ms || '')).toISOString(),
+					application_start: new Date(
+						Number(round.application_start_ms || ''),
+					).toISOString(),
+					application_end: new Date(
+						Number(round.application_end_ms || ''),
+					).toISOString(),
+				} as unknown as GPRound
+
 				result.push(roundDetail)
 			}
 
@@ -313,8 +285,6 @@ const MyVotesPage = () => {
 			const rounds = await contracts.round.getVotedRound(
 				storage.my_address || '',
 			)
-
-			console.log('rounds', rounds)
 
 			for (let i = 0; i < rounds.length; i++) {
 				let round = rounds[i]

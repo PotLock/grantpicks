@@ -158,11 +158,14 @@ const FeaturesSection = () => {
 		}>,
 	) => {
 		return dataArray.map((data) => (
-			<div key={data.title} className="grid gap-y-6 content-start">
+			<div
+				key={data.title}
+				className="grid gap-y-6 content-start justify-items-center sm:justify-items-start"
+			>
 				{data.icon}
-				<div>
-					<p className="font-medium text-[#171717]">{data.title}</p>
-					<p className="text-[#171717]/50">{data.description}</p>
+				<div className="grid justify-items-center text-center sm:justify-items-start sm:text-left">
+					<p className="font-medium text-[#171717] text-xl">{data.title}</p>
+					<p className="text-[#171717]/50 text-lg">{data.description}</p>
 				</div>
 			</div>
 		))

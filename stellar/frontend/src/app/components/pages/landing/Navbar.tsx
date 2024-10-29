@@ -20,7 +20,7 @@ const Navbar = () => {
 	}
 
 	return (
-		<div className="flex mt-[41px] z-20 fixed inset-x-0 items-center justify-between px-4 md:px-12 xl:px-20 h-12">
+		<div className="flex py-5 z-20 fixed inset-x-0 items-center justify-between px-4 md:px-12 xl:px-20 bg-white bg-opacity-30 backdrop-blur-3xl shadow-md">
 			<div className="flex items-center relative">
 				<button
 					onClick={() => setShowMenu(!showMenu)}
@@ -75,20 +75,29 @@ const Navbar = () => {
 					<p className="text-[#020909] font-black text-xl">GrantPicks</p>
 				</button>
 			</div>
-			<div className="hidden lg:flex text-[#202237] font-medium text-sm gap-x-[6px] border border-grantpicks-purple-500/20 h-full rounded-full px-7 bg-[#EEF2FE]">
-				<button className="px-3" onClick={() => scrollToSection('home')}>
+			<div className="hidden lg:flex text-[#202237] font-medium gap-x-[6px] border border-grantpicks-purple-500/20 h-full rounded-full px-7 bg-[#EEF2FE]">
+				<button
+					className="px-3 py-[10.5px]"
+					onClick={() => scrollToSection('home')}
+				>
 					Home
 				</button>
 				<button
-					className="px-3"
+					className="px-3 py-[10.5px]"
 					onClick={() => scrollToSection('how-it-works')}
 				>
 					How it Works
 				</button>
-				<button className="px-3" onClick={() => scrollToSection('features')}>
+				<button
+					className="px-3 py-[10.5px]"
+					onClick={() => scrollToSection('features')}
+				>
 					Features
 				</button>
-				<button className="px-3" onClick={() => scrollToSection('faqs')}>
+				<button
+					className="px-3 py-[10.5px]"
+					onClick={() => scrollToSection('faqs')}
+				>
 					FAQs
 				</button>
 			</div>
@@ -96,7 +105,7 @@ const Navbar = () => {
 				color="purple"
 				icon={<IconRocket size={18} className="fill-white hidden sm:block" />}
 				iconPosition="right"
-				className="h-full sm:px-7"
+				className="h-12 sm:px-7"
 				onClick={() => {
 					router.push('/application')
 				}}

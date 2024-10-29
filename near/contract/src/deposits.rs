@@ -114,7 +114,7 @@ impl Contract {
         self.rounds_by_id.insert(round_id, round.clone());
 
         // clean-up
-        refund_deposit(initial_storage_usage, None);
+        // refund_deposit(initial_storage_usage, None);
         // send protocol fee if > 0 & recipient is set
         if protocol_fee > 0 {
             if let Some(protocol_fee_recipient) = self.protocol_fee_recipient.as_ref() {

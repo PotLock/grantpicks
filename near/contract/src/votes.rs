@@ -276,6 +276,30 @@ impl Contract {
             .expect("Round not found")
             .can_vote(&voter)
     }
+
+    pub fn has_voted(&self, round_id: RoundId, voter: AccountId) -> bool {
+        self.votes_by_round_id
+            .get(&round_id)
+            .expect("No votes found for round")
+            .contains_key(&voter)
+    }
+
+    pub fn get_voted_rounds(
+        &self,
+        voter: AccountId,
+        from_index: Option<u64>,
+        limit: Option<u64>,
+    ) -> Vec<RoundDetailExternal> {
+        let from_index = from_index.unwrap_or(0);
+        let limit = limit.unwrap_or(self.default_page_size);
+        self.votes_by_round_id
+            .iter()
+            .skip(from_index as usize)
+            .take(limit as usize)
+            .filter(|(_, votes)| votes.contains_key(&voter))
+            .map(|(round_id, _)| self.rounds_by_id.get(round_id).expect("Round not found").clone().to_external())
+            .collect()
+    }
 }
 
 // LOGIC FROM ORIGINAL IMPLEMENTATION; KEEPING FOR REFERENCE

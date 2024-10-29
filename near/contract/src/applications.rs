@@ -78,7 +78,7 @@ impl Contract {
                 round
                     .application_end_ms
                     .expect("round.application_end_ms not present")
-                    >= env::block_timestamp(),
+                    >= env::block_timestamp_ms(),
                 "Application period has ended"
             );
         }
@@ -428,9 +428,24 @@ impl Contract {
             .collect()
     }
 
-    pub fn get_application(&self, applicant: AccountId) -> Option<RoundApplicationExternal> {
+    pub fn get_application(&self, applicant: AccountId, round_id: RoundId) -> Option<RoundApplicationExternal> {
+        let applications_for_round = self
+            .applications_for_round_by_internal_project_id
+            .get(&round_id)
+            .expect("Applications for round not found");
         let internal_project_id = self.project_id_to_internal_id.get(&applicant)?;
-        self.get_application_by_internal_project_id(internal_project_id.clone())
+        applications_for_round.get(internal_project_id).map(
+            |application| RoundApplicationExternal {
+                round_id: application.round_id,
+                applicant_id: applicant.clone(),
+                applicant_note: application.applicant_note.clone(),
+                video_url: application.video_url.clone(),
+                status: application.status.clone(),
+                review_note: application.review_note.clone(),
+                submited_ms: application.submited_ms,
+                updated_ms: application.updated_ms,
+            }
+        )
     }
 
     pub fn get_application_by_internal_project_id(

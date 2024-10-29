@@ -22,6 +22,7 @@ export interface InputProps {
 	errorMessage?: JSX.Element
 	textAlign?: 'left' | 'center' | 'right'
 	isStopPropagation?: boolean
+	maxLength?: number
 }
 
 export interface InputTextAreaProps {

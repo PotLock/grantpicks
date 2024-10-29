@@ -642,6 +642,7 @@ const EditRoundPage = () => {
 						<InputText
 							required
 							label="Round Title"
+							maxLength={60}
 							{...register('title', { required: true })}
 							errorMessage={
 								errors.title?.type === 'required' ? (
@@ -654,6 +655,7 @@ const EditRoundPage = () => {
 						<InputTextArea
 							label="Round Description"
 							required
+							maxLength={300}
 							{...register('description', { required: true })}
 							errorMessage={
 								errors.description?.type === 'required' ? (

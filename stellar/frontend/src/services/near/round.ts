@@ -328,7 +328,7 @@ export class RoundContract extends BaseContract {
 
 	async getVotedRound(accountId: string) {
 		const result = await this.viewMethod({
-			method: 'get_voted_round',
+			method: 'get_voted_rounds',
 			args: {
 				voter: accountId,
 			},

@@ -96,7 +96,7 @@ const RoundDetailDrawer = ({
 	onVote,
 }: RoundDetailDrawerProps) => {
 	const { selectedRoundType } = useRoundStore()
-	const { connectedWallet, stellarPubKey } = useWallet()
+	const { connectedWallet } = useWallet()
 	const storage = useAppStorage()
 
 	const onFetchRoundAdmins = async () => {

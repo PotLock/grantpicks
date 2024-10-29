@@ -162,7 +162,6 @@ const RoundVotePage = () => {
 			setShowEvalGuide(true)
 			checkVoterIsEligible()
 		} else {
-			fetchPairsRound()
 			setHasVoted(true)
 		}
 	}, [storage.chainId, storage.my_address, params.roundId])
@@ -186,7 +185,7 @@ const RoundVotePage = () => {
 					pairsData={pairsData}
 				/>
 			) : (
-				<IsVotedSection pairsData={pairsData} />
+				<IsVotedSection />
 			)}
 			<ProjectDetailDrawer
 				isOpen={showProjectDetailDrawer?.isOpen || false}

@@ -18,8 +18,6 @@ import { useModalContext } from '@/app/providers/ModalProvider'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { LIMIT_SIZE_CONTRACT } from '@/constants/query'
 import { GPRound } from '@/models/round'
-import { getMyVotedRounds } from '@/services/stellar/round'
-import { usePotlockService } from '@/services/potlock'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import useRoundStore from '@/stores/zustand/useRoundStore'
 import { IGetRoundsResponse } from '@/types/on-chain'
@@ -227,9 +225,8 @@ const ApplicationRoundsItem = ({
 }
 
 const MyVotesPage = () => {
-	const { stellarPubKey, connectedWallet } = useWallet()
+	const { connectedWallet } = useWallet()
 	const storage = useAppStorage()
-	const service = usePotlockService()
 
 	const onFetchMyVotedRounds = async (key: {
 		url: string
@@ -244,15 +241,34 @@ const MyVotesPage = () => {
 			}
 
 			let result: GPRound[] = []
-			const res = await getMyVotedRounds(
-				{ from_index: key.skip, limit: key.limit, voter: stellarPubKey },
-				contracts,
-			)
+
+			const res = (
+				await contracts.round_contract.get_voted_rounds({
+					voter: storage.my_address || '',
+					from_index: BigInt(key.skip),
+					limit: BigInt(key.limit),
+				})
+			).result
 
 			for (let i = 0; i < res.length; i++) {
 				let round = res[i]
 				let roundId = Number(round.id)
-				let roundDetail = await service.getRound(roundId)
+				let roundDetail = {
+					...round,
+					on_chain_id: roundId,
+					id: roundId,
+					voting_start: new Date(
+						Number(round.voting_start_ms || ''),
+					).toISOString(),
+					voting_end: new Date(Number(round.voting_end_ms || '')).toISOString(),
+					application_start: new Date(
+						Number(round.application_start_ms || ''),
+					).toISOString(),
+					application_end: new Date(
+						Number(round.application_end_ms || ''),
+					).toISOString(),
+				} as unknown as GPRound
+
 				result.push(roundDetail)
 			}
 
@@ -269,8 +285,6 @@ const MyVotesPage = () => {
 			const rounds = await contracts.round.getVotedRound(
 				storage.my_address || '',
 			)
-
-			console.log('rounds', rounds)
 
 			for (let i = 0; i < rounds.length; i++) {
 				let round = rounds[i]

@@ -99,8 +99,6 @@ const IsVotedPairItem = ({
 
 	useEffect(() => {
 		fetchProjectById()
-		console.log('pair', pair)
-		console.log('selectedPair', votingResult)
 	}, [pair])
 
 	return (
@@ -154,9 +152,10 @@ const IsVotedPairItem = ({
 	)
 }
 
-const IsVotedSection = ({ pairsData }: { pairsData: Pair[] | NearPair[] }) => {
+const IsVotedSection = () => {
 	const params = useParams<{ roundId: string }>()
-	const { connectedWallet, stellarPubKey, stellarKit } = useWallet()
+	const { connectedWallet } = useWallet()
+	const [pairsData, setPairsData] = useState<Pair[] | NearPair[]>([])
 	const [votingResult, setVotingResult] = useState<VotingResult | undefined>(
 		undefined,
 	)
@@ -174,10 +173,12 @@ const IsVotedSection = ({ pairsData }: { pairsData: Pair[] | NearPair[] }) => {
 					return
 				}
 
-				const roundRes = await getRoundInfo(
-					{ round_id: BigInt(params.roundId) },
-					contracts,
-				)
+				const roundRes = (
+					await contracts.round_contract.get_round({
+						round_id: BigInt(params.roundId),
+					})
+				).result
+
 				if (roundRes) {
 					setRoundData(roundRes)
 				}
@@ -208,13 +209,30 @@ const IsVotedSection = ({ pairsData }: { pairsData: Pair[] | NearPair[] }) => {
 					return
 				}
 
-				const votingResultRes = await getResultVoteRound(
-					{ round_id: BigInt(params.roundId), voter: stellarPubKey },
-					contracts,
-				)
+				const votingResultRes = (
+					await contracts.round_contract.get_my_vote_for_round({
+						round_id: BigInt(params.roundId),
+						voter: storage.my_address || '',
+					})
+				).result
+
 				if (votingResultRes) {
 					setVotingResult(votingResultRes)
 				}
+
+				const pairRes = votingResultRes.picks.map(async (pick: PickResult) => {
+					const pair: Pair = (
+						await contracts.round_contract.get_pair_by_index({
+							round_id: BigInt(params.roundId),
+							index: pick.pair_id,
+						})
+					).result
+
+					const newPairsData: any[] = [...pairsData, pair]
+					setPairsData(newPairsData)
+				})
+
+				await Promise.all(pairRes)
 			}
 		} catch (error: any) {
 			console.log('error fetch pairs', error)

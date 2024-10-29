@@ -16,7 +16,6 @@ import {
 } from './type'
 import { BaseContract } from './contract'
 import { parseNearAmount } from 'near-api-js/lib/utils/format'
-import { parse } from 'path'
 
 export class RoundContract extends BaseContract {
 	constructor(wallet: Wallet | null, network: string, contractId: string) {
@@ -213,9 +212,9 @@ export class RoundContract extends BaseContract {
 	async getApplicationForRound(
 		roundId: number,
 		accountId: string,
-	): Promise<NearProjectApplication> {
+	): Promise<NearProjectApplication | undefined> {
 		const result = await this.viewMethod({
-			method: 'get_application_for_round',
+			method: 'get_application',
 			args: {
 				round_id: parseInt(roundId.toString()),
 				applicant_id: accountId,
@@ -322,6 +321,17 @@ export class RoundContract extends BaseContract {
 			},
 			deposit: NO_DEPOSIT,
 			gas: THIRTY_TGAS,
+		})
+
+		return result
+	}
+
+	async getVotedRound(accountId: string) {
+		const result = await this.viewMethod({
+			method: 'get_voted_round',
+			args: {
+				voter: accountId,
+			},
 		})
 
 		return result

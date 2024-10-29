@@ -100,15 +100,18 @@ const ApplicationRoundsItem = ({
 	}
 
 	const fetchRoundApplication = async () => {
-		if (storage.chainId == 'stellar') {
-			if (stellarPubKey && doc.allow_applications) {
+		if (selectedRoundType === 'upcoming') {
+			if (storage.chainId == 'stellar') {
 				try {
 					const contracts = storage.getStellarContracts()
 
 					if (!contracts) return
 
 					const res = await getRoundApplication(
-						{ round_id: BigInt(doc.on_chain_id), applicant: stellarPubKey },
+						{
+							round_id: BigInt(doc.on_chain_id),
+							applicant: storage.my_address || '',
+						},
 						contracts,
 					)
 					//@ts-ignore
@@ -117,6 +120,27 @@ const ApplicationRoundsItem = ({
 					}
 				} catch (error: any) {
 					console.log('error fetch project applicant', error)
+					setIsUserApplied(false)
+				}
+			} else {
+				try {
+					const contracts = storage.getNearContracts(null)
+
+					if (!contracts) {
+						return
+					}
+
+					const application = await contracts.round.getApplicationForRound(
+						Number(doc.on_chain_id),
+						storage.my_address || '',
+					)
+
+					if (application) {
+						setIsUserApplied(true)
+					}
+				} catch (error: any) {
+					console.log('error fetch project applicant', error)
+					setIsUserApplied(false)
 				}
 			}
 		}
@@ -152,8 +176,8 @@ const ApplicationRoundsItem = ({
 	}
 
 	const checkIfUserHasVoted = async () => {
-		if (storage.chainId == 'stellar') {
-			if (stellarPubKey) {
+		if (selectedRoundType === 'on-going') {
+			if (storage.chainId == 'stellar') {
 				try {
 					const contracts = storage.getStellarContracts()
 
@@ -161,7 +185,7 @@ const ApplicationRoundsItem = ({
 
 					const params: HasVotedRoundParams = {
 						round_id: BigInt(doc.on_chain_id),
-						voter: stellarPubKey,
+						voter: storage.my_address || '',
 					}
 					const hasVoted = await isHasVotedRound(params, contracts)
 					setHasVoted(hasVoted)
@@ -169,7 +193,18 @@ const ApplicationRoundsItem = ({
 					console.log('error checking if user has voted', error)
 				}
 			} else {
-				setHasVoted(false)
+				const contracts = storage.getNearContracts(null)
+
+				if (!contracts) {
+					return
+				}
+
+				const hasVoted = await contracts.round.hasVote(
+					Number(doc.on_chain_id),
+					storage.my_address || '',
+				)
+
+				setHasVoted(hasVoted)
 			}
 		}
 	}
@@ -347,11 +382,17 @@ const ApplicationRoundsItem = ({
 				<Button
 					onClick={() => {
 						if (selectedRoundType === 'on-going') {
-							setVoteConfirmationProps((prev) => ({
-								...prev,
-								isOpen: true,
-								doc: doc,
-							}))
+							if (hasVoted) {
+								router.push(
+									`/application/round-vote/${doc.on_chain_id}?is_voted=true`,
+								)
+							} else {
+								setVoteConfirmationProps((prev) => ({
+									...prev,
+									isOpen: true,
+									doc: doc,
+								}))
+							}
 						} else if (
 							selectedRoundType === 'upcoming' &&
 							getSpecificTime() === 'upcoming-open'
@@ -363,7 +404,6 @@ const ApplicationRoundsItem = ({
 								roundData: doc,
 							}))
 						} else {
-							storage.clear()
 							router.push(`/application/round-result/${doc.on_chain_id}`)
 						}
 					}}
@@ -373,8 +413,7 @@ const ApplicationRoundsItem = ({
 					isDisabled={
 						getSpecificTime() === 'upcoming' ||
 						getSpecificTime() === 'upcoming-closed' ||
-						(isUserApplied && getSpecificTime() == 'upcoming-open') ||
-						(selectedRoundType === 'on-going' && hasVoted)
+						(isUserApplied && getSpecificTime() == 'upcoming-open')
 					}
 				>
 					{isUserApplied && getSpecificTime() === 'upcoming-open'

@@ -72,6 +72,7 @@ const CreateProjectStep1 = () => {
 					<InputText
 						required
 						label="Project Title"
+						maxLength={80}
 						{...register('title', { required: true })}
 						errorMessage={
 							errors.title?.type === 'required' ? (

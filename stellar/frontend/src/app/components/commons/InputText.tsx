@@ -23,6 +23,7 @@ const InputText = forwardRef<HTMLInputElement, InputProps>(
 			errorMessage,
 			textAlign = 'left',
 			isStopPropagation,
+			maxLength,
 		},
 		ref,
 	) => {
@@ -98,6 +99,7 @@ const InputText = forwardRef<HTMLInputElement, InputProps>(
 						onChange={onChange}
 						onKeyDown={onKeyDown}
 						onClick={(e) => isStopPropagation && e.stopPropagation()}
+						maxLength={maxLength}
 					/>
 					{suffixIcon && (
 						<div className="absolute right-0 pr-3 inset-y-0 flex items-center justify-center">

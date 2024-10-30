@@ -316,7 +316,7 @@ const RoundDetailDrawer = ({
 							<div className="grid grid-cols-2 gap-4 pt-3">
 								<div className="flex items-center space-x-2">
 									<Image
-										src={`https://www.tapback.co/api/avatar/${doc.owner.id || (doc.owner as unknown as string)}`}
+										src={`https://www.tapback.co/api/avatar/${doc.owner?.id || (doc.owner as unknown as string)}`}
 										alt="admin"
 										width={40}
 										height={40}
@@ -324,7 +324,7 @@ const RoundDetailDrawer = ({
 									<div>
 										<p className="text-base font-bold text-grantpicks-black-950">
 											{prettyTruncate(
-												doc.owner.id || (doc.owner as unknown as string),
+												doc.owner?.id || (doc.owner as unknown as string),
 												8,
 												'address',
 											)}

@@ -4,19 +4,17 @@ import Modal from '../../commons/Modal'
 import IconClose from '../../svgs/IconClose'
 import InputTextArea from '../../commons/InputTextArea'
 import Button from '../../commons/Button'
-import CMDWallet from '@/lib/wallet'
 import { useWallet } from '@/app/providers/WalletProvider'
-import Contracts from '@/lib/contracts'
-import { IGetRoundsResponse, Network } from '@/types/on-chain'
 import { challengePayoutRound } from '@/services/stellar/round'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import useAppStorage from '@/stores/zustand/useAppStorage'
+import { GPRound } from '@/models/round'
 
 interface ChallengePayoutModalProps extends BaseModalProps {
-	roundData: IGetRoundsResponse | undefined
+	roundData: GPRound | undefined
 }
 
 const ChallengePayoutModal = ({
@@ -40,7 +38,7 @@ const ChallengePayoutModal = ({
 
 			const tx = await challengePayoutRound(
 				{
-					round_id: roundData?.id as bigint,
+					round_id: BigInt(roundData?.id || 0),
 					caller: stellarPubKey,
 					reason,
 				},

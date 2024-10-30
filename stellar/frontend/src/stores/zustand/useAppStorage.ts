@@ -13,50 +13,52 @@ import { Wallet } from '@near-wallet-selector/core'
 import { Project } from 'project-registry-client'
 import {
 	Payout,
-	PayoutInput,
 	PayoutsChallenge,
 	ProjectVotingResult,
 	RoundApplication,
 	RoundDetail,
 } from 'round-client'
 import { create } from 'zustand'
+import { GPRound } from '@/models/round'
+import { GPProject } from '@/models/project'
+import { GPVotingResult } from '@/models/voting'
 
 interface AppRepo {
 	chainId: string | null
 	my_address: string | null
 	network: string
-	projects: Map<string, Project>
-	roundes: Map<string, RoundDetail>
+	projects: Map<string, GPProject>
+	roundes: Map<string, GPRound>
 	applications: Map<string, RoundApplication>
 	current_payout_inputs: Map<string, number>
 	current_manager_weight: number
 	current_pairwise_weight: number
-	current_round: RoundDetail | null
+	current_round: GPRound | null
 	current_round_payouts: Payout[]
 	current_round_payout_challenges: PayoutsChallenge[]
-	current_project: Project | null
-	current_results: ProjectVotingResult[]
+	current_project: GPProject | null
+	current_results: GPVotingResult[]
 	current_remaining: number
 	isAdminRound: boolean
 	isAdminProject: boolean
 	isPayoutDone: boolean
 	setIsAdminRound: (isAdminRound: boolean) => void
-	setProjects: (projects: Map<string, Project>) => void
-	setRound: (round: RoundDetail) => void
-	setCurrentProject: (project: Project) => void
+	setProjects: (projects: Map<string, GPProject>) => void
+	setRound: (round: GPRound) => void
+	setCurrentProject: (project: GPProject) => void
 	setMyAddress: (address: string) => void
 	setIsAdminProject: (isAdminProject: boolean) => void
-	setRoundes: (roundes: Map<string, RoundDetail>) => void
+	setRoundes: (roundes: Map<string, GPRound>) => void
 	setCurrentRoundPayouts: (payouts: Payout[]) => void
 	setCurrentRoundPayoutChallenges: (payouts: PayoutsChallenge[]) => void
 	setChainId: (chainId: string) => void
 	getStellarContracts: () => Contracts | null
 	getNearContracts: (wallet: Wallet | null) => NearContracts | null
-	setCurrentResults: (results: ProjectVotingResult[]) => void
+	setCurrentResults: (results: GPVotingResult[]) => void
 	getAllocation: (project_id: string) => number
 	getTotalParticipants: () => number
 	getTotalVoting: () => number
-	getResultNotFlagged: () => ProjectVotingResult[]
+	getResultNotFlagged: () => GPVotingResult[]
 	setCurrentPayoutInputs: (inputs: Map<string, number>) => void
 	setCurrentManagerWeight: (weight: number) => void
 	setCurrentPairwiseWeight: (weight: number) => void
@@ -71,11 +73,11 @@ interface AppRepo {
 
 const useAppStorage = create<AppRepo>((set, get) => ({
 	projects: new Map(),
-	setProjects: (projects: Map<string, Project>) => set(() => ({ projects })),
+	setProjects: (projects: Map<string, GPProject>) => set(() => ({ projects })),
 	current_round: null,
-	setRound: (round: RoundDetail) => set(() => ({ current_round: round })),
+	setRound: (round: GPRound) => set(() => ({ current_round: round })),
 	current_project: null,
-	setCurrentProject: (project: Project) =>
+	setCurrentProject: (project: GPProject) =>
 		set(() => ({ current_project: project })),
 	my_address: null,
 	setMyAddress: (address: string) => set(() => ({ my_address: address })),
@@ -86,7 +88,7 @@ const useAppStorage = create<AppRepo>((set, get) => ({
 	setIsAdminProject: (isAdminProject: boolean) =>
 		set(() => ({ isAdminProject: isAdminProject })),
 	roundes: new Map(),
-	setRoundes: (roundes: Map<string, RoundDetail>) => set(() => ({ roundes })),
+	setRoundes: (roundes: Map<string, GPRound>) => set(() => ({ roundes })),
 	current_round_payouts: [],
 	setCurrentRoundPayouts: (payouts: Payout[]) =>
 		set(() => ({ current_round_payouts: payouts })),
@@ -129,7 +131,7 @@ const useAppStorage = create<AppRepo>((set, get) => ({
 			chainId: null,
 		})),
 	current_results: [],
-	setCurrentResults: (results: ProjectVotingResult[]) =>
+	setCurrentResults: (results: GPVotingResult[]) =>
 		set(() => ({ current_results: results })),
 	getAllocation: (project_id: string) => {
 		const project = get().projects.get(project_id)
@@ -138,7 +140,7 @@ const useAppStorage = create<AppRepo>((set, get) => ({
 			let amountToDistribute = 0
 
 			const payout = get().current_round_payouts.find(
-				(p) => p.recipient_id === project?.owner,
+				(p) => p.recipient_id === project?.owner?.id,
 			)
 			if (payout) {
 				amountToDistribute = Number(formatStroopToXlm(payout.amount))
@@ -153,7 +155,7 @@ const useAppStorage = create<AppRepo>((set, get) => ({
 	},
 	getTotalParticipants: () => {
 		const totalVoting = get().current_results.reduce(
-			(acc, result) => acc + Number(result.voting_count.toString()),
+			(acc, result) => acc + Number(result.votes.toString()),
 			0,
 		)
 
@@ -163,11 +165,11 @@ const useAppStorage = create<AppRepo>((set, get) => ({
 	},
 	getTotalVoting: () =>
 		get().current_results.reduce(
-			(acc, result) => acc + Number(result.voting_count.toString()),
+			(acc, result) => acc + Number(result.votes.toString()),
 			0,
 		),
 	getResultNotFlagged: () =>
-		get().current_results.filter((result) => !result.is_flagged),
+		get().current_results.filter((result) => !result.flag),
 	current_payout_inputs: new Map(),
 	setCurrentPayoutInputs: (inputs: Map<string, number>) =>
 		set(() => ({ current_payout_inputs: inputs })),
@@ -182,12 +184,12 @@ const useAppStorage = create<AppRepo>((set, get) => ({
 		set(() => ({ current_remaining: remaining })),
 	getBannedProjectAllocations: () => {
 		const flaggedProjects = get().current_results.filter(
-			(result) => result.is_flagged,
+			(result) => result.flag,
 		)
 
 		let totalVoting = get().getTotalVoting()
 		let totalFlagged = flaggedProjects.reduce(
-			(acc, result) => acc + Number(result.voting_count.toString()),
+			(acc, result) => acc + Number(result.votes.toString()),
 			0,
 		)
 
@@ -198,7 +200,7 @@ const useAppStorage = create<AppRepo>((set, get) => ({
 	},
 	getPayoutTableItems: (project_id: string) => {
 		const data = get().current_results.find(
-			(result) => result.project_id.toString() === project_id,
+			(result) => result.project === project_id,
 		)
 
 		const roundData = get().current_round
@@ -218,36 +220,51 @@ const useAppStorage = create<AppRepo>((set, get) => ({
 		let assignedWeight = 0
 		let assignedWeightCalculated = 0
 		let totalVoting = get().getTotalVoting()
-		const myVote = (Number(data.voting_count) / totalVoting) * 100
-		const amountToDistribute =
-			(Number(formatStroopToXlm(roundData?.vault_total_deposits || BigInt(0))) *
-				myVote) /
-			100
+		const myVote = (data.votes / totalVoting) * 100
+		const chainId = get().chainId
+		let ammountToDistribute = 0
+
+		if (chainId === 'stellar') {
+			ammountToDistribute =
+				(Number(
+					formatStroopToXlm(
+						BigInt(roundData?.vault_total_deposits) || BigInt(0),
+					),
+				) *
+					myVote) /
+				100
+		}
+
 		let pairWiseCoin = 0
-		if (get().current_pairwise_weight > 0) {
+		if (get().current_pairwise_weight > 0 && chainId === 'stellar') {
 			pairWiseCoin =
 				(get().current_pairwise_weight / 100) *
 				Number(
 					formatStroopToXlm(
-						get().current_round?.current_vault_balance || BigInt(0),
+						BigInt(roundData?.current_vault_balance) || BigInt(0),
 					),
 				)
 		}
+
 		const amountOverride = get().current_payout_inputs.get(project_id) || 0
 		const pairWiseAdjusted = pairWiseCoin * (myVote / 100)
-		assignedWeight =
-			((pairWiseAdjusted + amountOverride) /
-				Number(
-					formatStroopToXlm(
-						get().current_round?.current_vault_balance || BigInt(0),
-					),
-				)) *
-			100
+
+		if (chainId === 'stellar') {
+			assignedWeight =
+				((pairWiseAdjusted + amountOverride) /
+					Number(
+						formatStroopToXlm(
+							BigInt(roundData?.current_vault_balance) || BigInt(0),
+						),
+					)) *
+				100
+		}
+
 		assignedWeightCalculated = pairWiseAdjusted + amountOverride
 		finalCalculation = pairWiseAdjusted + amountOverride
 
 		return {
-			actual_amount: amountToDistribute,
+			actual_amount: ammountToDistribute,
 			assigned_weight: assignedWeight,
 			assigned_calculated: assignedWeightCalculated,
 			amount_override: amountOverride,

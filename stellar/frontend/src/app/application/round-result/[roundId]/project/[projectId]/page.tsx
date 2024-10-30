@@ -10,7 +10,16 @@ import IconProject from '@/app/components/svgs/IconProject'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { getArithmeticIndex } from '@/lib/pair'
+import { GPVotingResult } from '@/models/voting'
+import {
+	nearProjectToGPProject,
+	nearRoundToGPRound,
+} from '@/services/near/type'
 import { usePotlockService } from '@/services/potlock'
+import {
+	projectToGPProject,
+	roundDetailToGPRound,
+} from '@/services/stellar/type'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import clsx from 'clsx'
@@ -48,7 +57,16 @@ const RoundResultProjectDetailPage = () => {
 				).result
 
 				if (votingResults) {
-					storage.setCurrentResults(votingResults)
+					const gprVotingResults: GPVotingResult[] = votingResults.map(
+						(votingResult) => {
+							return {
+								project: votingResult.project_id.toString(),
+								votes: Number(votingResult.voting_count.toString()),
+								flag: votingResult.is_flagged,
+							} as GPVotingResult
+						},
+					)
+					storage.setCurrentResults(gprVotingResults)
 					const projectInfoAll = storage.projects
 					votingResults.forEach(async (votingResult) => {
 						const project = storage.projects.get(
@@ -64,11 +82,61 @@ const RoundResultProjectDetailPage = () => {
 							if (projectInfo) {
 								projectInfoAll.set(
 									votingResult.project_id.toString(),
-									projectInfo,
+									projectToGPProject(projectInfo),
 								)
 
 								if (params.projectId === votingResult.project_id.toString()) {
-									storage.setCurrentProject(projectInfo)
+									storage.setCurrentProject(projectToGPProject(projectInfo))
+								}
+
+								storage.setProjects(projectInfoAll)
+							}
+						}
+					})
+
+					setNumberOfProjects(votingResults.length)
+				}
+			} else {
+				const contract = storage.getNearContracts(null)
+
+				if (!contract) {
+					return
+				}
+
+				const votingResults = await contract.round.getVotingResults(
+					Number(params.roundId),
+				)
+
+				if (votingResults) {
+					const gprVotingResults: GPVotingResult[] = votingResults.map(
+						(votingResult) => {
+							return {
+								project: votingResult.project,
+								votes: Number(votingResult.voting_count.toString()),
+								flag: false,
+							} as GPVotingResult
+						},
+					)
+					storage.setCurrentResults(gprVotingResults)
+					const projectInfoAll = storage.projects
+					votingResults.forEach(async (votingResult) => {
+						const project = storage.projects.get(votingResult.project)
+						if (!project) {
+							const data = await contract.near_social.getProjectData(
+								votingResult.project,
+							)
+							const json =
+								data[`${votingResult.project}`]['profile']['gp_project'] || '{}'
+							const projectInfo = JSON.parse(json)
+
+							if (projectInfo) {
+								projectInfoAll.set(
+									votingResult.project,
+									nearProjectToGPProject(projectInfo),
+								)
+
+								if (params.projectId === votingResult.project) {
+									storage.setCurrentProject(projectToGPProject(projectInfo))
 								}
 
 								storage.setProjects(projectInfoAll)
@@ -88,6 +156,7 @@ const RoundResultProjectDetailPage = () => {
 			const isExsist = storage.roundes.has(roundId.toString())
 			let isOwner = false
 			let isAdmin = false
+
 			if (!isExsist && storage.chainId === 'stellar') {
 				const contracts = storage.getStellarContracts()
 
@@ -106,8 +175,11 @@ const RoundResultProjectDetailPage = () => {
 				).result
 
 				if (roundInfo) {
-					storage.setRound(roundInfo)
-					storage.roundes.set(roundId.toString(), roundInfo)
+					storage.setRound(roundDetailToGPRound(roundInfo))
+					storage.roundes.set(
+						roundId.toString(),
+						roundDetailToGPRound(roundInfo),
+					)
 					isOwner = roundInfo.owner === stellarPubKey
 					isAdmin = admins.includes(stellarPubKey)
 
@@ -123,6 +195,32 @@ const RoundResultProjectDetailPage = () => {
 
 					storage.setPayoutDone(isPayoutDone)
 				}
+			} else {
+				const contracts = storage.getNearContracts(null)
+				if (!contracts) {
+					return
+				}
+
+				const roundInfo = await contracts.round.getRoundById(
+					parseInt(params.roundId),
+				)
+
+				console.log('roundInfo', roundInfo)
+
+				if (roundInfo) {
+					storage.setRound(nearRoundToGPRound(roundInfo))
+					storage.roundes.set(roundId.toString(), nearRoundToGPRound(roundInfo))
+					isOwner = roundInfo.owner === storage.my_address
+					isAdmin = roundInfo.admins.includes(storage.my_address || '')
+
+					const isAdminOrOwner = isAdmin || isOwner
+
+					storage.setIsAdminRound(isAdminOrOwner)
+
+					const isPayoutDone = false
+
+					storage.setPayoutDone(isPayoutDone)
+				}
 			}
 		}
 	}
@@ -134,8 +232,8 @@ const RoundResultProjectDetailPage = () => {
 			if (!contract) return
 
 			const unflagTx = await contract.round_contract.unflag_project({
-				round_id: storage.current_round?.id || BigInt(0),
-				project_id: storage.current_project?.id || BigInt(0),
+				round_id: BigInt(params.roundId),
+				project_id: BigInt(params.projectId),
 				caller: stellarPubKey,
 			})
 
@@ -162,7 +260,7 @@ const RoundResultProjectDetailPage = () => {
 		const pair = getArithmeticIndex(numberOfProjects, pick.pair_id)
 		const projects = pair.map((index) => {
 			try {
-				const project_id = storage.current_results[index].project_id.toString()
+				const project_id = storage.current_results[index].project.toString()
 				const project = storage.projects.get(project_id)
 
 				return project
@@ -234,11 +332,11 @@ const RoundResultProjectDetailPage = () => {
 	let totalVoting = 0
 
 	for (const votingResult of storage.current_results) {
-		totalVoting += Number(votingResult.voting_count.toString())
+		totalVoting += Number(votingResult.votes.toString())
 	}
 
 	const votingData = storage.current_results.find(
-		(result) => result.project_id.toString() === params.projectId,
+		(result) => result.project === params.projectId,
 	)
 
 	const allocation = storage.getAllocation(params.projectId)
@@ -291,14 +389,15 @@ const RoundResultProjectDetailPage = () => {
 			</div>
 
 			<div className="flex flex-col md:flex-row items-center w-full justify-between my-12 md:my-16">
-				{votingData?.is_flagged && (
+				{votingData?.flag && (
 					<div className="w-full my-2">
 						<div className="flex justify-between items-center">
 							<div className="text-black text-4xl font-bold my-4">
 								THIS PROJECT <br /> HAS BEEN FLAGGED
 							</div>
 							{storage.isAdminRound &&
-								votingData?.is_flagged &&
+								votingData?.flag &&
+								storage.chainId === 'stellar' &&
 								!storage.isPayoutDone && (
 									<div>
 										<Button
@@ -318,7 +417,7 @@ const RoundResultProjectDetailPage = () => {
 						</div>
 					</div>
 				)}
-				{!votingData?.is_flagged && (
+				{!votingData?.flag && (
 					<div className="flex items-center space-x-4 md:space-x-6 lg:space-x-8">
 						<div className="flex items-center space-x-2 md:space-x-4">
 							<div className="border border-black/10 p-2 rounded-full">
@@ -326,7 +425,7 @@ const RoundResultProjectDetailPage = () => {
 							</div>
 							<div>
 								<p className="text-[25px] font-normal">
-									{votingData ? votingData.voting_count.toString() : 0}
+									{votingData ? votingData.votes : 0}
 								</p>
 								<p className="text-xs font-semibold text-grantpicks-black-600">
 									VOTES OUT OF {totalVoting} MATCHES
@@ -352,7 +451,8 @@ const RoundResultProjectDetailPage = () => {
 					</div>
 				)}
 				{storage.isAdminRound &&
-					!votingData?.is_flagged &&
+					!votingData?.flag &&
+					storage.chainId === 'stellar' &&
 					!storage.isPayoutDone && (
 						<Button
 							color="white"

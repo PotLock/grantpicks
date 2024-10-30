@@ -51,7 +51,7 @@ const SuccessApplyProjectModal = ({
 						{roundData?.name}
 					</p>
 					<p className="text-xs font-normal text-grantpicks-black-600 text-center mb-4">
-						{roundData?.owner.id}
+						{roundData?.owner?.id}
 					</p>
 					<p className="text-sm font-normal text-grantpicks-black-600 text-center mb-4">
 						{roundData?.description}

@@ -71,8 +71,8 @@ const MoreVertMenu = ({
 						</div>
 					)}
 				{selectedRoundType === 'upcoming' &&
-					(data.owner.id === stellarPubKey ||
-						data.owner.id === nearAccounts[0]?.accountId) && (
+					(data.owner?.id === stellarPubKey ||
+						data.owner?.id === nearAccounts[0]?.accountId) && (
 						<div
 							className="p-2 flex items-center space-x-2 cursor-pointer hover:opacity-70 transition"
 							onClick={() =>

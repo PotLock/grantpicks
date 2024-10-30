@@ -18,11 +18,22 @@ import TimerEnd from '@/app/components/commons/TimerEnd'
 import IconEdit from '@/app/components/svgs/IconEdit'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import ResultItem from '@/app/components/commons/ResultItem'
-import { Payout, PayoutsChallenge } from 'round-client'
+import { Payout, PayoutsChallenge, ProjectVotingResult } from 'round-client'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import EditPayoutModal from '@/app/components/pages/round-result/EditPayoutModal'
 import toast from 'react-hot-toast'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
+import {
+	projectToGPProject,
+	roundDetailToGPRound,
+} from '@/services/stellar/type'
+import { formatNearAmount, parseNearAmount } from 'near-api-js/lib/utils/format'
+import {
+	nearProjectToGPProject,
+	NearProjectVotingResult,
+	nearRoundToGPRound,
+} from '@/services/near/type'
+import { GPVotingResult } from '@/models/voting'
 
 const RoundResultPage = () => {
 	const { connectedWallet, stellarPubKey, stellarKit } = useWallet()
@@ -59,8 +70,11 @@ const RoundResultPage = () => {
 				).result
 
 				if (roundInfo) {
-					storage.setRound(roundInfo)
-					storage.roundes.set(roundId.toString(), roundInfo)
+					storage.setRound(roundDetailToGPRound(roundInfo))
+					storage.roundes.set(
+						roundId.toString(),
+						roundDetailToGPRound(roundInfo),
+					)
 					isOwner = roundInfo.owner === stellarPubKey
 					isAdmin = admins.includes(stellarPubKey)
 
@@ -96,6 +110,32 @@ const RoundResultPage = () => {
 
 						storage.setCurrentRoundPayouts(newPayouts)
 					}
+				}
+			} else if (!isExsist) {
+				const contracts = storage.getNearContracts(null)
+				if (!contracts) {
+					return
+				}
+
+				const roundInfo = await contracts.round.getRoundById(
+					parseInt(params.roundId),
+				)
+
+				console.log('roundInfo', roundInfo)
+
+				if (roundInfo) {
+					storage.setRound(nearRoundToGPRound(roundInfo))
+					storage.roundes.set(roundId.toString(), nearRoundToGPRound(roundInfo))
+					isOwner = roundInfo.owner === storage.my_address
+					isAdmin = roundInfo.admins.includes(storage.my_address || '')
+
+					const isAdminOrOwner = isAdmin || isOwner
+
+					storage.setIsAdminRound(isAdminOrOwner)
+
+					const isPayoutDone = false
+
+					storage.setPayoutDone(isPayoutDone)
 				}
 			}
 		}
@@ -156,28 +196,82 @@ const RoundResultPage = () => {
 				).result
 
 				if (votingResults) {
-					storage.setCurrentResults(votingResults)
+					const gpVotingResults: GPVotingResult[] = votingResults.map(
+						(v: ProjectVotingResult) =>
+							({
+								project: v.project_id.toString(),
+								votes: Number(v.voting_count.toString()),
+								flag: v.is_flagged,
+							}) as GPVotingResult,
+					)
+
+					storage.setCurrentResults(gpVotingResults)
 					const projectInfoAll = storage.projects
-					for (const votingResult of votingResults) {
+					for (const votingResult of gpVotingResults) {
 						const project = storage.projects.get(
-							votingResult.project_id.toString(),
+							votingResult.project.toString(),
 						)
 						if (!project) {
 							const projectInfo = (
 								await contracts.project_contract.get_project_by_id({
-									project_id: votingResult.project_id,
+									project_id: BigInt(votingResult.project),
 								})
 							).result
 
 							if (projectInfo) {
 								projectInfoAll.set(
-									votingResult.project_id.toString(),
-									projectInfo,
+									votingResult.project.toString(),
+									projectToGPProject(projectInfo),
 								)
 
 								storage.setProjects(projectInfoAll)
 							}
 						}
+					}
+				}
+			} else {
+				const contracts = storage.getNearContracts(null)
+
+				if (!contracts) {
+					return
+				}
+
+				const votingResults = await contracts.round.getVotingResults(
+					Number(params.roundId),
+				)
+
+				if (votingResults) {
+					const gpVotingResults: GPVotingResult[] = votingResults.map(
+						(v: NearProjectVotingResult) =>
+							({
+								project: v.project,
+								votes: v.voting_count,
+								flag: false,
+							}) as GPVotingResult,
+					)
+
+					storage.setCurrentResults(gpVotingResults)
+					const projectInfoAll = storage.projects
+
+					for (const votingResult of gpVotingResults) {
+						const data = await contracts.near_social.getProjectData(
+							votingResult.project,
+						)
+
+						const json =
+							data[`${votingResult.project}`]['profile']['gp_project'] || '{}'
+						const project = JSON.parse(json)
+
+						if (project.fundings) {
+							project.funding_histories = project.fundings
+						}
+
+						projectInfoAll.set(
+							votingResult.project.toString(),
+							nearProjectToGPProject(project),
+						)
+
+						storage.setProjects(projectInfoAll)
 					}
 				}
 			}
@@ -186,28 +280,30 @@ const RoundResultPage = () => {
 
 	const processPayout = async () => {
 		global.openPageLoading()
-		const contract = storage.getStellarContracts()
-		if (!contract) return
 
 		try {
-			const payoutTx = await contract.round_contract.process_payouts({
-				round_id: storage.current_round?.id || BigInt(0),
-				caller: storage.my_address || '',
-			})
+			if (storage.chainId === 'stellar') {
+				const contract = storage.getStellarContracts()
+				if (!contract) return
+				const payoutTx = await contract.round_contract.process_payouts({
+					round_id: BigInt(storage.current_round?.id || 0),
+					caller: storage.my_address || '',
+				})
 
-			const txHash = await contract.signAndSendTx(
-				stellarKit as StellarWalletsKit,
-				payoutTx.toXDR(),
-				storage.my_address || stellarPubKey,
-			)
+				const txHash = await contract.signAndSendTx(
+					stellarKit as StellarWalletsKit,
+					payoutTx.toXDR(),
+					storage.my_address || stellarPubKey,
+				)
 
-			if (!txHash) {
-				toast.error('Error processing payout')
-				return
-			} else {
-				toast.success('Payout processed successfully')
-				await fetchRoundInfo()
-				global.dismissPageLoading()
+				if (!txHash) {
+					toast.error('Error processing payout')
+					return
+				} else {
+					toast.success('Payout processed successfully')
+					await fetchRoundInfo()
+					global.dismissPageLoading()
+				}
 			}
 		} catch (e) {
 			console.error(e)
@@ -218,30 +314,31 @@ const RoundResultPage = () => {
 
 	const setRoundCompleted = async () => {
 		global.openPageLoading()
-		const contract = storage.getStellarContracts()
-		if (!contract) return
 
 		try {
-			const txRoundCompleted = await contract.round_contract.set_round_complete(
-				{
-					round_id: storage.current_round?.id || BigInt(0),
-					caller: storage.my_address || '',
-				},
-			)
-			txRoundCompleted.simulate()
-			const txHash = await contract.signAndSendTx(
-				stellarKit as StellarWalletsKit,
-				txRoundCompleted.toXDR(),
-				storage.my_address || stellarPubKey,
-			)
+			if (storage.chainId === 'stellar') {
+				const contract = storage.getStellarContracts()
+				if (!contract) return
+				const txRoundCompleted =
+					await contract.round_contract.set_round_complete({
+						round_id: BigInt(storage.current_round?.id || 0),
+						caller: storage.my_address || '',
+					})
+				txRoundCompleted.simulate()
+				const txHash = await contract.signAndSendTx(
+					stellarKit as StellarWalletsKit,
+					txRoundCompleted.toXDR(),
+					storage.my_address || stellarPubKey,
+				)
 
-			if (!txHash) {
-				toast.error('Error Set Round Completed')
-				return
-			} else {
-				toast.success('Round Completed successfully')
-				await fetchRoundInfo()
-				global.dismissPageLoading()
+				if (!txHash) {
+					toast.error('Error Set Round Completed')
+					return
+				} else {
+					toast.success('Round Completed successfully')
+					await fetchRoundInfo()
+					global.dismissPageLoading()
+				}
 			}
 		} catch (e) {
 			console.error(e)
@@ -256,36 +353,39 @@ const RoundResultPage = () => {
 			return
 		}
 
-		if (storage.current_round?.current_vault_balance === BigInt(0)) {
+		if (storage.current_round?.current_vault_balance === '0') {
 			toast.error('No Remaining Fund to distribute')
 			return
 		}
 
 		global.openPageLoading()
-		const contract = storage.getStellarContracts()
-		if (!contract) return
 
 		try {
-			const distributeRemainingTx =
-				await contract.round_contract.redistribute_vault({
-					round_id: storage.current_round?.id || BigInt(0),
-					caller: storage.my_address || stellarPubKey,
-					memo: 'Distribute Remaining Fund',
-				})
+			if (storage.chainId === 'stellar') {
+				const contract = storage.getStellarContracts()
+				if (!contract) return
 
-			const txHash = await contract.signAndSendTx(
-				stellarKit as StellarWalletsKit,
-				distributeRemainingTx.toXDR(),
-				storage.my_address || stellarPubKey,
-			)
+				const distributeRemainingTx =
+					await contract.round_contract.redistribute_vault({
+						round_id: BigInt(storage.current_round?.id || 0),
+						caller: storage.my_address || stellarPubKey,
+						memo: 'Distribute Remaining Fund',
+					})
 
-			if (!txHash) {
-				toast.error('Error Distribute Remaining Fund')
-				return
-			} else {
-				toast.success('Remaining Fund Distributed successfully')
-				await fetchRoundInfo()
-				global.dismissPageLoading()
+				const txHash = await contract.signAndSendTx(
+					stellarKit as StellarWalletsKit,
+					distributeRemainingTx.toXDR(),
+					storage.my_address || stellarPubKey,
+				)
+
+				if (!txHash) {
+					toast.error('Error Distribute Remaining Fund')
+					return
+				} else {
+					toast.success('Remaining Fund Distributed successfully')
+					await fetchRoundInfo()
+					global.dismissPageLoading()
+				}
 			}
 		} catch (e) {
 			console.error(e)
@@ -297,8 +397,6 @@ const RoundResultPage = () => {
 	const initPage = async () => {
 		if (params.roundId) {
 			global.openPageLoading()
-			storage.clear()
-			storage.setMyAddress(stellarPubKey)
 			await Promise.all([
 				fetchRoundInfo(),
 				fetchVotingResultRound(),
@@ -314,35 +412,31 @@ const RoundResultPage = () => {
 	let endOfChallenge = new Date()
 	let endOfCompliance = new Date()
 
-	if (roundData?.cooldown_end_ms) {
-		endOfChallenge = new Date(
-			Number(roundData?.cooldown_end_ms?.toString()) || 0,
-		)
+	if (roundData?.cooldown_end) {
+		endOfChallenge = new Date(Number(roundData?.cooldown_end?.toString()) || 0)
 		showCooldownChallenge =
 			endOfChallenge.getTime() > new Date().getTime() &&
-			!roundData?.round_complete_ms
+			!roundData?.round_complete
 	}
 
-	if (roundData?.compliance_end_ms) {
-		endOfCompliance = new Date(
-			Number(roundData?.compliance_end_ms?.toString()) || 0,
-		)
+	if (roundData?.compliance_end) {
+		endOfCompliance = new Date(roundData?.compliance_end?.toString() || 0)
 
 		showCompliance =
 			endOfCompliance.getTime() > new Date().getTime() &&
-			!roundData?.round_complete_ms
+			!roundData?.round_complete
 	}
 
 	const canRedistribute =
 		storage.current_round &&
 		storage.isPayoutDone &&
-		storage.current_round?.current_vault_balance > 0 &&
+		Number(storage.current_round?.current_vault_balance) > 0 &&
 		storage.current_round?.allow_remaining_dist
 
 	useEffect(() => {
 		initPage()
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [stellarPubKey, params.roundId])
+	}, [storage.my_address, params.roundId])
 
 	return (
 		<RoundResultLayout>
@@ -371,13 +465,13 @@ const RoundResultPage = () => {
 
 			<div className="w-full flex flex-col items-center justify-center mb-4 md:mb-6 lg:mb-8">
 				<div className="bg-grantpicks-black-100 p-3 md:p-5 rounded-full flex items-center justify-center mb-3 md:mb-4 lg:mb-6">
-					{connectedWallet === 'near' ? (
-						<IconNear size={24} className="fill-grantpicks-black-950" />
-					) : (
+					{storage.chainId === 'stellar' ? (
 						<IconStellar size={24} className="fill-grantpicks-black-950" />
+					) : (
+						<IconNear size={24} className="fill-grantpicks-black-950" />
 					)}
 				</div>
-				<p className="text-[40px] font-black">{storage.current_round?.name}</p>
+				<p className="text-[40px] font-black">{roundData?.name}</p>
 			</div>
 
 			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 lg:gap-8 mb-4 md:mb-6 lg:mb-8">
@@ -396,22 +490,28 @@ const RoundResultPage = () => {
 				</div>
 				<div className="p-3 md:p-4 lg:p-5 rounded-xl border border-black/10 flex items-center space-x-4 bg-white">
 					<div className="border border-black/10 p-2 rounded-full">
-						<IconStellar size={24} className="fill-grantpicks-black-400" />
+						{storage.chainId === 'stellar' ? (
+							<IconStellar size={24} className="fill-grantpicks-black-400" />
+						) : (
+							<IconNear size={24} className="fill-grantpicks-black-400" />
+						)}
 					</div>
 					<div>
 						<p className="text-[25px] font-normal text-grantpicks-black-950">
-							{formatStroopToXlm(
-								storage.current_round?.expected_amount || BigInt(0),
-							)}{' '}
-							XLM{' '}
+							{storage.chainId === 'stellar'
+								? formatStroopToXlm(BigInt(roundData?.expected_amount || 0))
+								: roundData?.expected_amount}{' '}
+							{storage.chainId === 'stellar' ? 'XLM' : 'NEAR'}{' '}
 							<span className="text-xs md:text-base font-normal text-grantpicks-black-600">
-								{(
-									Number(
-										formatStroopToXlm(
-											storage.current_round?.expected_amount || BigInt(0),
-										),
-									) * global.stellarPrice
-								).toFixed(2)}{' '}
+								{storage.chainId === 'stellar'
+									? (
+											Number(
+												formatStroopToXlm(
+													BigInt(roundData?.expected_amount || 0),
+												),
+											) * global.stellarPrice
+										).toFixed(2)
+									: Number(roundData?.expected_amount) * global.nearPrice}{' '}
 								USD
 							</span>
 						</p>
@@ -420,26 +520,39 @@ const RoundResultPage = () => {
 						</p>
 					</div>
 				</div>
-				{storage.current_round?.use_vault && (
+				{(roundData?.use_vault || storage.chainId === 'near') && (
 					<div className="p-3 md:p-4 lg:p-5 rounded-xl border border-black/10 flex items-center space-x-4 bg-white">
 						<div className="border border-black/10 p-2 rounded-full">
-							<IconStellar size={24} className="fill-grantpicks-black-400" />
+							{storage.chainId === 'stellar' ? (
+								<IconStellar size={24} className="fill-grantpicks-black-400" />
+							) : (
+								<IconNear size={24} className="fill-grantpicks-black-400" />
+							)}
 						</div>
 						<div>
 							<p className="text-[25px] font-normal text-grantpicks-black-950">
-								{formatStroopToXlm(
-									storage.current_round?.vault_total_deposits || BigInt(0),
-								)}{' '}
-								XLM{' '}
+								{storage.chainId === 'stellar'
+									? formatStroopToXlm(
+											BigInt(roundData?.vault_total_deposits || 0),
+										)
+									: formatNearAmount(
+											roundData?.vault_total_deposits || '0',
+										)}{' '}
+								{storage.chainId === 'stellar' ? 'XLM' : 'NEAR'}{' '}
 								<span className="text-xs md:text-base font-normal text-grantpicks-black-600">
-									{(
-										Number(
-											formatStroopToXlm(
-												storage.current_round?.vault_total_deposits ||
-													BigInt(0),
-											),
-										) * global.stellarPrice
-									).toFixed(2)}{' '}
+									{storage.chainId === 'stellar'
+										? (
+												Number(
+													formatStroopToXlm(
+														BigInt(roundData?.vault_total_deposits || 0),
+													),
+												) * global.stellarPrice
+											).toFixed(2)
+										: Number(
+												formatNearAmount(
+													roundData?.vault_total_deposits || '0',
+												).replace(',', ''),
+											) * global.nearPrice}{' '}
 									USD
 								</span>
 							</p>
@@ -557,15 +670,23 @@ const RoundResultPage = () => {
 							<div
 								className="flex items-center space-x-2 cursor-pointer"
 								onClick={() => {
-									const pairWiseCoin = Number(
-										formatStroopToXlm(
-											storage.current_round?.current_vault_balance || BigInt(0),
-										),
-									)
+									let pairWiseCoin = 0
 
-									const bannedAllocation =
-										storage.getBannedProjectAllocations() * pairWiseCoin
-									storage.setCurrentRemaining(bannedAllocation)
+									if (storage.chainId === 'stellar') {
+										pairWiseCoin = Number(
+											formatStroopToXlm(
+												BigInt(roundData?.current_vault_balance || 0),
+											),
+										)
+									}
+
+									if (storage.chainId === 'stellar') {
+										const bannedAllocation =
+											storage.getBannedProjectAllocations() * pairWiseCoin
+										storage.setCurrentRemaining(bannedAllocation)
+									} else {
+										storage.setCurrentRemaining(0)
+									}
 									storage.setCurrentManagerWeight(0)
 									storage.setCurrentPairwiseWeight(100)
 									storage.setCurrentPayoutInputs(new Map())
@@ -603,42 +724,41 @@ const RoundResultPage = () => {
 							</Button>
 						)}
 
-						{storage.isPayoutDone &&
-							!storage.current_round?.round_complete_ms && (
-								<>
-									{canRedistribute && (
-										<Button
-											color="white"
-											className="!rounded-full !px-4"
-											onClick={distributedRemainingFund}
-										>
-											<div className="flex items-center space-x-2">
-												<p className="text-sm font-semibold text-black">
-													Distribute Remaining Fund
-												</p>
-											</div>
-										</Button>
-									)}
-
-									{!canRedistribute && <div className="flex w-10"></div>}
-
+						{storage.isPayoutDone && !roundData?.round_complete && (
+							<>
+								{canRedistribute && (
 									<Button
-										color="black"
+										color="white"
 										className="!rounded-full !px-4"
-										onClick={setRoundCompleted}
+										onClick={distributedRemainingFund}
 									>
 										<div className="flex items-center space-x-2">
-											<p className="text-sm font-semibold text-white">
-												Set Round Completed
+											<p className="text-sm font-semibold text-black">
+												Distribute Remaining Fund
 											</p>
 										</div>
 									</Button>
-								</>
-							)}
+								)}
+
+								{!canRedistribute && <div className="flex w-10"></div>}
+
+								<Button
+									color="black"
+									className="!rounded-full !px-4"
+									onClick={setRoundCompleted}
+								>
+									<div className="flex items-center space-x-2">
+										<p className="text-sm font-semibold text-white">
+											Set Round Completed
+										</p>
+									</div>
+								</Button>
+							</>
+						)}
 					</div>
 				)}
 			</div>
-			{storage.current_round && (
+			{roundData && (
 				<ChallengePayoutModal
 					isOpen={showChallengeModal}
 					onClose={async () => {
@@ -647,7 +767,7 @@ const RoundResultPage = () => {
 						await fetchPayoutChallenge()
 						global.dismissPageLoading()
 					}}
-					roundData={storage.current_round}
+					roundData={roundData}
 				/>
 			)}
 

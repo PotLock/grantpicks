@@ -20,7 +20,6 @@ import {
 	isHasVotedRound,
 } from '@/services/stellar/round'
 import { useWallet } from '@/app/providers/WalletProvider'
-import { IGetRoundsResponse, Network } from '@/types/on-chain'
 import useSWRInfinite from 'swr/infinite'
 import InfiniteScroll from 'react-infinite-scroll-component'
 import { LIMIT_SIZE, LIMIT_SIZE_CONTRACT } from '@/constants/query'
@@ -53,34 +52,12 @@ const ApplicationRoundsItem = ({
 	const [showFundRoundModal, setShowFundRoundModal] = useState<boolean>(false)
 	const { setApplyProjectInitProps, setVoteConfirmationProps } =
 		useModalContext()
-	const { connectedWallet, stellarPubKey, stellarKit } = useWallet()
+	const { connectedWallet, stellarPubKey } = useWallet()
 	const [totalApprovedProjects, setTotalApprovedProjects] = useState<number>(0)
 	const [isUserApplied, setIsUserApplied] = useState<boolean>(false)
 	const { setShowMenu } = useGlobalContext()
 	const [hasVoted, setHasVoted] = useState<boolean>(false)
 	const storage = useAppStorage()
-
-	const fetchOnChainRound = async () => {
-		if (storage.chainId == 'stellar') {
-			const contracts = storage.getStellarContracts()
-
-			if (!contracts) return
-
-			try {
-				const round = (
-					await contracts.round_contract.get_round({
-						round_id: BigInt(doc.on_chain_id),
-					})
-				).result
-
-				let rounds = storage.roundes
-				rounds.set(doc.on_chain_id.toString(), round)
-				storage.setRoundes(rounds)
-			} catch (error: any) {
-				console.log('error fetching on chain round', error)
-			}
-		}
-	}
 
 	const fetchTotalApprovedProjects = async () => {
 		if (storage.chainId == 'stellar') {
@@ -167,7 +144,7 @@ const ApplicationRoundsItem = ({
 		} else if (selectedRoundType === 'on-going') {
 			return `on-going`
 		} else {
-			if (doc.round_complete != null) {
+			if (doc.round_complete) {
 				return `ended`
 			} else {
 				return `payout-pending`
@@ -212,7 +189,6 @@ const ApplicationRoundsItem = ({
 	useEffect(() => {
 		fetchRoundApplication()
 		checkIfUserHasVoted()
-		fetchOnChainRound()
 		fetchTotalApprovedProjects()
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [doc.on_chain_id, connectedWallet, stellarPubKey])
@@ -371,7 +347,9 @@ const ApplicationRoundsItem = ({
 					</>
 				) : (
 					<p className="text-lg md:text-xl font-normal text-grantpicks-black-950">
-						{formatStroopToXlm(BigInt(doc.expected_amount))}{' '}
+						{storage.chainId === 'stellar'
+							? formatStroopToXlm(BigInt(doc.expected_amount))
+							: doc.expected_amount}{' '}
 						<span className="text-sm font-normal text-grantpicks-black-600">
 							{connectedWallet === 'near' ? 'NEAR' : 'XLM'}
 						</span>

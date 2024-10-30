@@ -30,7 +30,7 @@ import { ProjectFundingHistory } from 'project-registry-client'
 import {
 	NearProjectFundingHistory,
 	NearSocialGPProject,
-} from '@/services/near/near-social'
+} from '@/services/near/type'
 
 interface IFunding {
 	id: string

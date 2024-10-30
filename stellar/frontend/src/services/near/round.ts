@@ -11,6 +11,7 @@ import {
 	NearPair,
 	NearPick,
 	NearProjectApplication,
+	NearProjectVotingResult,
 	NearRound,
 	NearUpdateRoundParams,
 } from './type'
@@ -331,6 +332,17 @@ export class RoundContract extends BaseContract {
 			method: 'get_voted_rounds',
 			args: {
 				voter: accountId,
+			},
+		})
+
+		return result
+	}
+
+	async getVotingResults(roundId: number): Promise<NearProjectVotingResult[]> {
+		const result = await this.viewMethod({
+			method: 'get_voting_results_for_round',
+			args: {
+				round_id: parseInt(roundId.toString()),
 			},
 		})
 

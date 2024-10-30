@@ -169,7 +169,7 @@ const ApplicationItem = ({
 							Applied {moment(new Date(item.submitted_at)).fromNow()}
 						</p>
 					</div>
-					{roundData.owner.id === storage.my_address && (
+					{roundData.owner?.id === storage.my_address && (
 						<div className="flex items-center space-x-2">
 							<button
 								onClick={() => setOpenAcceptModal(true)}
@@ -243,7 +243,7 @@ const ApplicationItem = ({
 					<div className="border border-grantpicks-black-200 rounded-xl p-3 bg-white">
 						<p className="text-sm font-semibold text-grantpicks-black-950">
 							admin@
-							{prettyTruncate(roundData.owner.id, 10, 'address') || 'Reviewer'}
+							{prettyTruncate(roundData.owner?.id, 10, 'address') || 'Reviewer'}
 						</p>
 						<p className="text-sm font-normal text-grantpicks-black-600">
 							{storage.applications.get(item.applicant.id)?.review_note || ''}

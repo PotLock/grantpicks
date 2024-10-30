@@ -5,29 +5,30 @@ import IconUnion from '../svgs/IconUnion'
 import Image from 'next/image'
 import { formatStroopToXlm } from '@/utils/helper'
 import { useState } from 'react'
+import { GPVotingResult } from '@/models/voting'
 
 const PayoutItem = ({
 	index,
 	data,
 }: {
 	index: number
-	data: ProjectVotingResult
+	data: GPVotingResult
 }) => {
 	const store = useAppStorage()
-	const projectData = store.projects.get(data.project_id.toString())
+	const projectData = store.projects.get(data.project)
 	const [amountOverride, setAmountOverride] = useState<number>(0)
-	const tableState = store.getPayoutTableItems(data.project_id.toString())
+	const tableState = store.getPayoutTableItems(data.project)
 
 	const onChangeAmmountOverride = (e: React.ChangeEvent<HTMLInputElement>) => {
 		let newPayouts = store.current_payout_inputs
 
 		if (Number(e.target.value) > store.current_remaining + amountOverride) {
 			setAmountOverride(0)
-			newPayouts.set(data.project_id.toString(), 0)
+			newPayouts.set(data.project, 0)
 			store.setCurrentPayoutInputs(newPayouts)
 		} else {
 			setAmountOverride(Number(e.target.value))
-			newPayouts.set(data.project_id.toString(), Number(e.target.value))
+			newPayouts.set(data.project, Number(e.target.value))
 			store.setCurrentPayoutInputs(newPayouts)
 		}
 
@@ -41,7 +42,7 @@ const PayoutItem = ({
 			(store.current_pairwise_weight / 100) *
 			Number(
 				formatStroopToXlm(
-					store.current_round?.current_vault_balance || BigInt(0),
+					BigInt(store.current_round?.current_vault_balance || 0),
 				),
 			)
 
@@ -50,7 +51,7 @@ const PayoutItem = ({
 		const managerCoin =
 			Number(
 				formatStroopToXlm(
-					store.current_round?.current_vault_balance || BigInt(0),
+					BigInt(store.current_round?.current_vault_balance || 0),
 				),
 			) - pairWiseCoin
 
@@ -61,17 +62,13 @@ const PayoutItem = ({
 	return (
 		<div className="flex w-full items-center p-4 border-b">
 			<div className="flex items-center w-[70%] md:w-[34%]">
-				{!projectData?.image_url ? (
-					<div className="bg-grantpicks-black-200 rounded-full w-10 h-10" />
-				) : (
-					<Image
-						src={projectData?.image_url}
-						alt=""
-						width={200}
-						height={200}
-						className="rounded-full w-10 h-10 mx-1"
-					/>
-				)}
+				<Image
+					src={`https://www.tapback.co/api/avatar/${projectData?.owner?.id}`}
+					alt=""
+					width={200}
+					height={200}
+					className="rounded-full w-10 h-10 mx-1"
+				/>
 				<p className="text-xs md:text-sm font-semibold text-grantpicks-black-950">
 					{projectData?.name}
 				</p>

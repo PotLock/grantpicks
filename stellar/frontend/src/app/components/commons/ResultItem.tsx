@@ -1,7 +1,6 @@
 'use client'
 import { formatStroopToXlm } from '@/utils/helper'
 import { useRouter } from 'next/navigation'
-import { ProjectVotingResult } from 'round-client'
 import IconStarBronze from '../svgs/IconStarBronze'
 import IconStarGold from '../svgs/IconStarGold'
 import IconStarSilver from '../svgs/IconStarSilver'
@@ -9,29 +8,28 @@ import IconStellar from '../svgs/IconStellar'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import Image from 'next/image'
 import clsx from 'clsx'
+import { GPVotingResult } from '@/models/voting'
 
 const ResultItem = ({
 	index,
 	data,
 }: {
 	index: number
-	data: ProjectVotingResult
+	data: GPVotingResult
 }) => {
 	const router = useRouter()
 	const store = useAppStorage()
 	const roundData = store.current_round
-	const projectData = store.projects.get(data.project_id.toString())
+	const projectData = store.projects.get(data.project)
 	let totalVoting = store.getTotalVoting()
 
 	const myVote =
-		data.voting_count > 0 && totalVoting > 0
-			? (Number(data.voting_count) / totalVoting) * 100
-			: 0
+		data.votes > 0 && totalVoting > 0 ? (data.votes / totalVoting) * 100 : 0
 	let amountToDistribute = 0
 
 	if (store.current_round_payouts.length > 0) {
 		const payout = store.current_round_payouts.find(
-			(p) => p.recipient_id === projectData?.owner,
+			(p) => p.recipient_id === projectData?.owner?.id,
 		)
 		if (payout) {
 			amountToDistribute = Number(formatStroopToXlm(payout.amount))
@@ -44,14 +42,14 @@ const ResultItem = ({
 		<div
 			className={clsx(
 				'flex items-center w-full px-4 py-4 cursor-pointe transition rounded-2xl',
-				data.is_flagged && 'bg-red-100 border-none', // Add this line
-				!data.is_flagged && 'bg-white hover:bg-black/10', // Add this line
+				data.flag && 'bg-red-100 border-none', // Add this line
+				!data.flag && 'bg-white hover:bg-black/10', // Add this line
 			)}
 			onClick={() => {
 				if (roundData)
 					[
 						router.push(
-							`/application/round-result/${roundData?.id.toString()}/project/${data.project_id.toString()}`,
+							`/application/round-result/${roundData?.id.toString()}/project/${data.project.toString()}`,
 						),
 					]
 			}}
@@ -67,20 +65,16 @@ const ResultItem = ({
 				)}
 			</div>
 			<div className="flex items-center w-[60%]">
-				{!projectData?.image_url ? (
-					<div className="bg-grantpicks-black-200 rounded-full w-10 h-10" />
-				) : (
-					<Image
-						src={projectData?.image_url}
-						alt=""
-						width={200}
-						height={200}
-						className="rounded-full w-10 h-10 mx-1"
-					/>
-				)}
+				<Image
+					src={`https://www.tapback.co/api/avatar/${projectData?.owner?.id}`}
+					alt=""
+					width={200}
+					height={200}
+					className="rounded-full w-10 h-10 mx-1"
+				/>
 				<div className="flex items-center text-xs md:text-sm font-semibold text-grantpicks-black-600 w-full">
 					<div className="w-full">{projectData?.name || 'Loading...'}</div>
-					{data.is_flagged && (
+					{data.flag && (
 						<div className="bg-red-50 border rounded-full px-2 py-1 text-red-500 border-red-500 mr-5">
 							flagged
 						</div>
@@ -94,7 +88,7 @@ const ResultItem = ({
 						: store.current_round_payouts.length > 0
 							? '0.00'
 							: '-'}{' '}
-					XLM
+					{store.chainId === 'stellar' ? 'XLM' : 'NEAR'}
 				</p>
 				<IconStellar size={14} className="fill-grantpicks-black-600" />
 			</div>
@@ -105,7 +99,7 @@ const ResultItem = ({
 			</div>
 			<div className="flex items-center justify-end w-[12%]">
 				<p className="text-xs md:text-sm font-semibold text-grantpicks-black-500 text-right">
-					{data.voting_count.toString()}
+					{data.votes}
 				</p>
 			</div>
 		</div>

@@ -62,10 +62,10 @@ const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 		let payoutInputs: PayoutInput[] = []
 
 		storage.getResultNotFlagged().forEach((data) => {
-			const tableState = storage.getPayoutTableItems(data.project_id.toString())
-			const projectData = storage.projects.get(data.project_id.toString())
+			const tableState = storage.getPayoutTableItems(data.project)
+			const projectData = storage.projects.get(data.project)
 			payoutInputs.push({
-				recipient_id: projectData?.owner || '',
+				recipient_id: projectData?.owner?.id || '',
 				amount: BigInt(tableState.final_calculation * 10000000),
 				memo,
 			})
@@ -79,7 +79,7 @@ const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 
 		try {
 			const savePayoutTx = await contract.round_contract.set_payouts({
-				round_id: storage.current_round?.id || BigInt(0),
+				round_id: BigInt(storage.current_round?.id || 0),
 				caller: stellarPubKey,
 				payouts: payoutInputs,
 				clear_existing: true,
@@ -115,7 +115,7 @@ const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 	}
 
 	storage.getResultNotFlagged().forEach((data) => {
-		const tableState = storage.getPayoutTableItems(data.project_id.toString())
+		const tableState = storage.getPayoutTableItems(data.project)
 		currentOverAllStats.actual_amount += tableState.actual_amount
 		currentOverAllStats.amount_override += tableState.amount_override
 		currentOverAllStats.pairwise_weight_adjusted +=
@@ -137,13 +137,13 @@ const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 			(pairwiseWeight / 100) *
 			Number(
 				formatStroopToXlm(
-					storage.current_round?.current_vault_balance || BigInt(0),
+					BigInt(storage.current_round?.current_vault_balance || 0),
 				),
 			)
 		const managerCoin =
 			Number(
 				formatStroopToXlm(
-					storage.current_round?.current_vault_balance || BigInt(0),
+					BigInt(storage.current_round?.current_vault_balance || 0),
 				),
 			) - pairWiseCoin
 
@@ -198,7 +198,7 @@ const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 								{storage.current_remaining} /{' '}
 								{Number(
 									formatStroopToXlm(
-										storage.current_round?.current_vault_balance || BigInt(0),
+										BigInt(storage.current_round?.current_vault_balance || 0),
 									),
 								)}
 							</div>

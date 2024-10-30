@@ -26,8 +26,8 @@ import { useModalContext } from '@/app/providers/ModalProvider'
 import IconClose from '@/app/components/svgs/IconClose'
 import { localStorageConfigs } from '@/configs/local-storage'
 import useAppStorage from '@/stores/zustand/useAppStorage'
-import { NearSocialGPProject } from '@/services/near/near-social'
 import { RegistrationStatus } from 'lists-client'
+import { NearSocialGPProject } from '@/services/near/type'
 
 const CreateProjectFormContext = createContext<ICreateProjectFormContext>({
 	data: DEFAULT_CREATE_PROJECT_DATA,

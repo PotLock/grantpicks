@@ -23,8 +23,8 @@ const FlagProjectModal = ({ isOpen, onClose }: BaseModalProps) => {
 			if (!contract) return
 
 			const flagTx = await contract.round_contract.flag_project({
-				round_id: storage.current_round?.id || BigInt(0),
-				project_id: storage.current_project?.id || BigInt(0),
+				round_id: BigInt(storage.current_round?.id || 0),
+				project_id: BigInt(storage.current_round?.id || 0),
 				caller: stellarPubKey,
 				reason: reason,
 			})

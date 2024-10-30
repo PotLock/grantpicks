@@ -758,7 +758,7 @@ const RoundResultPage = () => {
 					</div>
 				)}
 			</div>
-			{storage.current_round && (
+			{roundData && (
 				<ChallengePayoutModal
 					isOpen={showChallengeModal}
 					onClose={async () => {
@@ -767,7 +767,7 @@ const RoundResultPage = () => {
 						await fetchPayoutChallenge()
 						global.dismissPageLoading()
 					}}
-					roundData={storage.current_round}
+					roundData={roundData}
 				/>
 			)}
 

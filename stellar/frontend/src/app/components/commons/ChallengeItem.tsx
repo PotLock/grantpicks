@@ -40,7 +40,7 @@ const ChallengeItem = ({
 		while (fetch) {
 			const payoutChallenges = (
 				await contracts.round_contract.get_challenges_payout({
-					round_id: roundId,
+					round_id: BigInt(roundId),
 					from_index: BigInt(challenges.length),
 					limit: BigInt(5),
 				})
@@ -69,7 +69,7 @@ const ChallengeItem = ({
 
 		try {
 			const resolveTx = await contract.round_contract.update_payouts_challenge({
-				round_id: storage.current_round?.id || BigInt(0),
+				round_id: BigInt(storage.current_round?.id || 0),
 				caller: storage.my_address || '',
 				challenger_id: challenge.challenger_id,
 				notes: adminNotes,

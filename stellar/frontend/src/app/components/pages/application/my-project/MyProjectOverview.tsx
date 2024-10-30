@@ -22,7 +22,7 @@ import useAppStorage from '@/stores/zustand/useAppStorage'
 import {
 	NearProjectFundingHistory,
 	NearSocialGPProject,
-} from '@/services/near/near-social'
+} from '@/services/near/type'
 
 const MyProjectOverview = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()

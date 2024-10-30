@@ -27,7 +27,7 @@ import { NEAR_ADDRESS_REGEX } from '@/constants/regex'
 import {
 	NearProjectFundingHistory,
 	NearSocialGPProject,
-} from '@/services/near/near-social'
+} from '@/services/near/type'
 
 const MyProjectTeam = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()

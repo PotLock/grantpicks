@@ -39,7 +39,7 @@ import { GPPayout } from '@/models/payout'
 import { LIMIT_SIZE_CONTRACT } from '@/constants/query'
 
 const RoundResultPage = () => {
-	const { connectedWallet, stellarPubKey, stellarKit } = useWallet()
+	const { nearWallet, stellarPubKey, stellarKit } = useWallet()
 	const [showChallengeModal, setShowChallengeModal] = useState<boolean>(false)
 	const global = useGlobalContext()
 	const [showViewChallengeDrawer, setShowViewChallengeDrawer] =
@@ -334,6 +334,23 @@ const RoundResultPage = () => {
 					await fetchRoundInfo()
 					global.dismissPageLoading()
 				}
+			} else {
+				const contract = storage.getNearContracts(nearWallet)
+
+				if (!contract) return
+
+				const roundId = parseInt(params.roundId)
+
+				const txPayouts = await contract.round.processPayouts(roundId)
+
+				if (!txPayouts) {
+					toast.error('Error processing payout')
+					return
+				} else {
+					toast.success('Payout processed successfully')
+					await fetchRoundInfo()
+					global.dismissPageLoading()
+				}
 			}
 		} catch (e) {
 			console.error(e)
@@ -362,6 +379,24 @@ const RoundResultPage = () => {
 				)
 
 				if (!txHash) {
+					toast.error('Error Set Round Completed')
+					return
+				} else {
+					toast.success('Round Completed successfully')
+					await fetchRoundInfo()
+					global.dismissPageLoading()
+				}
+			} else {
+				const contract = storage.getNearContracts(nearWallet)
+
+				if (!contract) return
+
+				const roundId = parseInt(params.roundId)
+
+				const txSetRoundCompleted =
+					await contract.round.setRoundComplete(roundId)
+
+				if (!txSetRoundCompleted) {
 					toast.error('Error Set Round Completed')
 					return
 				} else {
@@ -409,6 +444,24 @@ const RoundResultPage = () => {
 				)
 
 				if (!txHash) {
+					toast.error('Error Distribute Remaining Fund')
+					return
+				} else {
+					toast.success('Remaining Fund Distributed successfully')
+					await fetchRoundInfo()
+					global.dismissPageLoading()
+				}
+			} else {
+				const contract = storage.getNearContracts(nearWallet)
+
+				if (!contract) return
+
+				const roundId = parseInt(params.roundId)
+
+				const txDistributeRemaining =
+					await contract.round.redistributeRemainingFund(roundId)
+
+				if (!txDistributeRemaining) {
 					toast.error('Error Distribute Remaining Fund')
 					return
 				} else {

@@ -29,11 +29,14 @@ import {
 } from '@/services/stellar/type'
 import { formatNearAmount, parseNearAmount } from 'near-api-js/lib/utils/format'
 import {
+	NearPayout,
 	nearProjectToGPProject,
 	NearProjectVotingResult,
 	nearRoundToGPRound,
 } from '@/services/near/type'
 import { GPVotingResult } from '@/models/voting'
+import { GPPayout } from '@/models/payout'
+import { LIMIT_SIZE_CONTRACT } from '@/constants/query'
 
 const RoundResultPage = () => {
 	const { connectedWallet, stellarPubKey, stellarKit } = useWallet()
@@ -91,7 +94,7 @@ const RoundResultPage = () => {
 					storage.setPayoutDone(isPayoutDone)
 
 					let fetch = true
-					let newPayouts: Payout[] = []
+					let newPayouts: GPPayout[] = []
 
 					while (fetch) {
 						const payouts = (
@@ -102,7 +105,12 @@ const RoundResultPage = () => {
 							})
 						).result
 
-						newPayouts = newPayouts.concat(payouts)
+						payouts.forEach((p: Payout) => {
+							newPayouts.push({
+								recipient: p.recipient_id,
+								amount: p.amount.toString(),
+							})
+						})
 
 						if (payouts.length < 5) {
 							fetch = false
@@ -121,8 +129,6 @@ const RoundResultPage = () => {
 					parseInt(params.roundId),
 				)
 
-				console.log('roundInfo', roundInfo)
-
 				if (roundInfo) {
 					storage.setRound(nearRoundToGPRound(roundInfo))
 					storage.roundes.set(roundId.toString(), nearRoundToGPRound(roundInfo))
@@ -136,6 +142,30 @@ const RoundResultPage = () => {
 					const isPayoutDone = false
 
 					storage.setPayoutDone(isPayoutDone)
+
+					let fetch = true
+					let newPayouts: GPPayout[] = []
+
+					while (fetch) {
+						const payouts = await contracts.round.getPayouts(
+							Number(roundId.toString()),
+							newPayouts.length,
+							LIMIT_SIZE_CONTRACT,
+						)
+
+						payouts.forEach((p: NearPayout) => {
+							newPayouts.push({
+								recipient: p.recipient_id,
+								amount: p.amount,
+							})
+						})
+
+						if (payouts.length < LIMIT_SIZE_CONTRACT) {
+							fetch = false
+						}
+
+						storage.setCurrentRoundPayouts(newPayouts)
+					}
 				}
 			}
 		}

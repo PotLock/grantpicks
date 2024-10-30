@@ -347,7 +347,7 @@ const RoundResultProjectDetailPage = () => {
 			initPage()
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [params.roundId, params.projectId, stellarPubKey])
+	}, [params.roundId, params.projectId, storage.my_address])
 
 	return (
 		<RoundResultLayout>
@@ -438,9 +438,13 @@ const RoundResultProjectDetailPage = () => {
 							</div>
 							<div>
 								<p className="text-[25px] font-normal">
-									USD {(global.stellarPrice * allocation).toFixed(2)}{' '}
+									USD{' '}
+									{storage.chainId === 'stellar'
+										? (global.stellarPrice * allocation).toFixed(2)
+										: (global.nearPrice * allocation).toFixed(2)}{' '}
 									<span className="text-base font-normal text-gray-600">
-										{allocation} XLM
+										{allocation}{' '}
+										{storage.chainId === 'stellar' ? 'XLM' : 'NEAR'}
 									</span>{' '}
 								</p>
 								<p className="text-xs font-semibold text-grantpicks-black-600">

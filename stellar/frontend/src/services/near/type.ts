@@ -200,6 +200,15 @@ export type NearPayoutInput = {
 	memo: string | undefined
 }
 
+export type NearPayout = {
+	id: string
+	round_id: string
+	recipient_id: string
+	amount: string
+	paid_at: number | null
+	memo: string | undefined
+}
+
 export function nearRoundToGPRound(round: NearRound) {
 	const gprRound = new GPRound()
 

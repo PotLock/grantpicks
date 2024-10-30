@@ -10,6 +10,7 @@ import Image from 'next/image'
 import clsx from 'clsx'
 import { GPVotingResult } from '@/models/voting'
 import IconNear from '../svgs/IconNear'
+import { formatNearAmount } from 'near-api-js/lib/utils/format'
 
 const ResultItem = ({
 	index,
@@ -30,10 +31,16 @@ const ResultItem = ({
 
 	if (store.current_round_payouts.length > 0) {
 		const payout = store.current_round_payouts.find(
-			(p) => p.recipient_id === projectData?.owner?.id,
+			(p) => p.recipient === projectData?.owner?.id,
 		)
 		if (payout) {
-			amountToDistribute = Number(formatStroopToXlm(payout.amount))
+			if (store.chainId === 'stellar') {
+				amountToDistribute = Number(formatStroopToXlm(BigInt(payout.amount)))
+			} else {
+				amountToDistribute = Number(
+					formatNearAmount(payout.amount).replace(',', ''),
+				)
+			}
 		} else {
 			amountToDistribute = 0
 		}

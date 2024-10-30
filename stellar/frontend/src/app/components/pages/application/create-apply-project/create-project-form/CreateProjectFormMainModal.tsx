@@ -17,21 +17,17 @@ import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import {
-	createProject,
 	ICreateProjectParams,
 	IGetProjectsResponse,
 } from '@/services/stellar/project-registry'
 import { useWallet } from '@/app/providers/WalletProvider'
-import CMDWallet from '@/lib/wallet'
-import Contracts from '@/lib/contracts'
-import { Network } from '@/types/on-chain'
-import { parseToStroop } from '@/utils/helper'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import { useModalContext } from '@/app/providers/ModalProvider'
 import IconClose from '@/app/components/svgs/IconClose'
 import { localStorageConfigs } from '@/configs/local-storage'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { NearSocialGPProject } from '@/services/near/near-social'
+import { RegistrationStatus } from 'lists-client'
 
 const CreateProjectFormContext = createContext<ICreateProjectFormContext>({
 	data: DEFAULT_CREATE_PROJECT_DATA,
@@ -48,7 +44,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 	)
 	const { dismissPageLoading, openPageLoading } = useGlobalContext()
 	const [step, setStep] = useState<number>(1)
-	const { stellarPubKey, stellarKit, nearWallet } = useWallet()
+	const { stellarKit, nearWallet } = useWallet()
 	const { setSuccessCreateProjectModalProps } = useModalContext()
 	const storage = useAppStorage()
 
@@ -83,7 +79,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 						funded_ms: BigInt(f.date.getTime() as number),
 					})),
 					image_url: DEFAULT_IMAGE_URL,
-					payout_address: stellarPubKey,
+					payout_address: storage.my_address || '',
 					repositories: dataForm.github_urls.map((g) => ({
 						label: 'github',
 						url: g,
@@ -95,17 +91,46 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 					})),
 				}
 
-				const txCreateProject = await createProject(
-					stellarPubKey,
-					params,
-					contracts,
-				)
+				const isRegistered = await contracts.lists_contract.is_registered({
+					registrant_id: storage.my_address || '',
+					list_id: BigInt(process.env.PROJECTS_LIST_ID || '1'),
+					required_status: { tag: 'Approved' } as RegistrationStatus,
+				})
+
+				if (!isRegistered) {
+					const txRegisterList = await contracts.lists_contract.register_batch({
+						submitter: storage.my_address || '',
+						list_id: BigInt(process.env.PROJECTS_LIST_ID || '1'),
+						notes: 'Register new project',
+						registrations: [
+							{
+								registrant: storage.my_address || '',
+								notes: 'ok',
+								status: { tag: 'Approved' } as RegistrationStatus,
+								submitted_ms: undefined,
+								updated_ms: undefined,
+							},
+						],
+					})
+
+					await contracts.signAndSendTx(
+						stellarKit as StellarWalletsKit,
+						txRegisterList.toXDR(),
+						storage.my_address || '',
+					)
+				}
+
+				const txCreateProject = await contracts.project_contract.apply({
+					applicant: storage.my_address || '',
+					project_params: params,
+				})
 
 				const txHashCreateProject = await contracts.signAndSendTx(
 					stellarKit as StellarWalletsKit,
 					txCreateProject.toXDR(),
-					stellarPubKey,
+					storage.my_address || '',
 				)
+
 				if (txHashCreateProject) {
 					setSuccessCreateProjectModalProps((prev) => ({
 						...prev,
@@ -149,7 +174,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 						funded_ms: parseInt(f.date.getTime().toString()),
 					})),
 					image_url: DEFAULT_IMAGE_URL,
-					payout_address: stellarPubKey,
+					payout_address: storage.my_address || '',
 					repositories: dataForm.github_urls.map((g) => ({
 						label: 'github',
 						url: g,
@@ -167,9 +192,6 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 				const listId = process.env.NEAR_PROJECTS_LIST_ID || '1'
 
 				const txRegisterList = await contracts.lists.registerList(listId, true)
-
-				console.log('txCreateProject', txCreateProject)
-				console.log('txRegisterList', txRegisterList)
 
 				await contracts.near_social.sendTransactions([
 					txRegisterList,

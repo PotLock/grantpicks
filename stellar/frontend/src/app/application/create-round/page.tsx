@@ -260,17 +260,17 @@ const CreateRoundPage = () => {
 							: [],
 					allow_remaining_dist: data.allow_remaining_dist || false,
 					compliance_req_desc: data.compliance_req_desc,
-					compliance_period_ms: data.compliance_period_ms
-						? BigInt(data.compliance_period_ms as number)
+					compliance_period_ms: compliancePeriodData.period_ms
+						? BigInt(compliancePeriodData.period_ms)
 						: undefined,
-					cooldown_period_ms: data.cooldown_period_ms
-						? BigInt(data.cooldown_period_ms as number)
+					cooldown_period_ms: cooldownPeriodData.period_ms
+						? BigInt(cooldownPeriodData.period_ms)
 						: undefined,
 					remaining_dist_address:
 						data.remaining_dist_address || storage.my_address || '',
 					referrer_fee_basis_points: 0,
 				}
-				console.log('debug params', createRoundParams)
+
 				const txCreateRound = await createRound(
 					stellarPubKey,
 					createRoundParams,
@@ -334,13 +334,13 @@ const CreateRoundPage = () => {
 							value: data.contact_address,
 						},
 					],
-					compliance_period_ms: parseInt(
-						data.compliance_period_ms?.toString() || '0',
-					),
+					compliance_period_ms: compliancePeriodData.period_ms
+						? compliancePeriodData.period_ms
+						: undefined,
 					compliance_requirement_description: data.compliance_req_desc,
-					cooldown_period_ms: parseInt(
-						data.cooldown_period_ms?.toString() || '0',
-					),
+					cooldown_period_ms: cooldownPeriodData.period_ms
+						? cooldownPeriodData.period_ms
+						: undefined,
 					use_cooldown: data.allow_cooldown || false,
 					use_compliance: data.allow_compliance || false,
 					use_referrals: false,

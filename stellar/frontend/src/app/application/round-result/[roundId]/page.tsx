@@ -55,7 +55,7 @@ const RoundResultPage = () => {
 			const isExsist = storage.roundes.has(roundId.toString())
 			let isOwner = false
 			let isAdmin = false
-			if (!isExsist && storage.chainId === 'stellar') {
+			if (storage.chainId === 'stellar') {
 				const contracts = storage.getStellarContracts()
 
 				if (!contracts) {
@@ -119,7 +119,7 @@ const RoundResultPage = () => {
 						storage.setCurrentRoundPayouts(newPayouts)
 					}
 				}
-			} else if (!isExsist) {
+			} else {
 				const contracts = storage.getNearContracts(null)
 				if (!contracts) {
 					return

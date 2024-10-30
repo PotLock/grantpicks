@@ -194,6 +194,12 @@ export type NearProjectVotingResult = {
 	voting_count: number
 }
 
+export type NearPayoutInput = {
+	recipient_id: string
+	amount: string
+	memo: string | undefined
+}
+
 export function nearRoundToGPRound(round: NearRound) {
 	const gprRound = new GPRound()
 

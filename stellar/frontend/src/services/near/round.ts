@@ -9,6 +9,7 @@ import {
 	NearConfig,
 	NearCreateRoundParams,
 	NearPair,
+	NearPayoutInput,
 	NearPick,
 	NearProjectApplication,
 	NearProjectVotingResult,
@@ -351,5 +352,20 @@ export class RoundContract extends BaseContract {
 		} catch (e) {
 			return []
 		}
+	}
+
+	async setPayouts(roundId: number, payouts: NearPayoutInput[]) {
+		const result = await this.callMethod({
+			method: 'set_payouts',
+			args: {
+				round_id: parseInt(roundId.toString()),
+				payouts: payouts,
+				clear_existing: true,
+			},
+			deposit: NO_DEPOSIT,
+			gas: THIRTY_TGAS,
+		})
+
+		return result
 	}
 }

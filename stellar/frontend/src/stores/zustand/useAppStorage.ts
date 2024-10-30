@@ -22,6 +22,7 @@ import { create } from 'zustand'
 import { GPRound } from '@/models/round'
 import { GPProject } from '@/models/project'
 import { GPVotingResult } from '@/models/voting'
+import { formatNearAmount } from 'near-api-js/lib/utils/format'
 
 interface AppRepo {
 	chainId: string | null
@@ -233,6 +234,16 @@ const useAppStorage = create<AppRepo>((set, get) => ({
 				) *
 					myVote) /
 				100
+		} else {
+			ammountToDistribute =
+				(Number(
+					formatNearAmount(roundData?.vault_total_deposits || '0').replace(
+						',',
+						'',
+					),
+				) *
+					myVote) /
+				100
 		}
 
 		let pairWiseCoin = 0
@@ -248,16 +259,27 @@ const useAppStorage = create<AppRepo>((set, get) => ({
 
 		const amountOverride = get().current_payout_inputs.get(project_id) || 0
 		const pairWiseAdjusted = pairWiseCoin * (myVote / 100)
+		let currentBalance = 0
+
+		if (chainId === 'stellar') {
+			currentBalance = Number(
+				formatStroopToXlm(BigInt(roundData?.current_vault_balance || 0)),
+			)
+		} else {
+			currentBalance = Number(
+				formatNearAmount(roundData?.current_vault_balance || '0').replace(
+					',',
+					'',
+				),
+			)
+		}
 
 		if (chainId === 'stellar') {
 			assignedWeight =
-				((pairWiseAdjusted + amountOverride) /
-					Number(
-						formatStroopToXlm(
-							BigInt(roundData?.current_vault_balance) || BigInt(0),
-						),
-					)) *
-				100
+				((pairWiseAdjusted + amountOverride) / currentBalance) * 100
+		} else {
+			assignedWeight =
+				((pairWiseAdjusted + amountOverride) / currentBalance) * 100
 		}
 
 		assignedWeightCalculated = pairWiseAdjusted + amountOverride

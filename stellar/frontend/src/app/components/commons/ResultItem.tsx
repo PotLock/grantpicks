@@ -9,6 +9,7 @@ import useAppStorage from '@/stores/zustand/useAppStorage'
 import Image from 'next/image'
 import clsx from 'clsx'
 import { GPVotingResult } from '@/models/voting'
+import IconNear from '../svgs/IconNear'
 
 const ResultItem = ({
 	index,
@@ -90,7 +91,11 @@ const ResultItem = ({
 							: '-'}{' '}
 					{store.chainId === 'stellar' ? 'XLM' : 'NEAR'}
 				</p>
-				<IconStellar size={14} className="fill-grantpicks-black-600" />
+				{store.chainId === 'stellar' ? (
+					<IconStellar size={14} className="fill-grantpicks-black-600" />
+				) : (
+					<IconNear size={14} className="fill-grantpicks-black-600" />
+				)}
 			</div>
 			<div className="flex items-center justify-end w-[12%]">
 				<p className="text-xs md:text-sm font-semibold text-grantpicks-black-500 text-right">

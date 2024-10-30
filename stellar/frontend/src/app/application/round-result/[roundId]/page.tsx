@@ -490,7 +490,11 @@ const RoundResultPage = () => {
 				</div>
 				<div className="p-3 md:p-4 lg:p-5 rounded-xl border border-black/10 flex items-center space-x-4 bg-white">
 					<div className="border border-black/10 p-2 rounded-full">
-						<IconStellar size={24} className="fill-grantpicks-black-400" />
+						{storage.chainId === 'stellar' ? (
+							<IconStellar size={24} className="fill-grantpicks-black-400" />
+						) : (
+							<IconNear size={24} className="fill-grantpicks-black-400" />
+						)}
 					</div>
 					<div>
 						<p className="text-[25px] font-normal text-grantpicks-black-950">
@@ -519,7 +523,11 @@ const RoundResultPage = () => {
 				{(roundData?.use_vault || storage.chainId === 'near') && (
 					<div className="p-3 md:p-4 lg:p-5 rounded-xl border border-black/10 flex items-center space-x-4 bg-white">
 						<div className="border border-black/10 p-2 rounded-full">
-							<IconStellar size={24} className="fill-grantpicks-black-400" />
+							{storage.chainId === 'stellar' ? (
+								<IconStellar size={24} className="fill-grantpicks-black-400" />
+							) : (
+								<IconNear size={24} className="fill-grantpicks-black-400" />
+							)}
 						</div>
 						<div>
 							<p className="text-[25px] font-normal text-grantpicks-black-950">

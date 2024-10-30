@@ -339,13 +339,17 @@ export class RoundContract extends BaseContract {
 	}
 
 	async getVotingResults(roundId: number): Promise<NearProjectVotingResult[]> {
-		const result = await this.viewMethod({
-			method: 'get_voting_results_for_round',
-			args: {
-				round_id: parseInt(roundId.toString()),
-			},
-		})
+		try {
+			const result = await this.viewMethod({
+				method: 'get_voting_results_for_round',
+				args: {
+					round_id: parseInt(roundId.toString()),
+				},
+			})
 
-		return result
+			return result
+		} catch (e) {
+			return []
+		}
 	}
 }

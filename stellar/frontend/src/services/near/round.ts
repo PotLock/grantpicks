@@ -20,6 +20,7 @@ import {
 import { BaseContract } from './contract'
 import { parseNearAmount } from 'near-api-js/lib/utils/format'
 import { from } from 'rxjs'
+import { memo } from 'react'
 
 export class RoundContract extends BaseContract {
 	constructor(wallet: Wallet | null, network: string, contractId: string) {
@@ -383,6 +384,46 @@ export class RoundContract extends BaseContract {
 				from_index: skip,
 				limit,
 			},
+		})
+
+		return result
+	}
+
+	async processPayouts(roundId: number) {
+		const result = await this.callMethod({
+			method: 'process_payouts',
+			args: {
+				round_id: parseInt(roundId.toString()),
+			},
+			deposit: NO_DEPOSIT,
+			gas: THIRTY_TGAS,
+		})
+
+		return result
+	}
+
+	async redistributeRemainingFund(roundId: number) {
+		const result = await this.callMethod({
+			method: 'redistribute_vault',
+			args: {
+				round_id: parseInt(roundId.toString()),
+				memo: 'Redistribute remaining fund',
+			},
+			deposit: NO_DEPOSIT,
+			gas: THIRTY_TGAS,
+		})
+
+		return result
+	}
+
+	async setRoundComplete(roundId: number) {
+		const result = await this.callMethod({
+			method: 'set_round_complete',
+			args: {
+				round_id: parseInt(roundId.toString()),
+			},
+			deposit: NO_DEPOSIT,
+			gas: THIRTY_TGAS,
 		})
 
 		return result

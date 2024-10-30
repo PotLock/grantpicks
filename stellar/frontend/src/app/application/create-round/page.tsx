@@ -858,9 +858,15 @@ const CreateRoundPage = () => {
 									{...register('expected_amount', {
 										required: true,
 										onChange: async (e) => {
-											const calculation =
-												parseFloat(e.target.value || '0') * stellarPrice
-											setExpectAmountUsd(`${calculation.toFixed(3)}`)
+											if (storage.chainId === 'stellar') {
+												const calculation =
+													parseFloat(e.target.value || '0') * stellarPrice
+												setExpectAmountUsd(`${calculation.toFixed(3)}`)
+											} else {
+												const calculation =
+													parseFloat(e.target.value || '0') * nearPrice
+												setExpectAmountUsd(`${calculation.toFixed(3)}`)
+											}
 										},
 									})}
 									preffixIcon={

@@ -7,15 +7,17 @@ import { useWallet } from '@/app/providers/WalletProvider'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import toast from 'react-hot-toast'
-import Image from 'next/image'
 import IconNear from '../../svgs/IconNear'
 import IconStellar from '../../svgs/IconStellar'
-import { formatStroopToXlm } from '@/utils/helper'
+import { formatStroopToXlm, prettyTruncate } from '@/utils/helper'
 import IconUnion from '../../svgs/IconUnion'
 import PayoutItem from '../../commons/PayoutItem'
 import IconInfoCircle from '../../svgs/IconInfoCircle'
 import { PayoutInput } from 'round-client'
 import IconLoading from '../../svgs/IconLoading'
+import { formatNearAmount, parseNearAmount } from 'near-api-js/lib/utils/format'
+import Image from 'next/image'
+import { NearPayoutInput } from '@/services/near/type'
 
 export type PayoutTableItem = {
 	actual_amount: number
@@ -28,7 +30,7 @@ export type PayoutTableItem = {
 
 const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 	const [memo, setMemo] = useState<string>('')
-	const { stellarPubKey, stellarKit, connectedWallet } = useWallet()
+	const { stellarPubKey, stellarKit, nearWallet } = useWallet()
 	const [managerWeight, setManagerWeight] = useState<number>(0)
 	const [pairwiseWeight, setPairwiseWeight] = useState<number>(100)
 	const [isLoading, setIsLoading] = useState<boolean>(false)
@@ -59,44 +61,79 @@ const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 
 	const submitPayout = async () => {
 		setIsLoading(true)
-		let payoutInputs: PayoutInput[] = []
-
-		storage.getResultNotFlagged().forEach((data) => {
-			const tableState = storage.getPayoutTableItems(data.project)
-			const projectData = storage.projects.get(data.project)
-			payoutInputs.push({
-				recipient_id: projectData?.owner?.id || '',
-				amount: BigInt(tableState.final_calculation * 10000000),
-				memo,
-			})
-		})
-
-		const contract = storage.getStellarContracts()
-
-		if (!contract) {
-			return
-		}
-
 		try {
-			const savePayoutTx = await contract.round_contract.set_payouts({
-				round_id: BigInt(storage.current_round?.id || 0),
-				caller: stellarPubKey,
-				payouts: payoutInputs,
-				clear_existing: true,
-			})
+			if (storage.chainId === 'stellar') {
+				let payoutInputs: PayoutInput[] = []
 
-			const txHash = await contract.signAndSendTx(
-				stellarKit as StellarWalletsKit,
-				savePayoutTx.toXDR(),
-				stellarPubKey,
-			)
+				storage.getResultNotFlagged().forEach((data) => {
+					const tableState = storage.getPayoutTableItems(data.project)
+					const projectData = storage.projects.get(data.project)
+					payoutInputs.push({
+						recipient_id: projectData?.owner?.id || '',
+						amount: BigInt(tableState.final_calculation * 10000000),
+						memo,
+					})
+				})
 
-			if (!txHash) {
-				toast.error('Error submitting payout')
+				const contract = storage.getStellarContracts()
+
+				if (!contract) {
+					return
+				}
+
+				const savePayoutTx = await contract.round_contract.set_payouts({
+					round_id: BigInt(storage.current_round?.id || 0),
+					caller: stellarPubKey,
+					payouts: payoutInputs,
+					clear_existing: true,
+				})
+
+				const txHash = await contract.signAndSendTx(
+					stellarKit as StellarWalletsKit,
+					savePayoutTx.toXDR(),
+					stellarPubKey,
+				)
+
+				if (!txHash) {
+					toast.error('Error submitting payout')
+				} else {
+					toast.success('Payout submitted successfully')
+					setIsLoading(false)
+					onClose()
+				}
 			} else {
-				toast.success('Payout submitted successfully')
-				setIsLoading(false)
-				onClose()
+				let payoutInputs: NearPayoutInput[] = []
+
+				storage.getResultNotFlagged().forEach((data) => {
+					const tableState = storage.getPayoutTableItems(data.project)
+					const projectData = storage.projects.get(data.project)
+
+					payoutInputs.push({
+						recipient_id: projectData?.owner?.id || '',
+						amount:
+							parseNearAmount(tableState.final_calculation.toString()) || '0',
+						memo,
+					})
+				})
+
+				const contract = storage.getNearContracts(nearWallet)
+
+				if (!contract) {
+					return
+				}
+
+				const savePayoutTx = await contract.round.setPayouts(
+					Number(storage.current_round?.id || 0),
+					payoutInputs,
+				)
+
+				if (!savePayoutTx) {
+					toast.error('Error submitting payout')
+				} else {
+					toast.success('Payout submitted successfully')
+					setIsLoading(false)
+					onClose()
+				}
 			}
 		} catch (e) {
 			console.error(e)
@@ -133,19 +170,24 @@ const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 			overridedAmount += value
 		})
 
-		const pairWiseCoin =
-			(pairwiseWeight / 100) *
-			Number(
+		let currentBalance = 0
+
+		if (storage.chainId === 'stellar') {
+			currentBalance = Number(
 				formatStroopToXlm(
 					BigInt(storage.current_round?.current_vault_balance || 0),
 				),
 			)
-		const managerCoin =
-			Number(
-				formatStroopToXlm(
-					BigInt(storage.current_round?.current_vault_balance || 0),
-				),
-			) - pairWiseCoin
+		} else {
+			currentBalance = Number(
+				formatNearAmount(
+					storage.current_round?.current_vault_balance || '0',
+				).replace(',', ''),
+			)
+		}
+
+		const pairWiseCoin = (pairwiseWeight / 100) * currentBalance
+		const managerCoin = currentBalance - pairWiseCoin
 
 		const bannedAllocation =
 			storage.getBannedProjectAllocations() * pairWiseCoin
@@ -165,10 +207,17 @@ const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 							Edit Payout
 						</div>
 						<div className="flex items-center md:border-l md:ml-2 md:pl-2 md:mt-0 mt-2">
-							<div className="bg-grantpicks-black-200 rounded-full w-10 h-10 mr-2" />
+							<Image
+								src={`https://www.tapback.co/api/avatar/${storage.my_address}`}
+								alt=""
+								width={200}
+								height={200}
+								className="bg-grantpicks-black-200 rounded-full w-10 h-10 mr-2"
+							/>
 							<div className="flex items-center text-xs md:text-sm font-semibold text-grantpicks-black-600 flex-grow">
-								{stellarPubKey.substring(0, 6)}...
-								{stellarPubKey.substring(stellarPubKey.length - 6)}
+								{storage.my_address && storage.my_address.length > 15
+									? prettyTruncate(storage.my_address || '', 15, 'address')
+									: storage.my_address}
 							</div>
 						</div>
 						<div className="hiden md:flex md:flex-grow"></div>
@@ -188,19 +237,25 @@ const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 					</div>
 					<div className="md:flex md:items-center w-full">
 						<div className="flex">
-							{connectedWallet === 'near' ? (
+							{storage.chainId === 'near' ? (
 								<IconNear size={32} className="fill-grantpicks-black-950" />
 							) : (
 								<IconStellar size={32} className="fill-grantpicks-black-950" />
 							)}
 
 							<div className="text-xl md:text-2xl font-semibold text-grantpicks-black-950 ml-2">
-								{storage.current_remaining} /{' '}
-								{Number(
-									formatStroopToXlm(
-										BigInt(storage.current_round?.current_vault_balance || 0),
-									),
-								)}
+								{storage.current_remaining.toFixed(4)} /{' '}
+								{storage.chainId === 'stellar'
+									? Number(
+											formatStroopToXlm(
+												BigInt(
+													storage.current_round?.current_vault_balance || 0,
+												),
+											),
+										)
+									: formatNearAmount(
+											storage.current_round?.current_vault_balance || '0',
+										)}
 							</div>
 						</div>
 						<div className="flex flex-grow"></div>
@@ -291,19 +346,31 @@ const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 							<p className="text-xs md:text-sm font-semibold text-grantpicks-black-500 text-right w-full">
 								{currentOverAllStats.actual_amount.toFixed(2)}
 							</p>
-							<IconStellar size={14} className="fill-grantpicks-black-500" />
+							{storage.chainId === 'stellar' ? (
+								<IconStellar size={14} className="fill-grantpicks-black-500" />
+							) : (
+								<IconNear size={14} className="fill-grantpicks-black-500" />
+							)}
 						</div>
 						<div className="items-center w-[11%] hidden md:flex">
 							<p className="text-xs md:text-sm font-semibold text-grantpicks-black-500 text-right w-full">
 								{currentOverAllStats.amount_override.toFixed(2)}
 							</p>
-							<IconStellar size={14} className="fill-grantpicks-black-500" />
+							{storage.chainId === 'stellar' ? (
+								<IconStellar size={14} className="fill-grantpicks-black-500" />
+							) : (
+								<IconNear size={14} className="fill-grantpicks-black-500" />
+							)}
 						</div>
 						<div className="items-center w-[11%] hidden md:flex">
 							<p className="text-xs md:text-sm font-semibold text-grantpicks-black-500 text-right w-full">
 								{currentOverAllStats.pairwise_weight_adjusted.toFixed(2)}
 							</p>
-							<IconStellar size={14} className="fill-grantpicks-black-500" />
+							{storage.chainId === 'stellar' ? (
+								<IconStellar size={14} className="fill-grantpicks-black-500" />
+							) : (
+								<IconNear size={14} className="fill-grantpicks-black-500" />
+							)}
 						</div>
 						<div className="items-center w-[11%] hidden md:flex">
 							<p className="text-xs md:text-sm font-semibold text-grantpicks-black-500 text-right w-full">
@@ -315,13 +382,21 @@ const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 							<p className="text-xs md:text-sm font-semibold text-grantpicks-black-500 text-right w-full">
 								{currentOverAllStats.assigned_calculated.toFixed(2)}
 							</p>
-							<IconStellar size={14} className="fill-grantpicks-black-500" />
+							{storage.chainId === 'stellar' ? (
+								<IconStellar size={14} className="fill-grantpicks-black-500" />
+							) : (
+								<IconNear size={14} className="fill-grantpicks-black-500" />
+							)}
 						</div>
 						<div className="items-center w-[11%] hidden md:flex">
 							<p className="text-xs md:text-sm font-semibold text-grantpicks-black-500 text-right w-full">
 								{currentOverAllStats.final_calculation.toFixed(2)}
 							</p>
-							<IconStellar size={14} className="fill-grantpicks-black-500" />
+							{storage.chainId === 'stellar' ? (
+								<IconStellar size={14} className="fill-grantpicks-black-500" />
+							) : (
+								<IconNear size={14} className="fill-grantpicks-black-500" />
+							)}
 						</div>
 					</div>
 					<div className="w-full p-4">

@@ -29,11 +29,14 @@ import {
 } from '@/services/stellar/type'
 import { formatNearAmount, parseNearAmount } from 'near-api-js/lib/utils/format'
 import {
+	NearPayout,
 	nearProjectToGPProject,
 	NearProjectVotingResult,
 	nearRoundToGPRound,
 } from '@/services/near/type'
 import { GPVotingResult } from '@/models/voting'
+import { GPPayout } from '@/models/payout'
+import { LIMIT_SIZE_CONTRACT } from '@/constants/query'
 
 const RoundResultPage = () => {
 	const { connectedWallet, stellarPubKey, stellarKit } = useWallet()
@@ -52,7 +55,7 @@ const RoundResultPage = () => {
 			const isExsist = storage.roundes.has(roundId.toString())
 			let isOwner = false
 			let isAdmin = false
-			if (!isExsist && storage.chainId === 'stellar') {
+			if (storage.chainId === 'stellar') {
 				const contracts = storage.getStellarContracts()
 
 				if (!contracts) {
@@ -91,7 +94,7 @@ const RoundResultPage = () => {
 					storage.setPayoutDone(isPayoutDone)
 
 					let fetch = true
-					let newPayouts: Payout[] = []
+					let newPayouts: GPPayout[] = []
 
 					while (fetch) {
 						const payouts = (
@@ -102,7 +105,12 @@ const RoundResultPage = () => {
 							})
 						).result
 
-						newPayouts = newPayouts.concat(payouts)
+						payouts.forEach((p: Payout) => {
+							newPayouts.push({
+								recipient: p.recipient_id,
+								amount: p.amount.toString(),
+							})
+						})
 
 						if (payouts.length < 5) {
 							fetch = false
@@ -111,7 +119,7 @@ const RoundResultPage = () => {
 						storage.setCurrentRoundPayouts(newPayouts)
 					}
 				}
-			} else if (!isExsist) {
+			} else {
 				const contracts = storage.getNearContracts(null)
 				if (!contracts) {
 					return
@@ -120,8 +128,6 @@ const RoundResultPage = () => {
 				const roundInfo = await contracts.round.getRoundById(
 					parseInt(params.roundId),
 				)
-
-				console.log('roundInfo', roundInfo)
 
 				if (roundInfo) {
 					storage.setRound(nearRoundToGPRound(roundInfo))
@@ -136,6 +142,30 @@ const RoundResultPage = () => {
 					const isPayoutDone = false
 
 					storage.setPayoutDone(isPayoutDone)
+
+					let fetch = true
+					let newPayouts: GPPayout[] = []
+
+					while (fetch) {
+						const payouts = await contracts.round.getPayouts(
+							Number(roundId.toString()),
+							newPayouts.length,
+							LIMIT_SIZE_CONTRACT,
+						)
+
+						payouts.forEach((p: NearPayout) => {
+							newPayouts.push({
+								recipient: p.recipient_id,
+								amount: p.amount,
+							})
+						})
+
+						if (payouts.length < LIMIT_SIZE_CONTRACT) {
+							fetch = false
+						}
+
+						storage.setCurrentRoundPayouts(newPayouts)
+					}
 				}
 			}
 		}

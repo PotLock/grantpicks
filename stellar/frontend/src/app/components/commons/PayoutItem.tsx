@@ -1,11 +1,12 @@
 import useAppStorage from '@/stores/zustand/useAppStorage'
-import { ProjectVotingResult } from 'round-client'
 import IconStellar from '../svgs/IconStellar'
 import IconUnion from '../svgs/IconUnion'
 import Image from 'next/image'
 import { formatStroopToXlm } from '@/utils/helper'
 import { useState } from 'react'
 import { GPVotingResult } from '@/models/voting'
+import IconNear from '../svgs/IconNear'
+import { formatNearAmount } from 'near-api-js/lib/utils/format'
 
 const PayoutItem = ({
 	index,
@@ -18,6 +19,7 @@ const PayoutItem = ({
 	const projectData = store.projects.get(data.project)
 	const [amountOverride, setAmountOverride] = useState<number>(0)
 	const tableState = store.getPayoutTableItems(data.project)
+	const storage = useAppStorage()
 
 	const onChangeAmmountOverride = (e: React.ChangeEvent<HTMLInputElement>) => {
 		let newPayouts = store.current_payout_inputs
@@ -38,22 +40,27 @@ const PayoutItem = ({
 			overridedAmount += value
 		})
 
-		const pairWiseCoin =
-			(store.current_pairwise_weight / 100) *
-			Number(
+		let currentBalance = 0
+
+		if (storage.chainId === 'stellar') {
+			currentBalance = Number(
 				formatStroopToXlm(
 					BigInt(store.current_round?.current_vault_balance || 0),
 				),
 			)
+		} else {
+			currentBalance = Number(
+				formatNearAmount(
+					storage.current_round?.current_vault_balance || '0',
+				).replace(',', ''),
+			)
+		}
+
+		const pairWiseCoin = (store.current_pairwise_weight / 100) * currentBalance
 
 		const bannedAllocation = store.getBannedProjectAllocations() * pairWiseCoin
 
-		const managerCoin =
-			Number(
-				formatStroopToXlm(
-					BigInt(store.current_round?.current_vault_balance || 0),
-				),
-			) - pairWiseCoin
+		const managerCoin = currentBalance - pairWiseCoin
 
 		overridedAmount = managerCoin + bannedAllocation - overridedAmount
 		store.setCurrentRemaining(overridedAmount)
@@ -82,18 +89,27 @@ const PayoutItem = ({
 					value={tableState?.actual_amount.toFixed(2)}
 					className="flex flex-grow text-right outline-none w-10 text-sm disabled:bg-white"
 				/>
-				<IconStellar size={14} className="fill-grantpicks-black-500" />
+				{storage.chainId === 'stellar' ? (
+					<IconStellar size={14} className="fill-grantpicks-black-500" />
+				) : (
+					<IconNear size={14} className="fill-grantpicks-black-500" />
+				)}
 			</div>
 			<div className="items-center w-[11%] hidden md:flex">
 				<input
 					type="number"
 					placeholder="0"
 					maxLength={6}
-					value={amountOverride == 0 ? '' : amountOverride}
+					value={amountOverride || ''}
+					step={0.01}
 					className="flex flex-grow text-right outline-none w-10 text-sm m-1 bg-grantpicks-black-50 border border-grantpicks-black-100 p-2 rounded-md"
 					onChange={onChangeAmmountOverride}
 				/>
-				<IconStellar size={14} className="fill-grantpicks-black-500" />
+				{storage.chainId === 'stellar' ? (
+					<IconStellar size={14} className="fill-grantpicks-black-500" />
+				) : (
+					<IconNear size={14} className="fill-grantpicks-black-500" />
+				)}
 			</div>
 			<div className="items-center w-[11%] hidden md:flex">
 				<input
@@ -104,7 +120,11 @@ const PayoutItem = ({
 					value={tableState?.pairwise_weight_adjusted.toFixed(2)}
 					className="flex flex-grow text-right outline-none w-10 text-sm disabled:bg-white"
 				/>
-				<IconStellar size={14} className="fill-grantpicks-black-500" />
+				{storage.chainId === 'stellar' ? (
+					<IconStellar size={14} className="fill-grantpicks-black-500" />
+				) : (
+					<IconNear size={14} className="fill-grantpicks-black-500" />
+				)}
 			</div>
 			<div className="items-center w-[11%] hidden md:flex">
 				<input
@@ -126,7 +146,11 @@ const PayoutItem = ({
 					value={tableState?.assigned_calculated.toFixed(2)}
 					className="flex flex-grow text-right outline-none w-10 text-sm disabled:bg-white"
 				/>
-				<IconStellar size={14} className="fill-grantpicks-black-500" />
+				{storage.chainId === 'stellar' ? (
+					<IconStellar size={14} className="fill-grantpicks-black-500" />
+				) : (
+					<IconNear size={14} className="fill-grantpicks-black-500" />
+				)}
 			</div>
 			<div className="items-center w-[11%] hidden md:flex">
 				<input
@@ -137,7 +161,11 @@ const PayoutItem = ({
 					value={tableState?.final_calculation.toFixed(2)}
 					className="flex flex-grow text-right outline-none w-10 text-sm disabled:bg-white"
 				/>
-				<IconStellar size={14} className="fill-grantpicks-black-500" />
+				{storage.chainId === 'stellar' ? (
+					<IconStellar size={14} className="fill-grantpicks-black-500" />
+				) : (
+					<IconNear size={14} className="fill-grantpicks-black-500" />
+				)}
 			</div>
 		</div>
 	)

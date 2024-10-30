@@ -22,6 +22,8 @@ import { create } from 'zustand'
 import { GPRound } from '@/models/round'
 import { GPProject } from '@/models/project'
 import { GPVotingResult } from '@/models/voting'
+import { formatNearAmount } from 'near-api-js/lib/utils/format'
+import { GPPayout } from '@/models/payout'
 
 interface AppRepo {
 	chainId: string | null
@@ -34,7 +36,7 @@ interface AppRepo {
 	current_manager_weight: number
 	current_pairwise_weight: number
 	current_round: GPRound | null
-	current_round_payouts: Payout[]
+	current_round_payouts: GPPayout[]
 	current_round_payout_challenges: PayoutsChallenge[]
 	current_project: GPProject | null
 	current_results: GPVotingResult[]
@@ -49,7 +51,7 @@ interface AppRepo {
 	setMyAddress: (address: string) => void
 	setIsAdminProject: (isAdminProject: boolean) => void
 	setRoundes: (roundes: Map<string, GPRound>) => void
-	setCurrentRoundPayouts: (payouts: Payout[]) => void
+	setCurrentRoundPayouts: (payouts: GPPayout[]) => void
 	setCurrentRoundPayoutChallenges: (payouts: PayoutsChallenge[]) => void
 	setChainId: (chainId: string) => void
 	getStellarContracts: () => Contracts | null
@@ -90,7 +92,7 @@ const useAppStorage = create<AppRepo>((set, get) => ({
 	roundes: new Map(),
 	setRoundes: (roundes: Map<string, GPRound>) => set(() => ({ roundes })),
 	current_round_payouts: [],
-	setCurrentRoundPayouts: (payouts: Payout[]) =>
+	setCurrentRoundPayouts: (payouts: GPPayout[]) =>
 		set(() => ({ current_round_payouts: payouts })),
 	current_round_payout_challenges: [],
 	setCurrentRoundPayoutChallenges: (payouts: PayoutsChallenge[]) =>
@@ -135,15 +137,23 @@ const useAppStorage = create<AppRepo>((set, get) => ({
 		set(() => ({ current_results: results })),
 	getAllocation: (project_id: string) => {
 		const project = get().projects.get(project_id)
+		const chainId = get().chainId
 
 		if (project) {
 			let amountToDistribute = 0
 
 			const payout = get().current_round_payouts.find(
-				(p) => p.recipient_id === project?.owner?.id,
+				(p) => p.recipient === project?.owner?.id,
 			)
+
 			if (payout) {
-				amountToDistribute = Number(formatStroopToXlm(payout.amount))
+				if (chainId === 'stellar') {
+					amountToDistribute = Number(formatStroopToXlm(BigInt(payout.amount)))
+				} else {
+					amountToDistribute = Number(
+						formatNearAmount(payout.amount).replace(',', ''),
+					)
+				}
 			} else {
 				amountToDistribute = 0
 			}
@@ -233,6 +243,16 @@ const useAppStorage = create<AppRepo>((set, get) => ({
 				) *
 					myVote) /
 				100
+		} else {
+			ammountToDistribute =
+				(Number(
+					formatNearAmount(roundData?.vault_total_deposits || '0').replace(
+						',',
+						'',
+					),
+				) *
+					myVote) /
+				100
 		}
 
 		let pairWiseCoin = 0
@@ -248,16 +268,27 @@ const useAppStorage = create<AppRepo>((set, get) => ({
 
 		const amountOverride = get().current_payout_inputs.get(project_id) || 0
 		const pairWiseAdjusted = pairWiseCoin * (myVote / 100)
+		let currentBalance = 0
+
+		if (chainId === 'stellar') {
+			currentBalance = Number(
+				formatStroopToXlm(BigInt(roundData?.current_vault_balance || 0)),
+			)
+		} else {
+			currentBalance = Number(
+				formatNearAmount(roundData?.current_vault_balance || '0').replace(
+					',',
+					'',
+				),
+			)
+		}
 
 		if (chainId === 'stellar') {
 			assignedWeight =
-				((pairWiseAdjusted + amountOverride) /
-					Number(
-						formatStroopToXlm(
-							BigInt(roundData?.current_vault_balance) || BigInt(0),
-						),
-					)) *
-				100
+				((pairWiseAdjusted + amountOverride) / currentBalance) * 100
+		} else {
+			assignedWeight =
+				((pairWiseAdjusted + amountOverride) / currentBalance) * 100
 		}
 
 		assignedWeightCalculated = pairWiseAdjusted + amountOverride

@@ -9,6 +9,8 @@ import {
 	NearConfig,
 	NearCreateRoundParams,
 	NearPair,
+	NearPayout,
+	NearPayoutInput,
 	NearPick,
 	NearProjectApplication,
 	NearProjectVotingResult,
@@ -17,6 +19,7 @@ import {
 } from './type'
 import { BaseContract } from './contract'
 import { parseNearAmount } from 'near-api-js/lib/utils/format'
+import { from } from 'rxjs'
 
 export class RoundContract extends BaseContract {
 	constructor(wallet: Wallet | null, network: string, contractId: string) {
@@ -351,5 +354,37 @@ export class RoundContract extends BaseContract {
 		} catch (e) {
 			return []
 		}
+	}
+
+	async setPayouts(roundId: number, payouts: NearPayoutInput[]) {
+		const result = await this.callMethod({
+			method: 'set_payouts',
+			args: {
+				round_id: parseInt(roundId.toString()),
+				payouts: payouts,
+				clear_existing: true,
+			},
+			deposit: NO_DEPOSIT,
+			gas: THIRTY_TGAS,
+		})
+
+		return result
+	}
+
+	async getPayouts(
+		roundId: number,
+		skip: number,
+		limit: number,
+	): Promise<NearPayout[]> {
+		const result = await this.viewMethod({
+			method: 'get_payouts',
+			args: {
+				round_id: parseInt(roundId.toString()),
+				from_index: skip,
+				limit,
+			},
+		})
+
+		return result
 	}
 }

@@ -11,6 +11,7 @@ import {
 import { Option } from '@stellar/stellar-sdk/contract'
 import { RoundApplication, ApplicationStatus, PickedPair, PayoutInput, Config } from 'round-client'
 import { uniqueNamesGenerator, adjectives, colors, animals } from 'unique-names-generator'
+import { RegistrationInput, RegistrationStatus } from 'lists-client'
 export async function generateFakeRound() {
 	let adminKeyPair = Keypair.random()
 	let adminSecret = adminKeyPair.secret()
@@ -93,6 +94,15 @@ export async function generateFakeRound() {
 		})
 
 		let clientApp = new App('testnet', cmdWallet)
+
+		const listTx = await clientApp.lists_contract.register_batch({
+			submitter: pubKey,
+			list_id: BigInt(1),
+			notes: 'This is a test note',
+			registrations: undefined as Option<RegistrationInput[]>,
+		})
+
+		await listTx.signAndSend()
 
 		const registerTx = await clientApp.project_contract.apply({
 			applicant: pubKey,

@@ -10,7 +10,7 @@ if (typeof window !== 'undefined') {
 export const networks = {
     testnet: {
         networkPassphrase: "Test SDF Network ; September 2015",
-        contractId: "CD63SGHKPR5OLPGFINAQ5A46ZBLPD42MQKOGDOGSBUM677NUREHU6LLU",
+        contractId: "CDEHHXB2OVYVIDJ2M6VTFUNW6JD7GVREORLNSIYEEXIMNCW72UVTJPDD",
     }
 };
 export const Errors = {
@@ -20,9 +20,7 @@ export const Errors = {
     32: { message: "IndexOutOfBound" },
     38: { message: "SameOwner" },
     52: { message: "DataNotFound" },
-    57: { message: "AlreadyInitialized" }
-};
-export const Errors = {
+    57: { message: "AlreadyInitialized" },
     0: { message: "VotingStartGreaterThanVotingEnd" },
     1: { message: "ApplicationStartGreaterThanApplicationEnd" },
     2: { message: "VotingStartLessThanApplicationEnd" },
@@ -54,9 +52,7 @@ export const Errors = {
     51: { message: "NotSolveAllPayoutChallenge" },
     53: { message: "RoundDoesNotUseVault" },
     55: { message: "ApplicationPeriodNotSet" },
-    56: { message: "CoolDownPeriodNotComplete" }
-};
-export const Errors = {
+    56: { message: "CoolDownPeriodNotComplete" },
     6: { message: "VotingPeriodNotStarted" },
     7: { message: "VotingPeriodEnded" },
     9: { message: "VotingPeriodNotEnded" },
@@ -65,9 +61,7 @@ export const Errors = {
     18: { message: "NotVoteAllPairs" },
     24: { message: "EmptyVote" },
     25: { message: "TooManyVotes" },
-    33: { message: "ProjectNotInPair" }
-};
-export const Errors = {
+    33: { message: "ProjectNotInPair" },
     10: { message: "ApplicationPeriodNotStarted" },
     11: { message: "ApplicationPeriodEnded" },
     13: { message: "ProjectNotApproved" },

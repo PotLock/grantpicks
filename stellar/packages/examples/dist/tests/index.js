@@ -71,6 +71,13 @@ export async function generateFakeRound() {
             network: 'testnet',
         });
         let clientApp = new App('testnet', cmdWallet);
+        const listTx = await clientApp.lists_contract.register_batch({
+            submitter: pubKey,
+            list_id: BigInt(1),
+            notes: 'This is a test note',
+            registrations: undefined,
+        });
+        await listTx.signAndSend();
         const registerTx = await clientApp.project_contract.apply({
             applicant: pubKey,
             project_params: {
@@ -101,7 +108,7 @@ export async function generateFakeRound() {
                 fundings: [
                     {
                         amount: BigInt('1000'),
-                        denomiation: 'XLM',
+                        denomination: 'XLM',
                         description: 'Initial funding',
                         funded_ms: BigInt(Date.now()),
                         source: 'Stellar Development Foundation',

@@ -73,7 +73,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 					})),
 					fundings: dataForm.funding_histories.map((f) => ({
 						source: f.source,
-						denomiation: f.denomination,
+						denomination: f.denomination,
 						description: f.description,
 						amount: BigInt(f.amount),
 						funded_ms: BigInt(f.date.getTime() as number),
@@ -94,7 +94,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 				const isRegistered = await contracts.lists_contract.is_registered({
 					registrant_id: storage.my_address || '',
 					list_id: BigInt(process.env.PROJECTS_LIST_ID || '1'),
-					required_status: { tag: 'Approved' } as RegistrationStatus,
+					required_status: undefined,
 				})
 
 				if (!isRegistered) {
@@ -102,15 +102,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 						submitter: storage.my_address || '',
 						list_id: BigInt(process.env.PROJECTS_LIST_ID || '1'),
 						notes: 'Register new project',
-						registrations: [
-							{
-								registrant: storage.my_address || '',
-								notes: 'ok',
-								status: { tag: 'Approved' } as RegistrationStatus,
-								submitted_ms: undefined,
-								updated_ms: undefined,
-							},
-						],
+						registrations: undefined,
 					})
 
 					await contracts.signAndSendTx(

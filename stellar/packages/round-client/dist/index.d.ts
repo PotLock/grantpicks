@@ -1,3 +1,4 @@
+/// <reference types="node" resolution-mode="require"/>
 import { Buffer } from "buffer";
 import { AssembledTransaction, Client as ContractClient, ClientOptions as ContractClientOptions } from '@stellar/stellar-sdk/contract';
 import type { u32, u64, u128, i128, Option } from '@stellar/stellar-sdk/contract';
@@ -7,7 +8,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CD63SGHKPR5OLPGFINAQ5A46ZBLPD42MQKOGDOGSBUM677NUREHU6LLU";
+        readonly contractId: "CDEHHXB2OVYVIDJ2M6VTFUNW6JD7GVREORLNSIYEEXIMNCW72UVTJPDD";
     };
 };
 export type ApplicationStatus = {
@@ -206,8 +207,6 @@ export declare const Errors: {
     57: {
         message: string;
     };
-};
-export declare const Errors: {
     0: {
         message: string;
     };
@@ -304,8 +303,6 @@ export declare const Errors: {
     56: {
         message: string;
     };
-};
-export declare const Errors: {
     6: {
         message: string;
     };
@@ -333,8 +330,6 @@ export declare const Errors: {
     33: {
         message: string;
     };
-};
-export declare const Errors: {
     10: {
         message: string;
     };

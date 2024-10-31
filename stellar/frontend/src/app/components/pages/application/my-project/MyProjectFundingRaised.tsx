@@ -119,7 +119,7 @@ const MyProjectFundingRaised = () => {
 					overview: projectData?.overview || '',
 					fundings: data.funding_histories.map((f) => ({
 						source: f.source,
-						denomiation: f.denomination,
+						denomination: f.denomination,
 						description: f.description,
 						amount: BigInt(f.amount),
 						funded_ms: BigInt(f.date.getTime() as number),

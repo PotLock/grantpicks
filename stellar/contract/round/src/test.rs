@@ -115,7 +115,7 @@ fn generate_fake_project(
         source: String::from_str(&env, "source"),
         funded_ms: 100,
         description: String::from_str(&env, "description"),
-        denomiation: String::from_str(&env, "USD"),
+        denomination: String::from_str(&env, "USD"),
     });
 
     project_admins.push_back(admin.clone());

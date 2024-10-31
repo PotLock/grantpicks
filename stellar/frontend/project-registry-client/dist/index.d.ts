@@ -8,15 +8,9 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CAUINLSA42RCTY35UFGOM2NLKMSRM6FW6NP7AR4GTUZHUQZZWB6CRBSJ";
+        readonly contractId: "CBIW2SNUZZEERJLOIWRUEJN6DJVK5DORFK22XELYPD52S3QYYPPFFMAK";
     };
 };
-export declare enum ProjectStatus {
-    New = 0,
-    Approved = 1,
-    Rejected = 2,
-    Completed = 3
-}
 export interface Project {
     admins: Array<string>;
     contacts: Array<ProjectContact>;
@@ -29,7 +23,6 @@ export interface Project {
     owner: string;
     payout_address: string;
     repositories: Array<ProjectRepository>;
-    status: ProjectStatus;
     submited_ms: u64;
     team_members: Array<ProjectTeamMember>;
     updated_ms: Option<u64>;
@@ -78,7 +71,7 @@ export interface ProjectRepository {
 }
 export interface ProjectFundingHistory {
     amount: u128;
-    denomiation: string;
+    denomination: string;
     description: string;
     funded_ms: u64;
     source: string;
@@ -179,27 +172,6 @@ export interface Client {
          */
         simulate?: boolean;
     }) => Promise<AssembledTransaction<Project>>;
-    /**
-     * Construct and simulate a change_project_status transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
-     */
-    change_project_status: ({ contract_owner, project_id, new_status }: {
-        contract_owner: string;
-        project_id: u128;
-        new_status: ProjectStatus;
-    }, options?: {
-        /**
-         * The fee to pay for the transaction. Default: BASE_FEE
-         */
-        fee?: number;
-        /**
-         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
-         */
-        timeoutInSeconds?: number;
-        /**
-         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
-         */
-        simulate?: boolean;
-    }) => Promise<AssembledTransaction<null>>;
     /**
      * Construct and simulate a update_project transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
@@ -436,7 +408,6 @@ export declare class Client extends ContractClient {
     readonly fromJSON: {
         initialize: (json: string) => AssembledTransaction<null>;
         apply: (json: string) => AssembledTransaction<Project>;
-        change_project_status: (json: string) => AssembledTransaction<null>;
         update_project: (json: string) => AssembledTransaction<null>;
         add_admin: (json: string) => AssembledTransaction<null>;
         remove_admin: (json: string) => AssembledTransaction<null>;

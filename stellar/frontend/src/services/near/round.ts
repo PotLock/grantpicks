@@ -16,6 +16,7 @@ import {
 	NearProjectVotingResult,
 	NearRound,
 	NearUpdateRoundParams,
+	NearVotingResult,
 } from './type'
 import { BaseContract } from './contract'
 import { parseNearAmount } from 'near-api-js/lib/utils/format'
@@ -355,6 +356,33 @@ export class RoundContract extends BaseContract {
 		} catch (e) {
 			return []
 		}
+	}
+
+	async getVotingResult(
+		roundId: number,
+		accountId: string,
+	): Promise<NearVotingResult> {
+		const result = await this.viewMethod({
+			method: 'get_my_vote_for_round',
+			args: {
+				round_id: parseInt(roundId.toString()),
+				voter: accountId,
+			},
+		})
+
+		return result
+	}
+
+	async getPairByIndex(roundId: number, index: number): Promise<NearPair> {
+		const result = await this.viewMethod({
+			method: 'get_pair_by_id',
+			args: {
+				round_id: parseInt(roundId.toString()),
+				pair_id: index,
+			},
+		})
+
+		return result
 	}
 
 	async setPayouts(roundId: number, payouts: NearPayoutInput[]) {

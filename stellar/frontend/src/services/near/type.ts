@@ -4,6 +4,7 @@ import { RoundContract } from './round'
 import { GPRound } from '@/models/round'
 import { GPUser } from '@/models/user'
 import { GPProject } from '@/models/project'
+import { GPVoting } from '@/models/voting'
 
 export type NearSocialGPProject = {
 	name: string
@@ -209,6 +210,12 @@ export type NearPayout = {
 	memo: string | undefined
 }
 
+export type NearVotingResult = {
+	voter: string
+	picks: NearPick[]
+	voted_ms: number
+}
+
 export function nearRoundToGPRound(round: NearRound) {
 	const gprRound = new GPRound()
 
@@ -316,4 +323,16 @@ export function nearProjectToGPProject(project: NearSocialGPProject) {
 	gpProject.submited_ms = 0
 	gpProject.updated_ms = 0
 	return gpProject
+}
+
+
+export function nearVotingResultToGPVoting(votingResult: NearVotingResult) {
+  const gpVoting = new GPVoting()
+  gpVoting.voter = votingResult.voter
+  gpVoting.voted_ms = votingResult.voted_ms
+  gpVoting.picks = votingResult.picks.map((pick) => ({
+    pair_id: pick.pair_id,
+    voted_project: pick.voted_project,
+  }))
+  return gpVoting
 }

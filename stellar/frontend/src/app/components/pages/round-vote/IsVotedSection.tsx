@@ -234,11 +234,11 @@ const IsVotedSection = () => {
 						})
 					).result
 
-					const newPairsData: any[] = [...pairsData, pair]
-					setPairsData(newPairsData)
+					return pair
 				})
 
-				await Promise.all(pairRes)
+				const newPairs = await Promise.all(pairRes)
+				setPairsData(newPairs)
 			} else {
 				const contracts = storage.getNearContracts(null)
 
@@ -261,11 +261,11 @@ const IsVotedSection = () => {
 						pick.pair_id,
 					)
 
-					const newPairsData: any[] = [...pairsData, pair]
-					setPairsData(newPairsData)
+					return pair
 				})
 
-				await Promise.all(pairRes)
+				const newPairs = await Promise.all(pairRes)
+				setPairsData(newPairs)
 			}
 		} catch (error: any) {
 			console.log('error fetch pairs', error)

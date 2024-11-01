@@ -101,6 +101,10 @@ const IsVotedPairItem = ({
 		selectedPair = votingResult?.picks?.filter(
 			(pick: GPPicks) => pick.pair_id === (pair as Pair).pair_id,
 		)[0]
+	} else {
+		selectedPair = votingResult?.picks?.filter(
+			(pick: GPPicks) => pick.pair_id === (pair as NearPair).id,
+		)[0]
 	}
 
 	useEffect(() => {

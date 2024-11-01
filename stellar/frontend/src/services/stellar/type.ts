@@ -1,8 +1,9 @@
 import { GPProject } from '@/models/project'
 import { GPRound } from '@/models/round'
 import { GPUser } from '@/models/user'
+import { GPVoting } from '@/models/voting'
 import { Project } from 'project-registry-client'
-import { RoundDetail } from 'round-client'
+import { RoundDetail, VotingResult } from 'round-client'
 
 export function roundDetailToGPRound(round: RoundDetail) {
 	const gprRound = new GPRound()
@@ -123,4 +124,16 @@ export function projectToGPProject(project: Project) {
 	gpProject.updated_ms = 0
 
 	return gpProject
+}
+
+export function votingResultToGPVoting(votingResult: VotingResult) {
+	const gpVoting = new GPVoting()
+	gpVoting.voter = votingResult.voter
+	gpVoting.voted_ms = Number(votingResult.voted_ms)
+	gpVoting.picks = votingResult.picks.map((pick) => ({
+		pair_id: pick.pair_id,
+		voted_project: pick.project_id.toString(),
+	}))
+
+	return gpVoting
 }

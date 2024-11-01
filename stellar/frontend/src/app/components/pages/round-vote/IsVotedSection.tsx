@@ -6,10 +6,9 @@ import { useWallet } from '@/app/providers/WalletProvider'
 import IconNear from '../../svgs/IconNear'
 import IconStellar from '../../svgs/IconStellar'
 import clsx from 'clsx'
-import { IGetRoundsResponse, Network } from '@/types/on-chain'
-import { getResultVoteRound, getRoundInfo } from '@/services/stellar/round'
+import { IGetRoundsResponse } from '@/types/on-chain'
 import { useParams } from 'next/navigation'
-import { Pair, PickResult, VotingResult } from 'round-client'
+import { Pair, PickResult } from 'round-client'
 import moment from 'moment'
 import {
 	getProject,
@@ -18,8 +17,15 @@ import {
 import { prettyTruncate } from '@/utils/helper'
 import { Project } from 'project-registry-client'
 import useAppStorage from '@/stores/zustand/useAppStorage'
-import { NearPair, NearRound } from '@/services/near/type'
+import {
+	NearPair,
+	NearPick,
+	NearRound,
+	nearVotingResultToGPVoting,
+} from '@/services/near/type'
 import Image from 'next/image'
+import { GPPicks, GPVoting } from '@/models/voting'
+import { votingResultToGPVoting } from '@/services/stellar/type'
 
 const IsVotedPairItem = ({
 	index,
@@ -28,7 +34,7 @@ const IsVotedPairItem = ({
 }: {
 	index: number
 	pair: Pair | NearPair
-	votingResult?: VotingResult
+	votingResult?: GPVoting
 }) => {
 	const [firstProjectData, setFirstProjectData] = useState<Project | undefined>(
 		undefined,
@@ -89,11 +95,11 @@ const IsVotedPairItem = ({
 		}
 	}
 
-	let selectedPair: PickResult | undefined = undefined
+	let selectedPair: GPPicks | undefined = undefined
 
 	if (storage.chainId === 'stellar') {
 		selectedPair = votingResult?.picks?.filter(
-			(pick: PickResult) => pick.pair_id === (pair as Pair).pair_id,
+			(pick: GPPicks) => pick.pair_id === (pair as Pair).pair_id,
 		)[0]
 	}
 
@@ -108,7 +114,7 @@ const IsVotedPairItem = ({
 					className={clsx(
 						`w-20 md:w-24 lg:w-28 h-20 md:h-24 lg:h-28 rounded-full bg-grantpicks-black-300 mb-4`,
 						pair.projects.map((p) => p.toString())[0] ===
-							(selectedPair && (selectedPair?.project_id.toString() as string))
+							(selectedPair && selectedPair?.voted_project)
 							? `border-4 border-grantpicks-purple-500`
 							: `border-4 border-grantpicks-black-300`,
 					)}
@@ -121,7 +127,7 @@ const IsVotedPairItem = ({
 					className={clsx(
 						`w-20 md:w-24 lg:w-28 h-20 md:h-24 lg:h-28 rounded-full bg-grantpicks-black-300 mb-4`,
 						pair.projects.map((p) => p.toString())[1] ===
-							(selectedPair && (selectedPair?.project_id.toString() as string))
+							(selectedPair && selectedPair?.voted_project)
 							? `border-4 border-grantpicks-purple-500`
 							: `border-4 border-grantpicks-black-300`,
 					)}
@@ -156,7 +162,7 @@ const IsVotedSection = () => {
 	const params = useParams<{ roundId: string }>()
 	const { connectedWallet } = useWallet()
 	const [pairsData, setPairsData] = useState<Pair[] | NearPair[]>([])
-	const [votingResult, setVotingResult] = useState<VotingResult | undefined>(
+	const [votingResult, setVotingResult] = useState<GPVoting | undefined>(
 		undefined,
 	)
 	const [roundData, setRoundData] = useState<
@@ -217,7 +223,7 @@ const IsVotedSection = () => {
 				).result
 
 				if (votingResultRes) {
-					setVotingResult(votingResultRes)
+					setVotingResult(votingResultToGPVoting(votingResultRes))
 				}
 
 				const pairRes = votingResultRes.picks.map(async (pick: PickResult) => {
@@ -233,16 +239,47 @@ const IsVotedSection = () => {
 				})
 
 				await Promise.all(pairRes)
+			} else {
+				const contracts = storage.getNearContracts(null)
+
+				if (!contracts) {
+					return
+				}
+
+				const votingResultRes = await contracts.round.getVotingResult(
+					Number(params.roundId),
+					storage.my_address || '',
+				)
+
+				if (votingResultRes) {
+					setVotingResult(nearVotingResultToGPVoting(votingResultRes))
+				}
+
+				const pairRes = votingResultRes.picks.map(async (pick: NearPick) => {
+					const pair: NearPair = await contracts.round.getPairByIndex(
+						Number(params.roundId),
+						pick.pair_id,
+					)
+
+					const newPairsData: any[] = [...pairsData, pair]
+					setPairsData(newPairsData)
+				})
+
+				await Promise.all(pairRes)
 			}
 		} catch (error: any) {
 			console.log('error fetch pairs', error)
 		}
 	}
 
+	const init = async () => {
+		await Promise.all([fetchResultRound(), fetchRoundData()])
+	}
+
 	useEffect(() => {
-		fetchResultRound()
-		fetchRoundData()
-	}, [])
+		init()
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [params.roundId, storage.my_address])
 
 	return (
 		<div>

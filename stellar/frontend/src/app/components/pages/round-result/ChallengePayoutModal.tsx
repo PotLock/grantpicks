@@ -23,38 +23,60 @@ const ChallengePayoutModal = ({
 	roundData,
 }: ChallengePayoutModalProps) => {
 	const [reason, setReason] = useState<string>('')
-	const { stellarPubKey, stellarKit } = useWallet()
+	const { stellarPubKey, stellarKit, nearWallet } = useWallet()
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const storage = useAppStorage()
 
 	const onSubmitChallenge = async () => {
 		try {
 			openPageLoading()
-			let contracts = storage.getStellarContracts()
 
-			if (!contracts) {
-				return
-			}
+			if (storage.chainId === 'stellar') {
+				let contracts = storage.getStellarContracts()
 
-			const tx = await challengePayoutRound(
-				{
-					round_id: BigInt(roundData?.id || 0),
-					caller: stellarPubKey,
+				if (!contracts) {
+					return
+				}
+
+				const tx = await challengePayoutRound(
+					{
+						round_id: BigInt(roundData?.id || 0),
+						caller: stellarPubKey,
+						reason,
+					},
+					contracts,
+				)
+				const txhash = await contracts.signAndSendTx(
+					stellarKit as StellarWalletsKit,
+					tx.toXDR(),
+					stellarPubKey,
+				)
+				if (txhash) {
+					toast.success('Payout challenged successfully', {
+						style: toastOptions.success.style,
+					})
+					dismissPageLoading()
+					onClose()
+				}
+			} else {
+				const contract = storage.getNearContracts(nearWallet)
+
+				if (!contract) {
+					return
+				}
+
+				const tx = await contract.round.challengePayoutRound(
+					Number(roundData?.id),
 					reason,
-				},
-				contracts,
-			)
-			const txhash = await contracts.signAndSendTx(
-				stellarKit as StellarWalletsKit,
-				tx.toXDR(),
-				stellarPubKey,
-			)
-			if (txhash) {
-				toast.success('Payout challenged successfully', {
-					style: toastOptions.success.style,
-				})
-				dismissPageLoading()
-				onClose()
+				)
+
+				if (tx) {
+					toast.success('Payout challenged successfully', {
+						style: toastOptions.success.style,
+					})
+					dismissPageLoading()
+					onClose()
+				}
 			}
 		} catch (error: any) {
 			dismissPageLoading()

@@ -1,9 +1,10 @@
+import { GPPayoutChallenge } from '@/models/payout'
 import { GPProject } from '@/models/project'
 import { GPRound } from '@/models/round'
 import { GPUser } from '@/models/user'
 import { GPVoting } from '@/models/voting'
 import { Project } from 'project-registry-client'
-import { RoundDetail, VotingResult } from 'round-client'
+import { PayoutsChallenge, RoundDetail, VotingResult } from 'round-client'
 
 export function roundDetailToGPRound(round: RoundDetail) {
 	const gprRound = new GPRound()
@@ -136,4 +137,19 @@ export function votingResultToGPVoting(votingResult: VotingResult) {
 	}))
 
 	return gpVoting
+}
+
+export function payoutChallengeToGPPayoutChallenge(
+	payoutChallenge: PayoutsChallenge,
+) {
+	const gpPayoutChallenge = new GPPayoutChallenge()
+	gpPayoutChallenge.admin_notes = payoutChallenge.admin_notes
+	gpPayoutChallenge.challenger_id = payoutChallenge.challenger_id
+	gpPayoutChallenge.created_at = Number(payoutChallenge.created_at)
+	gpPayoutChallenge.reason = payoutChallenge.reason
+	gpPayoutChallenge.resolved = payoutChallenge.resolved
+	gpPayoutChallenge.resolved_by = payoutChallenge.resolved_by
+	gpPayoutChallenge.round_id = Number(payoutChallenge.round_id)
+
+	return gpPayoutChallenge
 }

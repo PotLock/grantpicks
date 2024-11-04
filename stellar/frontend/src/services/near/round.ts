@@ -10,6 +10,7 @@ import {
 	NearCreateRoundParams,
 	NearPair,
 	NearPayout,
+	NearPayoutChallenge,
 	NearPayoutInput,
 	NearPick,
 	NearProjectApplication,
@@ -449,6 +450,58 @@ export class RoundContract extends BaseContract {
 			method: 'set_round_complete',
 			args: {
 				round_id: parseInt(roundId.toString()),
+			},
+			deposit: NO_DEPOSIT,
+			gas: THIRTY_TGAS,
+		})
+
+		return result
+	}
+
+	async challengePayoutRound(roundId: number, reason: string) {
+		const result = await this.callMethod({
+			method: 'challenge_payouts',
+			args: {
+				round_id: parseInt(roundId.toString()),
+				reason,
+			},
+			deposit: NO_DEPOSIT,
+			gas: THIRTY_TGAS,
+		})
+
+		return result
+	}
+
+	async getPayoutChallenge(
+		roundId: number,
+		fromIndex: number,
+		limit: number,
+	): Promise<NearPayoutChallenge[]> {
+		const result = await this.viewMethod({
+			method: 'get_payouts_challenges',
+			args: {
+				round_id: parseInt(roundId.toString()),
+				from_index: fromIndex,
+				limit,
+			},
+		})
+
+		return result
+	}
+
+	async updatePayoutChallenge(
+		roundId: number,
+		challengeId: string,
+		notes: string,
+		resolved: boolean = false,
+	) {
+		const result = await this.callMethod({
+			method: 'update_payouts_challenge',
+			args: {
+				round_id: parseInt(roundId.toString()),
+				challenger_id: challengeId,
+				notes,
+				resolve_challenge: resolved,
 			},
 			deposit: NO_DEPOSIT,
 			gas: THIRTY_TGAS,

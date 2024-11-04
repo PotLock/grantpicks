@@ -106,7 +106,7 @@ const ResultItem = ({
 			</div>
 			<div className="flex items-center justify-end w-[12%]">
 				<p className="text-xs md:text-sm font-semibold text-grantpicks-black-500 text-right">
-					{myVote} %
+					{myVote.toFixed(3)} %
 				</p>
 			</div>
 			<div className="flex items-center justify-end w-[12%]">

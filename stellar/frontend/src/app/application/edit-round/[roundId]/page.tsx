@@ -82,7 +82,9 @@ import IconExpandMore from '@/app/components/svgs/IconExpandMore'
 import InfiniteScroll from 'react-infinite-scroll-component'
 import useSWRInfinite from 'swr/infinite'
 import IconLoading from '@/app/components/svgs/IconLoading'
-import { NearUpdateRoundParams } from '@/services/near/type'
+import { nearRoundToGPRound, NearUpdateRoundParams } from '@/services/near/type'
+import { GPRound } from '@/models/round'
+import { roundDetailToGPRound } from '@/services/stellar/type'
 
 const EditRoundPage = () => {
 	const router = useRouter()
@@ -168,7 +170,7 @@ const EditRoundPage = () => {
 		}
 	}
 
-	const onFetchRoundInfo = async () => {
+	const onFetchRoundInfo = async (): Promise<GPRound | undefined> => {
 		if (storage.chainId === 'stellar') {
 			let contracts = storage.getStellarContracts()
 			if (!contracts) {
@@ -178,7 +180,7 @@ const EditRoundPage = () => {
 				{ round_id: BigInt(params.roundId) },
 				contracts,
 			)
-			return resRoundInfo
+			return roundDetailToGPRound(resRoundInfo)
 		} else {
 			let contracts = storage.getNearContracts(nearWallet)
 			if (!contracts) {
@@ -187,7 +189,7 @@ const EditRoundPage = () => {
 			const resRoundInfo = await contracts.round.getRoundById(
 				parseInt(params.roundId),
 			)
-			return resRoundInfo
+			return nearRoundToGPRound(resRoundInfo)
 		}
 	}
 
@@ -259,30 +261,21 @@ const EditRoundPage = () => {
 				setExpectAmountUsd(`${calculation.toFixed(3)}`)
 				setValue('use_vault', resRoundInfo.use_vault || false)
 				setValue('is_video_required', resRoundInfo.is_video_required || false)
-				if (resRoundInfo.compliance_end_ms) {
+				if (resRoundInfo.compliance_end) {
 					setValue(
 						'allow_compliance',
-						resRoundInfo.compliance_end_ms ? true : false,
+						resRoundInfo.compliance_end ? true : false,
 					)
-					setValue(
-						'compliance_end_ms',
-						new Date(Number(resRoundInfo.compliance_end_ms)),
-					)
+					setValue('compliance_end_ms', new Date(resRoundInfo.compliance_end))
 					setValue(
 						'compliance_period_ms',
 						Number(resRoundInfo.compliance_period_ms),
 					)
 					setValue('compliance_req_desc', resRoundInfo.compliance_req_desc)
 				}
-				if (resRoundInfo.cooldown_end_ms) {
-					setValue(
-						'allow_cooldown',
-						resRoundInfo.cooldown_end_ms ? true : false,
-					)
-					setValue(
-						'cooldown_end_ms',
-						new Date(Number(resRoundInfo.cooldown_end_ms)),
-					)
+				if (resRoundInfo.cooldown_end) {
+					setValue('allow_cooldown', resRoundInfo.cooldown_end ? true : false)
+					setValue('cooldown_end_ms', new Date(resRoundInfo.cooldown_end))
 					setValue(
 						'cooldown_period_ms',
 						Number(resRoundInfo.cooldown_period_ms),
@@ -295,7 +288,7 @@ const EditRoundPage = () => {
 					)
 					setValue(
 						'remaining_dist_address',
-						resRoundInfo.remaining_dist_address,
+						resRoundInfo.remaining_dist_address?.id || '',
 					)
 				}
 				setValue(
@@ -311,20 +304,14 @@ const EditRoundPage = () => {
 					setValue('max_participants', resRoundInfo?.max_participants)
 					setValue(
 						'apply_duration_start',
-						new Date(Number(resRoundInfo.application_start_ms)),
+						new Date(resRoundInfo.application_start || 0),
 					)
 					setValue(
 						'apply_duration_end',
-						new Date(Number(resRoundInfo.application_end_ms)),
+						new Date(resRoundInfo.application_end || 0),
 					)
-					setValue(
-						'voting_duration_start',
-						new Date(Number(resRoundInfo.voting_start_ms)),
-					)
-					setValue(
-						'voting_duration_end',
-						new Date(Number(resRoundInfo.voting_end_ms)),
-					)
+					setValue('voting_duration_start', new Date(resRoundInfo.voting_start))
+					setValue('voting_duration_end', new Date(resRoundInfo.voting_end))
 					if ('is_video_required' in resRoundInfo) {
 						setValue('is_video_required', resRoundInfo.is_video_required)
 					}

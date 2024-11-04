@@ -5,6 +5,7 @@ import { GPRound } from '@/models/round'
 import { GPUser } from '@/models/user'
 import { GPProject } from '@/models/project'
 import { GPVoting } from '@/models/voting'
+import { GPPayoutChallenge } from '@/models/payout'
 
 export type NearSocialGPProject = {
 	name: string
@@ -168,9 +169,6 @@ export type NearRound = {
 	round_complete: boolean
 	use_vault: boolean
 	is_video_required: boolean
-	compliance_req_desc: string
-	allow_remaining_dist: boolean
-	remaining_dist_address: string
 }
 
 export type NearContracts = {
@@ -277,6 +275,7 @@ export function nearRoundToGPRound(round: NearRound) {
 		: null
 	gprRound.compliance_period_ms = round.compliance_period_ms
 	gprRound.vault_total_deposits = round.vault_total_deposits
+	gprRound.compliance_req_desc = round.compliance_requirement_description || ''
 	return gprRound
 }
 
@@ -325,14 +324,37 @@ export function nearProjectToGPProject(project: NearSocialGPProject) {
 	return gpProject
 }
 
-
 export function nearVotingResultToGPVoting(votingResult: NearVotingResult) {
-  const gpVoting = new GPVoting()
-  gpVoting.voter = votingResult.voter
-  gpVoting.voted_ms = votingResult.voted_ms
-  gpVoting.picks = votingResult.picks.map((pick) => ({
-    pair_id: pick.pair_id,
-    voted_project: pick.voted_project,
-  }))
-  return gpVoting
+	const gpVoting = new GPVoting()
+	gpVoting.voter = votingResult.voter
+	gpVoting.voted_ms = votingResult.voted_ms
+	gpVoting.picks = votingResult.picks.map((pick) => ({
+		pair_id: pick.pair_id,
+		voted_project: pick.voted_project,
+	}))
+	return gpVoting
+}
+
+export type NearPayoutChallenge = {
+	challenger_id: string
+	round_id: number
+	created_at: number
+	reason: string
+	admin_notes: string | undefined
+	resolved: boolean
+}
+
+export function nearPayoutChallengeToGPPayoutChallenge(
+	challenge: NearPayoutChallenge,
+) {
+	const gpPayoutChallenge = new GPPayoutChallenge()
+
+	gpPayoutChallenge.challenger_id = challenge.challenger_id
+	gpPayoutChallenge.round_id = challenge.round_id
+	gpPayoutChallenge.created_at = challenge.created_at
+	gpPayoutChallenge.reason = challenge.reason
+	gpPayoutChallenge.admin_notes = challenge.admin_notes || ''
+	gpPayoutChallenge.resolved = challenge.resolved
+
+	return gpPayoutChallenge
 }

@@ -24,18 +24,21 @@ import EditPayoutModal from '@/app/components/pages/round-result/EditPayoutModal
 import toast from 'react-hot-toast'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import {
+	payoutChallengeToGPPayoutChallenge,
 	projectToGPProject,
 	roundDetailToGPRound,
 } from '@/services/stellar/type'
 import { formatNearAmount, parseNearAmount } from 'near-api-js/lib/utils/format'
 import {
 	NearPayout,
+	NearPayoutChallenge,
+	nearPayoutChallengeToGPPayoutChallenge,
 	nearProjectToGPProject,
 	NearProjectVotingResult,
 	nearRoundToGPRound,
 } from '@/services/near/type'
 import { GPVotingResult } from '@/models/voting'
-import { GPPayout } from '@/models/payout'
+import { GPPayout, GPPayoutChallenge } from '@/models/payout'
 import { LIMIT_SIZE_CONTRACT } from '@/constants/query'
 
 const RoundResultPage = () => {
@@ -182,7 +185,7 @@ const RoundResultPage = () => {
 					return
 				}
 
-				let challenges: PayoutsChallenge[] = []
+				let challenges: GPPayoutChallenge[] = []
 				let fetch = true
 
 				while (fetch) {
@@ -194,16 +197,51 @@ const RoundResultPage = () => {
 						})
 					).result
 
-					challenges = challenges.concat(payoutChallenges)
+					const newPayouts: GPPayoutChallenge[] = await Promise.all(
+						payoutChallenges.map(async (challenge) => {
+							return payoutChallengeToGPPayoutChallenge(challenge)
+						}),
+					)
+					challenges = challenges.concat(newPayouts)
 
 					if (payoutChallenges.length < 5) {
 						fetch = false
 					}
 				}
 
-				if (challenges.length > 0) {
-					storage.setCurrentRoundPayoutChallenges(challenges)
+				storage.setCurrentRoundPayoutChallenges(challenges)
+			} else {
+				const contracts = storage.getNearContracts(null)
+
+				if (!contracts) {
+					return
 				}
+
+				let challenges: GPPayoutChallenge[] = []
+
+				let fetch = true
+
+				while (fetch) {
+					const payoutChallenges = await contracts.round.getPayoutChallenge(
+						Number(params.roundId),
+						challenges.length,
+						LIMIT_SIZE_CONTRACT,
+					)
+
+					const newChallenges: GPPayoutChallenge[] = payoutChallenges.map(
+						(challenge: NearPayoutChallenge) => {
+							return nearPayoutChallengeToGPPayoutChallenge(challenge)
+						},
+					)
+
+					challenges = challenges.concat(newChallenges)
+
+					if (payoutChallenges.length < LIMIT_SIZE_CONTRACT) {
+						fetch = false
+					}
+				}
+
+				storage.setCurrentRoundPayoutChallenges(challenges)
 			}
 		}
 	}
@@ -496,7 +534,8 @@ const RoundResultPage = () => {
 	let endOfCompliance = new Date()
 
 	if (roundData?.cooldown_end) {
-		endOfChallenge = new Date(Number(roundData?.cooldown_end?.toString()) || 0)
+		endOfChallenge = new Date(roundData?.cooldown_end?.toString() || 0)
+
 		showCooldownChallenge =
 			endOfChallenge.getTime() > new Date().getTime() &&
 			!roundData?.round_complete
@@ -594,7 +633,9 @@ const RoundResultPage = () => {
 												),
 											) * global.stellarPrice
 										).toFixed(2)
-									: Number(roundData?.expected_amount) * global.nearPrice}{' '}
+									: (
+											Number(roundData?.expected_amount) * global.nearPrice
+										).toFixed(2)}{' '}
 								USD
 							</span>
 						</p>
@@ -631,11 +672,13 @@ const RoundResultPage = () => {
 													),
 												) * global.stellarPrice
 											).toFixed(2)
-										: Number(
-												formatNearAmount(
-													roundData?.vault_total_deposits || '0',
-												).replace(',', ''),
-											) * global.nearPrice}{' '}
+										: (
+												Number(
+													formatNearAmount(
+														roundData?.vault_total_deposits || '0',
+													).replace(',', ''),
+												) * global.nearPrice
+											).toFixed(2)}{' '}
 									USD
 								</span>
 							</p>

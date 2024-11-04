@@ -12,15 +12,22 @@ import useAppStorage from '@/stores/zustand/useAppStorage'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import { set } from 'date-fns'
+import { GPPayoutChallenge } from '@/models/payout'
+import { payoutChallengeToGPPayoutChallenge } from '@/services/stellar/type'
+import { LIMIT_SIZE_CONTRACT } from '@/constants/query'
+import {
+	NearPayoutChallenge,
+	nearPayoutChallengeToGPPayoutChallenge,
+} from '@/services/near/type'
 
 const ChallengeItem = ({
 	challenge,
 	index,
 }: {
-	challenge: PayoutsChallenge
+	challenge: GPPayoutChallenge
 	index: number
 }) => {
-	const { stellarKit, stellarPubKey } = useWallet()
+	const { stellarKit, stellarPubKey, nearWallet } = useWallet()
 	const storage = useAppStorage()
 	const [isReviewing, setIsReviewing] = useState<boolean>(false)
 	const [adminNotes, setAdminNotes] = useState<string>('')
@@ -28,66 +35,126 @@ const ChallengeItem = ({
 
 	const reload = async () => {
 		const roundId = storage.current_round?.id
-		const contracts = storage.getStellarContracts()
 
-		if (!contracts || !roundId) {
-			return
-		}
+		if (storage.chainId == 'stellar') {
+			const contracts = storage.getStellarContracts()
 
-		let challenges: PayoutsChallenge[] = []
-		let fetch = true
-
-		while (fetch) {
-			const payoutChallenges = (
-				await contracts.round_contract.get_challenges_payout({
-					round_id: BigInt(roundId),
-					from_index: BigInt(challenges.length),
-					limit: BigInt(5),
-				})
-			).result
-
-			challenges = challenges.concat(payoutChallenges)
-
-			if (payoutChallenges.length < 5) {
-				fetch = false
+			if (!contracts || !roundId) {
+				return
 			}
-		}
 
-		if (challenges.length > 0) {
+			let challenges: GPPayoutChallenge[] = []
+			let fetch = true
+
+			while (fetch) {
+				const payoutChallenges = (
+					await contracts.round_contract.get_challenges_payout({
+						round_id: BigInt(roundId),
+						from_index: BigInt(challenges.length),
+						limit: BigInt(5),
+					})
+				).result
+
+				const newChallenges: GPPayoutChallenge[] = await Promise.all(
+					payoutChallenges.map(async (challenge) => {
+						return payoutChallengeToGPPayoutChallenge(challenge)
+					}),
+				)
+
+				challenges = challenges.concat(newChallenges)
+
+				if (payoutChallenges.length < 5) {
+					fetch = false
+				}
+			}
+
+			storage.setCurrentRoundPayoutChallenges(challenges)
+		} else {
+			const contracts = storage.getNearContracts(null)
+
+			if (!contracts || !roundId) {
+				return
+			}
+
+			let challenges: GPPayoutChallenge[] = []
+
+			let fetch = true
+
+			while (fetch) {
+				const payoutChallenges = await contracts.round.getPayoutChallenge(
+					Number(roundId),
+					challenges.length,
+					LIMIT_SIZE_CONTRACT,
+				)
+
+				const newChallenges: GPPayoutChallenge[] = payoutChallenges.map(
+					(challenge: NearPayoutChallenge) => {
+						return nearPayoutChallengeToGPPayoutChallenge(challenge)
+					},
+				)
+
+				challenges = challenges.concat(newChallenges)
+
+				if (payoutChallenges.length < LIMIT_SIZE_CONTRACT) {
+					fetch = false
+				}
+			}
+
 			storage.setCurrentRoundPayoutChallenges(challenges)
 		}
 	}
 
 	const resolveChallenge = async () => {
-		const contract = storage.getStellarContracts()
-		if (!contract) return
-
-		if (adminNotes === '') {
-			setErrorMessage('Please enter a note')
-			return
-		}
-
 		try {
-			const resolveTx = await contract.round_contract.update_payouts_challenge({
-				round_id: BigInt(storage.current_round?.id || 0),
-				caller: storage.my_address || '',
-				challenger_id: challenge.challenger_id,
-				notes: adminNotes,
-				resolve_challenge: true,
-			})
+			if (storage.chainId == 'stellar') {
+				const contract = storage.getStellarContracts()
+				if (!contract) return
 
-			const txHash = await contract.signAndSendTx(
-				stellarKit as StellarWalletsKit,
-				resolveTx.toXDR(),
-				stellarPubKey,
-			)
+				if (adminNotes === '') {
+					setErrorMessage('Please enter a note')
+					return
+				}
 
-			if (!txHash) {
-				setErrorMessage('Error resolving challenge')
-				return
+				const resolveTx =
+					await contract.round_contract.update_payouts_challenge({
+						round_id: BigInt(storage.current_round?.id || 0),
+						caller: storage.my_address || '',
+						challenger_id: challenge.challenger_id,
+						notes: adminNotes,
+						resolve_challenge: true,
+					})
+
+				const txHash = await contract.signAndSendTx(
+					stellarKit as StellarWalletsKit,
+					resolveTx.toXDR(),
+					stellarPubKey,
+				)
+
+				if (!txHash) {
+					setErrorMessage('Error resolving challenge')
+					return
+				} else {
+					reload()
+					setIsReviewing(false)
+				}
 			} else {
-				reload()
-				setIsReviewing(false)
+				const contract = storage.getNearContracts(nearWallet)
+
+				if (!contract) return
+
+				const resolveTx = await contract.round.updatePayoutChallenge(
+					Number(storage.current_round?.id),
+					challenge.challenger_id,
+					adminNotes,
+					true,
+				)
+
+				if (resolveTx) {
+					reload()
+					setIsReviewing(false)
+				} else {
+					setErrorMessage('Error resolving challenge')
+				}
 			}
 		} catch (e) {
 			console.error(e)
@@ -109,10 +176,10 @@ const ChallengeItem = ({
 			)}
 			<div className="flex items-center justify-between space-x-2 mb-2 w-full py-2">
 				<div className="flex justify-center">
-					<div className="bg-grantpicks-black-200 rounded-full w-10 h-10" />
 					<Image
 						src={`https://www.tapback.co/api/avatar/${challenge.challenger_id}`}
 						alt="challenger"
+						className="rounded-full w-10 h-10"
 						width={40}
 						height={40}
 					/>
@@ -143,7 +210,13 @@ const ChallengeItem = ({
 					<div className="bg-white rounded-t-2xl p-2 md:p-4">
 						<div className="bg-grantpicks-black-50 rounded-full p-2 flex items-center justify-between mb-4">
 							<div className="flex items-center space-x-2">
-								<div className="bg-grantpicks-black-100 rounded-full w-6"></div>
+								<Image
+									src={`https://www.tapback.co/api/avatar/${storage.my_address}`}
+									alt="challenger"
+									className="rounded-full w-6 h-6"
+									width={40}
+									height={40}
+								/>
 								<p className="text-sm font-semibold">
 									{prettyTruncate(storage.my_address || '', 10, 'address')}
 								</p>

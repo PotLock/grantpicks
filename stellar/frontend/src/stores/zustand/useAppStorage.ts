@@ -1,6 +1,4 @@
 import { PayoutTableItem } from '@/app/components/pages/round-result/EditPayoutModal'
-import { useGlobalContext } from '@/app/providers/GlobalProvider'
-import { useWallet } from '@/app/providers/WalletProvider'
 import Contracts from '@/lib/contracts'
 import CMDWallet from '@/lib/wallet'
 import { NearSocial } from '@/services/near/near-social'
@@ -10,20 +8,13 @@ import { NearContracts } from '@/services/near/type'
 import { Network } from '@/types/on-chain'
 import { formatStroopToXlm } from '@/utils/helper'
 import { Wallet } from '@near-wallet-selector/core'
-import { Project } from 'project-registry-client'
-import {
-	Payout,
-	PayoutsChallenge,
-	ProjectVotingResult,
-	RoundApplication,
-	RoundDetail,
-} from 'round-client'
+import { RoundApplication } from 'round-client'
 import { create } from 'zustand'
 import { GPRound } from '@/models/round'
 import { GPProject } from '@/models/project'
 import { GPVotingResult } from '@/models/voting'
 import { formatNearAmount } from 'near-api-js/lib/utils/format'
-import { GPPayout } from '@/models/payout'
+import { GPPayout, GPPayoutChallenge } from '@/models/payout'
 
 interface AppRepo {
 	chainId: string | null
@@ -37,7 +28,7 @@ interface AppRepo {
 	current_pairwise_weight: number
 	current_round: GPRound | null
 	current_round_payouts: GPPayout[]
-	current_round_payout_challenges: PayoutsChallenge[]
+	current_round_payout_challenges: GPPayoutChallenge[]
 	current_project: GPProject | null
 	current_results: GPVotingResult[]
 	current_remaining: number
@@ -52,7 +43,7 @@ interface AppRepo {
 	setIsAdminProject: (isAdminProject: boolean) => void
 	setRoundes: (roundes: Map<string, GPRound>) => void
 	setCurrentRoundPayouts: (payouts: GPPayout[]) => void
-	setCurrentRoundPayoutChallenges: (payouts: PayoutsChallenge[]) => void
+	setCurrentRoundPayoutChallenges: (payouts: GPPayoutChallenge[]) => void
 	setChainId: (chainId: string) => void
 	getStellarContracts: () => Contracts | null
 	getNearContracts: (wallet: Wallet | null) => NearContracts | null
@@ -95,7 +86,7 @@ const useAppStorage = create<AppRepo>((set, get) => ({
 	setCurrentRoundPayouts: (payouts: GPPayout[]) =>
 		set(() => ({ current_round_payouts: payouts })),
 	current_round_payout_challenges: [],
-	setCurrentRoundPayoutChallenges: (payouts: PayoutsChallenge[]) =>
+	setCurrentRoundPayoutChallenges: (payouts: GPPayoutChallenge[]) =>
 		set(() => ({ current_round_payout_challenges: payouts })),
 	chainId: null,
 	setChainId: (chainId: string) => set(() => ({ chainId })),
@@ -262,6 +253,15 @@ const useAppStorage = create<AppRepo>((set, get) => ({
 				Number(
 					formatStroopToXlm(
 						BigInt(roundData?.current_vault_balance) || BigInt(0),
+					),
+				)
+		} else {
+			pairWiseCoin =
+				(get().current_pairwise_weight / 100) *
+				Number(
+					formatNearAmount(roundData?.current_vault_balance || '0').replace(
+						',',
+						'',
 					),
 				)
 		}

@@ -38,6 +38,7 @@ export class GPRound {
 	num_picks_per_voter: number = 0
 	max_participants: number = 0
 	contacts: GPRoundContact[] = []
+	wl_list_id: number | null = null
 
 	constructor() {}
 }

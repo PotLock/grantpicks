@@ -76,6 +76,7 @@ export function roundDetailToGPRound(round: RoundDetail) {
 	gprRound.use_whitelist = round.use_whitelist
 	gprRound.use_vault = round.use_vault || false
 	gprRound.num_picks_per_voter = round.num_picks_per_voter
+	gprRound.wl_list_id = round.wl_list_id ? Number(round.wl_list_id) : null
 	return gprRound
 }
 

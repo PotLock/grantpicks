@@ -73,7 +73,19 @@ const ApplicationRoundsItem = ({
 			} catch (error: any) {
 				console.log('error fetching total approved projects', error)
 			}
-		}
+		}else{
+      const contracts = storage.getNearContracts(null)
+
+      if (!contracts) {
+        return
+      }
+
+      const results = await contracts.round.getVotingResults(Number(doc.on_chain_id))
+
+      if (results) {
+        setTotalApprovedProjects(results.length)
+      }
+    }
 	}
 
 	const fetchRoundApplication = async () => {

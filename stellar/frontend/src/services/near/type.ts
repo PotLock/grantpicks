@@ -191,6 +191,7 @@ export type NearProjectApplication = {
 export type NearProjectVotingResult = {
 	project: string
 	voting_count: number
+	is_flagged: boolean
 }
 
 export type NearPayoutInput = {

@@ -13,6 +13,7 @@ import { getArithmeticIndex } from '@/lib/pair'
 import { GPVotingResult } from '@/models/voting'
 import {
 	nearProjectToGPProject,
+	NearProjectVotingResult,
 	nearRoundToGPRound,
 } from '@/services/near/type'
 import { usePotlockService } from '@/services/potlock'
@@ -29,11 +30,10 @@ import toast from 'react-hot-toast'
 import { PickResult } from 'round-client'
 
 const RoundResultProjectDetailPage = () => {
-	const router = useRouter()
 	// const [pairFilter, setPairFilter] = useState<'all' | 'won' | 'lost'>('all')
 	const global = useGlobalContext()
 	const params = useParams<{ roundId: string; projectId: string }>()
-	const { stellarPubKey, stellarKit } = useWallet()
+	const { stellarKit, nearWallet } = useWallet()
 	const [showFlagModal, setShowFlagModal] = useState(false)
 	const [numberOfProjects, setNumberOfProjects] = useState(0)
 	const storage = useAppStorage()
@@ -109,11 +109,11 @@ const RoundResultProjectDetailPage = () => {
 
 				if (votingResults) {
 					const gprVotingResults: GPVotingResult[] = votingResults.map(
-						(votingResult) => {
+						(votingResult: NearProjectVotingResult) => {
 							return {
 								project: votingResult.project,
 								votes: Number(votingResult.voting_count.toString()),
-								flag: false,
+								flag: votingResult.is_flagged,
 							} as GPVotingResult
 						},
 					)
@@ -180,8 +180,8 @@ const RoundResultProjectDetailPage = () => {
 						roundId.toString(),
 						roundDetailToGPRound(roundInfo),
 					)
-					isOwner = roundInfo.owner === stellarPubKey
-					isAdmin = admins.includes(stellarPubKey)
+					isOwner = roundInfo.owner === storage.my_address
+					isAdmin = admins.includes(storage.my_address || '')
 
 					const isAdminOrOwner = isAdmin || isOwner
 
@@ -205,8 +205,6 @@ const RoundResultProjectDetailPage = () => {
 					parseInt(params.roundId),
 				)
 
-				console.log('roundInfo', roundInfo)
-
 				if (roundInfo) {
 					storage.setRound(nearRoundToGPRound(roundInfo))
 					storage.roundes.set(roundId.toString(), nearRoundToGPRound(roundInfo))
@@ -228,26 +226,45 @@ const RoundResultProjectDetailPage = () => {
 	const unflagProject = async () => {
 		try {
 			global.openPageLoading()
-			const contract = storage.getStellarContracts()
-			if (!contract) return
 
-			const unflagTx = await contract.round_contract.unflag_project({
-				round_id: BigInt(params.roundId),
-				project_id: BigInt(params.projectId),
-				caller: stellarPubKey,
-			})
+			if (storage.chainId === 'stellar') {
+				const contract = storage.getStellarContracts()
+				if (!contract) return
 
-			const txHash = await contract.signAndSendTx(
-				stellarKit as StellarWalletsKit,
-				unflagTx.toXDR(),
-				stellarPubKey,
-			)
+				const unflagTx = await contract.round_contract.unflag_project({
+					round_id: BigInt(params.roundId),
+					project_id: BigInt(params.projectId),
+					caller: storage.my_address || '',
+				})
 
-			if (!txHash) {
-				toast.error('Failed to unflag project')
+				const txHash = await contract.signAndSendTx(
+					stellarKit as StellarWalletsKit,
+					unflagTx.toXDR(),
+					storage.my_address || '',
+				)
+
+				if (!txHash) {
+					toast.error('Failed to unflag project')
+				} else {
+					fetchVotingResultRound()
+					toast.success('Project unflagged successfully')
+				}
 			} else {
+				const contracts = storage.getNearContracts(nearWallet)
+
+				if (!contracts) {
+					return
+				}
+
+				await contracts.round.unflagProject(
+					Number(params.roundId),
+					params.projectId,
+				)
+
 				fetchVotingResultRound()
+				toast.success('Project unflagged successfully')
 			}
+
 			global.dismissPageLoading()
 		} catch (e) {
 			console.error(e)
@@ -306,8 +323,6 @@ const RoundResultProjectDetailPage = () => {
 					return getDetailPickResult(pick)
 				})
 
-				console.log('detailedPicks', detailedPicks)
-
 				return {
 					voter,
 					picks: await Promise.all(detailedPicks),
@@ -342,8 +357,7 @@ const RoundResultProjectDetailPage = () => {
 	const allocation = storage.getAllocation(params.projectId)
 
 	useEffect(() => {
-		if (stellarPubKey) {
-			storage.setMyAddress(stellarPubKey)
+		if (storage.my_address) {
 			initPage()
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -397,7 +411,6 @@ const RoundResultProjectDetailPage = () => {
 							</div>
 							{storage.isAdminRound &&
 								votingData?.flag &&
-								storage.chainId === 'stellar' &&
 								!storage.isPayoutDone && (
 									<div>
 										<Button
@@ -454,18 +467,15 @@ const RoundResultProjectDetailPage = () => {
 						</div>
 					</div>
 				)}
-				{storage.isAdminRound &&
-					!votingData?.flag &&
-					storage.chainId === 'stellar' &&
-					!storage.isPayoutDone && (
-						<Button
-							color="white"
-							className="!border !border-black/10 !rounded-full !px-8 mt-5 md:mt-0"
-							onClick={() => setShowFlagModal(true)}
-						>
-							Flag Project
-						</Button>
-					)}
+				{storage.isAdminRound && !votingData?.flag && !storage.isPayoutDone && (
+					<Button
+						color="white"
+						className="!border !border-black/10 !rounded-full !px-8 mt-5 md:mt-0"
+						onClick={() => setShowFlagModal(true)}
+					>
+						Flag Project
+					</Button>
+				)}
 			</div>
 			{/* 
 			<div className="flex items-center space-x-2 md:space-x-3">

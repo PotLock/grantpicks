@@ -85,13 +85,14 @@ import IconLoading from '@/app/components/svgs/IconLoading'
 import { nearRoundToGPRound, NearUpdateRoundParams } from '@/services/near/type'
 import { GPRound } from '@/models/round'
 import { roundDetailToGPRound } from '@/services/stellar/type'
+import { formatNearAmount } from 'near-api-js/lib/utils/format'
 
 const EditRoundPage = () => {
 	const router = useRouter()
 	const params = useParams<{ roundId: string }>()
 	const { setSuccessUpdateRoundModalProps } = useModalContext()
 	const [showContactType, setShowContactType] = useState<boolean>(false)
-	const { stellarPrice } = useGlobalContext()
+	const { stellarPrice, nearPrice } = useGlobalContext()
 	const [amountUsd, setAmountUsd] = useState<string>('0.00')
 	const [expectAmountUsd, setExpectAmountUsd] = useState<string>('0.00')
 	const [showAddProjectsModal, setShowAddProjectsModal] =
@@ -239,25 +240,49 @@ const EditRoundPage = () => {
 		try {
 			openPageLoading()
 			const resRoundInfo = await onFetchRoundInfo()
-			console.log('res round info', resRoundInfo)
 			const resRoundAdmins = await onFetchAdmins()
-			console.log('res round admins', resRoundAdmins)
 			if (resRoundInfo) {
 				setValue('title', resRoundInfo?.name)
 				setValue('description', resRoundInfo?.description)
 				setValue('vote_per_person', resRoundInfo?.num_picks_per_voter)
 				setValue('vote_per_person', resRoundInfo?.num_picks_per_voter)
-				setValue(
-					'amount',
-					formatStroopToXlm(BigInt(resRoundInfo?.current_vault_balance)) === '0'
-						? '0'
-						: formatStroopToXlm(BigInt(resRoundInfo?.current_vault_balance)),
-				)
+
+				if (storage.chainId === 'stellar') {
+					setValue(
+						'amount',
+						formatStroopToXlm(BigInt(resRoundInfo?.current_vault_balance)) ===
+							'0'
+							? '0'
+							: formatStroopToXlm(BigInt(resRoundInfo?.current_vault_balance)),
+					)
+				} else {
+					setValue(
+						'amount',
+						formatNearAmount(resRoundInfo?.current_vault_balance) === '0'
+							? '0'
+							: formatNearAmount(resRoundInfo?.current_vault_balance).replace(
+									',',
+									'',
+								),
+					)
+				}
+
 				setValue('expected_amount', resRoundInfo?.expected_amount as string)
-				const calculation =
-					parseFloat(
-						formatStroopToXlm(BigInt(resRoundInfo?.expected_amount)) || '0',
-					) * stellarPrice
+				let calculation = 0
+				if (storage.chainId === 'stellar') {
+					calculation =
+						parseFloat(
+							formatStroopToXlm(BigInt(resRoundInfo?.expected_amount)) || '0',
+						) * stellarPrice
+				} else {
+					calculation =
+						parseFloat(
+							formatNearAmount(resRoundInfo?.expected_amount).replace(
+								',',
+								'',
+							) || '0',
+						) * nearPrice
+				}
 				setExpectAmountUsd(`${calculation.toFixed(3)}`)
 				setValue('use_vault', resRoundInfo.use_vault || false)
 				setValue('is_video_required', resRoundInfo.is_video_required || false)
@@ -553,7 +578,8 @@ const EditRoundPage = () => {
 
 	useEffect(() => {
 		onFetchDefaultValue()
-	}, [nearWallet])
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [storage.chainId, storage.my_address])
 
 	const onFetchLists = async (key: {
 		url: string
@@ -825,8 +851,14 @@ const EditRoundPage = () => {
 									placeholder="Enter amount..."
 									{...register('amount', {
 										onChange: async (e) => {
-											const calculation =
-												parseFloat(e.target.value || '0') * stellarPrice
+											let calculation = 0
+											if (storage.chainId === 'stellar') {
+												calculation =
+													parseFloat(e.target.value || '0') * stellarPrice
+											} else {
+												calculation =
+													parseFloat(e.target.value || '0') * nearPrice
+											}
 											setAmountUsd(`${calculation.toFixed(3)}`)
 											setValue('amount', e.target.value)
 										},
@@ -873,8 +905,14 @@ const EditRoundPage = () => {
 									{...register('expected_amount', {
 										required: true,
 										onChange: async (e) => {
-											const calculation =
-												parseFloat(e.target.value || '0') * stellarPrice
+											let calculation = 0
+											if (storage.chainId === 'stellar') {
+												calculation =
+													parseFloat(e.target.value || '0') * stellarPrice
+											} else {
+												calculation =
+													parseFloat(e.target.value || '0') * nearPrice
+											}
 											setExpectAmountUsd(`${calculation.toFixed(3)}`)
 										},
 									})}

@@ -12,14 +12,12 @@ import IconDollar from '@/app/components/svgs/IconDollar'
 import IconLoading from '@/app/components/svgs/IconLoading'
 import IconMoreVert from '@/app/components/svgs/IconMoreVert'
 import IconNear from '@/app/components/svgs/IconNear'
-import IconProject from '@/app/components/svgs/IconProject'
 import IconStellar from '@/app/components/svgs/IconStellar'
 import { useModalContext } from '@/app/providers/ModalProvider'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { LIMIT_SIZE_CONTRACT } from '@/constants/query'
 import { GPRound } from '@/models/round'
 import useAppStorage from '@/stores/zustand/useAppStorage'
-import useRoundStore from '@/stores/zustand/useRoundStore'
 import { IGetRoundsResponse } from '@/types/on-chain'
 import clsx from 'clsx'
 import moment from 'moment'
@@ -37,41 +35,21 @@ const ApplicationRoundsItem = ({
 	mutateRounds: any
 }) => {
 	const router = useRouter()
-	const { selectedRoundType } = useRoundStore()
 	const [showMoreVert, setShowMoreVert] = useState<boolean>(false)
 	const [showDetailDrawer, setShowDetailDrawer] = useState<boolean>(false)
 	const [showAppsDrawer, setShowAppsDrawer] = useState<boolean>(false)
 	const [showFundRoundModal, setShowFundRoundModal] = useState<boolean>(false)
 	const { setApplyProjectInitProps, setVoteConfirmationProps } =
 		useModalContext()
-	const { connectedWallet, stellarPubKey } = useWallet()
+	const { connectedWallet } = useWallet()
 
 	const getSpecificTime = () => {
-		if (selectedRoundType === 'upcoming') {
-			if (
-				new Date().getTime() >=
-					new Date(doc.application_start || '').getTime() &&
-				new Date().getTime() < new Date(doc.application_end || '').getTime()
-			) {
-				return `upcoming-open`
-			} else if (
-				new Date().getTime() >= new Date(doc.application_end || '').getTime() &&
-				new Date().getTime() < new Date(doc.voting_start).getTime()
-			) {
-				return `upcoming-closed`
-			} else if (doc.allow_applications) {
-				return `upcoming`
-			} else {
-				return `upcoming-closed`
-			}
-		} else if (selectedRoundType === 'on-going') {
+		if (new Date().getTime() < new Date(doc.voting_end || '').getTime()) {
 			return `on-going`
+		} else if (doc.round_complete) {
+			return `ended`
 		} else {
-			if (doc.round_complete != null) {
-				return `ended`
-			} else {
-				return `payout-pending`
-			}
+			return `payout-pending`
 		}
 	}
 
@@ -89,23 +67,15 @@ const ApplicationRoundsItem = ({
 					<div
 						className={clsx(
 							`px-5 py-2 border text-xs font-semibold flex items-center justify-center space-x-2 rounded-full`,
-							getSpecificTime() === 'upcoming-open' ||
-								getSpecificTime() === 'on-going'
+							getSpecificTime() === 'on-going'
 								? `border-grantpicks-green-400 text-grantpicks-green-700 bg-grantpicks-green-50`
-								: getSpecificTime() === 'upcoming' ||
-									  getSpecificTime() === 'upcoming-closed' ||
-									  getSpecificTime() == 'ended'
+								: getSpecificTime() == 'ended'
 									? `border-grantpicks-black-400 text-grantpicks-black-950 bg-grantpicks-black-50`
 									: `border-grantpicks-amber-400 text-grantpicks-amber-700 bg-grantpicks-amber-50`,
 						)}
 					>
-						{selectedRoundType === 'on-going' ? (
+						{getSpecificTime() === 'on-going' ? (
 							<IconCube size={18} className="fill-grantpicks-green-400" />
-						) : getSpecificTime() === 'upcoming-open' ? (
-							<IconProject size={18} className="fill-grantpicks-green-400" />
-						) : getSpecificTime() === 'upcoming' ||
-						  getSpecificTime() === 'upcoming-closed' ? (
-							<IconProject size={18} className="fill-grantpicks-black-950" />
 						) : getSpecificTime() === 'ended' ? (
 							<IconDollar size={18} className="fill-grantpicks-black-950" />
 						) : (
@@ -114,21 +84,12 @@ const ApplicationRoundsItem = ({
 						<p className="uppercase">
 							{getSpecificTime() === 'on-going'
 								? `voting open`
-								: getSpecificTime() === 'upcoming'
-									? `application closed`
-									: getSpecificTime() === 'upcoming-open'
-										? `application open`
-										: getSpecificTime() === 'upcoming-closed'
-											? `application closed`
-											: getSpecificTime() === 'ended'
-												? `completed`
-												: `payout pending`}
+								: getSpecificTime() === 'ended'
+									? `completed`
+									: `payout pending`}
 						</p>
 					</div>
-					{(getSpecificTime() === 'on-going' ||
-						getSpecificTime() === 'upcoming' ||
-						getSpecificTime() === 'upcoming-open' ||
-						getSpecificTime() === 'upcoming-closed') && (
+					{getSpecificTime() === 'on-going' && (
 						<div className="relative">
 							<IconMoreVert
 								size={24}

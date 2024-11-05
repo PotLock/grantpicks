@@ -142,7 +142,9 @@ const RoundResultPage = () => {
 
 					storage.setIsAdminRound(isAdminOrOwner)
 
-					const isPayoutDone = false
+					const isPayoutDone = await contracts.round.isPayoutDone(
+						parseInt(params.roundId),
+					)
 
 					storage.setPayoutDone(isPayoutDone)
 
@@ -712,9 +714,9 @@ const RoundResultPage = () => {
 									className="!border !border-grantpicks-black-400 w-full"
 									onClick={() => setShowViewChallengeDrawer(true)}
 								>
-									{storage.current_round_payout_challenges.length > 0
-										? 'View Challenge'
-										: 'View Challenges'}
+									{storage.current_round_payout_challenges.length > 1
+										? 'View Challenges'
+										: 'View Challenge'}
 								</Button>
 								<div className="absolute -top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full bg-grantpicks-purple-800 text-white">
 									{storage.current_round_payout_challenges.length}

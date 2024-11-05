@@ -509,4 +509,43 @@ export class RoundContract extends BaseContract {
 
 		return result
 	}
+
+	async isPayoutDone(roundId: number): Promise<boolean> {
+		const result = await this.viewMethod({
+			method: 'is_payout_done',
+			args: {
+				round_id: parseInt(roundId.toString()),
+			},
+		})
+
+		return result
+	}
+
+  async flagProject(roundId: number, applicantId: string) {
+    const result = await this.callMethod({
+      method: 'flag_project',
+      args: {
+        round_id: parseInt(roundId.toString()),
+        applicant_id: applicantId,
+      },
+      deposit: NO_DEPOSIT,
+      gas: THIRTY_TGAS,
+    })
+
+    return result
+  }
+  
+  async unflagProject(roundId: number, applicantId: string) {
+    const result = await this.callMethod({
+      method: 'unflag_project',
+      args: {
+        round_id: parseInt(roundId.toString()),
+        applicant_id: applicantId,
+      },
+      deposit: NO_DEPOSIT,
+      gas: THIRTY_TGAS,
+    })
+
+    return result
+  }
 }

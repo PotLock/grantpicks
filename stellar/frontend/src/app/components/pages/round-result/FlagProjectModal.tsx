@@ -13,33 +13,44 @@ import IconLoading from '../../svgs/IconLoading'
 const FlagProjectModal = ({ isOpen, onClose }: BaseModalProps) => {
 	const [reason, setReason] = useState<string>('')
 	const [isLoading, setIsLoading] = useState<boolean>(false)
-	const { stellarPubKey, stellarKit } = useWallet()
+	const { stellarKit, nearWallet } = useWallet()
 	const storage = useAppStorage()
 
 	const flagProject = async () => {
 		setIsLoading(true)
 		try {
-			const contract = storage.getStellarContracts()
-			if (!contract) return
+			if (storage.chainId === 'stellar') {
+				const contract = storage.getStellarContracts()
+				if (!contract) return
 
-			const flagTx = await contract.round_contract.flag_project({
-				round_id: BigInt(storage.current_round?.id || 0),
-				project_id: BigInt(storage.current_round?.id || 0),
-				caller: stellarPubKey,
-				reason: reason,
-			})
+				const flagTx = await contract.round_contract.flag_project({
+					round_id: BigInt(storage.current_round?.id || 0),
+					project_id: BigInt(storage.current_project?.id || 0),
+					caller: storage.my_address || '',
+					reason: reason,
+				})
 
-			const txHash = await contract.signAndSendTx(
-				stellarKit as StellarWalletsKit,
-				flagTx.toXDR(),
-				stellarPubKey,
-			)
+				const txHash = await contract.signAndSendTx(
+					stellarKit as StellarWalletsKit,
+					flagTx.toXDR(),
+					storage.my_address || '',
+				)
 
-			if (!txHash) {
-				toast.error('Failed to flag project')
+				if (!txHash) {
+					toast.error('Failed to flag project')
+				}
+			} else {
+				const contract = storage.getNearContracts(nearWallet)
+
+				if (!contract) return
+
+				await contract.round.flagProject(
+					storage.current_round?.id || 0,
+					storage.current_project?.owner?.id || '',
+				)
+
+				toast.success('Project flagged successfully')
 			}
-
-			console.log('txHash', txHash)
 			setIsLoading(false)
 			onClose()
 		} catch (e) {

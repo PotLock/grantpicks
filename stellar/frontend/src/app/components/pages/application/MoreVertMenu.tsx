@@ -76,7 +76,7 @@ const MoreVertMenu = ({
 						<div
 							className="p-2 flex items-center space-x-2 cursor-pointer hover:opacity-70 transition"
 							onClick={() =>
-								router.push(`/application/edit-round/${data.id.toString()}`)
+								router.push(`/application/edit-round/${data.on_chain_id}`)
 							}
 						>
 							<IconEdit size={18} className="fill-grantpicks-black-400" />

@@ -267,7 +267,14 @@ const EditRoundPage = () => {
 					)
 				}
 
-				setValue('expected_amount', resRoundInfo?.expected_amount as string)
+				setValue(
+					'expected_amount',
+					storage.chainId === 'stellar'
+						? (formatStroopToXlm(
+								BigInt(resRoundInfo?.expected_amount),
+							) as string)
+						: (resRoundInfo?.expected_amount as string),
+				)
 				let calculation = 0
 				if (storage.chainId === 'stellar') {
 					calculation =

@@ -18,11 +18,17 @@ export function roundDetailToGPRound(round: RoundDetail) {
 		total_matching_pool_allocations_usd: 0,
 		total_donations_out_usd: 0,
 	} as GPUser
+	gprRound.contacts = round.contacts.map((c, index) => ({
+		id: index,
+		name: c.name,
+		value: c.value,
+	}))
 	gprRound.admins = []
 	gprRound.name = round.name
 	gprRound.description = round.description
 	gprRound.expected_amount = round.expected_amount.toString()
 	gprRound.allow_applications = round.allow_applications
+	gprRound.max_participants = round.max_participants
 	gprRound.is_video_required = round.is_video_required
 	gprRound.cooldown_end = round.cooldown_end_ms
 		? new Date(Number(round.cooldown_end_ms)).toISOString()

@@ -14,7 +14,11 @@ import Button from '../../commons/Button'
 import { useWallet } from '@/app/providers/WalletProvider'
 import IconNear from '../../svgs/IconNear'
 import moment from 'moment'
-import { formatStroopToXlm, prettyTruncate } from '@/utils/helper'
+import {
+	extractChainId,
+	formatStroopToXlm,
+	prettyTruncate,
+} from '@/utils/helper'
 import { getRoundAdmins } from '@/services/stellar/round'
 import useSWR from 'swr'
 import IconLoading from '../../svgs/IconLoading'
@@ -96,11 +100,11 @@ const RoundDetailDrawer = ({
 	onVote,
 }: RoundDetailDrawerProps) => {
 	const { selectedRoundType } = useRoundStore()
-	const { connectedWallet } = useWallet()
 	const storage = useAppStorage()
+	const chainId = extractChainId(doc)
 
 	const onFetchRoundAdmins = async () => {
-		if (storage.chainId == 'stellar') {
+		if (chainId == 'stellar') {
 			let contracts = storage.getStellarContracts()
 
 			if (!contracts) {
@@ -199,7 +203,7 @@ const RoundDetailDrawer = ({
 				<div className="px-5 py-4">
 					<div className="flex items-center">
 						<div className="border border-black/10 rounded-full p-3 flex items-center justify-center mb-4">
-							{connectedWallet === 'near' ? (
+							{chainId === 'near' ? (
 								<IconNear size={16} className="fill-grantpicks-black-950" />
 							) : (
 								<IconStellar size={16} className="fill-grantpicks-black-950" />
@@ -262,17 +266,19 @@ const RoundDetailDrawer = ({
 											).fromNow()}{' '}
 								</p>
 							</div>
-						) : <></>}
+						) : (
+							<></>
+						)}
 					</div>
 				</div>
 				<div className="p-4 md:p-5">
 					<div className="flex items-center mb-4 md:mb-5">
 						<div className="flex-1">
 							<p className="font-semibold text-lg md:text-xl text-grantpicks-black-950">
-								{storage.chainId === 'stellar'
+								{chainId === 'stellar'
 									? formatStroopToXlm(BigInt(doc.current_vault_balance))
 									: formatNearAmount(doc.current_vault_balance)}{' '}
-								{storage.chainId === 'stellar' ? 'XLM' : 'NEAR'}
+								{chainId === 'stellar' ? 'XLM' : 'NEAR'}
 							</p>
 							<p className="font-semibold text-xs text-grantpicks-black-600">
 								AVAILABLE FUNDS
@@ -280,10 +286,10 @@ const RoundDetailDrawer = ({
 						</div>
 						<div className="flex-1">
 							<p className="font-semibold text-lg md:text-xl text-grantpicks-black-950">
-								{storage.chainId === 'stellar'
+								{chainId === 'stellar'
 									? formatStroopToXlm(BigInt(doc.expected_amount))
 									: doc.expected_amount}{' '}
-								{storage.chainId === 'stellar' ? 'XLM' : 'NEAR'}
+								{chainId === 'stellar' ? 'XLM' : 'NEAR'}
 							</p>
 							<p className="font-semibold text-xs text-grantpicks-black-600">
 								EXPECTED FUNDS

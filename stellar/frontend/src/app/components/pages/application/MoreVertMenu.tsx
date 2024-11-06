@@ -10,6 +10,8 @@ import IconUser from '../../svgs/IconUser'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { GPRound } from '@/models/round'
+import { extractChainId } from '@/utils/helper'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 
 const MoreVertMenu = ({
 	isOpen,
@@ -27,8 +29,8 @@ const MoreVertMenu = ({
 	onFundRound: () => void
 }) => {
 	const { selectedRoundType } = useRoundStore()
-	const { stellarPubKey, nearAccounts } = useWallet()
 	const router = useRouter()
+	const storage = useAppStorage()
 
 	const generateLink = () => {
 		if (data.contacts[0].name.toLowerCase().includes('telegram')) {
@@ -59,6 +61,7 @@ const MoreVertMenu = ({
 				)}
 				{(selectedRoundType === 'upcoming' ||
 					selectedRoundType === 'on-going') &&
+					storage.my_address &&
 					data.allow_applications && (
 						<div
 							className="p-2 flex items-center space-x-2 cursor-pointer hover:opacity-70 transition"
@@ -71,8 +74,7 @@ const MoreVertMenu = ({
 						</div>
 					)}
 				{selectedRoundType === 'upcoming' &&
-					(data.owner?.id === stellarPubKey ||
-						data.owner?.id === nearAccounts[0]?.accountId) && (
+					data.owner?.id === storage.my_address && (
 						<div
 							className="p-2 flex items-center space-x-2 cursor-pointer hover:opacity-70 transition"
 							onClick={() =>
@@ -85,17 +87,19 @@ const MoreVertMenu = ({
 							</p>
 						</div>
 					)}
-				{selectedRoundType === 'upcoming' && data.use_vault && (
-					<div
-						className="p-2 flex items-center space-x-2 cursor-pointer hover:opacity-70 transition"
-						onClick={onFundRound}
-					>
-						<IconDonate size={18} className="fill-grantpicks-black-400" />
-						<p className="text-sm font-normal text-grantpicks-black-950">
-							Fund Round
-						</p>
-					</div>
-				)}
+				{selectedRoundType === 'upcoming' &&
+					storage.my_address &&
+					data.use_vault && (
+						<div
+							className="p-2 flex items-center space-x-2 cursor-pointer hover:opacity-70 transition"
+							onClick={onFundRound}
+						>
+							<IconDonate size={18} className="fill-grantpicks-black-400" />
+							<p className="text-sm font-normal text-grantpicks-black-950">
+								Fund Round
+							</p>
+						</div>
+					)}
 				{selectedRoundType === 'on-going' && (
 					<Link
 						href={data.contacts.length > 0 ? generateLink() : ''}

@@ -28,6 +28,7 @@ export function roundDetailToGPRound(round: RoundDetail) {
 	gprRound.description = round.description
 	gprRound.expected_amount = round.expected_amount.toString()
 	gprRound.allow_applications = round.allow_applications
+	gprRound.max_participants = round.max_participants
 	gprRound.is_video_required = round.is_video_required
 	gprRound.cooldown_end = round.cooldown_end_ms
 		? new Date(Number(round.cooldown_end_ms)).toISOString()

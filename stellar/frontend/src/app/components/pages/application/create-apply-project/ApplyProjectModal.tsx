@@ -7,6 +7,7 @@ import IconProject from '@/app/components/svgs/IconProject'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import { useModalContext } from '@/app/providers/ModalProvider'
 import { useWallet } from '@/app/providers/WalletProvider'
+import { toastOptions } from '@/constants/style'
 import Contracts from '@/lib/contracts'
 import CMDWallet from '@/lib/wallet'
 import { GPRound } from '@/models/round'
@@ -23,6 +24,7 @@ import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import Image from 'next/image'
 import { Project } from 'project-registry-client'
 import React, { useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
 
 interface ApplyProjectToRoundModalProps extends BaseModalProps {
 	round_id?: bigint
@@ -36,7 +38,7 @@ const ApplyProjectModal = ({
 	roundData,
 }: ApplyProjectToRoundModalProps) => {
 	const { setCreateProjectFormMainProps } = useModalContext()
-	const { stellarPubKey, stellarKit, nearWallet } = useWallet()
+	const { stellarPubKey, stellarKit, nearWallet, nearAccounts } = useWallet()
 	const [isProjectMissingInfo, setIsProjectMissingInfo] =
 		useState<boolean>(false)
 	const [projectData, setProjectData] = useState<Project | undefined>(undefined)
@@ -285,10 +287,19 @@ const ApplyProjectModal = ({
 						<Button
 							color="black-950"
 							onClick={() => {
-								setCreateProjectFormMainProps((prev) => ({
-									...prev,
-									isOpen: true,
-								}))
+								if (!stellarPubKey && !nearAccounts[0]?.accountId) {
+									toast.error(
+										'Please connect your wallet to create new project',
+										{
+											style: toastOptions.error.style,
+										},
+									)
+								} else {
+									setCreateProjectFormMainProps((prev) => ({
+										...prev,
+										isOpen: true,
+									}))
+								}
 								onClose()
 							}}
 							isFullWidth

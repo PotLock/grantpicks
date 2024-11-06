@@ -222,6 +222,7 @@ export function nearRoundToGPRound(round: NearRound) {
 	gprRound.on_chain_id = parseInt(round.id)
 	gprRound.name = round.name
 	gprRound.description = round.description
+	gprRound.factory_contract = process.env.NEAR_ROUND_CONTRACT_ID || ''
 	gprRound.owner = {
 		id: round.owner,
 		total_donations_in_usd: 0,

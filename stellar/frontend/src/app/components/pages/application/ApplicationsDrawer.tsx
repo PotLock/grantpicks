@@ -9,7 +9,7 @@ import IconCalendar from '../../svgs/IconCalendar'
 import IconCheckCircle from '../../svgs/IconCheckCircle'
 import { useWallet } from '@/app/providers/WalletProvider'
 import useSWRInfinite from 'swr/infinite'
-import { LIMIT_SIZE } from '@/constants/query'
+import { LIMIT_SIZE, LIMIT_SIZE_CONTRACT } from '@/constants/query'
 import {
 	ReviewApplicationParams,
 	reviewApplicationRound,
@@ -21,7 +21,7 @@ import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
-import { prettyTruncate } from '@/utils/helper'
+import { extractChainId, prettyTruncate } from '@/utils/helper'
 import ApplicationAcceptModal from './ApplicationAcceptModal'
 import ApplicationRejectModal from './ApplicationRejectModal'
 import useAppStorage from '@/stores/zustand/useAppStorage'
@@ -30,6 +30,7 @@ import { GPRound } from '@/models/round'
 import { usePotlockService } from '@/services/potlock'
 import { GPApplication } from '@/models/application'
 import { NearProjectApplication } from '@/services/near/type'
+import { RoundApplication } from 'round-client'
 
 interface ApplicationsDrawerProps extends IDrawerProps {
 	doc: GPRound
@@ -53,33 +54,6 @@ const ApplicationItem = ({
 	const [openAcceptModal, setOpenAcceptModal] = useState<boolean>(false)
 	const [openRejectModal, setOpenRejectModal] = useState<boolean>(false)
 	const storage = useAppStorage()
-
-	const onFetchRoundApplications = async () => {
-		if (storage.chainId === 'stellar') {
-			const contract = storage.getStellarContracts()
-
-			if (!contract) {
-				return
-			}
-
-			try {
-				const application = (
-					await contract.round_contract.get_application({
-						round_id: BigInt(roundData.on_chain_id),
-						applicant: item.applicant.id,
-					})
-				).result
-
-				let applications = storage.applications
-				applications.set(application.applicant_id, application)
-				storage.setApplications(applications)
-			} catch (error) {
-				console.log('error get application', error)
-			}
-		} else {
-			return []
-		}
-	}
 
 	const onAcceptReject = async (type: 'accept' | 'reject', note: string) => {
 		try {
@@ -153,11 +127,6 @@ const ApplicationItem = ({
 			console.log(`error ${type} application`, error)
 		}
 	}
-
-	useEffect(() => {
-		onFetchRoundApplications()
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [item])
 
 	return (
 		<div className="bg-grantpicks-black-50 rounded-xl border border-grantpicks-black-200">
@@ -278,18 +247,49 @@ const ApplicationsDrawer = ({
 	const [roundAppsData, setRoundAppsData] = useState<GPApplication[]>([])
 	const containerScrollRef = useRef<HTMLDivElement>(null)
 	const potlockService = usePotlockService()
+	const chainId = extractChainId(doc)
 	const storage = useAppStorage()
 
 	const onFetchRoundApplications = async (key: {
 		url: string
 		page: number
 	}): Promise<GPApplication[]> => {
-		if (storage.chainId === 'stellar') {
-			const res = await potlockService.getApplications(doc.id, key.page + 1)
-			return res.map((item: GPApplication) => {
-				item.status = item.status.replaceAll("['", '').replaceAll("']", '')
-				return item
-			})
+		if (chainId === 'stellar') {
+      //TODO: implement getApplications From BE
+			// const res = await potlockService.getApplications(doc.id, key.page + 1)
+			// return res.map((item: GPApplication) => {
+			// 	item.status = item.status.replaceAll("['", '').replaceAll("']", '')
+			// 	return item
+			// })
+
+			const contracts = storage.getStellarContracts()
+
+			if (!contracts) {
+				return []
+			}
+
+			const result = (
+				await contracts.round_contract.get_applications_for_round({
+					round_id: BigInt(doc.on_chain_id),
+					limit: BigInt(LIMIT_SIZE),
+					from_index: BigInt(key.page * LIMIT_SIZE),
+				})
+			).result
+
+			return await Promise.all(
+				result.map((item: RoundApplication, index) => {
+					return {
+						id: key.page * LIMIT_SIZE + index,
+						message: item.applicant_note || '',
+						status: item.status.tag,
+						submitted_at: new Date(Number(item.submited_ms)).toISOString(),
+						round: doc,
+						applicant: {
+							id: item.applicant_id,
+						},
+					} as GPApplication
+				}),
+			)
 		} else {
 			const contracts = storage.getNearContracts(null)
 
@@ -303,18 +303,20 @@ const ApplicationsDrawer = ({
 				LIMIT_SIZE,
 			)
 
-			return result.map((item: NearProjectApplication, index) => {
-				return {
-					id: key.page * LIMIT_SIZE + index,
-					message: item.applicant_note || '',
-					status: item.status,
-					submitted_at: new Date(item.submited_ms).toISOString(),
-					round: doc,
-					applicant: {
-						id: item.applicant_id,
-					},
-				} as GPApplication
-			})
+			return await Promise.all(
+				result.map((item: NearProjectApplication, index) => {
+					return {
+						id: key.page * LIMIT_SIZE + index,
+						message: item.applicant_note || '',
+						status: item.status,
+						submitted_at: new Date(item.submited_ms).toISOString(),
+						round: doc,
+						applicant: {
+							id: item.applicant_id,
+						},
+					} as GPApplication
+				}),
+			)
 		}
 	}
 
@@ -323,7 +325,8 @@ const ApplicationsDrawer = ({
 		return {
 			url: `get-round-applications-${doc.on_chain_id}`,
 			page: pageIndex,
-			chainId: storage.chainId,
+			chainId,
+			my_address: storage.my_address,
 		}
 	}
 	const { data, size, setSize, isValidating, isLoading, mutate } =

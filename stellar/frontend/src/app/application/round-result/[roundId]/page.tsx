@@ -12,7 +12,7 @@ import IconStellar from '@/app/components/svgs/IconStellar'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { formatStroopToXlm } from '@/utils/helper'
 import clsx from 'clsx'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 import TimerEnd from '@/app/components/commons/TimerEnd'
 import IconEdit from '@/app/components/svgs/IconEdit'
@@ -49,16 +49,17 @@ const RoundResultPage = () => {
 		useState<boolean>(false)
 	const [showEditPayoutModal, setShowEditPayoutModal] = useState<boolean>(false)
 	const params = useParams<{ roundId: string }>()
+	const query = useSearchParams()
+	const chainId = query.get('chain_id') || 'stellar'
 	const storage = useAppStorage()
 	const router = useRouter()
 
 	const fetchRoundInfo = async () => {
 		if (params.roundId) {
 			const roundId = BigInt(params.roundId)
-			const isExsist = storage.roundes.has(roundId.toString())
 			let isOwner = false
 			let isAdmin = false
-			if (storage.chainId === 'stellar') {
+			if (chainId === 'stellar') {
 				const contracts = storage.getStellarContracts()
 
 				if (!contracts) {
@@ -81,8 +82,8 @@ const RoundResultPage = () => {
 						roundId.toString(),
 						roundDetailToGPRound(roundInfo),
 					)
-					isOwner = roundInfo.owner === stellarPubKey
-					isAdmin = admins.includes(stellarPubKey)
+					isOwner = roundInfo.owner === storage.my_address
+					isAdmin = admins.includes(storage.my_address || '')
 
 					const isAdminOrOwner = isAdmin || isOwner
 
@@ -180,7 +181,7 @@ const RoundResultPage = () => {
 		if (params.roundId) {
 			const roundId = BigInt(params.roundId)
 
-			if (storage.chainId === 'stellar') {
+			if (chainId === 'stellar') {
 				const contracts = storage.getStellarContracts()
 
 				if (!contracts) {
@@ -252,7 +253,7 @@ const RoundResultPage = () => {
 		if (params.roundId) {
 			const roundId = BigInt(params.roundId)
 
-			if (storage.chainId === 'stellar') {
+			if (chainId === 'stellar') {
 				const contracts = storage.getStellarContracts()
 
 				if (!contracts) {
@@ -518,7 +519,7 @@ const RoundResultPage = () => {
 	}
 
 	const initPage = async () => {
-		if (params.roundId) {
+		if (params.roundId && chainId) {
 			global.openPageLoading()
 			await Promise.all([
 				fetchRoundInfo(),
@@ -560,7 +561,7 @@ const RoundResultPage = () => {
 	useEffect(() => {
 		initPage()
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [storage.my_address, params.roundId])
+	}, [storage.my_address, params.roundId, chainId])
 
 	return (
 		<RoundResultLayout>

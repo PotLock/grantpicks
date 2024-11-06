@@ -10,7 +10,7 @@ export function roundDetailToGPRound(round: RoundDetail) {
 	const gprRound = new GPRound()
 	gprRound.id = Number(round.id)
 	gprRound.on_chain_id = Number(round.id)
-	gprRound.factory_contract = ''
+	gprRound.factory_contract = process.env.ROUND_CONTRACT_ID || ''
 	gprRound.deployed_at = ''
 	gprRound.owner = {
 		id: round.owner,

@@ -71,7 +71,7 @@ const ApplicationRoundsItem = ({
 				})
 				setTotalApprovedProjects(res.result.length)
 			} catch (error: any) {
-				console.log('error fetching total approved projects', error)
+				console.log('error fetching total approved projects')
 			}
 		} else {
 			const contracts = storage.getNearContracts(null)
@@ -83,10 +83,7 @@ const ApplicationRoundsItem = ({
 			const results = await contracts.round.getVotingResults(
 				Number(doc.on_chain_id),
 			)
-
-			if (results) {
-				setTotalApprovedProjects(results.length)
-			}
+			setTotalApprovedProjects(results.length)
 		}
 	}
 
@@ -110,7 +107,7 @@ const ApplicationRoundsItem = ({
 						if (selectedRoundType === 'upcoming') setIsUserApplied(true)
 					}
 				} catch (error: any) {
-					console.log('error fetch project applicant', error)
+					console.log('error fetch project applicant')
 					setIsUserApplied(false)
 				}
 			} else {
@@ -130,7 +127,7 @@ const ApplicationRoundsItem = ({
 						setIsUserApplied(true)
 					}
 				} catch (error: any) {
-					console.log('error fetch project applicant', error)
+					console.log('error fetch project applicant')
 					setIsUserApplied(false)
 				}
 			}
@@ -365,7 +362,7 @@ const ApplicationRoundsItem = ({
 							? formatStroopToXlm(BigInt(doc.expected_amount))
 							: doc.expected_amount}{' '}
 						<span className="text-sm font-normal text-grantpicks-black-600">
-							{connectedWallet === 'near' ? 'NEAR' : 'XLM'}
+							{chainId === 'near' ? 'NEAR' : 'XLM'}
 						</span>
 					</p>
 				)}
@@ -396,13 +393,18 @@ const ApplicationRoundsItem = ({
 								roundData: doc,
 							}))
 						} else {
-							router.push(`/application/round-result/${doc.on_chain_id}`)
+							router.push(
+								`/application/round-result/${doc.on_chain_id}?chain_id=${chainId}`,
+							)
 						}
 					}}
 					isFullWidth
 					className="!border !border-grantpicks-black-200 !py-2"
 					color="white"
 					isDisabled={
+						((getSpecificTime() === 'ended' ||
+							getSpecificTime() === 'payout-pending') &&
+							totalApprovedProjects == 0) ||
 						getSpecificTime() === 'upcoming' ||
 						getSpecificTime() === 'upcoming-closed' ||
 						(isUserApplied && getSpecificTime() == 'upcoming-open')
@@ -420,7 +422,11 @@ const ApplicationRoundsItem = ({
 									? 'Apply'
 									: getSpecificTime() === 'upcoming-closed'
 										? 'Application Closed'
-										: 'View Result'}
+										: !storage.my_address
+											? 'Connect Wallet'
+											: totalApprovedProjects == 0
+												? 'No projects Participated'
+												: 'View Result'}
 				</Button>
 			</div>
 
@@ -468,12 +474,26 @@ const ApplicationRounds = () => {
 	const storage = useAppStorage()
 
 	const onFetchRounds = async (key: { url: string; page: number }) => {
+		let beChainId = null
+
+		switch (storage.chainId) {
+			case 'near':
+				beChainId = '1'
+				break
+			case 'ethereum':
+				beChainId = '2'
+				break
+			case 'stellar':
+				beChainId = '3'
+				break
+		}
+
 		const res = await potlockApi.getRounds(
 			key.page + 1,
 			sortType === 'Vault Total Deposits'
 				? 'vault_total_deposits'
 				: 'deployed_at',
-			storage.chainId,
+			beChainId,
 		)
 		return res
 	}

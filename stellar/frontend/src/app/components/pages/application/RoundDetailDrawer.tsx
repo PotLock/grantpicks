@@ -262,16 +262,7 @@ const RoundDetailDrawer = ({
 											).fromNow()}{' '}
 								</p>
 							</div>
-						) : (
-							<p className="text-lg flex-1 md:text-xl font-normal text-grantpicks-black-950">
-								{storage.chainId === 'stellar'
-									? formatStroopToXlm(BigInt(doc.expected_amount))
-									: formatNearAmount(doc.expected_amount)}{' '}
-								<span className="text-sm font-normal text-grantpicks-black-600">
-									{storage.chainId === 'stellar' ? 'XLM' : 'NEAR'}
-								</span>
-							</p>
-						)}
+						) : <></>}
 					</div>
 				</div>
 				<div className="p-4 md:p-5">

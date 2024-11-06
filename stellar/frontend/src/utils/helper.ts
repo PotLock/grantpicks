@@ -4,6 +4,7 @@ import {
 	RPC_EXPLORER,
 	SOROBAN_RPC_URL,
 } from '@/constants/on-chain'
+import { GPRound } from '@/models/round'
 import { ENetworkEnv, Networks, SubmitTxProps } from '@/types/on-chain'
 import axios from 'axios'
 import { Horizon, SorobanRpc, TransactionBuilder } from 'round-client'
@@ -161,3 +162,12 @@ export const fetchYoutubeIframe = async (
 }
 
 export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+export const extractChainId = (round: GPRound) => {
+	const contract = process.env.ROUND_CONTRACT_ID || ''
+	if (contract === round.factory_contract) {
+		return 'stellar'
+	} else {
+		return 'near'
+	}
+}

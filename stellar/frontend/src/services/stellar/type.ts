@@ -18,6 +18,11 @@ export function roundDetailToGPRound(round: RoundDetail) {
 		total_matching_pool_allocations_usd: 0,
 		total_donations_out_usd: 0,
 	} as GPUser
+	gprRound.contacts = round.contacts.map((c, index) => ({
+		id: index,
+		name: c.name,
+		value: c.value,
+	}))
 	gprRound.admins = []
 	gprRound.name = round.name
 	gprRound.description = round.description

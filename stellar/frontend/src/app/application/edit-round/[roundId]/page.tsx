@@ -240,7 +240,6 @@ const EditRoundPage = () => {
 		try {
 			openPageLoading()
 			const resRoundInfo = await onFetchRoundInfo()
-			console.log('>_', resRoundInfo)
 			const resRoundAdmins = await onFetchAdmins()
 			if (resRoundInfo) {
 				setValue('title', resRoundInfo?.name)

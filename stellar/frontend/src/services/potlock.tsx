@@ -11,8 +11,16 @@ export class PotlockService {
 		})
 	}
 
-	async getRounds(page: number = 1, sort: string = 'deployed_at') {
-		const result = await this._axios?.get(`/rounds?sort=${sort}&page=${page}`)
+	async getRounds(
+		page: number = 1,
+		sort: string = 'deployed_at',
+		chainId: string | null = null,
+	) {
+		let url = `/rounds?sort=${sort}&page=${page}`
+		if (chainId) {
+			url += `&chain=${chainId}`
+		}
+		const result = await this._axios?.get(url)
 		return result?.data.results
 	}
 

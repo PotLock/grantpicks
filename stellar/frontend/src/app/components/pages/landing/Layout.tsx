@@ -1,9 +1,12 @@
-import React from 'react'
+import React, { useState } from 'react'
 import BaseLayout from '../../commons/BaseLayout'
 import Footer from '../../commons/Footer'
 import Navbar from './Navbar'
+import DisclaimerBanner from './DisclaimerBanner'
 
 const LandingLayout = ({ children }: { children: React.ReactNode }) => {
+	const [isBannerVisible, setIsBannerVisible] = useState<boolean>(true)
+
 	return (
 		<BaseLayout>
 			<>
@@ -15,7 +18,11 @@ const LandingLayout = ({ children }: { children: React.ReactNode }) => {
 					}}
 				/>
 				<div className="bg-[url('/assets/images/container.png')] z-10 absolute inset-0 h-full"></div>
-				<Navbar />
+				<DisclaimerBanner
+					isBannerVisible={isBannerVisible}
+					setIsBannerVisible={setIsBannerVisible}
+				/>
+				<Navbar isBannerVisible={isBannerVisible} />
 				<div className="z-20">{children}</div>
 				<Footer />
 			</>

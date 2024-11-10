@@ -7,8 +7,9 @@ import IconBurger from '../../svgs/IconBurger'
 import Menu from '../../commons/Menu'
 import IconClose from '../../svgs/IconClose'
 import { envVarConfigs } from '@/configs/env-var'
+import clsx from 'clsx'
 
-const Navbar = () => {
+const Navbar = ({ isBannerVisible }: { isBannerVisible: boolean }) => {
 	const router = useRouter()
 	const [showMenu, setShowMenu] = useState<boolean>(false)
 
@@ -20,7 +21,12 @@ const Navbar = () => {
 	}
 
 	return (
-		<div className="flex py-5 z-20 fixed inset-x-0 items-center justify-between px-4 md:px-12 xl:px-20 bg-white bg-opacity-30 backdrop-blur-3xl shadow-md">
+		<div
+			className={clsx(
+				'flex py-5 z-20 fixed inset-x-0 items-center justify-between px-4 md:px-12 xl:px-20 bg-white bg-opacity-30 backdrop-blur-3xl shadow-md',
+				isBannerVisible ? 'mt-[60px] sm:mt-[44px]' : 'mt-0',
+			)}
+		>
 			<div className="flex items-center relative">
 				<button
 					onClick={() => setShowMenu(!showMenu)}

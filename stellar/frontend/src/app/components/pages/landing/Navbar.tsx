@@ -4,7 +4,6 @@ import IconRocket from '../../svgs/IconRocket'
 import { useRouter } from 'next/navigation'
 import Button from '../../commons/Button'
 import IconBurger from '../../svgs/IconBurger'
-import Menu from '../../commons/Menu'
 import IconClose from '../../svgs/IconClose'
 import { envVarConfigs } from '@/configs/env-var'
 import clsx from 'clsx'
@@ -39,32 +38,46 @@ const Navbar = ({ isBannerVisible }: { isBannerVisible: boolean }) => {
 					)}
 				</button>
 				{showMenu && (
-					<Menu
-						isOpen={showMenu}
-						onClose={() => setShowMenu(false)}
-						position="top-7 left-0"
-					>
+					<div className="absolute top-10 left-0 lg:hidden">
 						<div className="grid gap-y-3 text-[#202237] font-medium text-sm gap-x-[6px] border border-grantpicks-purple-500/20 h-full rounded-xl p-4 bg-[#EEF2FE]">
-							<button className="px-3" onClick={() => scrollToSection('home')}>
+							<button
+								className="px-3"
+								onClick={() => {
+									scrollToSection('home')
+									setShowMenu(false)
+								}}
+							>
 								Home
 							</button>
 							<button
 								className="px-3"
-								onClick={() => scrollToSection('how-it-works')}
+								onClick={() => {
+									scrollToSection('how-it-works')
+									setShowMenu(false)
+								}}
 							>
 								How it Works
 							</button>
 							<button
 								className="px-3"
-								onClick={() => scrollToSection('features')}
+								onClick={() => {
+									scrollToSection('features')
+									setShowMenu(false)
+								}}
 							>
 								Features
 							</button>
-							<button className="px-3" onClick={() => scrollToSection('faqs')}>
+							<button
+								className="px-3"
+								onClick={() => {
+									scrollToSection('faqs')
+									setShowMenu(false)
+								}}
+							>
 								FAQs
 							</button>
 						</div>
-					</Menu>
+					</div>
 				)}
 				<button
 					onClick={() => {

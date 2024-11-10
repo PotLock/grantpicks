@@ -11,7 +11,7 @@ const DisclaimerBanner = ({
 	if (!isBannerVisible) return null
 
 	return (
-		<div className="flex py-[14px] z-30 fixed inset-x-0 items-center px-4 md:px-12 xl:px-20 bg-purple-600">
+		<div className="flex py-[14px] z-30 fixed inset-x-0 items-center px-4 md:px-12 xl:px-20 bg-grantpicks-purple-600">
 			<div className="flex items-center justify-center w-full">
 				<p className="text-white text-xs text-center">
 					<span className="font-bold">Disclaimer:</span> Please Note the smart

@@ -10,7 +10,7 @@ import IconNear from '@/app/components/svgs/IconNear'
 import IconProject from '@/app/components/svgs/IconProject'
 import IconStellar from '@/app/components/svgs/IconStellar'
 import { useWallet } from '@/app/providers/WalletProvider'
-import { formatStroopToXlm } from '@/utils/helper'
+import { extractChainId, formatStroopToXlm } from '@/utils/helper'
 import clsx from 'clsx'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
@@ -40,6 +40,7 @@ import {
 import { GPVotingResult } from '@/models/voting'
 import { GPPayout, GPPayoutChallenge } from '@/models/payout'
 import { LIMIT_SIZE_CONTRACT } from '@/constants/query'
+import { usePotlockService } from '@/services/potlock'
 
 const RoundResultPage = () => {
 	const { nearWallet, stellarPubKey, stellarKit } = useWallet()
@@ -49,16 +50,26 @@ const RoundResultPage = () => {
 		useState<boolean>(false)
 	const [showEditPayoutModal, setShowEditPayoutModal] = useState<boolean>(false)
 	const params = useParams<{ roundId: string }>()
-	const query = useSearchParams()
-	const chainId = query.get('chain_id') || 'stellar'
+	const [chainId, setChainId] = useState<string | null>(null)
 	const storage = useAppStorage()
+	const potlockApi = usePotlockService()
 	const router = useRouter()
 
 	const fetchRoundInfo = async () => {
 		if (params.roundId) {
-			const roundId = BigInt(params.roundId)
+			const roundId = params.roundId ? Number(params.roundId) : Number(0)
 			let isOwner = false
 			let isAdmin = false
+
+			const roundInfo = await potlockApi.getRound(roundId)
+			const newChainId = extractChainId(roundInfo)
+
+			storage.setRound(roundInfo)
+			storage.roundes.set(roundId.toString(), roundInfo)
+
+			setChainId(newChainId)
+			storage.setChainId(newChainId)
+
 			if (chainId === 'stellar') {
 				const contracts = storage.getStellarContracts()
 
@@ -66,22 +77,13 @@ const RoundResultPage = () => {
 					return
 				}
 
-				const roundInfo = (
-					await contracts.round_contract.get_round({ round_id: roundId })
-				).result
-
 				const admins = (
 					await contracts.round_contract.admins({
-						round_id: roundId,
+						round_id: BigInt(roundInfo.on_chain_id),
 					})
 				).result
 
 				if (roundInfo) {
-					storage.setRound(roundDetailToGPRound(roundInfo))
-					storage.roundes.set(
-						roundId.toString(),
-						roundDetailToGPRound(roundInfo),
-					)
 					isOwner = roundInfo.owner === storage.my_address
 					isAdmin = admins.includes(storage.my_address || '')
 
@@ -91,7 +93,7 @@ const RoundResultPage = () => {
 
 					const isPayoutDone = (
 						await contracts.round_contract.is_payout_done({
-							round_id: roundId,
+							round_id: BigInt(roundInfo.on_chain_id),
 						})
 					).result
 
@@ -103,7 +105,7 @@ const RoundResultPage = () => {
 					while (fetch) {
 						const payouts = (
 							await contracts.round_contract.get_payouts_for_round({
-								round_id: roundId,
+								round_id: BigInt(roundInfo.on_chain_id),
 								from_index: BigInt(newPayouts.length),
 								limit: BigInt(5),
 							})
@@ -129,13 +131,7 @@ const RoundResultPage = () => {
 					return
 				}
 
-				const roundInfo = await contracts.round.getRoundById(
-					parseInt(params.roundId),
-				)
-
 				if (roundInfo) {
-					storage.setRound(nearRoundToGPRound(roundInfo))
-					storage.roundes.set(roundId.toString(), nearRoundToGPRound(roundInfo))
 					isOwner = roundInfo.owner === storage.my_address
 					isAdmin = roundInfo.admins.includes(storage.my_address || '')
 
@@ -144,7 +140,7 @@ const RoundResultPage = () => {
 					storage.setIsAdminRound(isAdminOrOwner)
 
 					const isPayoutDone = await contracts.round.isPayoutDone(
-						parseInt(params.roundId),
+						roundInfo.on_chain_id,
 					)
 
 					storage.setPayoutDone(isPayoutDone)
@@ -154,7 +150,7 @@ const RoundResultPage = () => {
 
 					while (fetch) {
 						const payouts = await contracts.round.getPayouts(
-							Number(roundId.toString()),
+							roundInfo.on_chain_id,
 							newPayouts.length,
 							LIMIT_SIZE_CONTRACT,
 						)
@@ -178,9 +174,7 @@ const RoundResultPage = () => {
 	}
 
 	const fetchPayoutChallenge = async () => {
-		if (params.roundId) {
-			const roundId = BigInt(params.roundId)
-
+		if (chainId) {
 			if (chainId === 'stellar') {
 				const contracts = storage.getStellarContracts()
 
@@ -194,7 +188,9 @@ const RoundResultPage = () => {
 				while (fetch) {
 					const payoutChallenges = (
 						await contracts.round_contract.get_challenges_payout({
-							round_id: roundId,
+							round_id: storage.current_round?.on_chain_id
+								? BigInt(storage.current_round?.on_chain_id)
+								: BigInt(0),
 							from_index: BigInt(challenges.length),
 							limit: BigInt(5),
 						})
@@ -226,7 +222,7 @@ const RoundResultPage = () => {
 
 				while (fetch) {
 					const payoutChallenges = await contracts.round.getPayoutChallenge(
-						Number(params.roundId),
+						storage.current_round?.on_chain_id || 0,
 						challenges.length,
 						LIMIT_SIZE_CONTRACT,
 					)
@@ -250,9 +246,7 @@ const RoundResultPage = () => {
 	}
 
 	const fetchVotingResultRound = async () => {
-		if (params.roundId) {
-			const roundId = BigInt(params.roundId)
-
+		if (chainId) {
 			if (chainId === 'stellar') {
 				const contracts = storage.getStellarContracts()
 
@@ -262,7 +256,7 @@ const RoundResultPage = () => {
 
 				const votingResults = (
 					await contracts.round_contract.get_voting_results_for_round({
-						round_id: roundId,
+						round_id: BigInt(storage.current_round?.on_chain_id || 0),
 					})
 				).result
 
@@ -308,7 +302,7 @@ const RoundResultPage = () => {
 				}
 
 				const votingResults = await contracts.round.getVotingResults(
-					Number(params.roundId),
+					storage.current_round?.on_chain_id || 0,
 				)
 
 				if (votingResults) {
@@ -357,7 +351,7 @@ const RoundResultPage = () => {
 				const contract = storage.getStellarContracts()
 				if (!contract) return
 				const payoutTx = await contract.round_contract.process_payouts({
-					round_id: BigInt(storage.current_round?.id || 0),
+					round_id: BigInt(storage.current_round?.on_chain_id || 0),
 					caller: storage.my_address || '',
 				})
 
@@ -380,9 +374,9 @@ const RoundResultPage = () => {
 
 				if (!contract) return
 
-				const roundId = parseInt(params.roundId)
-
-				const txPayouts = await contract.round.processPayouts(roundId)
+				const txPayouts = await contract.round.processPayouts(
+					storage.current_round?.on_chain_id || 0,
+				)
 
 				if (!txPayouts) {
 					toast.error('Error processing payout')
@@ -473,7 +467,7 @@ const RoundResultPage = () => {
 
 				const distributeRemainingTx =
 					await contract.round_contract.redistribute_vault({
-						round_id: BigInt(storage.current_round?.id || 0),
+						round_id: BigInt(storage.current_round?.on_chain_id || 0),
 						caller: storage.my_address || stellarPubKey,
 						memo: 'Distribute Remaining Fund',
 					})
@@ -497,10 +491,10 @@ const RoundResultPage = () => {
 
 				if (!contract) return
 
-				const roundId = parseInt(params.roundId)
-
 				const txDistributeRemaining =
-					await contract.round.redistributeRemainingFund(roundId)
+					await contract.round.redistributeRemainingFund(
+						storage.current_round?.on_chain_id || 0,
+					)
 
 				if (!txDistributeRemaining) {
 					toast.error('Error Distribute Remaining Fund')
@@ -519,13 +513,10 @@ const RoundResultPage = () => {
 	}
 
 	const initPage = async () => {
-		if (params.roundId && chainId) {
+		if (params.roundId) {
 			global.openPageLoading()
-			await Promise.all([
-				fetchRoundInfo(),
-				fetchVotingResultRound(),
-				fetchPayoutChallenge(),
-			])
+			await fetchRoundInfo()
+			await Promise.all([fetchVotingResultRound(), fetchPayoutChallenge()])
 			global.dismissPageLoading()
 		}
 	}

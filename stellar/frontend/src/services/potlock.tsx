@@ -1,5 +1,6 @@
 'use client'
 
+import { GPRound } from '@/models/round'
 import axios, { AxiosInstance } from 'axios'
 import React from 'react'
 
@@ -24,7 +25,7 @@ export class PotlockService {
 		return result?.data.results
 	}
 
-	async getRound(roundId: number) {
+	async getRound(roundId: number): Promise<GPRound> {
 		const result = await this._axios?.get(`/round/${roundId}`)
 		return result?.data
 	}
@@ -45,7 +46,9 @@ export class PotlockService {
 
 	async getProjectByOwner(owner: string) {
 		const result = await this._axios?.get(`/projects?owner=${owner}`)
-		return result?.data.results
+		return result?.data.results && result?.data.results.length > 0
+			? result?.data.results[0]
+			: null
 	}
 
 	async getProjectStats(projectId: number, owner: string) {

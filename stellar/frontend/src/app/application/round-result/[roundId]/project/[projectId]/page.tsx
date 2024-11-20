@@ -1,48 +1,50 @@
 'use client'
 
 import Button from '@/app/components/commons/Button'
+import InputText from '@/app/components/commons/InputText'
 import FlagProjectModal from '@/app/components/pages/round-result/FlagProjectModal'
 import RoundResultLayout from '@/app/components/pages/round-result/RoundResultLayout'
 import IconArrowLeft from '@/app/components/svgs/IconArrowLeft'
 import IconArrowRight from '@/app/components/svgs/IconArrowRight'
 import IconDollar from '@/app/components/svgs/IconDollar'
+import IconDot from '@/app/components/svgs/IconDot'
 import IconProject from '@/app/components/svgs/IconProject'
+import IconSearch from '@/app/components/svgs/IconSearch'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import { useWallet } from '@/app/providers/WalletProvider'
+import { LIMIT_SIZE } from '@/constants/query'
 import { getArithmeticIndex } from '@/lib/pair'
 import { GPVotingResult } from '@/models/voting'
 import {
 	nearProjectToGPProject,
 	NearProjectVotingResult,
-	nearRoundToGPRound,
 } from '@/services/near/type'
 import { usePotlockService } from '@/services/potlock'
-import {
-	projectToGPProject,
-	roundDetailToGPRound,
-} from '@/services/stellar/type'
+import { projectToGPProject } from '@/services/stellar/type'
 import useAppStorage from '@/stores/zustand/useAppStorage'
+import { extractChainId } from '@/utils/helper'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import clsx from 'clsx'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
-import { PickResult } from 'round-client'
+import useSWRInfinite from 'swr/infinite'
 
 const RoundResultProjectDetailPage = () => {
-	// const [pairFilter, setPairFilter] = useState<'all' | 'won' | 'lost'>('all')
+	const [pairFilter, setPairFilter] = useState<'all' | 'won' | 'lost'>('all')
 	const global = useGlobalContext()
 	const params = useParams<{ roundId: string; projectId: string }>()
 	const { stellarKit, nearWallet } = useWallet()
 	const [showFlagModal, setShowFlagModal] = useState(false)
 	const [numberOfProjects, setNumberOfProjects] = useState(0)
+	const [owner, setOwner] = useState<string | null>(null)
+	const [apiProjectId, setApiProjectId] = useState<number | null>(null)
+	const [apiRoundId, setApiRoundId] = useState<number | null>(null)
 	const storage = useAppStorage()
 	const potlockService = usePotlockService()
 
 	const fetchVotingResultRound = async () => {
-		if (params.roundId) {
-			const roundId = BigInt(params.roundId)
-
+		if (storage.current_round) {
 			if (storage.chainId === 'stellar') {
 				const contracts = storage.getStellarContracts()
 
@@ -52,7 +54,7 @@ const RoundResultProjectDetailPage = () => {
 
 				const votingResults = (
 					await contracts.round_contract.get_voting_results_for_round({
-						round_id: roundId,
+						round_id: BigInt(storage.current_round.on_chain_id || 0),
 					})
 				).result
 
@@ -87,9 +89,15 @@ const RoundResultProjectDetailPage = () => {
 
 								if (params.projectId === votingResult.project_id.toString()) {
 									storage.setCurrentProject(projectToGPProject(projectInfo))
+									setOwner(projectInfo.owner)
 								}
 
 								storage.setProjects(projectInfoAll)
+							}
+						} else {
+							if (params.projectId === votingResult.project_id.toString()) {
+								storage.setCurrentProject(project)
+								setOwner(project.owner?.id || '')
 							}
 						}
 					})
@@ -104,7 +112,7 @@ const RoundResultProjectDetailPage = () => {
 				}
 
 				const votingResults = await contract.round.getVotingResults(
-					Number(params.roundId),
+					storage.current_round.on_chain_id,
 				)
 
 				if (votingResults) {
@@ -137,9 +145,15 @@ const RoundResultProjectDetailPage = () => {
 
 								if (params.projectId === votingResult.project) {
 									storage.setCurrentProject(projectToGPProject(projectInfo))
+									setOwner(projectInfo.owner)
 								}
 
 								storage.setProjects(projectInfoAll)
+							}
+						} else {
+							if (params.projectId === votingResult.project.toString()) {
+								storage.setCurrentProject(project)
+								setOwner(project.owner?.id || '')
 							}
 						}
 					})
@@ -152,34 +166,30 @@ const RoundResultProjectDetailPage = () => {
 
 	const fetchRoundInfo = async () => {
 		if (params.roundId) {
-			const roundId = BigInt(params.roundId)
-			const isExsist = storage.roundes.has(roundId.toString())
 			let isOwner = false
 			let isAdmin = false
 
-			if (!isExsist && storage.chainId === 'stellar') {
+			const roundInfo = await potlockService.getRound(Number(params.roundId))
+			const chainId = extractChainId(roundInfo)
+
+			storage.setRound(roundInfo)
+			storage.roundes.set(roundInfo.id.toString(), roundInfo)
+			storage.setChainId(chainId)
+
+			if (storage.chainId === 'stellar') {
 				const contracts = storage.getStellarContracts()
 
 				if (!contracts) {
 					return
 				}
 
-				const roundInfo = (
-					await contracts.round_contract.get_round({ round_id: roundId })
-				).result
-
 				const admins = (
 					await contracts.round_contract.admins({
-						round_id: roundId,
+						round_id: BigInt(roundInfo?.on_chain_id || 0),
 					})
 				).result
 
 				if (roundInfo) {
-					storage.setRound(roundDetailToGPRound(roundInfo))
-					storage.roundes.set(
-						roundId.toString(),
-						roundDetailToGPRound(roundInfo),
-					)
 					isOwner = roundInfo.owner === storage.my_address
 					isAdmin = admins.includes(storage.my_address || '')
 
@@ -189,7 +199,7 @@ const RoundResultProjectDetailPage = () => {
 
 					const isPayoutDone = (
 						await contracts.round_contract.is_payout_done({
-							round_id: roundId,
+							round_id: BigInt(roundInfo.on_chain_id || 0),
 						})
 					).result
 
@@ -201,13 +211,7 @@ const RoundResultProjectDetailPage = () => {
 					return
 				}
 
-				const roundInfo = await contracts.round.getRoundById(
-					parseInt(params.roundId),
-				)
-
 				if (roundInfo) {
-					storage.setRound(nearRoundToGPRound(roundInfo))
-					storage.roundes.set(roundId.toString(), nearRoundToGPRound(roundInfo))
 					isOwner = roundInfo.owner === storage.my_address
 					isAdmin = roundInfo.admins.includes(storage.my_address || '')
 
@@ -215,7 +219,9 @@ const RoundResultProjectDetailPage = () => {
 
 					storage.setIsAdminRound(isAdminOrOwner)
 
-					const isPayoutDone = false
+					const isPayoutDone = await contracts.round.isPayoutDone(
+						roundInfo.on_chain_id,
+					)
 
 					storage.setPayoutDone(isPayoutDone)
 				}
@@ -232,7 +238,7 @@ const RoundResultProjectDetailPage = () => {
 				if (!contract) return
 
 				const unflagTx = await contract.round_contract.unflag_project({
-					round_id: BigInt(params.roundId),
+					round_id: BigInt(storage.current_round?.on_chain_id || 0),
 					project_id: BigInt(params.projectId),
 					caller: storage.my_address || '',
 				})
@@ -257,7 +263,7 @@ const RoundResultProjectDetailPage = () => {
 				}
 
 				await contracts.round.unflagProject(
-					Number(params.roundId),
+					storage.current_round?.on_chain_id || 0,
 					params.projectId,
 				)
 
@@ -272,73 +278,20 @@ const RoundResultProjectDetailPage = () => {
 		}
 	}
 
-	const getDetailPickResult = (pick: PickResult) => {
-		const numberOfProjects = storage.current_results.length
-		const pair = getArithmeticIndex(numberOfProjects, pick.pair_id)
-		const projects = pair.map((index) => {
-			try {
-				const project_id = storage.current_results[index].project.toString()
-				const project = storage.projects.get(project_id)
-
-				return project
-			} catch (e) {
-				return null
-			}
-		})
-
-		return {
-			pair,
-			projects,
-			selected: pick.project_id,
-		}
-	}
-
-	/*
-  TODO: backend not provided enough information to implement this function
-  */
-	const fetchVotesRound = async () => {
-		if (params.roundId && params.projectId) {
-			const contracts = storage.getStellarContracts()
-			if (!contracts) {
-				return
+	const fetchApiProjectInfo = async () => {
+		if (owner && storage.current_round) {
+			const projectInfo = await potlockService.getProjectByOwner(owner)
+			if (projectInfo) {
+				setApiProjectId(projectInfo.id)
 			}
 
-			const roundId = params.roundId || ''
-			const projectId = params.projectId || ''
-			let votingResults = await potlockService.getVotes(
-				Number(roundId),
-				Number(projectId),
-			)
-
-			const detailVotes = votingResults.map(async (vote: any) => {
-				const voter = vote.voter.id || ''
-				const onChainVote = (
-					await contracts.round_contract.get_my_vote_for_round({
-						round_id: BigInt(roundId),
-						voter: voter,
-					})
-				).result
-
-				const detailedPicks = onChainVote.picks.map((pick: PickResult) => {
-					return getDetailPickResult(pick)
-				})
-
-				return {
-					voter,
-					picks: await Promise.all(detailedPicks),
-				}
-			})
-
-			const votes = await Promise.all(detailVotes)
-
-			console.log('votes', votes)
+			setApiRoundId(storage.current_round.id)
 		}
 	}
 
 	const initPage = async () => {
 		global.openPageLoading()
 		await Promise.all([fetchVotingResultRound(), fetchRoundInfo()])
-		// await fetchVotesRound()
 		global.dismissPageLoading()
 	}
 
@@ -362,6 +315,43 @@ const RoundResultProjectDetailPage = () => {
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [params.roundId, params.projectId, storage.my_address])
+
+	const onFetchVotes = async (key: { url: string; page: number }) => {
+		if (apiProjectId && apiRoundId) {
+			const votes = await potlockService.getVotes(
+				apiRoundId,
+				apiProjectId,
+				key.page,
+			)
+
+			return votes
+		} else {
+			return []
+		}
+	}
+
+	useEffect(() => {
+		fetchApiProjectInfo()
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [owner, storage.current_round])
+
+	const getKey = (pageIndex: number, previousPageData: any[]) => {
+		if (previousPageData && !previousPageData.length) return null
+		return {
+			url: `get-votes`,
+			page: pageIndex,
+			round_id: apiProjectId,
+			project_id: apiRoundId,
+		}
+	}
+
+	const { data, size, setSize, isValidating, isLoading, mutate } =
+		useSWRInfinite(getKey, async (key) => await onFetchVotes(key), {
+			revalidateFirstPage: false,
+		})
+	const rounds = data ? ([] as any[]).concat(...(data as any as any[])) : []
+
+	const hasMore = data ? data.length >= LIMIT_SIZE : false
 
 	return (
 		<RoundResultLayout>
@@ -477,7 +467,6 @@ const RoundResultProjectDetailPage = () => {
 					</Button>
 				)}
 			</div>
-			{/* 
 			<div className="flex items-center space-x-2 md:space-x-3">
 				<Button
 					color={pairFilter === 'all' ? `black` : `alpha-50`}
@@ -522,7 +511,11 @@ const RoundResultProjectDetailPage = () => {
 				</div>
 			</div>
 
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4 lg:gap-6"></div> */}
+			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4 lg:gap-6">
+				{data?.map((round, index) => {
+					return <p key={index}>{JSON.stringify(round)}</p>
+				})}
+			</div>
 
 			<FlagProjectModal
 				isOpen={showFlagModal}

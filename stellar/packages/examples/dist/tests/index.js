@@ -29,7 +29,7 @@ export async function generateFakeRound() {
             application_end_ms: BigInt(new Date().getTime() + 1000 * 60 * 60 * 24 * 7),
             voting_start_ms: BigInt(new Date().getTime() + 1000 * 60 * 60 * 24 * 8),
             voting_end_ms: BigInt(new Date().getTime() + 1000 * 60 * 60 * 24 * 14),
-            name: 'Round Completed YX (1)',
+            name: 'Round Generated For Prom ' + randomName,
             description: 'This is a test round',
             is_video_required: false,
             allow_applications: true,

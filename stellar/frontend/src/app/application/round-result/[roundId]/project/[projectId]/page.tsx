@@ -6,14 +6,13 @@ import FlagProjectModal from '@/app/components/pages/round-result/FlagProjectMod
 import RoundResultLayout from '@/app/components/pages/round-result/RoundResultLayout'
 import IconArrowLeft from '@/app/components/svgs/IconArrowLeft'
 import IconArrowRight from '@/app/components/svgs/IconArrowRight'
+import IconCheckCircle from '@/app/components/svgs/IconCheckCircle'
 import IconDollar from '@/app/components/svgs/IconDollar'
 import IconDot from '@/app/components/svgs/IconDot'
 import IconProject from '@/app/components/svgs/IconProject'
-import IconSearch from '@/app/components/svgs/IconSearch'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { LIMIT_SIZE } from '@/constants/query'
-import { getArithmeticIndex } from '@/lib/pair'
 import { GPVotingResult } from '@/models/voting'
 import {
 	nearProjectToGPProject,
@@ -22,13 +21,105 @@ import {
 import { usePotlockService } from '@/services/potlock'
 import { projectToGPProject } from '@/services/stellar/type'
 import useAppStorage from '@/stores/zustand/useAppStorage'
-import { extractChainId } from '@/utils/helper'
+import { extractChainId, prettyTruncate } from '@/utils/helper'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import clsx from 'clsx'
 import { useParams } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import useSWRInfinite from 'swr/infinite'
+import Image from 'next/image'
+import { GPProject } from '@/models/project'
+import IconCheck from '@/app/components/svgs/IconCheck'
+import IconCloseFilled from '@/app/components/svgs/IconCloseFilled'
+
+const VoteItem = ({ index, data }: { index: number; data: any }) => {
+	const store = useAppStorage()
+	let [firstProjectData, setFirstProjectData] = useState<GPProject | null>(null)
+	let [secondProjectData, setSecondProjectData] = useState<GPProject | null>(
+		null,
+	)
+
+	const fetchProjectData = async () => {
+		const firstProjectData = await store.getProjectByOwner(
+			data.pair[0].project_id,
+		)
+		const secondProjectData = await store.getProjectByOwner(
+			data.pair[1].project_id,
+		)
+
+		setFirstProjectData(firstProjectData)
+		setSecondProjectData(secondProjectData)
+	}
+
+	useEffect(() => {
+		fetchProjectData()
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [data])
+
+	return (
+		<div key={index} className="rounded-2xl border-grantpicks-black-100 border">
+			<div className="flex p-2 md:p-3  items-center bg-grantpicks-black-100 rounded-t-2xl">
+				<Image
+					src={`https://www.tapback.co/api/avatar/${data.voter.id}`}
+					alt="Voter"
+					className={'w-10 h-10 rounded-full'}
+					width={40}
+					height={40}
+				/>
+
+				<p className="text-sm font-semibold text-grantpicks-black-950 ml-2">
+					@{prettyTruncate(data.voter.id, 10, 'address')}
+				</p>
+			</div>
+			<div className="relative justify-center flex items-center gap-x-4 md:gap-x-6 mb-4 md:mb-6 mt-3">
+				<div className="flex items-center flex-col mt-5">
+					<Image
+						className={clsx(
+							`w-20 md:w-24 lg:w-28 h-20 md:h-24 lg:h-28 rounded-full bg-grantpicks-black-300 mb-4`,
+							data.winner.project_id === data.pair[0].project_id
+								? 'border-4 border-grantpicks-purple-500'
+								: 'border-4 border-grantpicks-red-400',
+						)}
+						src={`https://www.tapback.co/api/avatar/${firstProjectData?.owner?.id}`}
+						alt="Project 1"
+						width={112}
+						height={112}
+					/>
+					{data.winner.project_id === data.pair[0].project_id ? (
+						<IconCheckCircle size={24} className="fill-grantpicks-purple-400" />
+					) : (
+						<IconCloseFilled size={24} className="fill-grantpicks-red-400" />
+					)}
+				</div>
+				<div className="flex items-center flex-col mt-5">
+					<Image
+						className={clsx(
+							`w-20 md:w-24 lg:w-28 h-20 md:h-24 lg:h-28 rounded-full bg-grantpicks-black-300 mb-4`,
+							data.winner.project_id === data.pair[1].project_id
+								? 'border-4 border-grantpicks-purple-500'
+								: 'border-4 border-grantpicks-red-400',
+						)}
+						src={`https://www.tapback.co/api/avatar/${secondProjectData?.owner?.id}`}
+						alt="Project 2"
+						width={112}
+						height={112}
+					/>
+					{data.winner.project_id === data.pair[1].project_id ? (
+						<IconCheckCircle size={24} className="fill-grantpicks-purple-400" />
+					) : (
+						<IconCloseFilled size={24} className="fill-grantpicks-red-400" />
+					)}
+				</div>
+				<div className="absolute inset-0 flex items-center justify-center">
+					<div className="rounded-full w-16 h-16 bg-gradient-to-t from-grantpicks-purple-500 to-grantpicks-purple-100 flex items-center justify-center">
+						<p className="text-[32px] font-black text-white">VS</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	)
+}
 
 const RoundResultProjectDetailPage = () => {
 	const [pairFilter, setPairFilter] = useState<'all' | 'won' | 'lost'>('all')
@@ -320,8 +411,8 @@ const RoundResultProjectDetailPage = () => {
 		if (apiProjectId && apiRoundId) {
 			const votes = await potlockService.getVotes(
 				apiRoundId,
-				apiProjectId,
-				key.page,
+				owner || '',
+				key.page + 1,
 			)
 
 			return votes
@@ -349,7 +440,19 @@ const RoundResultProjectDetailPage = () => {
 		useSWRInfinite(getKey, async (key) => await onFetchVotes(key), {
 			revalidateFirstPage: false,
 		})
-	const rounds = data ? ([] as any[]).concat(...(data as any as any[])) : []
+	let votes = data ? ([] as any[]).concat(...(data as any as any[])) : []
+
+	if (pairFilter !== 'all') {
+		if (pairFilter === 'won') {
+			votes = votes.filter((vote: any) => {
+				return vote.winner.project_id === owner
+			})
+		} else {
+			votes = votes.filter((vote: any) => {
+				return vote.winner.project_id !== owner
+			})
+		}
+	}
 
 	const hasMore = data ? data.length >= LIMIT_SIZE : false
 
@@ -495,25 +598,18 @@ const RoundResultProjectDetailPage = () => {
 				<div className="flex items-center space-x-2">
 					<IconDot size={8} className="fill-black" />
 					<p className="text-sm font-bold text-grantpicks-black-950">
-						900{` `}{' '}
+						{votes.length}
+						{` `}
 						<span className="text-xs font-semibold text-grantpicks-black-600">
 							MATCHES
 						</span>
 					</p>
 				</div>
-				<div className="w-[50%]">
-					<InputText
-						placeholder="Search account"
-						preffixIcon={
-							<IconSearch className="fill-grantpicks-black-400" size={18} />
-						}
-					/>
-				</div>
 			</div>
 
 			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4 lg:gap-6">
-				{data?.map((round, index) => {
-					return <p key={index}>{JSON.stringify(round)}</p>
+				{votes?.map((item, index) => {
+					return <VoteItem key={index} index={index} data={item} />
 				})}
 			</div>
 

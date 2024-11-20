@@ -37,9 +37,9 @@ export class PotlockService {
 		return result?.data.results
 	}
 
-	async getVotes(roundId: number, project_id: number, page: number = 1) {
+	async getVotes(roundId: number, owner: string, page: number = 1) {
 		const result = await this._axios?.get(
-			`/round/${roundId}/${project_id}/votes?page=${page}`,
+			`/round/${roundId}/${owner}/votes?page=${page}`,
 		)
 		return result?.data.results
 	}

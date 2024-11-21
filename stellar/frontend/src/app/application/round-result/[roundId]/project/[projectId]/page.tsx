@@ -129,8 +129,6 @@ const RoundResultProjectDetailPage = () => {
 	const [showFlagModal, setShowFlagModal] = useState(false)
 	const [numberOfProjects, setNumberOfProjects] = useState(0)
 	const [owner, setOwner] = useState<string | null>(null)
-	const [apiProjectId, setApiProjectId] = useState<number | null>(null)
-	const [apiRoundId, setApiRoundId] = useState<number | null>(null)
 	const storage = useAppStorage()
 	const potlockService = usePotlockService()
 
@@ -369,17 +367,6 @@ const RoundResultProjectDetailPage = () => {
 		}
 	}
 
-	const fetchApiProjectInfo = async () => {
-		if (owner && storage.current_round) {
-			const projectInfo = await potlockService.getProjectByOwner(owner)
-			if (projectInfo) {
-				setApiProjectId(projectInfo.id)
-			}
-
-			setApiRoundId(storage.current_round.id)
-		}
-	}
-
 	const initPage = async () => {
 		global.openPageLoading()
 		await Promise.all([fetchVotingResultRound(), fetchRoundInfo()])
@@ -408,31 +395,22 @@ const RoundResultProjectDetailPage = () => {
 	}, [params.roundId, params.projectId, storage.my_address])
 
 	const onFetchVotes = async (key: { url: string; page: number }) => {
-		if (apiProjectId && apiRoundId) {
-			const votes = await potlockService.getVotes(
-				apiRoundId,
-				owner || '',
-				key.page + 1,
-			)
+		const votes = await potlockService.getVotes(
+			storage.current_round?.id || 0,
+			owner || '',
+			key.page + 1,
+		)
 
-			return votes
-		} else {
-			return []
-		}
+		return votes
 	}
-
-	useEffect(() => {
-		fetchApiProjectInfo()
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [owner, storage.current_round])
 
 	const getKey = (pageIndex: number, previousPageData: any[]) => {
 		if (previousPageData && !previousPageData.length) return null
 		return {
 			url: `get-votes`,
 			page: pageIndex,
-			round_id: apiProjectId,
-			project_id: apiRoundId,
+			round_id: storage.current_round?.id,
+			project_id: owner,
 		}
 	}
 

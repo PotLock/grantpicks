@@ -122,7 +122,7 @@ const IsVotedPairItem = ({
 							? `border-4 border-grantpicks-purple-500`
 							: `border-4 border-grantpicks-black-300`,
 					)}
-					src={`https://www.tapback.co/api/avatar/${firstProjectData?.name}`}
+					src={`https://www.tapback.co/api/avatar/${firstProjectData?.owner}`}
 					alt="Project 1"
 					width={112}
 					height={112}
@@ -135,7 +135,7 @@ const IsVotedPairItem = ({
 							? `border-4 border-grantpicks-purple-500`
 							: `border-4 border-grantpicks-black-300`,
 					)}
-					src={`https://www.tapback.co/api/avatar/${secondProjectData?.name}`}
+					src={`https://www.tapback.co/api/avatar/${secondProjectData?.owner}`}
 					alt="Project 2"
 					width={112}
 					height={112}

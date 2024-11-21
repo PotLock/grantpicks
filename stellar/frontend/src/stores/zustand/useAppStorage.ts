@@ -62,6 +62,7 @@ interface AppRepo {
 	clear: () => void
 	setApplications: (applications: Map<string, RoundApplication>) => void
 	setNetwork: (network: string) => void
+	getProjectByOwner: (owner: string) => Promise<GPProject | null>
 }
 
 const useAppStorage = create<AppRepo>((set, get) => ({
@@ -335,6 +336,18 @@ const useAppStorage = create<AppRepo>((set, get) => ({
 			return nearContracts
 		}
 		return null
+	},
+	getProjectByOwner: async (owner: string) => {
+		const projects = get().projects
+		let project = null
+
+		projects.forEach((value) => {
+			if (value.owner?.id === owner) {
+				project = value
+			}
+		})
+
+		return project
 	},
 }))
 

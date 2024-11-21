@@ -393,9 +393,7 @@ const ApplicationRoundsItem = ({
 								roundData: doc,
 							}))
 						} else {
-							router.push(
-								`/application/round-result/${doc.on_chain_id}?chain_id=${chainId}`,
-							)
+							router.push(`/application/round-result/${doc.id}`)
 						}
 					}}
 					isFullWidth

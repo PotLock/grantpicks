@@ -310,7 +310,8 @@ const ApplicationRoundsItem = ({
 					<div className="flex items-center space-x-1">
 						<IconGroup size={18} className="fill-grantpicks-black-400" />
 						<p className="text-sm font-normal text-grantpicks-black-950">
-							Max. {doc.max_participants} applicant
+							Max. {doc.max_participants}{' '}
+							{doc.max_participants > 1 ? 'applicants' : 'applicant'}
 						</p>
 					</div>
 				) : (

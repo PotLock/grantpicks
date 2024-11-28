@@ -40,6 +40,17 @@ pub struct RoundApplicationExternal {
     pub updated_ms: Option<u64>,
 }
 
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
+#[borsh(crate = "near_sdk::borsh")]
+#[serde(crate = "near_sdk::serde")]
+pub struct FlagDetail {
+    pub project_id: AccountId,
+    pub applicant_id: AccountId,
+    pub reason: String,
+    pub flagged_by: AccountId,
+    pub flagged_ms: u64,
+}
+
 #[near_bindgen]
 impl Contract {
     #[payable]
@@ -385,6 +396,62 @@ impl Contract {
         };
         log_application_updated(&app_external);
         app_external
+    }
+
+    #[payable]
+    pub fn flag_project(
+        &mut self,
+        round_id: RoundId,
+        project_id: AccountId,
+        reason: String,
+    ) -> FlagDetail {        
+        // Get round and verify caller is owner/admin
+        let round = self.rounds_by_id.get(&round_id).expect("Round not found");
+        assert!(
+            round.is_caller_owner_or_admin(),
+            "Only round owner or admin can flag projects"
+        );
+
+        // Get internal project ID
+        let internal_project_id = self
+            .project_id_to_internal_id
+            .get(&project_id)
+            .expect("Project not found in internal project ID mapping");
+
+        // Verify project has an application in this round
+        let applications_for_round = self
+            .applications_for_round_by_internal_project_id
+            .get(&round_id)
+            .expect("Applications for round not found");
+        
+        assert!(
+            applications_for_round
+                .get(&internal_project_id)
+                .is_some(),
+            "Project has not applied to this round"
+        );
+
+        // Create flag detail
+        let flag = FlagDetail {
+            project_id: project_id.clone(),
+            applicant_id: project_id.clone(), // In NEAR case, project_id is the same as applicant_id
+            reason,
+            flagged_by: env::predecessor_account_id(),
+            flagged_ms: env::block_timestamp_ms(),
+        };
+
+        // Store flag in contract state
+        // self.flagged_projects_by_round_id.insert(&round_id, &flag);
+        self
+            .flagged_projects_by_round_id
+            .get_mut(&round_id)
+            .expect("Flagged projects for round not found")
+            .insert(*internal_project_id, flag.clone());
+
+        // Log event
+        log_project_flagged(&flag);
+
+        flag
     }
 
     // GETTERS / VIEW METHODS

@@ -72,7 +72,7 @@ pub struct RoundDetailInternal {
     pub compliance_requirement_description: Option<String>, // can be changed until compliance period ends
     pub compliance_period_ms: u64,
     pub compliance_end_ms: Option<TimestampMs>,
-    pub round_complete: bool,
+    pub round_complete: Option<TimestampMs>,
 }
 
 impl RoundDetailInternal {
@@ -862,7 +862,7 @@ pub struct RoundDetailExternal {
     pub compliance_requirement_description: Option<String>,
     pub compliance_period_ms: u64,
     pub compliance_end_ms: Option<TimestampMs>,
-    pub round_complete: bool,
+    pub round_complete: Option<TimestampMs>,
 }
 
 impl RoundDetailExternal {
@@ -961,7 +961,7 @@ impl Contract {
             remaining_funds_redistributed_at_ms: None,
             remaining_funds_redistribution_memo: None,
             remaining_funds_redistributed_by: None,
-            round_complete: false,
+            round_complete: None,
         };
 
         // validation
@@ -1017,6 +1017,11 @@ impl Contract {
         self.deposit_ids_for_round.insert(
             id,
             UnorderedSet::new(StorageKey::DepositIdsForRoundInner { round_id: id }),
+        );
+
+        self.flagged_projects_by_round_id.insert(
+            id,
+            UnorderedMap::new(StorageKey::FlaggedProjectsByIdInner { round_id: id }),
         );
         // clean-up
         refund_deposit(initial_storage_usage, None);
@@ -1545,7 +1550,7 @@ impl Contract {
         // Verify caller is owner or admin
         round.assert_caller_is_owner_or_admin();
 
-        round.round_complete = true;
+        round.round_complete = Some(env::block_timestamp_ms());
 
         self.rounds_by_id.insert(round_id, round.clone());
         refund_deposit(initial_storage_usage, None);
@@ -1589,5 +1594,9 @@ impl Contract {
             .get(&round_id)
             .expect("Round not found")
             .is_voting_live()
+    }
+
+    pub fn is_payout_done(&self, round_id: RoundId) -> bool {
+        self.payouts_processed(round_id)
     }
 }

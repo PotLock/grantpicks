@@ -35,6 +35,7 @@ pub struct VotingResult {
 pub struct ProjectVotingResult {
     pub project: AccountId,
     pub voting_count: u32,
+    pub is_flagged: bool,
 }
 
 #[near_bindgen]
@@ -102,7 +103,7 @@ impl Contract {
 
         // insert voting result
         votes_for_round.insert(caller, voting_result.clone());
-        log_vote(&voting_result);
+        log_vote(round_id, &voting_result);
         voting_result
     }
 
@@ -256,6 +257,13 @@ impl Contract {
             .voting_count_per_project_by_round_id
             .get(&round_id)
             .expect("Vote count not found for round");
+        let emp_map = UnorderedMap::<InternalProjectId, FlagDetail>::new(b"r");
+        let flagged_projects = self
+            .flagged_projects_by_round_id
+            .get(&round_id)
+            .unwrap_or_else(|| 
+                &emp_map
+            );
         let mut results: Vec<ProjectVotingResult> = Vec::new();
         for (project_id, vote_count) in vote_counts_for_round.iter() {
             let project = self
@@ -265,9 +273,14 @@ impl Contract {
             results.push(ProjectVotingResult {
                 project: project.clone(),
                 voting_count: *vote_count,
+                is_flagged: flagged_projects.contains_key(project_id),
             });
         }
         results
+    }
+
+    pub fn get_my_vote_for_round(&self, round_id: RoundId, voter: AccountId) -> Option<VotingResult> {
+        self.votes_by_round_id.get(&round_id).and_then(|votes| votes.get(&voter).cloned())
     }
 
     pub fn can_vote(&self, round_id: RoundId, voter: AccountId) -> bool {

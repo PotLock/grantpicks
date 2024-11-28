@@ -72,6 +72,10 @@ pub enum StorageKey {
     PayoutsChallengesForRoundByChallengerIdInner {
         round_id: RoundId,
     },
+    FlaggedProjectsById,
+    FlaggedProjectsByIdInner {
+        round_id: RoundId,
+    },
 }
 
 #[near_bindgen]
@@ -110,6 +114,7 @@ pub struct Contract {
     protocol_fee_basis_points: Option<u16>,
     default_page_size: u64,
     contract_source_metadata: ContractSourceMetadata,
+    flagged_projects_by_round_id: UnorderedMap<RoundId, UnorderedMap<InternalProjectId, FlagDetail>>,
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
@@ -164,6 +169,7 @@ impl Contract {
             protocol_fee_basis_points,
             default_page_size: DEFAULT_PAGE_SIZE,
             contract_source_metadata,
+            flagged_projects_by_round_id: UnorderedMap::new(StorageKey::FlaggedProjectsById),
         }
     }
 

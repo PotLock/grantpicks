@@ -148,7 +148,7 @@ pub(crate) fn log_application_deleted(application: &RoundApplicationExternal) {
 }
 
 /// vote
-pub(crate) fn log_vote(vote: &VotingResult) {
+pub(crate) fn log_vote(round_id: RoundId, vote: &VotingResult) {
     env::log_str(
         format!(
             "{}{}",
@@ -159,6 +159,7 @@ pub(crate) fn log_vote(vote: &VotingResult) {
                 "event": "vote",
                 "data": [
                     {
+                        "round_id": round_id,
                         "vote": vote,
                     }
                 ]
@@ -318,6 +319,26 @@ pub(crate) fn log_protocol_fee_config_set(
                     {
                         "protocol_fee_recipient": protocol_fee_recipient,
                         "protocol_fee_basis_points": protocol_fee_basis_points,
+                    }
+                ]
+            })
+        )
+        .as_ref(),
+    );
+}
+
+pub(crate) fn log_project_flagged(flag: &FlagDetail) {
+    env::log_str(
+        format!(
+            "{}{}",
+            EVENT_JSON_PREFIX,
+            json!({
+                "standard": "potlock",
+                "version": "1.0.0",
+                "event": "project_flagged",
+                "data": [
+                    {
+                        "flag": flag,
                     }
                 ]
             })

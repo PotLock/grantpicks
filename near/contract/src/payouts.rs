@@ -255,7 +255,7 @@ impl Contract {
         // verify that the caller is the owner or admin
         round.assert_caller_is_owner_or_admin();
         // verify that round_complete is not true
-        assert!(round.round_complete == false, "All paid out");
+        assert!(round.round_complete.is_none(), "All paid out");
         // verify that the cooldown period has passed
         round.assert_cooldown_period_complete();
         // verify that any challenges have been resolved
@@ -277,37 +277,33 @@ impl Contract {
                 .get(&internal_project_id)
                 .expect("Project does not exist internally");
 
-            if round.is_caller_owner_or_admin() {
-                log!("Skipping payout for project {} (internal ID {}) as it is owner or admin and not eligible for payouts.", project_id, internal_project_id);
-            } else {
-                // check if there are payouts for the project
-                if let Some(payout_ids_for_project) = self
-                    .payout_ids_by_internal_project_id
-                    .get(&internal_project_id)
-                {
-                    for payout_id in payout_ids_for_project.iter() {
-                        let payout = self.payouts_by_id.get_mut(&payout_id).expect("no payout");
-                        if payout.paid_at.is_none() {
-                            // transfer funds
-                            Promise::new(project_id.clone())
-                                .transfer(NearToken::from_yoctonear(payout.amount))
-                                .then(
-                                    Self::ext(env::current_account_id())
-                                        .with_static_gas(XCC_GAS)
-                                        .transfer_payout_callback(payout.clone()),
+            // check if there are payouts for the project
+            if let Some(payout_ids_for_project) = self
+                .payout_ids_by_internal_project_id
+                .get(&internal_project_id)
+            {
+                for payout_id in payout_ids_for_project.iter() {
+                    let payout = self.payouts_by_id.get_mut(&payout_id).expect("no payout");
+                    if payout.paid_at.is_none() {
+                        // transfer funds
+                        Promise::new(project_id.clone())
+                            .transfer(NearToken::from_yoctonear(payout.amount))
+                            .then(
+                                Self::ext(env::current_account_id())
+                                    .with_static_gas(XCC_GAS)
+                                    .transfer_payout_callback(payout.clone()),
                                 );
-                            // update payout to indicate that funds transfer has been initiated
-                            payout.paid_at = Some(env::block_timestamp_ms());
-                            // accumulate the total amount paid
-                            total_amount_paid += payout.amount;
-                        } else {
-                            log!(
-                                format!(
-                                    "Skipping payout for project {} (internal ID {}) as it has already been paid out.",
+                        // update payout to indicate that funds transfer has been initiated
+                        payout.paid_at = Some(env::block_timestamp_ms());
+                        // accumulate the total amount paid
+                        total_amount_paid += payout.amount;
+                    } else {
+                        log!(
+                            format!(
+                                "Skipping payout for project {} (internal ID {}) as it has already been paid out.",
                                     project_id, internal_project_id
                                 )
-                            );
-                        }
+                        );
                     }
                 }
             }
@@ -561,7 +557,7 @@ impl Contract {
             round.remaining_funds_redistributed_by = Some(caller.clone());
             // round.remaining_funds_redistribution_memos = None;
             // set round_complete to true
-            round.round_complete = true;
+            round.round_complete = Some(env::block_timestamp_ms());
             // log event
             log_vault_redistributed(
                 &round_id,
@@ -624,5 +620,20 @@ impl Contract {
                 challenge.to_external(challenger_id.clone(), round_id)
             })
             .collect()
+    }
+
+    pub fn payouts_processed(&self, round_id: RoundId) -> bool {
+        // Get payout IDs for the round
+        let payout_ids = match self.payout_ids_by_round_id.get(&round_id) {
+            Some(ids) => ids,
+            None => return true // No payouts means all are processed
+        };
+
+        // Check if all payouts have paid_at timestamp
+        payout_ids.iter().all(|payout_id| {
+            self.payouts_by_id
+                .get(payout_id)
+                .map_or(false, |payout| payout.paid_at.is_some())
+        })
     }
 }

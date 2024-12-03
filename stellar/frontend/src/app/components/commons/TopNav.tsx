@@ -19,14 +19,20 @@ const TopNav = () => {
 
 	return (
 		<div className="flex fixed z-20 inset-x-0 items-center justify-between px-[5vw] md:px-[10vw] xl:px-[15vw] py-4 bg-white">
-			<div
-				className="cursor-pointer transition"
+			<button
 				onClick={() => router.push(`/rounds`)}
+				className="flex items-center gap-x-[2px] px-[10px]"
 			>
+				<Image
+					src="/assets/images/grantpicks-logo-new.png"
+					alt="grantpicks-logo"
+					width={46}
+					height={26}
+				/>
 				<p className="text-base md:text-lg xl:text-xl font-black text-grantpicks-black-950">
-					GRANTPICKS
+					GrantPicks
 				</p>
-			</div>
+			</button>
 			<div className="flex items-center space-x-4">
 				<Button
 					onClick={() => router.push(`/rounds`)}

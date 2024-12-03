@@ -158,7 +158,7 @@ const IsVotedPairItem = ({
 							project: firstProjectData as Project,
 						}))
 					}
-					className="text-grantpicks-black-950 font-semibold text-base"
+					className="text-grantpicks-black-950 font-semibold text-base cursor-pointer"
 				>
 					{prettyTruncate(firstProjectData?.name, 20)}
 				</p>
@@ -170,7 +170,7 @@ const IsVotedPairItem = ({
 							project: secondProjectData as Project,
 						}))
 					}
-					className="text-grantpicks-black-950 font-semibold text-base"
+					className="text-grantpicks-black-950 font-semibold text-base cursor-pointer"
 				>
 					{prettyTruncate(secondProjectData?.name, 20)}
 				</p>

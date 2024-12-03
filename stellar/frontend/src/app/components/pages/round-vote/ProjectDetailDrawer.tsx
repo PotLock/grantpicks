@@ -155,7 +155,7 @@ const ProjectDetailDrawer = ({
 					)}
 					{ytIframe && (
 						<div
-							className="mb-6 md:mb-8"
+							className="mb-6 md:mb-8 overflow-hidden"
 							dangerouslySetInnerHTML={{ __html: ytIframe }}
 						/>
 					)}

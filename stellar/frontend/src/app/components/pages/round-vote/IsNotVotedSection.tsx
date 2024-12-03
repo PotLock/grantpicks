@@ -11,7 +11,7 @@ import { useParams } from 'next/navigation'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
-import { IProjectDetailOwner } from '@/app/application/round-vote/[roundId]/page'
+import { IProjectDetailOwner } from '@/app/rounds/round-vote/[roundId]/page'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { NearPair, NearPick } from '@/services/near/type'
 

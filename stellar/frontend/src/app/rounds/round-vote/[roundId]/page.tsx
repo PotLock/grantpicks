@@ -185,7 +185,9 @@ const RoundVotePage = () => {
 					pairsData={pairsData}
 				/>
 			) : (
-				<IsVotedSection />
+				<IsVotedSection
+					setShowProjectDetailDrawer={setShowProjectDetailDrawer}
+				/>
 			)}
 			<ProjectDetailDrawer
 				isOpen={showProjectDetailDrawer?.isOpen || false}

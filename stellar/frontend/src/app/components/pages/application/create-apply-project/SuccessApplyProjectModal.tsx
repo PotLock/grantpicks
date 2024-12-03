@@ -62,7 +62,7 @@ const SuccessApplyProjectModal = ({
 						isFullWidth
 						onClick={() => {
 							onClose()
-							router.push(`/application`)
+							router.push(`/rounds`)
 						}}
 					>
 						<div className="flex items-center space-x-2">

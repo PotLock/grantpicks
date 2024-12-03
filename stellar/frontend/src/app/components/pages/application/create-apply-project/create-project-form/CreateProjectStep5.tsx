@@ -356,7 +356,10 @@ const CreateProjectStep5 = () => {
 							</div>
 						)}
 						{embededYtHtml && (
-							<div dangerouslySetInnerHTML={{ __html: embededYtHtml }} />
+							<div
+								className="overflow-hidden rounded-b-xl"
+								dangerouslySetInnerHTML={{ __html: embededYtHtml }}
+							/>
 						)}
 					</div>
 				)}

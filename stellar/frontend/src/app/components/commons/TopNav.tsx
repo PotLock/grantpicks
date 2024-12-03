@@ -21,7 +21,7 @@ const TopNav = () => {
 		<div className="flex fixed z-20 inset-x-0 items-center justify-between px-[5vw] md:px-[10vw] xl:px-[15vw] py-4 bg-white">
 			<div
 				className="cursor-pointer transition"
-				onClick={() => router.push(`/application`)}
+				onClick={() => router.push(`/rounds`)}
 			>
 				<p className="text-base md:text-lg xl:text-xl font-black text-grantpicks-black-950">
 					GRANTPICKS
@@ -29,7 +29,7 @@ const TopNav = () => {
 			</div>
 			<div className="flex items-center space-x-4">
 				<Button
-					onClick={() => router.push(`/application`)}
+					onClick={() => router.push(`/rounds`)}
 					className="!text-sm !font-semibold"
 					color="alpha-50"
 				>

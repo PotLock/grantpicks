@@ -17,7 +17,7 @@ import {
 	getProject,
 	GetProjectParams,
 } from '@/services/stellar/project-registry'
-import { IProjectDetailOwner } from '@/app/application/round-vote/[roundId]/page'
+import { IProjectDetailOwner } from '@/app/rounds/round-vote/[roundId]/page'
 import { fetchYoutubeIframe, prettyTruncate } from '@/utils/helper'
 import { Project } from 'project-registry-client'
 import useAppStorage from '@/stores/zustand/useAppStorage'
@@ -150,7 +150,7 @@ const RoundVotePairItem = ({
 							src={firstProjectData?.video_url || `/assets/videos/video-2.mp4`}
 							autoPlay={false}
 							controls={false}
-							className="w-[80%] mx-auto aspect-video"
+							className="mx-auto rounded-t-[20px] overflow-hidden"
 						></video>
 						<div className="flex items-center justify-center absolute inset-0 z-20">
 							<button
@@ -176,7 +176,7 @@ const RoundVotePairItem = ({
 				)}
 				{ytIframe1 && (
 					<div
-						className="flex items-center justify-center"
+						className="flex items-center justify-center rounded-t-[20px] overflow-hidden"
 						dangerouslySetInnerHTML={{ __html: ytIframe1 }}
 					/>
 				)}
@@ -195,7 +195,7 @@ const RoundVotePairItem = ({
 							src={secondProjectData?.video_url || `/assets/videos/video-2.mp4`}
 							autoPlay={false}
 							controls={false}
-							className="w-[80%] mx-auto aspect-video"
+							className="mx-auto rounded-t-[20px] overflow-hidden"
 						></video>
 						<div className="flex items-center justify-center absolute inset-0 z-20">
 							<button
@@ -221,7 +221,7 @@ const RoundVotePairItem = ({
 				)}
 				{ytIframe2 && (
 					<div
-						className="flex items-center justify-center"
+						className="flex items-center justify-center rounded-t-[20px] overflow-hidden"
 						dangerouslySetInnerHTML={{ __html: ytIframe2 }}
 					/>
 				)}

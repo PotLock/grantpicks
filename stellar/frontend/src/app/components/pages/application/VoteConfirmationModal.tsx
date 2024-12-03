@@ -173,7 +173,7 @@ const VoteConfirmationModal = ({
 										style: toastOptions.error.style,
 									})
 								} else {
-									router.push(`/application/round-vote/${data?.on_chain_id}`)
+									router.push(`/rounds/round-vote/${data?.on_chain_id}`)
 								}
 								onClose()
 								// onApplyRound()

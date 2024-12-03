@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { Dispatch, SetStateAction, useEffect, useState } from 'react'
 import IconCheckCircle from '../../svgs/IconCheckCircle'
 import IconCube from '../../svgs/IconCube'
 import IconClock from '../../svgs/IconClock'
@@ -26,15 +26,18 @@ import {
 import Image from 'next/image'
 import { GPPicks, GPVoting } from '@/models/voting'
 import { votingResultToGPVoting } from '@/services/stellar/type'
+import { IProjectDetailOwner } from '@/app/rounds/round-vote/[roundId]/page'
 
 const IsVotedPairItem = ({
 	index,
 	pair,
 	votingResult,
+	setShowProjectDetailDrawer,
 }: {
 	index: number
 	pair: Pair | NearPair
 	votingResult?: GPVoting
+	setShowProjectDetailDrawer: Dispatch<SetStateAction<IProjectDetailOwner>>
 }) => {
 	const [firstProjectData, setFirstProjectData] = useState<Project | undefined>(
 		undefined,
@@ -147,10 +150,28 @@ const IsVotedPairItem = ({
 				</div>
 			</div>
 			<div className="relative justify-center flex items-center gap-x-4 md:gap-x-6 mb-4 md:mb-6">
-				<p className="text-grantpicks-black-950 font-semibold text-base">
+				<p
+					onClick={() =>
+						setShowProjectDetailDrawer((prev: any) => ({
+							...prev,
+							isOpen: true,
+							project: firstProjectData as Project,
+						}))
+					}
+					className="text-grantpicks-black-950 font-semibold text-base cursor-pointer"
+				>
 					{prettyTruncate(firstProjectData?.name, 20)}
 				</p>
-				<p className="text-grantpicks-black-950 font-semibold text-base">
+				<p
+					onClick={() =>
+						setShowProjectDetailDrawer((prev: any) => ({
+							...prev,
+							isOpen: true,
+							project: secondProjectData as Project,
+						}))
+					}
+					className="text-grantpicks-black-950 font-semibold text-base cursor-pointer"
+				>
 					{prettyTruncate(secondProjectData?.name, 20)}
 				</p>
 			</div>
@@ -162,7 +183,11 @@ const IsVotedPairItem = ({
 	)
 }
 
-const IsVotedSection = () => {
+const IsVotedSection = ({
+	setShowProjectDetailDrawer,
+}: {
+	setShowProjectDetailDrawer: Dispatch<SetStateAction<IProjectDetailOwner>>
+}) => {
 	const params = useParams<{ roundId: string }>()
 	const { connectedWallet } = useWallet()
 	const [pairsData, setPairsData] = useState<Pair[] | NearPair[]>([])
@@ -330,6 +355,7 @@ const IsVotedSection = () => {
 						pair={pair}
 						index={idx}
 						votingResult={votingResult}
+						setShowProjectDetailDrawer={setShowProjectDetailDrawer}
 					/>
 				))}
 			</div>

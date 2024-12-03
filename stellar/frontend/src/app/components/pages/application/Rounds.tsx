@@ -28,13 +28,14 @@ import Image from 'next/image'
 import moment from 'moment'
 import { extractChainId, formatStroopToXlm } from '@/utils/helper'
 import IconStellar from '../../svgs/IconStellar'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { usePotlockService } from '@/services/potlock'
 import { GPRound } from '@/models/round'
 import IconUnfoldMore from '../../svgs/IconUnfoldMore'
 import Menu from '../../commons/Menu'
+import { TSelectedRoundType } from '@/types/round'
 
 const ApplicationRoundsItem = ({
 	doc,
@@ -44,6 +45,7 @@ const ApplicationRoundsItem = ({
 	mutateRounds: any
 }) => {
 	const router = useRouter()
+	const searchParams = useSearchParams()
 	const { selectedRoundType } = useRoundStore()
 	const [showMoreVert, setShowMoreVert] = useState<boolean>(false)
 	const [showDetailDrawer, setShowDetailDrawer] = useState<boolean>(false)
@@ -204,6 +206,24 @@ const ApplicationRoundsItem = ({
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [doc.on_chain_id, connectedWallet, stellarPubKey])
 
+	useEffect(() => {
+		if (searchParams.get('round_id') === doc.on_chain_id.toString()) {
+			setShowDetailDrawer(true)
+		}
+	}, [searchParams, doc.on_chain_id])
+
+	const handleOpenDetailDrawer = () => {
+		setShowDetailDrawer(true)
+		router.push(`?round_type=${selectedRoundType}&round_id=${doc.on_chain_id}`)
+	}
+
+	const handleCloseDetailDrawer = () => {
+		setShowDetailDrawer(false)
+		const url = new URL(window.location.href)
+		url.searchParams.delete('round_id')
+		router.replace(url.toString(), { scroll: false })
+	}
+
 	return (
 		<div className="p-4 md:p-5 rounded-xl border border-black/10">
 			<div className="flex items-center justify-between mb-4 md:mb-6">
@@ -290,9 +310,7 @@ const ApplicationRoundsItem = ({
 				</div>
 			</div>
 			<button
-				onClick={() => {
-					setShowDetailDrawer(true)
-				}}
+				onClick={handleOpenDetailDrawer}
 				className="font-semibold text-base md:text-lg lg:text-xl max-w-60 mb-4 text-grantpicks-black-950 text-left"
 			>
 				{doc.name}
@@ -310,7 +328,8 @@ const ApplicationRoundsItem = ({
 					<div className="flex items-center space-x-1">
 						<IconGroup size={18} className="fill-grantpicks-black-400" />
 						<p className="text-sm font-normal text-grantpicks-black-950">
-							Max. {doc.max_participants} applicant
+							Max. {doc.max_participants}{' '}
+							{doc.max_participants > 1 ? 'applicants' : 'applicant'}
 						</p>
 					</div>
 				) : (
@@ -343,7 +362,8 @@ const ApplicationRoundsItem = ({
 							<div className="flex items-center space-x-1">
 								<IconClock size={18} className="fill-grantpicks-black-400" />
 								<p className="text-sm font-normal text-grantpicks-black-950">
-									Closed {moment(new Date(doc.application_end || '')).fromNow()}
+									Closing{' '}
+									{moment(new Date(doc.application_end || '')).fromNow()}
 								</p>
 							</div>
 						)}
@@ -373,7 +393,7 @@ const ApplicationRoundsItem = ({
 						if (selectedRoundType === 'on-going') {
 							if (hasVoted) {
 								router.push(
-									`/application/round-vote/${doc.on_chain_id}?is_voted=true`,
+									`/rounds/round-vote/${doc.on_chain_id}?is_voted=true`,
 								)
 							} else {
 								setVoteConfirmationProps((prev) => ({
@@ -393,7 +413,7 @@ const ApplicationRoundsItem = ({
 								roundData: doc,
 							}))
 						} else {
-							router.push(`/application/round-result/${doc.id}`)
+							router.push(`/rounds/round-result/${doc.id}`)
 						}
 					}}
 					isFullWidth
@@ -430,7 +450,7 @@ const ApplicationRoundsItem = ({
 
 			<RoundDetailDrawer
 				isOpen={showDetailDrawer}
-				onClose={() => setShowDetailDrawer(false)}
+				onClose={handleCloseDetailDrawer}
 				onOpenFundRound={() => setShowFundRoundModal(true)}
 				onApplyRound={() => {
 					setApplyProjectInitProps((prev) => ({
@@ -470,6 +490,8 @@ const ApplicationRounds = () => {
 	const [showSortType, setShowSortType] = useState<boolean>(false)
 	const [sortType, setSortType] = useState<string>('Most Recent')
 	const storage = useAppStorage()
+	const router = useRouter()
+	const searchParams = useSearchParams()
 
 	const onFetchRounds = async (key: { url: string; page: number }) => {
 		let beChainId = null
@@ -542,11 +564,35 @@ const ApplicationRounds = () => {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [sortType])
 
+	useEffect(() => {
+		const roundTypeFromQuery = searchParams.get('round_type')
+		const validRoundTypes: TSelectedRoundType[] = [
+			'on-going',
+			'upcoming',
+			'ended',
+		]
+
+		if (
+			roundTypeFromQuery &&
+			validRoundTypes.includes(roundTypeFromQuery as TSelectedRoundType)
+		) {
+			setSelectedRoundType(roundTypeFromQuery as TSelectedRoundType)
+		} else {
+			setSelectedRoundType('on-going')
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [searchParams])
+
 	return (
 		<div>
 			<div className="flex items-center md:justify-center md:space-x-4 space-x-2 overflow-x-auto mb-6 md:mb-7 lg:mb-8">
 				<button
-					onClick={() => setSelectedRoundType('on-going')}
+					onClick={() => {
+						setSelectedRoundType('on-going')
+						const url = new URL(window.location.href)
+						url.searchParams.delete('round_type')
+						router.replace(url.toString(), { scroll: false })
+					}}
 					className={clsx(
 						`rounded-full px-6 py-3 flex-shrink-0 md:flex-shrink text-sm font-semibold cursor-pointer transition hover:opacity-70`,
 						selectedRoundType === 'on-going'
@@ -557,7 +603,10 @@ const ApplicationRounds = () => {
 					Ongoing rounds
 				</button>
 				<button
-					onClick={() => setSelectedRoundType('upcoming')}
+					onClick={() => {
+						setSelectedRoundType('upcoming')
+						router.push(`?round_type=upcoming`)
+					}}
 					className={clsx(
 						`rounded-full px-6 py-3 flex-shrink-0 md:flex-shrink text-sm font-semibold cursor-pointer transition hover:opacity-70`,
 						selectedRoundType === 'upcoming'
@@ -568,7 +617,10 @@ const ApplicationRounds = () => {
 					Upcoming rounds
 				</button>
 				<button
-					onClick={() => setSelectedRoundType('ended')}
+					onClick={() => {
+						setSelectedRoundType('ended')
+						router.push(`?round_type=ended`)
+					}}
 					className={clsx(
 						`rounded-full px-6 py-3 flex-shrink-0 md:flex-shrink text-sm font-semibold cursor-pointer transition hover:opacity-70`,
 						selectedRoundType === 'ended'

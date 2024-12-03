@@ -421,7 +421,12 @@ const MyProjectMedia = () => {
 								</div>
 							</div>
 						)}
-						{ytIframe && <div dangerouslySetInnerHTML={{ __html: ytIframe }} />}
+						{ytIframe && (
+							<div
+								className="overflow-hidden rounded-b-xl"
+								dangerouslySetInnerHTML={{ __html: ytIframe }}
+							/>
+						)}
 					</div>
 				)}
 			</div>

@@ -17,7 +17,7 @@ import {
 	getProject,
 	GetProjectParams,
 } from '@/services/stellar/project-registry'
-import { IProjectDetailOwner } from '@/app/application/round-vote/[roundId]/page'
+import { IProjectDetailOwner } from '@/app/rounds/round-vote/[roundId]/page'
 import { fetchYoutubeIframe, prettyTruncate } from '@/utils/helper'
 import { Project } from 'project-registry-client'
 import useAppStorage from '@/stores/zustand/useAppStorage'

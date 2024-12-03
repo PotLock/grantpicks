@@ -126,7 +126,7 @@ const MyProjectProvider = () => {
 								size={24}
 								className="fill-grantpicks-black-400 absolute right-1 top-1 cursor-pointer transition hover:opacity-80"
 								onClick={() => {
-									router.push(`/application`)
+									router.push(`/rounds`)
 									setShowMenu(null)
 								}}
 							/>
@@ -136,7 +136,7 @@ const MyProjectProvider = () => {
 							<Button
 								color="black-950"
 								onClick={() => {
-									router.push(`/application`)
+									router.push(`/rounds`)
 									setCreateProjectFormMainProps((prev) => ({
 										...prev,
 										isOpen: true,

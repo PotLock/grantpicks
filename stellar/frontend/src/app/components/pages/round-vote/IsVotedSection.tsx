@@ -26,7 +26,7 @@ import {
 import Image from 'next/image'
 import { GPPicks, GPVoting } from '@/models/voting'
 import { votingResultToGPVoting } from '@/services/stellar/type'
-import { IProjectDetailOwner } from '@/app/application/round-vote/[roundId]/page'
+import { IProjectDetailOwner } from '@/app/rounds/round-vote/[roundId]/page'
 
 const IsVotedPairItem = ({
 	index,

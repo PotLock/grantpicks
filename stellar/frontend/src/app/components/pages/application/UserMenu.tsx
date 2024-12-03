@@ -106,7 +106,7 @@ const UserMenu = ({
 				</div>
 				<div className="flex flex-col space-y-3">
 					<div
-						onClick={() => router.push(`/application/create-round`)}
+						onClick={() => router.push(`/rounds/create-round`)}
 						className="flex items-center space-x-3 cursor-pointer hover:opacity-70 transition"
 					>
 						<IconCube size={24} className="fill-grantpicks-black-400" />
@@ -115,7 +115,7 @@ const UserMenu = ({
 						</p>
 					</div>
 					<div
-						onClick={() => router.push(`/application/my-project`)}
+						onClick={() => router.push(`/rounds/my-project`)}
 						className="flex items-center space-x-3 cursor-pointer hover:opacity-70 transition"
 					>
 						<IconProject size={24} className="fill-grantpicks-black-400" />
@@ -124,7 +124,7 @@ const UserMenu = ({
 						</p>
 					</div>
 					<div
-						onClick={() => router.push(`/application/my-votes`)}
+						onClick={() => router.push(`/rounds/my-votes`)}
 						className="flex items-center space-x-3 cursor-pointer hover:opacity-70 transition"
 					>
 						<IconCheckCircle size={24} className="fill-grantpicks-black-400" />
@@ -137,7 +137,7 @@ const UserMenu = ({
 						onClick={async () => {
 							await onSignOut()
 							onCloseChooseWalletMenu()
-							router.push(`/application`)
+							router.push(`/rounds`)
 						}}
 					>
 						<IconLogout size={24} className="fill-grantpicks-red-400" />

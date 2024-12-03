@@ -126,7 +126,7 @@ const Navbar = ({ isBannerVisible }: { isBannerVisible: boolean }) => {
 				iconPosition="right"
 				className="h-12 sm:px-7"
 				onClick={() => {
-					router.push('/application')
+					router.push('/rounds')
 				}}
 				isDisabled={envVarConfigs.NETWORK_ENV !== 'testnet'}
 			>

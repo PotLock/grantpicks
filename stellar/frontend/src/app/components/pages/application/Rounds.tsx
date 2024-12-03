@@ -375,7 +375,7 @@ const ApplicationRoundsItem = ({
 						if (selectedRoundType === 'on-going') {
 							if (hasVoted) {
 								router.push(
-									`/application/round-vote/${doc.on_chain_id}?is_voted=true`,
+									`/rounds/round-vote/${doc.on_chain_id}?is_voted=true`,
 								)
 							} else {
 								setVoteConfirmationProps((prev) => ({
@@ -395,7 +395,7 @@ const ApplicationRoundsItem = ({
 								roundData: doc,
 							}))
 						} else {
-							router.push(`/application/round-result/${doc.id}`)
+							router.push(`/rounds/round-result/${doc.id}`)
 						}
 					}}
 					isFullWidth

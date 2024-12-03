@@ -49,7 +49,7 @@ const HomeSection = () => {
 						iconPosition="right"
 						className="px-7 w-full md:w-auto"
 						onClick={() => {
-							router.push('/application')
+							router.push('/rounds')
 						}}
 						isDisabled={envVarConfigs.NETWORK_ENV !== 'testnet'}
 					>

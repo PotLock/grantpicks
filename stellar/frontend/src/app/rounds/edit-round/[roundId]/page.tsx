@@ -527,7 +527,7 @@ const EditRoundPage = () => {
 					}))
 					reset()
 					dismissPageLoading()
-					router.push(`/application`)
+					router.push(`/rounds`)
 				}
 			} else {
 				const udpateRoundParams: NearUpdateRoundParams = {
@@ -572,7 +572,7 @@ const EditRoundPage = () => {
 
 				reset()
 				dismissPageLoading()
-				router.push(`/application`)
+				router.push(`/rounds`)
 			}
 		} catch (error: any) {
 			console.error('error', error)

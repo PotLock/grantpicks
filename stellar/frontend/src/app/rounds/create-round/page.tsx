@@ -311,7 +311,7 @@ const CreateRoundPage = () => {
 					}))
 					reset()
 					dismissPageLoading()
-					router.push(`/application`)
+					router.push(`/rounds`)
 				}
 			} else {
 				const params: NearCreateRoundParams = {
@@ -426,7 +426,7 @@ const CreateRoundPage = () => {
 
 				reset()
 				dismissPageLoading()
-				router.push(`/application`)
+				router.push(`/rounds`)
 			}
 		} catch (error: any) {
 			console.error(error)

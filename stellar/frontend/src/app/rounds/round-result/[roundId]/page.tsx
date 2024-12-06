@@ -560,7 +560,7 @@ const RoundResultPage = () => {
 				<div
 					className="flex items-center space-x-2"
 					onClick={() => {
-						router.push('/application')
+						router.push('/rounds')
 					}}
 				>
 					<IconArrowLeft size={18} className="fill-grantpicks-black-400" />

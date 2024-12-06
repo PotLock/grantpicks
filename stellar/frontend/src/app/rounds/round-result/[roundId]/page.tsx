@@ -84,7 +84,7 @@ const RoundResultPage = () => {
 				).result
 
 				if (roundInfo) {
-					isOwner = roundInfo.owner === storage.my_address
+					isOwner = roundInfo.owner?.id === storage.my_address
 					isAdmin = admins.includes(storage.my_address || '')
 
 					const isAdminOrOwner = isAdmin || isOwner
@@ -132,7 +132,7 @@ const RoundResultPage = () => {
 				}
 
 				if (roundInfo) {
-					isOwner = roundInfo.owner === storage.my_address
+					isOwner = roundInfo.owner?.id === storage.my_address
 					isAdmin = roundInfo.admins.includes(storage.my_address || '')
 
 					const isAdminOrOwner = isAdmin || isOwner

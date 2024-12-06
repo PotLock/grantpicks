@@ -279,7 +279,7 @@ const RoundResultProjectDetailPage = () => {
 				).result
 
 				if (roundInfo) {
-					isOwner = roundInfo.owner === storage.my_address
+					isOwner = roundInfo.owner?.id === storage.my_address
 					isAdmin = admins.includes(storage.my_address || '')
 
 					const isAdminOrOwner = isAdmin || isOwner
@@ -301,7 +301,7 @@ const RoundResultProjectDetailPage = () => {
 				}
 
 				if (roundInfo) {
-					isOwner = roundInfo.owner === storage.my_address
+					isOwner = roundInfo.owner?.id === storage.my_address
 					isAdmin = roundInfo.admins.includes(storage.my_address || '')
 
 					const isAdminOrOwner = isAdmin || isOwner
@@ -442,7 +442,7 @@ const RoundResultProjectDetailPage = () => {
 						size={24}
 						className="fill-grantpicks-black-400 cursor-pointer hover:opacity-70"
 						onClick={() =>
-							(location.href = `/application/round-result/${params.roundId}`)
+							(location.href = `/rounds/round-result/${params.roundId}`)
 						}
 					/>
 					<p className="text-base font-bold text-grantpicks-black-950">

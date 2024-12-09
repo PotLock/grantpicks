@@ -30,7 +30,28 @@ const CreateProjectStep4 = () => {
 		handleSubmit,
 		setValue,
 		formState: { errors },
-	} = useForm<CreateProjectStep4Data>({})
+	} = useForm<CreateProjectStep4Data>({
+		defaultValues: {
+			funding_histories:
+				data.funding_histories.length > 0
+					? data.funding_histories.map((history) => ({
+							source: history.source || '',
+							date: history.date || new Date(),
+							denomination: history.denomination || '',
+							amount: history.amount || '',
+							description: history.description || '',
+						}))
+					: [
+							{
+								source: '',
+								date: new Date(),
+								denomination: '',
+								amount: '',
+								description: '',
+							},
+						],
+		},
+	})
 	const {
 		fields: fieldHistories,
 		append: appendHistory,
@@ -101,6 +122,9 @@ const CreateProjectStep4 = () => {
 									size={24}
 									className="fill-grantpicks-red-400 cursor-pointer hover:opacity-70 transition absolute top-3 right-3"
 									onClick={() => {
+										if (fieldHistories.length <= 1) {
+											setValue('is_havent_raised', true)
+										}
 										removeHistory(index)
 									}}
 								/>

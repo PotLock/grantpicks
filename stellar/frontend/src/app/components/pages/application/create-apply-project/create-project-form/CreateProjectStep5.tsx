@@ -190,7 +190,7 @@ const CreateProjectStep5 = () => {
 	return (
 		<div
 			ref={embededYtHtmlRef}
-			className="bg-grantpicks-black-50 rounded-b-xl w-full relative overflow-y-auto max-h-[80vh]"
+			className="bg-grantpicks-black-50 rounded-b-xl w-full relative overflow-y-auto h-[70vh]"
 		>
 			<div className="pt-10 pb-6 px-4 md:px-6 border-b border-black/10">
 				<div className="flex items-center space-x-2 mb-4">

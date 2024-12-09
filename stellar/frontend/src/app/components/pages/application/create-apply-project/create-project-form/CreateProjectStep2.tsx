@@ -44,17 +44,17 @@ const CreateProjectStep2 = () => {
 	}
 
 	const onAddMember = async () => {
-		if(storage.chainId === 'stellar') {
-      if (!StrKey.isValidEd25519PublicKey(watch('member'))) {
-        toast.error('Address is not valid', { style: toastOptions.error.style })
-        return
-      }
-    }else{
-      if (!NEAR_ADDRESS_REGEX(watch('member'))) {
-        toast.error('Address is not valid', { style: toastOptions.error.style })
-        return
-      }
-    }
+		if (storage.chainId === 'stellar') {
+			if (!StrKey.isValidEd25519PublicKey(watch('member'))) {
+				toast.error('Address is not valid', { style: toastOptions.error.style })
+				return
+			}
+		} else {
+			if (!NEAR_ADDRESS_REGEX(watch('member'))) {
+				toast.error('Address is not valid', { style: toastOptions.error.style })
+				return
+			}
+		}
 		if (members.includes(watch('member'))) {
 			toast.error('This admin is already added', {
 				style: toastOptions.error.style,
@@ -122,7 +122,7 @@ const CreateProjectStep2 = () => {
 	}, [members])
 
 	return (
-		<div className="bg-grantpicks-black-50 w-full relative">
+		<div className="bg-grantpicks-black-50 w-full relative overflow-y-auto h-[70vh]">
 			<div className="pt-10 px-4 md:px-6 border-b border-black/10">
 				<div className="flex items-center space-x-2 mb-4">
 					<IconCheckCircle size={18} className="fill-grantpicks-green-600" />

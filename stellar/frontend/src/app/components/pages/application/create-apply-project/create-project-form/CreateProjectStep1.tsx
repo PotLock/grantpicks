@@ -113,24 +113,24 @@ const CreateProjectStep1 = () => {
 						}
 					/>
 				</div>
-				<div className="py-5 md:py-6 flex flex-col items-center space-y-4  border-t border-black/10">
-					<Button
-						color="black-950"
-						isFullWidth
-						onClick={handleSubmit(onNextStep1)}
-						className="!py-3"
-					>
-						Next
-					</Button>
-					<Button
-						color="alpha-50"
-						isFullWidth
-						onClick={() => onClose()}
-						className="!py-3"
-					>
-						Cancel
-					</Button>
-				</div>
+			</div>
+			<div className="p-5 md:p-6 flex flex-col items-center space-y-4  border-t border-black/10">
+				<Button
+					color="black-950"
+					isFullWidth
+					onClick={handleSubmit(onNextStep1)}
+					className="!py-3"
+				>
+					Next
+				</Button>
+				<Button
+					color="alpha-50"
+					isFullWidth
+					onClick={() => onClose()}
+					className="!py-3"
+				>
+					Cancel
+				</Button>
 			</div>
 		</div>
 	)

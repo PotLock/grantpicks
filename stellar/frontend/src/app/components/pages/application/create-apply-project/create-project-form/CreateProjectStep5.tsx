@@ -395,17 +395,9 @@ const CreateProjectStep5 = () => {
 				</div>
 				<div className="flex-1">
 					<Button
-						color={
-							(accFiles && accFiles.length === 0 && !embededYtHtml) ||
-							loadingFlow !== null
-								? `disabled`
-								: `black-950`
-						}
+						color={loadingFlow !== null ? `disabled` : `black-950`}
 						isFullWidth
-						isDisabled={
-							(accFiles && accFiles.length === 0 && !embededYtHtml) ||
-							loadingFlow !== null
-						}
+						isDisabled={loadingFlow !== null}
 						onClick={handleSubmit(onProceed)}
 						className="!py-3"
 					>

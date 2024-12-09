@@ -36,6 +36,7 @@ const CreateProjectStep5 = () => {
 	const [accFileUrls, setAccFileUrls] = useState<string[]>([])
 	const [linkInput, setLinkInput] = useState<string>('')
 	const [embededYtHtml, setEmbededYtHtml] = useState<string>('')
+	const [embededYtTitle, setEmbededYtTitle] = useState<string>('')
 	const embededYtHtmlRef = useRef<HTMLDivElement>(null)
 	const [isDirtyInput, setIsDirtyInput] = useState<boolean>(false)
 	const videoRef = useRef<HTMLVideoElement>(null)
@@ -130,6 +131,7 @@ const CreateProjectStep5 = () => {
 		setIsDirtyInput(true)
 		if (!YOUTUBE_URL_REGEX.test(linkInput)) {
 			setEmbededYtHtml('')
+			setEmbededYtTitle('')
 			return
 		}
 		const ytRes = await fetchYoutubeIframe(
@@ -137,6 +139,7 @@ const CreateProjectStep5 = () => {
 			embededYtHtmlRef.current?.clientWidth || 0,
 		)
 		setEmbededYtHtml(ytRes?.html)
+		setEmbededYtTitle(ytRes?.title)
 		setValue('video', {
 			url: linkInput || '',
 			file: undefined,
@@ -168,16 +171,23 @@ const CreateProjectStep5 = () => {
 			setAccFiles(draft.accFiles)
 			setPlaybackSrc(draft.playbackSrc)
 			setEmbededYtHtml(draft.embededYtHtml)
+			setEmbededYtTitle(draft.embededYtTitle)
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])
 
 	useEffect(() => {
-		if (embededYtHtml != '' || playbackSrc != null || accFiles.length != 0) {
+		if (
+			embededYtHtml != '' ||
+			embededYtTitle != '' ||
+			playbackSrc != null ||
+			accFiles.length != 0
+		) {
 			const storeData = {
 				accFiles: accFiles,
 				playbackSrc: playbackSrc,
 				embededYtHtml: embededYtHtml,
+				embededYtTitle: embededYtTitle,
 			}
 			localStorage.setItem(
 				localStorageConfigs.CREATE_PROJECT_STEP_5,
@@ -185,7 +195,7 @@ const CreateProjectStep5 = () => {
 			)
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [playbackSrc, embededYtHtml])
+	}, [playbackSrc, embededYtHtml, embededYtTitle])
 
 	return (
 		<div
@@ -287,9 +297,16 @@ const CreateProjectStep5 = () => {
 				) : (
 					<div className="rounded-xl relative bg-white w-full border border-black/10">
 						<div className="flex items-center justify-between px-4 py-3">
-							<p className="text-sm font-semibold text-grantpicks-black-950">
-								{accFiles && accFiles.length > 0 ? accFiles[0].name : ''}
-							</p>
+							{accFiles && accFiles.length > 0 && (
+								<p className="text-sm font-semibold text-grantpicks-black-950">
+									{accFiles && accFiles.length > 0 ? accFiles[0].name : ''}
+								</p>
+							)}
+							{embededYtHtml && (
+								<p className="text-sm font-semibold text-grantpicks-black-950">
+									{embededYtTitle}
+								</p>
+							)}
 							<IconTrash
 								size={24}
 								className="fill-grantpicks-black-400 cursor-pointer hover:opacity-70 transition"
@@ -311,6 +328,7 @@ const CreateProjectStep5 = () => {
 											video: { file: undefined, url: '' },
 										}))
 										setEmbededYtHtml('')
+										setEmbededYtTitle('')
 									}
 									localStorage.removeItem(
 										localStorageConfigs.CREATE_PROJECT_STEP_5,

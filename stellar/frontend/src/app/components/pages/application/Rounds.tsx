@@ -212,7 +212,10 @@ const ApplicationRoundsItem = ({
 
 	const handleOpenDetailDrawer = () => {
 		setShowDetailDrawer(true)
-		router.push(`?round_type=${selectedRoundType}&round_id=${doc.on_chain_id}`)
+		router.push(
+			`?round_type=${selectedRoundType}&round_id=${doc.on_chain_id}`,
+			{ scroll: false },
+		)
 	}
 
 	const handleCloseDetailDrawer = () => {
@@ -421,6 +424,10 @@ const ApplicationRoundsItem = ({
 						data={doc}
 						onViewDetails={() => {
 							setShowDetailDrawer(true)
+							router.push(
+								`?round_type=${selectedRoundType}&round_id=${doc.on_chain_id}`,
+								{ scroll: false },
+							)
 						}}
 						onViewApps={() => {
 							setShowAppsDrawer(true)

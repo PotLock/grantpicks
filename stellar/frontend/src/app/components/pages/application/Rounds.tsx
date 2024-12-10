@@ -547,7 +547,8 @@ const ApplicationRounds = () => {
 				temp = temp.filter(
 					(t) =>
 						new Date(t.voting_start).getTime() <= new Date().getTime() &&
-						new Date().getTime() < new Date(t.voting_end).getTime(),
+						new Date().getTime() < new Date(t.voting_end).getTime() &&
+						t.approved_projects.length > 0,
 				)
 			} else if (selectedRoundType === 'ended') {
 				temp = temp.filter(

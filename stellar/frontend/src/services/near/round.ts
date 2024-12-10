@@ -224,7 +224,7 @@ export class RoundContract extends BaseContract {
 			method: 'get_application',
 			args: {
 				round_id: parseInt(roundId.toString()),
-				applicant_id: accountId,
+				applicant: accountId,
 			},
 		})
 
@@ -521,31 +521,31 @@ export class RoundContract extends BaseContract {
 		return result
 	}
 
-  async flagProject(roundId: number, applicantId: string) {
-    const result = await this.callMethod({
-      method: 'flag_project',
-      args: {
-        round_id: parseInt(roundId.toString()),
-        applicant_id: applicantId,
-      },
-      deposit: NO_DEPOSIT,
-      gas: THIRTY_TGAS,
-    })
+	async flagProject(roundId: number, applicantId: string) {
+		const result = await this.callMethod({
+			method: 'flag_project',
+			args: {
+				round_id: parseInt(roundId.toString()),
+				applicant_id: applicantId,
+			},
+			deposit: NO_DEPOSIT,
+			gas: THIRTY_TGAS,
+		})
 
-    return result
-  }
-  
-  async unflagProject(roundId: number, applicantId: string) {
-    const result = await this.callMethod({
-      method: 'unflag_project',
-      args: {
-        round_id: parseInt(roundId.toString()),
-        applicant_id: applicantId,
-      },
-      deposit: NO_DEPOSIT,
-      gas: THIRTY_TGAS,
-    })
+		return result
+	}
 
-    return result
-  }
+	async unflagProject(roundId: number, applicantId: string) {
+		const result = await this.callMethod({
+			method: 'unflag_project',
+			args: {
+				round_id: parseInt(roundId.toString()),
+				applicant_id: applicantId,
+			},
+			deposit: NO_DEPOSIT,
+			gas: THIRTY_TGAS,
+		})
+
+		return result
+	}
 }

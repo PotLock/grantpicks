@@ -51,10 +51,8 @@ export class PotlockService {
 			: null
 	}
 
-	async getProjectStats(projectId: number, owner: string) {
-		const result = await this._axios?.get(
-			`/${owner}/${projectId}/project-stats`,
-		)
+	async getProjectStats(owner: string) {
+		const result = await this._axios?.get(`/${owner}/project-stats`)
 		return result?.data
 	}
 

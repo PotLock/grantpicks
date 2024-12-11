@@ -25,7 +25,7 @@ const MyProjectContext = createContext<IMyProjectContext>({
 })
 
 const MyProjectProvider = () => {
-	const { stellarPubKey } = useWallet()
+	const { stellarPubKey, nearAccounts } = useWallet()
 	const router = useRouter()
 	const [projectData, setProjectData] = useState<Project | undefined>(undefined)
 	const [projectDataModel, setProjectDataModel] = useState<Project | undefined>(
@@ -58,10 +58,8 @@ const MyProjectProvider = () => {
 					setProjectDataModel(res)
 
 					if (res) {
-						const projectStats = await potlockService.getProjectStats(
-							Number(res.id),
-							stellarPubKey,
-						)
+						const projectStats =
+							await potlockService.getProjectStats(stellarPubKey)
 						setStats(projectStats)
 					}
 				} else {
@@ -90,6 +88,10 @@ const MyProjectProvider = () => {
 					if (project.name) {
 						setProjectDataModel(project)
 						setProjectData(project)
+						const projectStats = await potlockService.getProjectStats(
+							nearAccounts[0].accountId,
+						)
+						setStats(projectStats)
 					} else {
 						setNoProject(true)
 					}

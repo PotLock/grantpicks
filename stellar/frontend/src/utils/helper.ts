@@ -164,8 +164,7 @@ export const fetchYoutubeIframe = async (
 export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 export const extractChainId = (round: GPRound) => {
-	const contract = process.env.ROUND_CONTRACT_ID || ''
-	if (contract === round.factory_contract) {
+	if (round.chain === 'stellar') {
 		return 'stellar'
 	} else {
 		return 'near'

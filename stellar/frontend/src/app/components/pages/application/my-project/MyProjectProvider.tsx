@@ -101,6 +101,8 @@ const MyProjectProvider = () => {
 			}
 			//@ts-ignore
 		} catch (error: any) {
+			storage.chainId === 'stellar' && setNoProject(true)
+			storage.chainId === 'near' && setNoProject(true)
 			console.log('error fetch project applicant', error)
 		}
 	}

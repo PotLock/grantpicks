@@ -69,6 +69,7 @@ const MyProjectMedia = () => {
 	>(undefined)
 	const [playbackSrc, setPlaybackSrc] = useState<Src[] | null>(null)
 	const [ytIframe, setYtIframe] = useState<string>('')
+	const [embededYtTitle, setEmbededYtTitle] = useState<string>('')
 	const embededYtHtmlRef = useRef<HTMLDivElement>(null)
 	const storage = useAppStorage()
 
@@ -238,7 +239,9 @@ const MyProjectMedia = () => {
 					projectData.video_url || '',
 					embededYtHtmlRef.current?.clientWidth || 0,
 				)
+				setLinkInput(projectData.video_url)
 				setYtIframe(res?.html)
+				setEmbededYtTitle(res?.title)
 			} else {
 				const blobRes = await onFetchingBlobToFile(
 					projectData.video_url,
@@ -256,6 +259,7 @@ const MyProjectMedia = () => {
 		setIsDirtyInput(true)
 		if (!YOUTUBE_URL_REGEX.test(linkInput)) {
 			setYtIframe('')
+			setEmbededYtTitle('')
 			return
 		}
 		const ytRes = await fetchYoutubeIframe(
@@ -263,6 +267,7 @@ const MyProjectMedia = () => {
 			embededYtHtmlRef.current?.clientWidth || 0,
 		)
 		setYtIframe(ytRes?.html)
+		setEmbededYtTitle(ytRes?.title)
 		setValue('video', {
 			url: linkInput || '',
 			file: undefined,
@@ -334,8 +339,7 @@ const MyProjectMedia = () => {
 									className="!py-2"
 									isStopPropagation={true}
 									errorMessage={
-										isDirtyInput &&
-										(linkInput === '' || !YOUTUBE_URL_REGEX.test(linkInput)) ? (
+										isDirtyInput && !YOUTUBE_URL_REGEX.test(linkInput) ? (
 											<p className="text-xs text-grantpicks-red-600">
 												Invalid link
 											</p>
@@ -360,9 +364,16 @@ const MyProjectMedia = () => {
 				) : (
 					<div className="rounded-xl relative bg-white w-full border border-black/10">
 						<div className="flex items-center justify-between px-4 py-3">
-							<p className="text-sm font-semibold text-grantpicks-black-950">
-								{accFiles[0] ? accFiles[0].name : ''}
-							</p>
+							{accFiles[0] && (
+								<p className="text-sm font-semibold text-grantpicks-black-950">
+									{accFiles[0] ? accFiles[0].name : ''}
+								</p>
+							)}
+							{ytIframe && (
+								<p className="text-sm font-semibold text-grantpicks-black-950">
+									{embededYtTitle}
+								</p>
+							)}
 							<IconTrash
 								size={24}
 								className="fill-grantpicks-black-400 cursor-pointer hover:opacity-70 transition"
@@ -380,6 +391,8 @@ const MyProjectMedia = () => {
 											file: undefined,
 										})
 										setYtIframe('')
+										setLinkInput('')
+										setEmbededYtTitle('')
 									}
 								}}
 							/>
@@ -453,7 +466,7 @@ const MyProjectMedia = () => {
 						color="black-950"
 						onClick={handleSubmit(onSaveChanges)}
 						className="!py-3 disabled:cursor-not-allowed"
-						isDisabled={linkInput === ''}
+						isDisabled={linkInput === projectData?.video_url || !ytIframe}
 					>
 						Save changes
 					</Button>

@@ -163,7 +163,6 @@ const MyProjectTeam = () => {
 				</p>
 				<div className="mb-6 w-full">
 					<InputText
-						required
 						placeholder="Account ID, Comma separated"
 						{...register('member')}
 						onKeyDown={async (e) => {
@@ -226,11 +225,7 @@ const MyProjectTeam = () => {
 							</button>
 						}
 						errorMessage={
-							members.length === 0 ? (
-								<p className="text-red-500 text-xs mt-1 ml-2">
-									Team member is required
-								</p>
-							) : sameMemberError ? (
+							sameMemberError ? (
 								<p className="text-red-500 text-xs mt-1 ml-2">
 									Team member is already added
 								</p>

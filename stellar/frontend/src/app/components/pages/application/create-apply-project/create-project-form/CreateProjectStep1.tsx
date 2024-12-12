@@ -55,8 +55,8 @@ const CreateProjectStep1 = () => {
 	}, [watch()])
 
 	return (
-		<div className="bg-grantpicks-black-50 w-full relative">
-			<div className="pt-10 px-4 md:px-6 border-b border-black/10">
+		<div className="bg-grantpicks-black-50 w-full relative overflow-y-auto h-[70vh]">
+			<div className="pt-10 px-4 md:px-6">
 				<div className="flex items-center">
 					<div className="bg-grantpicks-alpha-50/5 border border-grantpicks-alpha-50/[0.07] flex items-center space-x-2 px-2 py-1 rounded-full mb-4">
 						<IconProject size={18} className="fill-grantpicks-black-400" />
@@ -68,7 +68,7 @@ const CreateProjectStep1 = () => {
 				<p className="text-lg md:text-xl lg:text-2xl font-semibold text-grantpicks-black-950">
 					Tell us about your project
 				</p>
-				<div className="py-6 md:py-8 px-5 md:px-6 space-y-6 overflow-y-auto h-[50vh]">
+				<div className="py-6 md:py-8 px-5 md:px-6 space-y-6">
 					<InputText
 						required
 						label="Project Title"
@@ -114,7 +114,7 @@ const CreateProjectStep1 = () => {
 					/>
 				</div>
 			</div>
-			<div className="p-5 md:p-6 flex flex-col items-center space-y-4">
+			<div className="p-5 md:p-6 flex flex-col items-center space-y-4  border-t border-black/10">
 				<Button
 					color="black-950"
 					isFullWidth

@@ -227,6 +227,9 @@ const MyProjectFundingRaised = () => {
 									size={24}
 									className="fill-grantpicks-red-400 cursor-pointer hover:opacity-70 transition absolute top-3 right-3"
 									onClick={() => {
+										if (fieldHistories.length <= 1) {
+											setValue('is_havent_raised', true)
+										}
 										removeHistory(index)
 									}}
 								/>

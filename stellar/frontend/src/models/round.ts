@@ -3,6 +3,7 @@ import { GPUser } from './user'
 export class GPRound {
 	id: number = 0
 	on_chain_id: number = 0
+	chain: string = ''
 	factory_contract: string = ''
 	deployed_at: string = ''
 	owner: GPUser | null = null

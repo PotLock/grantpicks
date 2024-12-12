@@ -32,10 +32,6 @@ const CreateProjectStep2 = () => {
 	const storage = useAppStorage()
 
 	const onNextStep2: SubmitHandler<CreateProjectStep2Data> = (submitData) => {
-		if (members.length === 0) {
-			setRequiredError(true)
-			return
-		}
 		setData({
 			...data,
 			team_member: members,
@@ -44,17 +40,17 @@ const CreateProjectStep2 = () => {
 	}
 
 	const onAddMember = async () => {
-		if(storage.chainId === 'stellar') {
-      if (!StrKey.isValidEd25519PublicKey(watch('member'))) {
-        toast.error('Address is not valid', { style: toastOptions.error.style })
-        return
-      }
-    }else{
-      if (!NEAR_ADDRESS_REGEX(watch('member'))) {
-        toast.error('Address is not valid', { style: toastOptions.error.style })
-        return
-      }
-    }
+		if (storage.chainId === 'stellar') {
+			if (!StrKey.isValidEd25519PublicKey(watch('member'))) {
+				toast.error('Address is not valid', { style: toastOptions.error.style })
+				return
+			}
+		} else {
+			if (!NEAR_ADDRESS_REGEX(watch('member'))) {
+				toast.error('Address is not valid', { style: toastOptions.error.style })
+				return
+			}
+		}
 		if (members.includes(watch('member'))) {
 			toast.error('This admin is already added', {
 				style: toastOptions.error.style,
@@ -112,17 +108,19 @@ const CreateProjectStep2 = () => {
 	}, [])
 
 	useEffect(() => {
-		if (members.length != 0) {
+		if (members.length !== 0) {
 			localStorage.setItem(
 				localStorageConfigs.CREATE_PROJECT_STEP_2,
 				JSON.stringify(members),
 			)
+		} else {
+			localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_2)
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [members])
 
 	return (
-		<div className="bg-grantpicks-black-50 w-full relative">
+		<div className="bg-grantpicks-black-50 w-full relative overflow-y-auto h-[70vh]">
 			<div className="pt-10 px-4 md:px-6 border-b border-black/10">
 				<div className="flex items-center space-x-2 mb-4">
 					<IconCheckCircle size={18} className="fill-grantpicks-green-600" />
@@ -144,7 +142,6 @@ const CreateProjectStep2 = () => {
 				<div className="py-6 md:py-8 px-5 md:px-6">
 					<div className="mb-6">
 						<InputText
-							required
 							label="Team Member"
 							placeholder="Account ID, Comma separated"
 							{...register('member')}
@@ -168,11 +165,7 @@ const CreateProjectStep2 = () => {
 								</button>
 							}
 							errorMessage={
-								requiredError ? (
-									<p className="text-red-500 text-xs mt-1 ml-2">
-										Team member is required
-									</p>
-								) : validationError ? (
+								validationError ? (
 									<p className="text-red-500 text-xs mt-1 ml-2">
 										Address invalid
 									</p>
@@ -180,8 +173,15 @@ const CreateProjectStep2 = () => {
 									<p className="text-red-500 text-xs mt-1 ml-2">
 										Team member is already added
 									</p>
+								) : watch('member') !== '' &&
+								  watch('member') !== undefined &&
+								  !validationError ? (
+									<p className="text-green-500 text-xs mt-1 ml-2">
+										Address is valid
+									</p>
 								) : undefined
 							}
+							className={`border ${validationError || sameMemberError ? 'border-red-500' : !validationError && watch('member') !== '' && watch('member') !== undefined ? 'border-green-500' : 'border-gray-300'}`}
 							hintLabel={
 								storage.chainId === 'stellar'
 									? 'You must put a valid STELLAR address that belongs to your team member(s)'

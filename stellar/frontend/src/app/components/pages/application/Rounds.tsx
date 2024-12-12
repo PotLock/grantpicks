@@ -8,8 +8,6 @@ import IconDollar from '../../svgs/IconDollar'
 import IconGroup from '../../svgs/IconGroup'
 import IconClock from '../../svgs/IconClock'
 import Button from '../../commons/Button'
-import IconMoreVert from '../../svgs/IconMoreVert'
-import MoreVertMenu from './MoreVertMenu'
 import RoundDetailDrawer from './RoundDetailDrawer'
 import ApplicationsDrawer from './ApplicationsDrawer'
 import FundRoundModal from './FundRoundModal'
@@ -36,6 +34,7 @@ import { GPRound } from '@/models/round'
 import IconUnfoldMore from '../../svgs/IconUnfoldMore'
 import Menu from '../../commons/Menu'
 import { TSelectedRoundType } from '@/types/round'
+import RoundMenu from './RoundMenu'
 
 const ApplicationRoundsItem = ({
 	doc,
@@ -47,7 +46,6 @@ const ApplicationRoundsItem = ({
 	const router = useRouter()
 	const searchParams = useSearchParams()
 	const { selectedRoundType } = useRoundStore()
-	const [showMoreVert, setShowMoreVert] = useState<boolean>(false)
 	const [showDetailDrawer, setShowDetailDrawer] = useState<boolean>(false)
 	const [showAppsDrawer, setShowAppsDrawer] = useState<boolean>(false)
 	const [showFundRoundModal, setShowFundRoundModal] = useState<boolean>(false)
@@ -214,7 +212,10 @@ const ApplicationRoundsItem = ({
 
 	const handleOpenDetailDrawer = () => {
 		setShowDetailDrawer(true)
-		router.push(`?round_type=${selectedRoundType}&round_id=${doc.on_chain_id}`)
+		router.push(
+			`?round_type=${selectedRoundType}&round_id=${doc.on_chain_id}`,
+			{ scroll: false },
+		)
 	}
 
 	const handleCloseDetailDrawer = () => {
@@ -274,39 +275,6 @@ const ApplicationRoundsItem = ({
 												: `payout pending`}
 						</p>
 					</div>
-					{(getSpecificTime() === 'on-going' ||
-						getSpecificTime() === 'upcoming' ||
-						getSpecificTime() === 'upcoming-open' ||
-						getSpecificTime() === 'upcoming-closed') && (
-						<div className="relative">
-							<IconMoreVert
-								size={24}
-								className="fill-grantpicks-black-400 cursor-pointer hover:opacity-70 transition"
-								onClick={() => setShowMoreVert(true)}
-							/>
-							<MoreVertMenu
-								isOpen={showMoreVert}
-								data={doc}
-								onClose={() => setShowMoreVert(false)}
-								onViewDetails={() => {
-									setShowMoreVert(false)
-									setShowDetailDrawer(true)
-								}}
-								onViewApps={() => {
-									setShowMoreVert(false)
-									setShowAppsDrawer(true)
-								}}
-								onFundRound={() => {
-									if (!connectedWallet) {
-										setShowMenu('choose-wallet')
-										return
-									}
-									setShowMoreVert(false)
-									setShowFundRoundModal(true)
-								}}
-							/>
-						</div>
-					)}
 				</div>
 			</div>
 			<button
@@ -447,6 +415,33 @@ const ApplicationRoundsItem = ({
 												: 'View Result'}
 				</Button>
 			</div>
+			{(getSpecificTime() === 'on-going' ||
+				getSpecificTime() === 'upcoming' ||
+				getSpecificTime() === 'upcoming-open' ||
+				getSpecificTime() === 'upcoming-closed') && (
+				<div className="mt-6">
+					<RoundMenu
+						data={doc}
+						onViewDetails={() => {
+							setShowDetailDrawer(true)
+							router.push(
+								`?round_type=${selectedRoundType}&round_id=${doc.on_chain_id}`,
+								{ scroll: false },
+							)
+						}}
+						onViewApps={() => {
+							setShowAppsDrawer(true)
+						}}
+						onFundRound={() => {
+							if (!connectedWallet) {
+								setShowMenu('choose-wallet')
+								return
+							}
+							setShowFundRoundModal(true)
+						}}
+					/>
+				</div>
+			)}
 
 			<RoundDetailDrawer
 				isOpen={showDetailDrawer}
@@ -547,7 +542,8 @@ const ApplicationRounds = () => {
 				temp = temp.filter(
 					(t) =>
 						new Date(t.voting_start).getTime() <= new Date().getTime() &&
-						new Date().getTime() < new Date(t.voting_end).getTime(),
+						new Date().getTime() < new Date(t.voting_end).getTime() &&
+						t.approved_projects.length > 0,
 				)
 			} else if (selectedRoundType === 'ended') {
 				temp = temp.filter(
@@ -605,7 +601,7 @@ const ApplicationRounds = () => {
 				<button
 					onClick={() => {
 						setSelectedRoundType('upcoming')
-						router.push(`?round_type=upcoming`)
+						router.push(`?round_type=upcoming`, { scroll: false })
 					}}
 					className={clsx(
 						`rounded-full px-6 py-3 flex-shrink-0 md:flex-shrink text-sm font-semibold cursor-pointer transition hover:opacity-70`,
@@ -619,7 +615,7 @@ const ApplicationRounds = () => {
 				<button
 					onClick={() => {
 						setSelectedRoundType('ended')
-						router.push(`?round_type=ended`)
+						router.push(`?round_type=ended`, { scroll: false })
 					}}
 					className={clsx(
 						`rounded-full px-6 py-3 flex-shrink-0 md:flex-shrink text-sm font-semibold cursor-pointer transition hover:opacity-70`,

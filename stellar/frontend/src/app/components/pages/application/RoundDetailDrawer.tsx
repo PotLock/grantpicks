@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import Drawer from '../../commons/Drawer'
 import { IDrawerProps } from '@/types/dialog'
 import clsx from 'clsx'
@@ -19,7 +19,7 @@ import {
 	formatStroopToXlm,
 	prettyTruncate,
 } from '@/utils/helper'
-import { getRoundAdmins } from '@/services/stellar/round'
+import { getRoundAdmins, getRoundApplication } from '@/services/stellar/round'
 import useSWR from 'swr'
 import IconLoading from '../../svgs/IconLoading'
 import { Contact } from 'round-client'
@@ -102,6 +102,55 @@ const RoundDetailDrawer = ({
 	const { selectedRoundType } = useRoundStore()
 	const storage = useAppStorage()
 	const chainId = extractChainId(doc)
+	const [isUserApplied, setIsUserApplied] = useState<boolean>(false)
+	const { connectedWallet, stellarPubKey } = useWallet()
+
+	const fetchRoundApplication = async () => {
+		if (selectedRoundType === 'upcoming') {
+			if (chainId == 'stellar') {
+				try {
+					const contracts = storage.getStellarContracts()
+
+					if (!contracts) return
+
+					const res = await getRoundApplication(
+						{
+							round_id: BigInt(doc.on_chain_id),
+							applicant: storage.my_address || '',
+						},
+						contracts,
+					)
+					//@ts-ignore
+					if (!res?.error) {
+						if (selectedRoundType === 'upcoming') setIsUserApplied(true)
+					}
+				} catch (error: any) {
+					console.log('error fetch project applicant')
+					setIsUserApplied(false)
+				}
+			} else {
+				try {
+					const contracts = storage.getNearContracts(null)
+
+					if (!contracts) {
+						return
+					}
+
+					const application = await contracts.round.getApplicationForRound(
+						Number(doc.on_chain_id),
+						storage.my_address || '',
+					)
+
+					if (application) {
+						setIsUserApplied(true)
+					}
+				} catch (error: any) {
+					console.log('error fetch project applicant')
+					setIsUserApplied(false)
+				}
+			}
+		}
+	}
 
 	const onFetchRoundAdmins = async () => {
 		if (chainId == 'stellar') {
@@ -160,6 +209,11 @@ const RoundDetailDrawer = ({
 		isValidating,
 		isLoading,
 	} = useSWR(isOpen ? `get-round-admins-${doc.id}` : null, onFetchRoundAdmins)
+
+	useEffect(() => {
+		fetchRoundApplication()
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [doc.on_chain_id, connectedWallet, stellarPubKey])
 
 	return (
 		<Drawer onClose={onClose} isOpen={isOpen}>
@@ -383,17 +437,20 @@ const RoundDetailDrawer = ({
 								onClose()
 							}}
 							isDisabled={
+								(isUserApplied && getSpecificTime() === 'upcoming-open') ||
 								!doc.allow_applications ||
 								new Date().getTime() >
 									new Date(doc.application_end || '').getTime()
 							}
 							className="!py-3 flex-1"
 						>
-							{new Date().getTime() >
-								new Date(doc.application_end || '').getTime() ||
-							!doc.allow_applications
-								? 'Application Closed'
-								: 'Apply'}
+							{isUserApplied && getSpecificTime() === 'upcoming-open'
+								? `You're already a part of this round.`
+								: new Date().getTime() >
+											new Date(doc.application_end || '').getTime() ||
+									  !doc.allow_applications
+									? 'Application Closed'
+									: 'Apply'}
 						</Button>
 						{doc.use_vault && (
 							<Button

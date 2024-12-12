@@ -22,6 +22,7 @@ import { IGetRoundsResponse, Network } from '@/types/on-chain'
 import { prettyTruncate } from '@/utils/helper'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import Image from 'next/image'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Project } from 'project-registry-client'
 import React, { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
@@ -37,6 +38,8 @@ const ApplyProjectModal = ({
 	round_id,
 	roundData,
 }: ApplyProjectToRoundModalProps) => {
+	const router = useRouter()
+	const searchParams = useSearchParams()
 	const { setCreateProjectFormMainProps } = useModalContext()
 	const { stellarPubKey, stellarKit, nearWallet, nearAccounts } = useWallet()
 	const [isProjectMissingInfo, setIsProjectMissingInfo] =
@@ -153,6 +156,14 @@ const ApplyProjectModal = ({
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isOpen, storage.my_address, storage.chainId])
+
+	const addApplyQuery = () => {
+		const currentParams = new URLSearchParams(searchParams.toString())
+		currentParams.set('apply_round', roundData?.id.toString() as string)
+		router.push(`?${currentParams.toString()}`, {
+			scroll: false,
+		})
+	}
 
 	return (
 		<Modal
@@ -295,6 +306,7 @@ const ApplyProjectModal = ({
 										},
 									)
 								} else {
+									addApplyQuery()
 									setCreateProjectFormMainProps((prev) => ({
 										...prev,
 										isOpen: true,

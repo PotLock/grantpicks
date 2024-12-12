@@ -28,6 +28,8 @@ import { localStorageConfigs } from '@/configs/local-storage'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { RegistrationStatus } from 'lists-client'
 import { NearSocialGPProject } from '@/services/near/type'
+import { useSearchParams } from 'next/navigation'
+import { usePotlockService } from '@/services/potlock'
 
 const CreateProjectFormContext = createContext<ICreateProjectFormContext>({
 	data: DEFAULT_CREATE_PROJECT_DATA,
@@ -39,18 +41,25 @@ const CreateProjectFormContext = createContext<ICreateProjectFormContext>({
 })
 
 const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
+	const searchParams = useSearchParams()
+	const potlockApi = usePotlockService()
 	const [dataForm, setDataForm] = useState<ICreateProjectForm>(
 		DEFAULT_CREATE_PROJECT_DATA,
 	)
 	const { dismissPageLoading, openPageLoading } = useGlobalContext()
 	const [step, setStep] = useState<number>(1)
 	const { stellarKit, nearWallet } = useWallet()
-	const { setSuccessCreateProjectModalProps } = useModalContext()
+	const { setSuccessCreateProjectModalProps, setApplyProjectInitProps } =
+		useModalContext()
 	const storage = useAppStorage()
 
 	const onProceedApply = async () => {
 		try {
 			openPageLoading()
+
+			const roundData = await potlockApi.getRound(
+				Number(searchParams.get('apply_round')),
+			)
 
 			if (storage.chainId === 'stellar') {
 				const contracts = storage.getStellarContracts()
@@ -190,12 +199,21 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 					txCreateProject,
 				])
 
-				setSuccessCreateProjectModalProps((prev) => ({
-					...prev,
-					isOpen: true,
-					createProjectRes: params as unknown as IGetProjectsResponse,
-					txHash: undefined,
-				}))
+				if (searchParams.has('apply_round')) {
+					setApplyProjectInitProps((prev) => ({
+						...prev,
+						isOpen: true,
+						round_id: BigInt(searchParams.get('apply_round') as string),
+						roundData: roundData,
+					}))
+				} else {
+					setSuccessCreateProjectModalProps((prev) => ({
+						...prev,
+						isOpen: true,
+						createProjectRes: params as unknown as IGetProjectsResponse,
+						txHash: undefined,
+					}))
+				}
 				setDataForm(DEFAULT_CREATE_PROJECT_DATA)
 				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_1)
 				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_2)

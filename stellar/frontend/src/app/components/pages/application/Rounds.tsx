@@ -35,6 +35,7 @@ import IconUnfoldMore from '../../svgs/IconUnfoldMore'
 import Menu from '../../commons/Menu'
 import { TSelectedRoundType } from '@/types/round'
 import RoundMenu from './RoundMenu'
+import useSWR from 'swr'
 
 const ApplicationRoundsItem = ({
 	doc,
@@ -487,6 +488,30 @@ const ApplicationRounds = () => {
 	const storage = useAppStorage()
 	const router = useRouter()
 	const searchParams = useSearchParams()
+	const { nearAccounts, stellarPubKey } = useWallet()
+	const [myRoundsData, setMyRoundsData] = useState<GPRound[]>([])
+
+	const filterRoundsByType = (rounds: GPRound[], type: string) => {
+		switch (type) {
+			case 'upcoming':
+				return rounds.filter(
+					(t) => new Date().getTime() < new Date(t.voting_start).getTime(),
+				)
+			case 'on-going':
+				return rounds.filter(
+					(t) =>
+						new Date(t.voting_start).getTime() <= new Date().getTime() &&
+						new Date().getTime() < new Date(t.voting_end).getTime() &&
+						t.approved_projects.length > 0,
+				)
+			case 'ended':
+				return rounds.filter(
+					(t) => new Date(t.voting_end).getTime() <= new Date().getTime(),
+				)
+			default:
+				return rounds
+		}
+	}
 
 	const onFetchRounds = async (key: { url: string; page: number }) => {
 		let beChainId = null
@@ -533,27 +558,34 @@ const ApplicationRounds = () => {
 
 	useEffect(() => {
 		if (data) {
-			let temp = [...rounds]
-			if (selectedRoundType === 'upcoming') {
-				temp = temp.filter(
-					(t) => new Date().getTime() < new Date(t.voting_start).getTime(),
-				)
-			} else if (selectedRoundType === 'on-going') {
-				temp = temp.filter(
-					(t) =>
-						new Date(t.voting_start).getTime() <= new Date().getTime() &&
-						new Date().getTime() < new Date(t.voting_end).getTime() &&
-						t.approved_projects.length > 0,
-				)
-			} else if (selectedRoundType === 'ended') {
-				temp = temp.filter(
-					(t) => new Date(t.voting_end).getTime() <= new Date().getTime(),
-				)
-			}
+			const temp = filterRoundsByType([...rounds], selectedRoundType)
 			setRoundsData(temp)
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [selectedRoundType, data, connectedWallet])
+
+	const onFetchMyRounds = async (accountId: string) => {
+		const res = await potlockApi.getMyRounds(accountId)
+		return res
+	}
+
+	const {
+		data: dataMyRounds,
+		isLoading: isLoadingMyRounds,
+		mutate: mutateMyRounds,
+	} = useSWR(`get-my-rounds`, () =>
+		onFetchMyRounds(
+			connectedWallet === 'near' ? nearAccounts[0]?.accountId : stellarPubKey,
+		),
+	)
+
+	useEffect(() => {
+		if (dataMyRounds) {
+			const temp = filterRoundsByType([...dataMyRounds], selectedRoundType)
+			setMyRoundsData(temp)
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [selectedRoundType, dataMyRounds, connectedWallet])
 
 	useEffect(() => {
 		setSize(1)
@@ -578,6 +610,29 @@ const ApplicationRounds = () => {
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [searchParams])
+
+	const LoadingRoundState = () => (
+		<div className="h-52 flex items-center justify-center w-full">
+			<IconLoading size={40} className="fill-grantpicks-black-600" />
+		</div>
+	)
+
+	const EmptyRoundState = () => (
+		<div>
+			<div className="mt-8 flex items-center justify-center">
+				<Image
+					src="/assets/images/empty-state.png"
+					alt=""
+					className="object-fill animate-bounce duration-1000"
+					width={100}
+					height={100}
+				/>
+			</div>
+			<p className="text-base font-bold text-grantpicks-black-950 text-center">
+				There are no Rounds yet.
+			</p>
+		</div>
+	)
 
 	return (
 		<div>
@@ -643,7 +698,7 @@ const ApplicationRounds = () => {
 						<Menu
 							isOpen={showSortType}
 							onClose={() => setShowSortType(false)}
-							position="right-0 left-0 -bottom-20"
+							position="right-0 left-0 -bottom-28"
 						>
 							<div className="border border-black/10 p-3 rounded-xl space-y-3 bg-white">
 								<p
@@ -664,54 +719,66 @@ const ApplicationRounds = () => {
 								>
 									Vault Total Deposits
 								</p>
+								<p
+									onClick={() => {
+										setSortType('My Rounds')
+										setShowSortType(false)
+									}}
+									className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
+								>
+									My Rounds
+								</p>
 							</div>
 						</Menu>
 					)}
 				</div>
 			</div>
 			<div className="min-h-96">
-				<InfiniteScroll
-					dataLength={rounds.length}
-					next={() => !isValidating && setSize(size + 1)}
-					hasMore={hasMore}
-					style={{ display: 'flex', flexDirection: 'column' }}
-					loader={
-						<div className="my-2 flex items-center justify-center">
-							<IconLoading size={24} className="fill-grantpicks-black-600" />
-						</div>
-					}
-				>
-					{isLoading ? (
-						<div className="h-52 flex items-center justify-center w-full">
-							<IconLoading size={40} className="fill-grantpicks-black-600" />
-						</div>
-					) : roundsData.length === 0 ? (
-						<div>
-							<div className="mt-8 flex items-center justify-center">
-								<Image
-									src="/assets/images/empty-state.png"
-									alt=""
-									className="object-fill animate-bounce duration-1000"
-									width={100}
-									height={100}
-								/>
-							</div>
-							<p className="text-base font-bold text-grantpicks-black-950 text-center">
-								There are no Rounds yet.
-							</p>
-						</div>
+				{sortType === 'My Rounds' ? (
+					isLoadingMyRounds ? (
+						<LoadingRoundState />
+					) : myRoundsData.length === 0 ? (
+						<EmptyRoundState />
 					) : (
 						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
-							{roundsData?.map((doc, idx) => (
+							{myRoundsData.map((doc, idx) => (
 								<ApplicationRoundsItem
 									key={idx}
 									doc={doc}
-									mutateRounds={mutate}
+									mutateRounds={mutateMyRounds}
 								/>
 							))}
 						</div>
-					)}
-				</InfiniteScroll>
+					)
+				) : (
+					<InfiniteScroll
+						dataLength={rounds.length}
+						next={() => !isValidating && setSize(size + 1)}
+						hasMore={hasMore}
+						style={{ display: 'flex', flexDirection: 'column' }}
+						loader={
+							<div className="my-2 flex items-center justify-center">
+								<IconLoading size={24} className="fill-grantpicks-black-600" />
+							</div>
+						}
+					>
+						{isLoading ? (
+							<LoadingRoundState />
+						) : roundsData.length === 0 ? (
+							<EmptyRoundState />
+						) : (
+							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
+								{roundsData?.map((doc, idx) => (
+									<ApplicationRoundsItem
+										key={idx}
+										doc={doc}
+										mutateRounds={mutate}
+									/>
+								))}
+							</div>
+						)}
+					</InfiniteScroll>
+				)}
 			</div>
 		</div>
 	)

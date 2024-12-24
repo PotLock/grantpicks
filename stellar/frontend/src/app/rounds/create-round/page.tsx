@@ -573,39 +573,41 @@ const CreateRoundPage = () => {
 								Voting Duration{' '}
 								<span className="text-grantpicks-red-600 ml-1">*</span>
 							</p>
-							<Controller
-								name="voting_duration_start"
-								control={control}
-								rules={{ required: true }}
-								render={({ field }) => (
-									<DatePicker
-										showIcon
-										minDate={subDays(watch().apply_duration_end as Date, 1)}
-										selectsRange={true}
-										icon={
-											<div className="flex items-center mt-2">
-												<IconCalendar
-													size={20}
-													className="fill-grantpicks-black-400"
-												/>
-											</div>
-										}
-										calendarIconClassName="flex items-center"
-										startDate={field.value as Date}
-										endDate={watch().voting_duration_end as Date}
-										placeholderText="Voting Duration"
-										isClearable={true}
-										onChange={(date) => {
-											field.onChange(date[0])
-											setValue('voting_duration_end', date[1], {
-												shouldValidate: true,
-											})
-										}}
-										className="border border-grantpicks-black-200 rounded-xl w-full h-12"
-										wrapperClassName="w-full mb-1"
-									/>
-								)}
-							/>
+							<div {...register('voting_duration_start', { required: true })}>
+								<Controller
+									name="voting_duration_start"
+									control={control}
+									rules={{ required: true }}
+									render={({ field }) => (
+										<DatePicker
+											showIcon
+											minDate={subDays(watch().apply_duration_end as Date, 1)}
+											selectsRange={true}
+											icon={
+												<div className="flex items-center mt-2">
+													<IconCalendar
+														size={20}
+														className="fill-grantpicks-black-400"
+													/>
+												</div>
+											}
+											calendarIconClassName="flex items-center"
+											startDate={field.value as Date}
+											endDate={watch().voting_duration_end as Date}
+											placeholderText="Voting Duration"
+											isClearable={true}
+											onChange={(date) => {
+												field.onChange(date[0])
+												setValue('voting_duration_end', date[1], {
+													shouldValidate: true,
+												})
+											}}
+											className="border border-grantpicks-black-200 rounded-xl w-full h-12"
+											wrapperClassName="w-full mb-1"
+										/>
+									)}
+								/>
+							</div>
 							{errors.voting_duration_start?.type === 'required' ? (
 								<p className="text-red-500 text-xs mt-1 ml-2">
 									Start and end voting duration is required
@@ -675,18 +677,32 @@ const CreateRoundPage = () => {
 							</p>
 							<div className="flex items-center space-x-4">
 								<div className="relative w-40 md:w-44 lg:w-52">
-									<div
+									<button
+										{...register('contact_type', { required: true })}
 										onClick={() => setShowContactType(true)}
-										className="border border-grantpicks-black-200 rounded-xl py-3 px-3 flex items-center justify-between cursor-pointer hover:opacity-80 transition"
+										className={clsx(
+											'border w-full border-grantpicks-black-200 rounded-xl py-3 px-3 flex items-center justify-between cursor-pointer hover:opacity-80 transition',
+											errors.contact_address?.type === 'required' &&
+												'border-red-500',
+										)}
 									>
-										<p className="text-sm font-normal text-grantpicks-black-950">
-											{watch().contact_type}
+										<p
+											className={clsx(
+												'text-sm font-normal ',
+												watch().contact_type === ''
+													? 'text-grantpicks-black-950/50'
+													: 'text-grantpicks-black-950',
+											)}
+										>
+											{watch().contact_type === ''
+												? 'Select platform'
+												: watch().contact_type}
 										</p>
 										<IconUnfoldMore
 											size={24}
 											className="fill-grantpicks-black-400"
 										/>
-									</div>
+									</button>
 									{showContactType && (
 										<Menu
 											isOpen={showContactType}
@@ -740,6 +756,11 @@ const CreateRoundPage = () => {
 								</div>
 								<div className="flex-1">
 									<InputText
+										className={clsx(
+											(errors.contact_address?.type === 'required' ||
+												errors.contact_address) &&
+												'border border-red-500',
+										)}
 										disabled={!watch('contact_type')}
 										required
 										placeholder="Your username..."
@@ -1025,41 +1046,47 @@ const CreateRoundPage = () => {
 											<span className="text-grantpicks-red-600 ml-1">*</span>
 										)}
 									</p>
-									<Controller
-										name="apply_duration_start"
-										control={control}
-										rules={{ required: watch().allow_application }}
-										render={({ field }) => (
-											<DatePicker
-												disabled={!watch().allow_application}
-												showIcon
-												selectsRange={true}
-												maxDate={subDays(
-													watch().voting_duration_start as Date,
-													0,
-												)}
-												icon={
-													<div className="flex items-center mt-2 pr-2">
-														<IconCalendar
-															size={20}
-															className="fill-grantpicks-black-400"
-														/>
-													</div>
-												}
-												calendarIconClassName="flex items-center"
-												startDate={field.value as Date}
-												endDate={watch().apply_duration_end as Date}
-												placeholderText="Apply Duration"
-												isClearable={true}
-												onChange={(date) => {
-													field.onChange(date[0])
-													setValue('apply_duration_end', date[1])
-												}}
-												className="border border-grantpicks-black-200 rounded-xl w-full h-12"
-												wrapperClassName="w-full mb-1"
-											/>
-										)}
-									/>
+									<div
+										{...register('apply_duration_start', {
+											required: watch().allow_application,
+										})}
+									>
+										<Controller
+											name="apply_duration_start"
+											control={control}
+											rules={{ required: watch().allow_application }}
+											render={({ field }) => (
+												<DatePicker
+													disabled={!watch().allow_application}
+													showIcon
+													selectsRange={true}
+													maxDate={subDays(
+														watch().voting_duration_start as Date,
+														0,
+													)}
+													icon={
+														<div className="flex items-center mt-2 pr-2">
+															<IconCalendar
+																size={20}
+																className="fill-grantpicks-black-400"
+															/>
+														</div>
+													}
+													calendarIconClassName="flex items-center"
+													startDate={field.value as Date}
+													endDate={watch().apply_duration_end as Date}
+													placeholderText="Apply Duration"
+													isClearable={true}
+													onChange={(date) => {
+														field.onChange(date[0])
+														setValue('apply_duration_end', date[1])
+													}}
+													className="border border-grantpicks-black-200 rounded-xl w-full h-12"
+													wrapperClassName="w-full mb-1"
+												/>
+											)}
+										/>
+									</div>
 									{errors.apply_duration_start?.type === 'required' ? (
 										<p className="text-red-500 text-xs mt-1 ml-2">
 											start and end of apply duration is required

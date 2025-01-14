@@ -25,6 +25,8 @@ pub trait ListsTrait {
     registrant_id: Address,
     required_status: Option<RegistrationStatus>, // defaults to Approved
   ) -> bool;
+  // TO get a list by its ID: to confirm it exists.
+  fn get_list(env: &Env, list_id: u128) -> ListExternal;
 }
 #[contracttype]
 #[derive(Debug, Clone, PartialEq)]
@@ -34,4 +36,21 @@ pub enum RegistrationStatus {
   Rejected,
   Graylisted,
   Blacklisted,
+}
+
+#[contracttype]
+#[derive(Debug, Clone, PartialEq)]
+pub struct ListExternal {
+    pub id: u128,
+    pub name: String,
+    pub description: String,
+    pub cover_img_url: String,
+    pub owner: Address,
+    pub admins: Vec<Address>,
+    pub created_ms: u64,
+    pub updated_ms: u64,
+    pub default_registration_status: RegistrationStatus,
+    pub admin_only_registrations: bool,
+    pub total_registrations_count: u64,
+    pub total_upvotes_count: u64,
 }

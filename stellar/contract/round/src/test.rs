@@ -160,6 +160,7 @@ Test case:
 #[test]
 fn test_round_create() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -203,7 +204,7 @@ fn test_round_create() {
         &project_contract.address,
         &list_contract.address,
         &Some(1),
-        &Some(2),
+        &None,
         &None,
         &None,
         &None,
@@ -235,6 +236,8 @@ Test case:
 #[test]
 fn test_apply_applications() {
     let env = Env::default();
+    env.budget().reset_unlimited();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -244,6 +247,8 @@ fn test_apply_applications() {
     let projects = generate_fake_project(&env, &project_contract, 5);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
+
+    
 
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
@@ -279,7 +284,7 @@ fn test_apply_applications() {
         &project_contract.address,
         &list_contract.address,
         &Some(1),
-        &Some(2),
+        &None,
         &None,
         &None,
         &None,
@@ -313,6 +318,8 @@ Test case:
 #[test]
 fn test_review_application() {
     let env = Env::default();
+    env.budget().reset_unlimited();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -357,7 +364,7 @@ fn test_review_application() {
         &project_contract.address,
         &list_contract.address,
         &Some(1),
-        &Some(2),
+        &None,
         &None,
         &None,
         &None,
@@ -398,6 +405,8 @@ Test case:
 #[should_panic]
 fn test_whitelist_applicant() {
     let env = Env::default();
+    env.budget().reset_unlimited();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -473,8 +482,8 @@ Test case:
 #[test]
 #[should_panic]
 fn test_unwhitelisted_voters_should_panic() {
-    extern  crate std;
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -590,6 +599,7 @@ Test case:
 fn test_whitelisted_voter_can_vote() {
     extern  crate std;
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -703,6 +713,7 @@ Test case:
 #[should_panic]
 fn test_blacklist() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -813,6 +824,7 @@ Test case:
 #[test]
 fn test_voting() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -857,7 +869,7 @@ fn test_voting() {
         &project_contract.address,
         &list_contract.address,
         &Some(1),
-        &Some(2),
+        &None,
         &None,
         &None,
         &None,
@@ -970,6 +982,7 @@ Test case:
 #[test]
 fn test_add_remove_admin() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let roby = Address::generate(&env);
@@ -1014,7 +1027,7 @@ fn test_add_remove_admin() {
         &project_contract.address,
         &list_contract.address,
         &Some(1),
-        &Some(2),
+        &None,
         &None,
         &None,
         &None,
@@ -1050,6 +1063,7 @@ Test case:
 #[test]
 fn test_voting_deposit_and_payout() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -1096,7 +1110,7 @@ fn test_voting_deposit_and_payout() {
         &project_contract.address,
         &list_contract.address,
         &Some(1),
-        &Some(2),
+        &None,
         &None,
         &None,
         &None,
@@ -1208,6 +1222,7 @@ fn test_voting_deposit_and_payout() {
 #[test]
 fn test_get_all_pairs() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -1252,7 +1267,7 @@ fn test_get_all_pairs() {
         &project_contract.address,
         &list_contract.address,
         &Some(1),
-        &Some(2),
+        &None,
         &None,
         &None,
         &None,
@@ -1313,6 +1328,7 @@ Test case:
 #[test]
 fn test_change_number_of_votes() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -1356,7 +1372,7 @@ fn test_change_number_of_votes() {
         &project_contract.address,
         &list_contract.address,
         &Some(1),
-        &Some(2),
+        &None,
         &None,
         &None,
         &None,
@@ -1378,6 +1394,7 @@ Test case:
 #[test]
 fn test_change_amount() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -1421,7 +1438,7 @@ fn test_change_amount() {
         &project_contract.address,
         &list_contract.address,
         &Some(1),
-        &Some(2),
+        &None,
         &None,
         &None,
         &None,
@@ -1443,6 +1460,7 @@ Test case:
 #[test]
 fn test_set_voting_period() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -1486,7 +1504,7 @@ fn test_set_voting_period() {
         &project_contract.address,
         &list_contract.address,
         &Some(1),
-        &Some(2),
+        &None,
         &None,
         &None,
         &None,
@@ -1510,6 +1528,7 @@ Test case:
 #[test]
 fn test_application_period() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -1553,7 +1572,7 @@ fn test_application_period() {
         &project_contract.address,
         &list_contract.address,
         &Some(1),
-        &Some(2),
+        &None,
         &None,
         &None,
         &None,
@@ -1589,6 +1608,7 @@ Test case:
 #[test]
 fn test_update_round() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -1632,7 +1652,7 @@ fn test_update_round() {
         &project_contract.address,
         &list_contract.address,
         &Some(1),
-        &Some(2),
+        &None,
         &None,
         &None,
         &None,
@@ -1672,6 +1692,7 @@ Test case:
 #[test]
 fn test_change_allow_applications() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -1715,7 +1736,7 @@ fn test_change_allow_applications() {
         &project_contract.address,
         &list_contract.address,
         &Some(1),
-        &Some(2),
+        &None,
         &None,
         &None,
         &None,
@@ -1745,6 +1766,7 @@ Test case:
 #[test]
 fn test_unapply_from_round() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -1789,7 +1811,7 @@ fn test_unapply_from_round() {
         &project_contract.address,
         &list_contract.address,
         &Some(1),
-        &Some(2),
+        &None,
         &None,
         &None,
         &None,
@@ -1818,6 +1840,7 @@ Test case:
 #[test]
 fn test_apply_to_round_batch() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -1862,7 +1885,7 @@ fn test_apply_to_round_batch() {
         &project_contract.address,
         &list_contract.address,
         &Some(1),
-        &Some(2),
+        &None,
         &None,
         &None,
         &None,
@@ -1887,6 +1910,7 @@ Test case:
 #[test]
 fn test_change_round_contract_config() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let treasury = Address::generate(&env);
@@ -1901,7 +1925,7 @@ fn test_change_round_contract_config() {
         &project_contract.address,
         &list_contract.address,
         &Some(1),
-        &Some(2),
+        &None,
         &None,
         &None,
         &None,

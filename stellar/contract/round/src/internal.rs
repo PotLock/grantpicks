@@ -48,6 +48,19 @@ impl RoundCreator for RoundContract {
             panic_with_error!(env, Error::AlreadyInitialized);
         }
 
+        if voting_wl_list_id.is_some() {
+            let list_client = ListsClient::new(env, &list_address);
+            let valid_list = list_client.get_list(&voting_wl_list_id.unwrap());
+            assert!(valid_list.id == voting_wl_list_id.unwrap(), "Invalid voting whitelist list id");
+        }
+
+        if application_wl_list_id.is_some() {
+            let list_client = ListsClient::new(env, &list_address);
+            let valid_list = list_client.get_list(&application_wl_list_id.unwrap());
+            assert!(valid_list.id == application_wl_list_id.unwrap(), "Invalid application whitelist list id");
+        }
+        
+
         let config = Config {
             owner: caller.clone(),
             protocol_fee_basis_points: protocol_fee_basis_points.unwrap_or(0),

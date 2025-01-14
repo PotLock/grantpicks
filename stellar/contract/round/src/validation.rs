@@ -203,12 +203,23 @@ pub fn validate_not_blacklist(env: &Env, round_id: u128, voter: &Address) {
     }
 }
 
-pub fn validate_whitelist(env: &Env, round_id: u128, voter: &Address) {
+pub fn validate_voting_whitelist(env: &Env, round_id: u128, voter: &Address) {
     let round = read_round_info(env, round_id);
-    let list_id = round.wl_list_id.unwrap();
+    let list_id = round.voting_wl_list_id.unwrap();
     let list_contract = read_config(env).list_contract;
     let list_client = ListsClient::new(env, &list_contract);
     let is_whitelisted = list_client.is_registered(&Some(list_id), &voter, &Some(RegistrationStatus::Approved));
+    if !is_whitelisted {
+        panic_with_error!(env, RoundError::UserNotWhitelisted);
+    }
+}
+
+pub fn validate_application_whitelist(env: &Env, round_id: u128, applicant: &Address) {
+    let round = read_round_info(env, round_id);
+    let list_id = round.application_wl_list_id.unwrap();
+    let list_contract = read_config(env).list_contract;
+    let list_client = ListsClient::new(env, &list_contract);
+    let is_whitelisted = list_client.is_registered(&Some(list_id), &applicant, &Some(RegistrationStatus::Approved));
     if !is_whitelisted {
         panic_with_error!(env, RoundError::UserNotWhitelisted);
     }

@@ -28,7 +28,8 @@ pub struct Config {
     pub token_contract: Address,
     pub project_contract: Address,
     pub list_contract: Address,
-    pub kyc_list_id: u128
+    pub voting_wl_list_id: Option<u128>,
+    pub application_wl_list_id: Option<u128>,
 }
 
 //Note: Whitelist And Blacklist In Different Storage
@@ -47,8 +48,10 @@ pub struct RoundDetail {
     pub expected_amount: u128,
     pub current_vault_balance: u128,
     pub vault_total_deposits: u128,
-    pub use_whitelist: bool,
-    pub wl_list_id: Option<u128>,
+    pub use_whitelist_voting: bool,
+    pub use_whitelist_application: bool,
+    pub voting_wl_list_id: Option<u128>,
+    pub application_wl_list_id: Option<u128>,
     pub use_vault: Option<bool>,
     pub num_picks_per_voter: u32,
     pub max_participants: u32,
@@ -81,8 +84,10 @@ pub struct CreateRoundParams {
     pub application_end_ms: Option<u64>,
     pub expected_amount: u128,
     pub admins: Vec<Address>,
-    pub use_whitelist: Option<bool>,
-    pub wl_list_id: Option<u128>,
+    pub use_whitelist_voting: Option<bool>,
+    pub use_whitelist_application: Option<bool>,
+    pub voting_wl_list_id: Option<u128>,
+    pub application_wl_list_id: Option<u128>,
     pub use_vault: Option<bool>,
     pub num_picks_per_voter: Option<u32>,
     pub max_participants: Option<u32>,

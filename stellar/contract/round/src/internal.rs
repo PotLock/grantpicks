@@ -17,13 +17,7 @@ use crate::{
     }, external::{ListsClient, ProjectRegistryClient, RegistrationStatus}, factory::RoundCreator, pair::{get_all_pairs, get_all_rounds, get_pair_by_index, get_random_pairs}, payout_writer::{
         add_payout_id_to_project_payout_ids, clear_payouts, clear_project_payout_ids, has_paid, increment_payout_id, read_payout_challenge, read_payout_challenges, read_payout_info, read_payouts, read_project_payout_ids_for_project, remove_payout_challenge, remove_payout_info, write_payout_challenge, write_payout_challenges, write_payout_info, write_payouts
     }, round_writer::{increment_round_number, is_initialized, read_round_info, write_round_info}, storage::{clear_round, extend_instance, extend_round}, utils::{calculate_protocol_fee, count_total_available_pairs, get_ledger_second_as_millis}, validation::{
-        validate_application_period, validate_approved_projects, validate_blacklist,
-        validate_can_payout, validate_has_voted,
-        validate_max_participant, validate_max_participants, validate_not_blacklist,
-        validate_number_of_votes, validate_owner_or_admin, validate_pick_per_votes,
-        validate_project_to_approve, validate_review_notes, validate_round_detail,
-        validate_round_detail_update, validate_specify_applicant, validate_vault_fund,
-        validate_voting_not_started, validate_voting_period, validate_whitelist,
+        validate_application_period, validate_application_whitelist, validate_approved_projects, validate_blacklist, validate_can_payout, validate_has_voted, validate_max_participant, validate_max_participants, validate_not_blacklist, validate_number_of_votes, validate_owner_or_admin, validate_pick_per_votes, validate_project_to_approve, validate_review_notes, validate_round_detail, validate_round_detail_update, validate_specify_applicant, validate_vault_fund, validate_voting_not_started, validate_voting_period, validate_voting_whitelist
     }, voter_writer::{
         add_to_blacklist, add_voted_round, get_voted_rounds_for_voter, is_blacklisted, read_all_blacklist, remove_from_blacklist
     }, voting_writer::{
@@ -42,7 +36,8 @@ impl RoundCreator for RoundContract {
         token_address: Address,
         registry_address: Address,
         list_address: Address,
-        kyc_list_id: u128,
+        voting_wl_list_id: Option<u128>, // list for whitelisted/eligible voted
+        application_wl_list_id: Option<u128>, // list for whitelisted/eligible projects
         protocol_fee_basis_points: Option<u32>,
         protocol_fee_recipient: Option<Address>,
         default_page_size: Option<u64>,
@@ -53,6 +48,19 @@ impl RoundCreator for RoundContract {
             panic_with_error!(env, Error::AlreadyInitialized);
         }
 
+        if voting_wl_list_id.is_some() {
+            let list_client = ListsClient::new(env, &list_address);
+            let valid_list = list_client.get_list(&voting_wl_list_id.unwrap());
+            assert!(valid_list.id == voting_wl_list_id.unwrap(), "Invalid voting whitelist list id");
+        }
+
+        if application_wl_list_id.is_some() {
+            let list_client = ListsClient::new(env, &list_address);
+            let valid_list = list_client.get_list(&application_wl_list_id.unwrap());
+            assert!(valid_list.id == application_wl_list_id.unwrap(), "Invalid application whitelist list id");
+        }
+        
+
         let config = Config {
             owner: caller.clone(),
             protocol_fee_basis_points: protocol_fee_basis_points.unwrap_or(0),
@@ -61,7 +69,8 @@ impl RoundCreator for RoundContract {
             token_contract: token_address,
             project_contract: registry_address,
             list_contract: list_address,
-            kyc_list_id,
+            voting_wl_list_id,
+            application_wl_list_id,
         };
 
         write_config(env, &config);
@@ -99,8 +108,10 @@ impl RoundCreator for RoundContract {
             application_start_ms: round_detail.application_start_ms,
             application_end_ms: round_detail.application_end_ms,
             expected_amount: round_detail.expected_amount,
-            use_whitelist: round_detail.use_whitelist.unwrap_or(false),
-            wl_list_id: round_detail.wl_list_id,
+            use_whitelist_voting: round_detail.use_whitelist_voting.unwrap_or(false),
+            use_whitelist_application: round_detail.use_whitelist_application.unwrap_or(false),
+            voting_wl_list_id: round_detail.voting_wl_list_id,
+            application_wl_list_id: round_detail.application_wl_list_id,
             num_picks_per_voter,
             max_participants: round_detail.max_participants.unwrap_or(10),
             current_vault_balance: 0,
@@ -193,13 +204,24 @@ impl RoundCreator for RoundContract {
         write_config(env, &updated_config);
     }
 
-    fn change_kyc_list_id(env: &Env, kyc_list_id: u128){
+    fn change_voting_wl_list_id(env: &Env, list_id: u128){
         let config = read_config(env);
 
         config.owner.require_auth();
 
         let mut updated_config = config.clone();
-        updated_config.kyc_list_id = kyc_list_id;
+        updated_config.voting_wl_list_id = Some(list_id);
+
+        write_config(env, &updated_config);
+    }
+
+    fn change_application_wl_list_id(env: &Env, list_id: u128){
+        let config = read_config(env);
+
+        config.owner.require_auth();
+
+        let mut updated_config = config.clone();
+        updated_config.application_wl_list_id = Some(list_id);
 
         write_config(env, &updated_config);
     }
@@ -297,6 +319,10 @@ impl IsRound for RoundContract {
         } else {
             caller
         };
+
+        if round.use_whitelist_application {
+            validate_application_whitelist(env, round_id, &applicant);
+        }
 
         let project_contract = read_config(env).project_contract;
         let project_client = ProjectRegistryClient::new(env, &project_contract);
@@ -506,8 +532,8 @@ impl IsRound for RoundContract {
         validate_voting_period(env, &round);
         validate_number_of_votes(env, round.num_picks_per_voter, picks.len());
 
-        if round.use_whitelist {
-            validate_whitelist(env, round_id, &voter);
+        if round.use_whitelist_voting {
+            validate_voting_whitelist(env, round_id, &voter);
         }
 
         validate_blacklist(env, round_id, &voter);
@@ -664,7 +690,7 @@ impl IsRound for RoundContract {
                 }
 
                 if round.compliance_period_ms.is_some() {
-                   let is_kcy_passed = list_client.is_registered(&Some(config.kyc_list_id), &payout.recipient_id, &Some(RegistrationStatus::Approved));
+                   let is_kcy_passed = list_client.is_registered(&config.voting_wl_list_id, &payout.recipient_id, &Some(RegistrationStatus::Approved));
                     if !is_kcy_passed {
                         payout.paid_at_ms = Some(get_ledger_second_as_millis(env));
                         write_payout_info(env, payout_id, &payout);
@@ -710,11 +736,11 @@ impl IsRound for RoundContract {
         let current_ms = get_ledger_second_as_millis(env);
 
         if round.voting_start_ms <= current_ms && current_ms <= round.voting_end_ms {
-            if round.use_whitelist {
-                if round.wl_list_id.is_none() {
+            if round.use_whitelist_voting {
+                if round.voting_wl_list_id.is_none() {
                     return true;
                 }
-                let list_id = round.wl_list_id.unwrap();
+                let list_id = round.voting_wl_list_id.unwrap();
                 let list_contract = read_config(env).list_contract;
                 let list_client = ListsClient::new(env, &list_contract);
                 let is_whitelisted = list_client.is_registered(&Some(list_id), &voter, &Some(RegistrationStatus::Approved));
@@ -830,7 +856,7 @@ impl IsRound for RoundContract {
 
     fn whitelist_status(env: &Env, round_id: u128, address: Address) -> bool {
         let round = read_round_info(env, round_id);
-        let list_id = round.wl_list_id.unwrap();
+        let list_id = round.voting_wl_list_id.unwrap();
         let list_contract = read_config(env).list_contract;
         let list_client = ListsClient::new(env, &list_contract);
         let is_whitelisted = list_client.is_registered(&Some(list_id), &address, &Some(RegistrationStatus::Approved));
@@ -1032,7 +1058,7 @@ impl IsRound for RoundContract {
         round.description = round_detail.description;
         round.max_participants = round_detail.max_participants.unwrap_or(10);
         round.name = round_detail.name;
-        round.wl_list_id = round_detail.wl_list_id;
+        round.voting_wl_list_id = round_detail.wl_list_id;
 
         write_round_info(env, round_id, &round);
         extend_instance(env);

@@ -160,6 +160,7 @@ Test case:
 #[test]
 fn test_round_create() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -180,8 +181,10 @@ fn test_round_create() {
         application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
         expected_amount: 5,
         admins: admins.clone(),
-        use_whitelist: Some(false),
-        wl_list_id: None,
+        use_whitelist_voting: Some(false),
+        use_whitelist_application: Some(false),
+        voting_wl_list_id: None,
+        application_wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -200,7 +203,8 @@ fn test_round_create() {
         &token_contract.address,
         &project_contract.address,
         &list_contract.address,
-        &1,
+        &Some(1),
+        &None,
         &None,
         &None,
         &None,
@@ -213,7 +217,8 @@ fn test_round_create() {
     assert_eq!(round_info.expected_amount, 5);
     assert_eq!(admins, admins);
     assert_eq!(round_info.owner, admin);
-    assert_eq!(round_info.use_whitelist, false);
+    assert_eq!(round_info.use_whitelist_voting, false);
+    assert_eq!(round_info.use_whitelist_application, false);
     assert_eq!(round_info.num_picks_per_voter, 2);
 
     let all_rounds = round.get_rounds(&None, &None);
@@ -231,6 +236,8 @@ Test case:
 #[test]
 fn test_apply_applications() {
     let env = Env::default();
+    env.budget().reset_unlimited();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -240,6 +247,8 @@ fn test_apply_applications() {
     let projects = generate_fake_project(&env, &project_contract, 5);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
+
+    
 
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
@@ -252,8 +261,10 @@ fn test_apply_applications() {
         application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
         expected_amount: 5,
         admins: admins.clone(),
-        use_whitelist: Some(false),
-        wl_list_id: None,
+        use_whitelist_voting: Some(false),
+        use_whitelist_application: Some(false),
+        voting_wl_list_id: None,
+        application_wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -272,7 +283,8 @@ fn test_apply_applications() {
         &token_contract.address,
         &project_contract.address,
         &list_contract.address,
-        &1,
+        &Some(1),
+        &None,
         &None,
         &None,
         &None,
@@ -306,6 +318,8 @@ Test case:
 #[test]
 fn test_review_application() {
     let env = Env::default();
+    env.budget().reset_unlimited();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -327,8 +341,10 @@ fn test_review_application() {
         application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
         expected_amount: 5,
         admins: admins.clone(),
-        use_whitelist: Some(false),
-        wl_list_id: None,
+        use_whitelist_voting: Some(false),
+        use_whitelist_application: Some(false),
+        voting_wl_list_id: None,
+        application_wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -347,7 +363,8 @@ fn test_review_application() {
         &token_contract.address,
         &project_contract.address,
         &list_contract.address,
-        &1,
+        &Some(1),
+        &None,
         &None,
         &None,
         &None,
@@ -388,6 +405,8 @@ Test case:
 #[should_panic]
 fn test_whitelist_applicant() {
     let env = Env::default();
+    env.budget().reset_unlimited();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -396,7 +415,7 @@ fn test_whitelist_applicant() {
     let list_contract = deploy_list_contract(&env, &admin);
     let projects = generate_fake_project(&env, &project_contract, 5);
 
-    let wl_list = list_contract.create_list(&admin, &String::from_str(&env, "wl"), &list_contract::RegistrationStatus::Approved, &None, &None, &None, &None);
+    let application_wl_list = list_contract.create_list(&admin, &String::from_str(&env, "application_wl"), &list_contract::RegistrationStatus::Approved, &None, &None, &None, &None);
 
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
@@ -413,8 +432,10 @@ fn test_whitelist_applicant() {
         application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
         expected_amount: 5,
         admins: admins.clone(),
-        use_whitelist: Some(true),
-        wl_list_id: Some(wl_list.id),
+        use_whitelist_voting: Some(true),
+        use_whitelist_application: Some(true),
+        voting_wl_list_id: Some(1),
+        application_wl_list_id: Some(application_wl_list.id),
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -433,7 +454,8 @@ fn test_whitelist_applicant() {
         &token_contract.address,
         &project_contract.address,
         &list_contract.address,
-        &1,
+        &Some(1),
+        &Some(2),
         &None,
         &None,
         &None,
@@ -454,12 +476,14 @@ Test case:
 1. Create a round
 2. Apply to the round
 3. Review the application
-4. Vote for the project using whitelist
+4. Vote for the project using unwhitelisted voter
+5. Vote tx should panic
 */
 #[test]
 #[should_panic]
-fn test_whitelist_voters() {
+fn test_unwhitelisted_voters_should_panic() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -467,8 +491,8 @@ fn test_whitelist_voters() {
     let project_contract = deploy_registry_contract(&env, &admin);
     let list_contract = deploy_list_contract(&env, &admin);
     let projects = generate_fake_project(&env, &project_contract, 5);
-    let wl_list = list_contract.create_list(&admin, &String::from_str(&env, "wl"), &list_contract::RegistrationStatus::Approved, &None, &None, &None, &None);
-
+    // let application_wl_list = list_contract.create_list(&admin, &String::from_str(&env, "application_wl"), &list_contract::RegistrationStatus::Approved, &None, &None, &None, &None);
+    
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
@@ -480,12 +504,14 @@ fn test_whitelist_voters() {
         voting_start_ms: get_ledger_second_as_millis(&env),
         voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
         application_start_ms: Some(get_ledger_second_as_millis(&env)),
-        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
+        application_end_ms: Some(get_ledger_second_as_millis(&env)),
         expected_amount: 5,
         admins: admins.clone(),
-        use_whitelist: Some(true),
-        wl_list_id: Some(wl_list.id),
-        num_picks_per_voter: Some(2),
+        use_whitelist_voting: Some(true),
+        use_whitelist_application: Some(false),
+        voting_wl_list_id: Some(1),
+        application_wl_list_id: None,
+        num_picks_per_voter: Some(1),
         max_participants: Some(10),
         allow_applications: true,
         owner: admin.clone(),
@@ -503,21 +529,28 @@ fn test_whitelist_voters() {
         &token_contract.address,
         &project_contract.address,
         &list_contract.address,
-        &1,
+        &Some(1), // use kyc list that was created with contract
+        &None,
         &None,
         &None,
         &None,
     );
 
     let created_round = round.create_round(&admin, &round_detail);
-    let project_id = 1;
-    let applicant = Address::generate(&env);
-
-    list_contract.register_batch(&applicant, &wl_list.id, &None, &None);
+    // let project_id = 1;
+    // let applicant = Address::generate(&env);
+    // list_contract.register_batch(&applicant, &application_wl_list.id, &None, &None);
 
     round.apply_to_round(
         &created_round.id,
         &projects.get(0).unwrap().owner,
+        &None,
+        &None,
+        &None,
+    );
+    round.apply_to_round(
+        &created_round.id,
+        &projects.get(1).unwrap().owner,
         &None,
         &None,
         &None,
@@ -530,16 +563,141 @@ fn test_whitelist_voters() {
         &ApplicationStatus::Approved,
         &None,
     );
+    round.review_application(
+        &created_round.id,
+        &admin,
+        &projects.get(1).unwrap().owner,
+        &ApplicationStatus::Approved,
+        &None,
+    );
 
     let voter = Address::generate(&env);
+    let pair_to_vote = round.get_pairs_to_vote(&created_round.id);
+    // list_contract.register_batch(&voter, &1, &Some(String::from_str(&env, "Test")), &None);
     let mut picks: Vec<PickedPair> = Vec::new(&env);
     picks.push_back(PickedPair {
-        pair_id: 0,
-        voted_project_id: project_id,
+        pair_id: pair_to_vote.get(0).unwrap().pair_id,
+        voted_project_id: pair_to_vote.get(0).unwrap().projects.get(0).unwrap(),
     });
     round.vote(&created_round.id, &voter, &picks);
 
-    let whitelisted = list_contract.is_registered(&Some(wl_list.id), &applicant, &Some(list_contract::RegistrationStatus::Approved));
+    let whitelisted = list_contract.is_registered(&Some(1), &voter, &Some(list_contract::RegistrationStatus::Approved));
+
+    assert_eq!(whitelisted, true);
+}
+
+
+/*
+Test case:
+1. Create a round
+2. Apply to the round
+3. Review the application
+4. whitelist the voter
+5. Vote for the project using whitelisted voter
+*/
+#[test]
+fn test_whitelisted_voter_can_vote() {
+    extern  crate std;
+    let env = Env::default();
+    env.budget().reset_unlimited();
+    env.mock_all_auths();
+    let admin = Address::generate(&env);
+    let round = deploy_contract(&env, &admin);
+    let token_contract = create_token(&env, &admin).0;
+    let project_contract = deploy_registry_contract(&env, &admin);
+    let list_contract = deploy_list_contract(&env, &admin);
+    let projects = generate_fake_project(&env, &project_contract, 5);
+    // let application_wl_list = list_contract.create_list(&admin, &String::from_str(&env, "application_wl"), &list_contract::RegistrationStatus::Approved, &None, &None, &None, &None);
+    
+    let mut admins: Vec<Address> = Vec::new(&env);
+    admins.push_back(admin.clone());
+
+    let round_detail = &CreateRoundParams {
+        description: String::from_str(&env, "description"),
+        name: String::from_str(&env, "name"),
+        is_video_required: false,
+        contacts: Vec::new(&env),
+        voting_start_ms: get_ledger_second_as_millis(&env),
+        voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
+        application_start_ms: Some(get_ledger_second_as_millis(&env)),
+        application_end_ms: Some(get_ledger_second_as_millis(&env)),
+        expected_amount: 5,
+        admins: admins.clone(),
+        use_whitelist_voting: Some(true),
+        use_whitelist_application: Some(false),
+        voting_wl_list_id: Some(1),
+        application_wl_list_id: None,
+        num_picks_per_voter: Some(1),
+        max_participants: Some(10),
+        allow_applications: true,
+        owner: admin.clone(),
+        cooldown_period_ms: None,
+        compliance_req_desc: String::from_str(&env, ""),
+        compliance_period_ms: None,
+        allow_remaining_dist: false,
+        remaining_dist_address: admin.clone(),
+        referrer_fee_basis_points: None,
+        use_vault: None,
+    };
+
+    round.initialize(
+        &admin,
+        &token_contract.address,
+        &project_contract.address,
+        &list_contract.address,
+        &Some(1), // use kyc list that was created with contract
+        &None,
+        &None,
+        &None,
+        &None,
+    );
+
+    let created_round = round.create_round(&admin, &round_detail);
+    // let project_id = 1;
+    // let applicant = Address::generate(&env);
+    // list_contract.register_batch(&applicant, &application_wl_list.id, &None, &None);
+
+    round.apply_to_round(
+        &created_round.id,
+        &projects.get(0).unwrap().owner,
+        &None,
+        &None,
+        &None,
+    );
+    round.apply_to_round(
+        &created_round.id,
+        &projects.get(1).unwrap().owner,
+        &None,
+        &None,
+        &None,
+    );
+
+    round.review_application(
+        &created_round.id,
+        &admin,
+        &projects.get(0).unwrap().owner,
+        &ApplicationStatus::Approved,
+        &None,
+    );
+    round.review_application(
+        &created_round.id,
+        &admin,
+        &projects.get(1).unwrap().owner,
+        &ApplicationStatus::Approved,
+        &None,
+    );
+
+    let voter = Address::generate(&env);
+    let pair_to_vote = round.get_pairs_to_vote(&created_round.id);
+    list_contract.register_batch(&voter, &1, &Some(String::from_str(&env, "Test")), &None);
+    let mut picks: Vec<PickedPair> = Vec::new(&env);
+    picks.push_back(PickedPair {
+        pair_id: pair_to_vote.get(0).unwrap().pair_id,
+        voted_project_id: pair_to_vote.get(0).unwrap().projects.get(0).unwrap(),
+    });
+    round.vote(&created_round.id, &voter, &picks);
+
+    let whitelisted = list_contract.is_registered(&Some(1), &voter, &Some(list_contract::RegistrationStatus::Approved));
 
     assert_eq!(whitelisted, true);
 }
@@ -555,6 +713,7 @@ Test case:
 #[should_panic]
 fn test_blacklist() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -576,8 +735,10 @@ fn test_blacklist() {
         application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
         expected_amount: 5,
         admins: admins.clone(),
-        use_whitelist: Some(false),
-        wl_list_id: None,
+        use_whitelist_voting: Some(false),
+        use_whitelist_application: Some(false),
+        voting_wl_list_id: None,
+        application_wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -596,7 +757,8 @@ fn test_blacklist() {
         &token_contract.address,
         &project_contract.address,
         &list_contract.address,
-        &1,
+        &Some(1),
+        &None,
         &None,
         &None,
         &None,
@@ -662,6 +824,7 @@ Test case:
 #[test]
 fn test_voting() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -683,8 +846,10 @@ fn test_voting() {
         application_end_ms: Some(get_ledger_second_as_millis(&env)),
         expected_amount: 5,
         admins: admins.clone(),
-        use_whitelist: Some(false),
-        wl_list_id: None,
+        use_whitelist_voting: Some(false),
+        use_whitelist_application: Some(false),
+        voting_wl_list_id: None,
+        application_wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -703,7 +868,8 @@ fn test_voting() {
         &token_contract.address,
         &project_contract.address,
         &list_contract.address,
-        &1,
+        &Some(1),
+        &None,
         &None,
         &None,
         &None,
@@ -816,6 +982,7 @@ Test case:
 #[test]
 fn test_add_remove_admin() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let roby = Address::generate(&env);
@@ -837,8 +1004,10 @@ fn test_add_remove_admin() {
         application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
         expected_amount: 5,
         admins: admins.clone(),
-        use_whitelist: Some(false),
-        wl_list_id: None,
+        use_whitelist_voting: Some(false),
+        use_whitelist_application: Some(false),
+        voting_wl_list_id: None,
+        application_wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -857,7 +1026,8 @@ fn test_add_remove_admin() {
         &token_contract.address,
         &project_contract.address,
         &list_contract.address,
-        &1,
+        &Some(1),
+        &None,
         &None,
         &None,
         &None,
@@ -893,6 +1063,7 @@ Test case:
 #[test]
 fn test_voting_deposit_and_payout() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -916,8 +1087,10 @@ fn test_voting_deposit_and_payout() {
         application_end_ms: Some(get_ledger_second_as_millis(&env) + 1000),
         expected_amount: 10 * deposit,
         admins: admins.clone(),
-        use_whitelist: Some(false),
-        wl_list_id: None,
+        use_whitelist_voting: Some(false),
+        use_whitelist_application: Some(false),
+        voting_wl_list_id: None,
+        application_wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -936,7 +1109,8 @@ fn test_voting_deposit_and_payout() {
         &token_contract.address,
         &project_contract.address,
         &list_contract.address,
-        &1,
+        &Some(1),
+        &None,
         &None,
         &None,
         &None,
@@ -1048,6 +1222,7 @@ fn test_voting_deposit_and_payout() {
 #[test]
 fn test_get_all_pairs() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -1069,8 +1244,10 @@ fn test_get_all_pairs() {
         application_end_ms: None,
         expected_amount: 5,
         admins: admins.clone(),
-        use_whitelist: Some(false),
-        wl_list_id: None,
+        use_whitelist_voting: Some(false),
+        use_whitelist_application: Some(false),
+        voting_wl_list_id: None,
+        application_wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: false,
@@ -1089,7 +1266,8 @@ fn test_get_all_pairs() {
         &token_contract.address,
         &project_contract.address,
         &list_contract.address,
-        &1,
+        &Some(1),
+        &None,
         &None,
         &None,
         &None,
@@ -1150,6 +1328,7 @@ Test case:
 #[test]
 fn test_change_number_of_votes() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -1170,8 +1349,10 @@ fn test_change_number_of_votes() {
         application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
         expected_amount: 5,
         admins: admins.clone(),
-        use_whitelist: Some(false),
-        wl_list_id: None,
+        use_whitelist_voting: Some(false),
+        use_whitelist_application: Some(false),
+        voting_wl_list_id: None,
+        application_wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -1190,7 +1371,8 @@ fn test_change_number_of_votes() {
         &token_contract.address,
         &project_contract.address,
         &list_contract.address,
-        &1,
+        &Some(1),
+        &None,
         &None,
         &None,
         &None,
@@ -1212,6 +1394,7 @@ Test case:
 #[test]
 fn test_change_amount() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -1232,8 +1415,10 @@ fn test_change_amount() {
         application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
         expected_amount: 5,
         admins: admins.clone(),
-        use_whitelist: Some(false),
-        wl_list_id: None,
+        use_whitelist_voting: Some(false),
+        use_whitelist_application: Some(false),
+        voting_wl_list_id: None,
+        application_wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -1252,7 +1437,8 @@ fn test_change_amount() {
         &token_contract.address,
         &project_contract.address,
         &list_contract.address,
-        &1,
+        &Some(1),
+        &None,
         &None,
         &None,
         &None,
@@ -1274,6 +1460,7 @@ Test case:
 #[test]
 fn test_set_voting_period() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -1294,8 +1481,10 @@ fn test_set_voting_period() {
         application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
         expected_amount: 5,
         admins: admins.clone(),
-        use_whitelist: Some(false),
-        wl_list_id: None,
+        use_whitelist_voting: Some(false),
+        use_whitelist_application: Some(false),
+        voting_wl_list_id: None,
+        application_wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -1314,7 +1503,8 @@ fn test_set_voting_period() {
         &token_contract.address,
         &project_contract.address,
         &list_contract.address,
-        &1,
+        &Some(1),
+        &None,
         &None,
         &None,
         &None,
@@ -1338,6 +1528,7 @@ Test case:
 #[test]
 fn test_application_period() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -1358,8 +1549,10 @@ fn test_application_period() {
         application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
         expected_amount: 5,
         admins: admins.clone(),
-        use_whitelist: Some(false),
-        wl_list_id: None,
+        use_whitelist_voting: Some(false),
+        use_whitelist_application: Some(false),
+        voting_wl_list_id: None,
+        application_wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -1378,7 +1571,8 @@ fn test_application_period() {
         &token_contract.address,
         &project_contract.address,
         &list_contract.address,
-        &1,
+        &Some(1),
+        &None,
         &None,
         &None,
         &None,
@@ -1414,6 +1608,7 @@ Test case:
 #[test]
 fn test_update_round() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -1434,8 +1629,10 @@ fn test_update_round() {
         application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
         expected_amount: 5,
         admins: admins.clone(),
-        use_whitelist: Some(false),
-        wl_list_id: None,
+        use_whitelist_voting: Some(false),
+        use_whitelist_application: Some(false),
+        voting_wl_list_id: None,
+        application_wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -1454,7 +1651,8 @@ fn test_update_round() {
         &token_contract.address,
         &project_contract.address,
         &list_contract.address,
-        &1,
+        &Some(1),
+        &None,
         &None,
         &None,
         &None,
@@ -1494,6 +1692,7 @@ Test case:
 #[test]
 fn test_change_allow_applications() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -1514,8 +1713,10 @@ fn test_change_allow_applications() {
         application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
         expected_amount: 5,
         admins: admins.clone(),
-        use_whitelist: Some(false),
-        wl_list_id: None,
+        use_whitelist_voting: Some(false),
+        use_whitelist_application: Some(false),
+        voting_wl_list_id: None,
+        application_wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -1534,7 +1735,8 @@ fn test_change_allow_applications() {
         &token_contract.address,
         &project_contract.address,
         &list_contract.address,
-        &1,
+        &Some(1),
+        &None,
         &None,
         &None,
         &None,
@@ -1564,6 +1766,7 @@ Test case:
 #[test]
 fn test_unapply_from_round() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -1585,8 +1788,10 @@ fn test_unapply_from_round() {
         application_end_ms: Some(get_ledger_second_as_millis(&env)),
         expected_amount: 10 * 10u128.pow(7),
         admins: admins.clone(),
-        use_whitelist: Some(false),
-        wl_list_id: None,
+        use_whitelist_voting: Some(false),
+        use_whitelist_application: Some(false),
+        voting_wl_list_id: None,
+        application_wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -1605,7 +1810,8 @@ fn test_unapply_from_round() {
         &token_contract.address,
         &project_contract.address,
         &list_contract.address,
-        &1,
+        &Some(1),
+        &None,
         &None,
         &None,
         &None,
@@ -1634,6 +1840,7 @@ Test case:
 #[test]
 fn test_apply_to_round_batch() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
@@ -1655,8 +1862,10 @@ fn test_apply_to_round_batch() {
         application_end_ms: Some(get_ledger_second_as_millis(&env)),
         expected_amount: 10 * 10u128.pow(7),
         admins: admins.clone(),
-        use_whitelist: Some(false),
-        wl_list_id: None,
+        use_whitelist_voting: Some(false),
+        use_whitelist_application: Some(false),
+        voting_wl_list_id: None,
+        application_wl_list_id: None,
         num_picks_per_voter: Some(2),
         max_participants: Some(10),
         allow_applications: true,
@@ -1675,7 +1884,8 @@ fn test_apply_to_round_batch() {
         &token_contract.address,
         &project_contract.address,
         &list_contract.address,
-        &1,
+        &Some(1),
+        &None,
         &None,
         &None,
         &None,
@@ -1700,6 +1910,7 @@ Test case:
 #[test]
 fn test_change_round_contract_config() {
     let env = Env::default();
+    env.budget().reset_unlimited();
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let treasury = Address::generate(&env);
@@ -1713,7 +1924,8 @@ fn test_change_round_contract_config() {
         &token_contract.address,
         &project_contract.address,
         &list_contract.address,
-        &1,
+        &Some(1),
+        &None,
         &None,
         &None,
         &None,

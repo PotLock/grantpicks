@@ -122,7 +122,7 @@ pub fn validate_application_period(env: &Env, round: &RoundDetail) {
 pub fn validate_voting_not_started(env: &Env, round: &RoundDetail) {
     let current_time = get_ledger_second_as_millis(env);
 
-    if current_time > round.voting_end_ms {
+    if current_time > round.voting_start_ms {
         panic_with_error!(env, VoteError::VotingAlreadyStarted);
     }
 }

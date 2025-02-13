@@ -601,7 +601,7 @@ impl IsRound for RoundContract {
         validate_owner_or_admin(env, &admin, &round);
 
         voters.iter().for_each(|voter| {
-            validate_not_blacklist(env, round_id, &voter);
+            validate_blacklist(env, round_id, &voter); // validate that user is not already blacklisted
             add_to_blacklist(env, round_id, voter.clone());
             log_update_user_flag(env, round.id, voter.clone(), true);
         });
@@ -1106,7 +1106,7 @@ impl IsRound for RoundContract {
             let uproject = project.unwrap();
 
             if round.is_video_required {
-                if uproject.has_video {
+                if !uproject.has_video {
                     panic_with_error!(env, ApplicationError::VideoUrlNotValid);
                 }
             }

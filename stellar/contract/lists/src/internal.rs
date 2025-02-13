@@ -386,6 +386,10 @@ impl ListsTrait for ListsContract {
         let ulist = list.unwrap();
         let admins = read_list_admins(env, list_id);
         let is_admin_or_owner = ulist.owner == submitter || admins.contains(&submitter);
+        if ulist.admin_only_registration && !is_admin_or_owner {
+            panic_with_error!(env, Error::AdminOrOwnerOnly);
+        }
+
         if !is_admin_or_owner {
             if notes.is_none() {
                 panic_with_error!(env, Error::NoteRequired);

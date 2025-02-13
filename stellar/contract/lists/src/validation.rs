@@ -1,6 +1,6 @@
 use soroban_sdk::{panic_with_error, Address, Env, String};
 
-use crate::{error::Error, lists_writer::read_lists_number, upvotes_writer::read_list_upvotes};
+use crate::{error::Error, lists_writer::{ read_lists_number, get_lists_registered_by}, upvotes_writer::read_list_upvotes};
 
 pub fn validate_name(env: &Env,name: &String) {
     if name.is_empty() {
@@ -41,5 +41,12 @@ pub fn validate_has_upvoted_list(env: &Env, voter: &Address, list_id: u128) {
     
     if !upvotes.contains(voter) {
         panic_with_error!(env, Error::NotUpvoted);
+    }
+}
+
+pub fn validate_no_existing_registration(env: &Env, list_id: u128, registrant: &Address) {
+    let registrant_lists = get_lists_registered_by(env, registrant);
+    if registrant_lists.contains(list_id) {
+        panic_with_error!(env, Error::AlreadyRegistered);
     }
 }

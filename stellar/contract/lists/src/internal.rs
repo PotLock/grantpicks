@@ -20,8 +20,7 @@ use crate::{
         add_upvote_to_list, add_upvoted_list_to_user, clear_upvotes_for_list, read_list_upvotes,
         read_user_upvoted_lists, remove_upvote_from_list, remove_upvoted_list_from_user,
     }, utils::unwrap_or_blank, validation::{
-        validate_cover_image_url, validate_description,
-        validate_has_upvoted_list, validate_name, validate_upvotes_status, validate_valid_list_id,
+        validate_cover_image_url, validate_description, validate_has_upvoted_list, validate_name, validate_no_existing_registration, validate_upvotes_status, validate_valid_list_id
     }
 };
 
@@ -408,6 +407,7 @@ impl ListsTrait for ListsContract {
         let notes = notes.clone().unwrap_or_else(|| String::from_str(env, ""));
         if is_admin_or_owner {
             for registration in registrations.unwrap() {
+                validate_no_existing_registration(env, list_id, &registration.registrant);
                 let registration_id = increment_registration_number(env);
 
                 let internal_registration = RegistrationInternal {
@@ -445,6 +445,7 @@ impl ListsTrait for ListsContract {
                 log_create_registration_event(env, list_id, registration_id, registration_external);
             }
         } else {
+            validate_no_existing_registration(env, list_id, &submitter);
             let registration_id = increment_registration_number(env);
             let internal_registration = RegistrationInternal {
                 id: registration_id,

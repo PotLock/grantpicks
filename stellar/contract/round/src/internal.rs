@@ -691,7 +691,7 @@ impl IsRound for RoundContract {
 
                 if round.compliance_period_ms.is_some() {
                    let is_kcy_passed = list_client.is_registered(&config.voting_wl_list_id, &payout.recipient_id, &Some(RegistrationStatus::Approved));
-                    if !is_kcy_passed {
+                    if !is_kcy_passed && round.compliance_end_ms.unwrap_or(0) < get_ledger_second_as_millis(env){
                         payout.paid_at_ms = Some(get_ledger_second_as_millis(env));
                         write_payout_info(env, payout_id, &payout);
                         return;

@@ -546,6 +546,8 @@ impl IsRound for RoundContract {
         let projects = read_approved_projects(env, round_id);
         let mut voting_count = read_voting_count(env, round_id);
         let mut voting_results = read_voting_results(env, round_id);
+
+        let mut seen_pairs: Vec<u32> = Vec::new(env);
   
         picks.iter().for_each(|picked_pair| {
             let picked_index = picked_pair.pair_id;
@@ -553,6 +555,11 @@ impl IsRound for RoundContract {
             if picked_index >= total_available_pairs {
                 panic_with_error!(env, Error::IndexOutOfBound);
             }
+            
+            if seen_pairs.contains(picked_index) {
+                panic_with_error!(env, VoteError::DuplicatePick);
+            }
+            seen_pairs.push_back(picked_pair.pair_id);
 
             let pair = get_pair_by_index(env, total_available_pairs, picked_index, &projects);
             let is_project_in_pair = pair.projects.contains(picked_pair.voted_project_id);

@@ -37,29 +37,31 @@ pub fn is_blacklisted(env: &Env, round_id: u128, voter: Address) -> bool {
     }
 }
 
-pub fn read_voted_rounds(env: &Env) -> Map<Address, Vec<u128>> {
-    let key = ContractKey::VotedRoundIds;
-    match get_storage(env).get(&key) {
+
+pub fn get_voted_rounds_for_voter(env: &Env, voter: Address) -> Vec<u128> {
+    read_voter_rounds(env, &voter)
+}
+
+pub fn read_voter_rounds(env: &Env, voter: &Address) -> Vec<u128> {
+    let key = ContractKey::VotedRoundIds(voter.clone());
+    match env.storage().persistent().get(&key) {
         Some(rounds) => rounds,
-        None => Map::new(env),
+        None => Vec::new(env),
     }
 }
 
-pub fn write_voted_rounds(env: &Env, rounds: &Map<Address, Vec<u128>>) {
-    let key = ContractKey::VotedRoundIds;
-    get_storage(env).set(&key, rounds);
+pub fn write_voter_rounds(env: &Env, voter: &Address, rounds: &Vec<u128>) {
+    let key = ContractKey::VotedRoundIds(voter.clone());
+    env.storage().persistent().set(&key, rounds);
 }
 
 pub fn add_voted_round(env: &Env, voter: Address, round_id: u128) {
-    let mut rounds = read_voted_rounds(env);
-    let voter_rounds = rounds.get(voter.clone()).unwrap_or(Vec::new(env));
-    let mut voter_rounds = voter_rounds.clone();
-    voter_rounds.push_back(round_id);
-    rounds.set(voter, voter_rounds);
-    write_voted_rounds(env, &rounds);
+    let mut rounds = read_voter_rounds(env, &voter);
+    rounds.push_back(round_id);
+    write_voter_rounds(env, &voter, &rounds);
 }
 
-pub fn get_voted_rounds_for_voter(env: &Env, voter: Address) -> Vec<u128> {
-    let rounds = read_voted_rounds(env);
-    rounds.get(voter).unwrap_or(Vec::new(env))
+pub fn has_voted(env: &Env, voter: &Address, round_id: u128) -> bool {
+    let rounds = read_voter_rounds(env, voter);
+    rounds.contains(round_id)
 }

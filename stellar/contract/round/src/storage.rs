@@ -1,4 +1,4 @@
-use soroban_sdk::Env;
+use soroban_sdk::{Address, Env};
 
 use crate::{deposit_writer::read_deposit_from_round, payout_writer::read_payouts, storage_key::ContractKey};
 
@@ -12,7 +12,6 @@ pub fn extend_instance(env: &Env) {
     extend_persistent(env, &ContractKey::NextPayoutId);
     extend_persistent(env, &ContractKey::NextDepositId);
     extend_persistent(env, &ContractKey::ProjectPayoutIds);
-    extend_persistent(env, &ContractKey::VotedRoundIds);
 }
 
 pub fn extend_round(env: &Env, round_id: u128) {
@@ -47,6 +46,10 @@ pub fn extend_payout(env: &Env, payout_id: u32) {
 
 pub fn extend_deposit(env: &Env, deposit_id: u32) {
     extend_persistent(env, &ContractKey::DepositInfo(deposit_id as u128));
+}
+
+pub fn extend_voter_storage(env: &Env, voter: &Address) {
+    extend_persistent(env, &ContractKey::VotedRoundIds(voter.clone()));
 }
 
 pub fn extend_persistent(env: &Env, key: &ContractKey) {

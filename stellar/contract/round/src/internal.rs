@@ -455,8 +455,8 @@ impl IsRound for RoundContract {
             }
         }
 
-        let token_contract = read_config(env).token_contract;
-        let token_client = TokenClient::new(env, &token_contract);
+        let config = read_config(env);
+        let token_client = TokenClient::new(env, &config.token_contract);
 
         let balance = token_client.balance(&caller);
         let amount_i128: i128 = amount.try_into().expect("Conversion failed");
@@ -467,7 +467,12 @@ impl IsRound for RoundContract {
         }
 
         let protocol_fee = calculate_protocol_fee(env, amount).unwrap_or(0);
-        let referrer_fee = round.calculate_referrer_fee(env, amount).unwrap_or(0);
+
+        let referrer_fee = if referrer_id.is_some() {
+            round.calculate_referrer_fee(env, amount).unwrap_or(0)
+        } else {
+            0
+        };
 
         let deposit_id = increment_deposit_id(env);
 
@@ -491,7 +496,7 @@ impl IsRound for RoundContract {
             &deposit.total_amount,
         );
 
-        let fee_address = read_config(env).protocol_fee_recipient;
+        let fee_address = config.protocol_fee_recipient;
         if deposit.protocol_fee > 0 {
             token_client.transfer(
                 &env.current_contract_address(),
@@ -501,12 +506,14 @@ impl IsRound for RoundContract {
         }
 
         if referrer_id.is_some() {
-            let referrer = referrer_id.unwrap();
-            token_client.transfer(
-                &env.current_contract_address(),
-                &referrer,
-                &deposit.referrer_fee,
-            );
+            if deposit.referrer_fee > 0 {
+                let referrer = referrer_id.unwrap();
+                token_client.transfer(
+                    &env.current_contract_address(),
+                    &referrer,
+                    &deposit.referrer_fee,
+                );
+            }
         }
 
         let mut updated_round = round.clone();

@@ -31,6 +31,18 @@ pub fn validate_round_detail(env: &Env, round_detail: &CreateRoundParams) {
     if round_detail.contacts.len() >= 10 {
         panic_with_error!(env, RoundError::ContactMustBeLessThanTen);
     }
+
+    if round_detail.use_whitelist_voting.unwrap_or(false) {
+        if round_detail.voting_wl_list_id.is_none() {
+            panic_with_error!(env, RoundError::WhitelistIdNotSet)
+        }
+    }
+
+    if round_detail.use_whitelist_application.unwrap_or(false) {
+        if round_detail.application_wl_list_id.is_none() {
+            panic_with_error!(env, RoundError::WhitelistIdNotSet)
+        }
+    }
 }
 
 pub fn validate_round_detail_update(env: &Env, round_detail: &UpdateRoundParams) {

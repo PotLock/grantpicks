@@ -67,6 +67,7 @@ pub enum VoteError {
     EmptyVote = 24,
     TooManyVotes = 25,
     ProjectNotInPair = 33,
+    TooManyVotesForAvailablePairs = 60,
 }
 
 #[allow(clippy::module_name_repetitions)]

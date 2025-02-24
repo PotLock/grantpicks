@@ -736,6 +736,10 @@ impl IsRound for RoundContract {
         let current_ms = get_ledger_second_as_millis(env);
 
         if round.voting_start_ms <= current_ms && current_ms <= round.voting_end_ms {
+            let is_blacklisted = is_blacklisted(env, round_id, voter.clone());
+            if is_blacklisted {
+                return false;
+            }
             if round.use_whitelist_voting {
                 if round.voting_wl_list_id.is_none() {
                     return true;
@@ -745,11 +749,6 @@ impl IsRound for RoundContract {
                 let list_client = ListsClient::new(env, &list_contract);
                 let is_whitelisted = list_client.is_registered(&Some(list_id), &voter, &Some(RegistrationStatus::Approved));
                 return is_whitelisted;
-            }
-
-            let is_blacklisted = is_blacklisted(env, round_id, voter.clone());
-            if is_blacklisted {
-                return false;
             }
 
             return true;

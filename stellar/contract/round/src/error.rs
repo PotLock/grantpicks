@@ -51,6 +51,10 @@ pub enum RoundError {
     RoundDoesNotUseVault = 53,
     ApplicationPeriodNotSet = 55,
     CoolDownPeriodNotComplete = 56,
+    VotingPeriodTooShort = 61,
+    ApplicationPeriodTooShort = 62,
+    ApplicationStartInPast = 63,
+    VotingStartInPast = 64,
 }
 
 #[allow(clippy::module_name_repetitions)]

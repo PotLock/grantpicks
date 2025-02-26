@@ -84,4 +84,5 @@ pub enum ApplicationError {
     VideoUrlNotValid = 42,
     ProjectAlreadyApplied = 43,
     ApplicationNotAllowed = 54,
+    RedundantStatus = 55,
 }

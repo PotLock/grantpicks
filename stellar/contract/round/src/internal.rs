@@ -399,6 +399,9 @@ impl IsRound for RoundContract {
         }
 
         let mut updated_application = application.unwrap();
+        if updated_application.status == status {
+            panic_with_error!(env, ApplicationError::RedundantStatus);
+        }
         updated_application.status = status;
 
         if note.is_some() {
@@ -411,14 +414,17 @@ impl IsRound for RoundContract {
         updated_application.updated_ms = Some(get_ledger_second_as_millis(env));
 
         let mut approved_projects = read_approved_projects(env, round_id);
+        let is_already_approved = is_project_approved(env, round_id, updated_application.project_id);
         if updated_application.status == ApplicationStatus::Approved {
             validate_max_participant(env, &round);
+            
+            if !is_already_approved {
+                approved_projects.push_back(updated_application.project_id);
+            }
 
-            approved_projects.push_back(updated_application.project_id);
         } else {
-            let is_approved = is_project_approved(env, round_id, updated_application.project_id);
 
-            if is_approved {
+            if is_already_approved {
                 let index = approved_projects
                     .first_index_of(updated_application.project_id)
                     .unwrap();

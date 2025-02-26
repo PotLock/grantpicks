@@ -25,6 +25,9 @@ use crate::{
     }
 };
 
+const MAX_PROTOCOL_FEE_BASIS_POINTS: u32 = 1_000; // 10% max protocol fee
+const MAX_REFERRER_FEE_BASIS_POINTS: u32 = 500; // 5% max referrer fee
+
 #[contract]
 pub struct RoundContract;
 
@@ -60,6 +63,12 @@ impl RoundCreator for RoundContract {
             assert!(valid_list.id == application_wl_list_id.unwrap(), "Invalid application whitelist list id");
         }
         
+        // Validate protocol fee
+        if let Some(fee) = protocol_fee_basis_points {
+            if fee > MAX_PROTOCOL_FEE_BASIS_POINTS {
+                panic_with_error!(env, Error::ProtocolFeeTooHigh);
+            }
+        }
 
         let config = Config {
             owner: caller.clone(),
@@ -86,6 +95,13 @@ impl RoundCreator for RoundContract {
         }
 
         validate_round_detail(env, &round_detail);
+
+        // Validate referrer fee
+        if let Some(fee) = round_detail.referrer_fee_basis_points {
+            if fee > MAX_REFERRER_FEE_BASIS_POINTS {
+                panic_with_error!(env, Error::ReferrerFeeTooHigh);
+            }
+        }
 
         let mut num_picks_per_voter = 2;
 
@@ -193,12 +209,15 @@ impl RoundCreator for RoundContract {
 
         let mut updated_config = config.clone();
 
-        if protocol_fee_recipient.is_some() {
-            updated_config.protocol_fee_recipient = protocol_fee_recipient.unwrap();
+        if let Some(fee) = protocol_fee_basis_points {
+            if fee > MAX_PROTOCOL_FEE_BASIS_POINTS {
+                panic_with_error!(env, Error::ProtocolFeeTooHigh);
+            }
+            updated_config.protocol_fee_basis_points = fee;
         }
 
-        if protocol_fee_basis_points.is_some() {
-            updated_config.protocol_fee_basis_points = protocol_fee_basis_points.unwrap();
+        if protocol_fee_recipient.is_some() {
+            updated_config.protocol_fee_recipient = protocol_fee_recipient.unwrap();
         }
 
         write_config(env, &updated_config);

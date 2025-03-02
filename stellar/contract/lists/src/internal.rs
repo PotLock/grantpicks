@@ -580,36 +580,39 @@ impl ListsTrait for ListsContract {
                 });
             }
           
+            extend_list(env, ulist.id);
+        } else if registration_id.is_some() {
+            let uregistration_id = registration_id.unwrap();
+            let registration = get_registration_by_id(env, uregistration_id);
 
-          extend_list(env, ulist.id);
-        } else {
-            let registrant_id = submitter.clone();
-            let registration_ids = get_user_registration_ids_of(env, &registrant_id);
-            let list_registered = get_lists_registered_by(env, &registrant_id);
+            if registration.is_none() {
+                panic_with_error!(env, Error::RegistrationNotFound);
+            }
 
-            registration_ids.iter().for_each(|registration_id| {
-                let registration = get_registration_by_id(env, registration_id);
-                if registration.is_some() {
-                    let uregistration = registration.unwrap();
-                    if list_registered.contains(uregistration.list_id) {
-                        remove_registration(env, registration_id);
-                        remove_list_to_registrant_lists(
-                            env,
-                            uregistration.registrant_id.clone(),
-                            uregistration.list_id,
-                        );
-                        remove_registration_to_list(env, uregistration.list_id, registration_id);
-                        remove_registration_id_to_user(
-                            env,
-                            uregistration.registrant_id,
-                            registration_id,
-                        );
-                        log_delete_registration_event(env, uregistration.list_id, registration_id);
-                    }
+            let uregistration = registration.unwrap();
+            
+            if uregistration.registrant_id != submitter && uregistration.registered_by != submitter {
+                let ulist = get_list_by_id(env, uregistration.list_id).unwrap();
+                let admins = read_list_admins(env, uregistration.list_id);
+                let is_admin_or_owner = ulist.owner == submitter || admins.contains(&submitter);
+                
+                if !is_admin_or_owner {
+                    panic_with_error!(env, Error::AdminOrOwnerOnly);
                 }
-            });
-        }
+            }
 
+            remove_registration(env, uregistration_id);
+            remove_list_to_registrant_lists(
+                env,
+                uregistration.registrant_id.clone(),
+                uregistration.list_id,
+            );
+            remove_registration_to_list(env, uregistration.list_id, uregistration_id);
+            remove_registration_id_to_user(env, uregistration.registrant_id, uregistration_id);
+            log_delete_registration_event(env, uregistration.list_id, uregistration_id);
+            
+            extend_list(env, uregistration.list_id);
+        }
         extend_instance(env);
     }
 

@@ -1668,20 +1668,20 @@ fn test_update_round() {
         voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
         application_start_ms: Some(get_ledger_second_as_millis(&env)),
         application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
-        expected_amount: 1000000,
-        use_whitelist: Some(false),
-        wl_list_id: None,
+        use_whitelist_voting: Some(false),
+        voting_wl_list_id: None,
+        application_wl_list_id: None,
         use_vault: None,
+        referrer_fee_basis_points: Some(500),
         num_picks_per_voter: Some(2),
         max_participants: Some(100),
-        allow_applications: true,
     };
 
     let updated_round = round.update_round(&admin, &created_round.id, &new_round_detail);
     assert!(created_round.name != updated_round.name);
     assert!(created_round.description != updated_round.description);
     assert!(created_round.max_participants != updated_round.max_participants);
-    assert!(created_round.expected_amount != updated_round.expected_amount);
+    // assert!(created_round.expected_amount != updated_round.expected_amount);
 }
 
 /*

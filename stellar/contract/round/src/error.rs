@@ -12,6 +12,7 @@ pub enum Error {
     SameOwner = 38,
     DataNotFound = 52,
     AlreadyInitialized = 57,
+    ReferrerFeeTooHigh = 72,
 }
 
 #[allow(clippy::module_name_repetitions)]
@@ -51,6 +52,7 @@ pub enum RoundError {
     RoundDoesNotUseVault = 53,
     ApplicationPeriodNotSet = 55,
     CoolDownPeriodNotComplete = 56,
+    CannotUpdateVaultAfterDeposits = 69,
 }
 
 #[allow(clippy::module_name_repetitions)]

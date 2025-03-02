@@ -28,6 +28,8 @@ use crate::{
 #[contract]
 pub struct RoundContract;
 
+const MAX_REFERRER_FEE_BASIS_POINTS: u32 = 500;
+
 #[contractimpl]
 impl RoundCreator for RoundContract {
     fn initialize(
@@ -1050,21 +1052,68 @@ impl IsRound for RoundContract {
         validate_owner_or_admin(env, &caller, &round);
         validate_round_detail_update(env, &round_detail);
 
-        round.allow_applications = round_detail.allow_applications;
-        round.application_end_ms = round_detail.application_end_ms;
-        round.application_start_ms = round_detail.application_start_ms;
-        round.contacts = round_detail.contacts;
-        round.expected_amount = round_detail.expected_amount;
-        round.description = round_detail.description;
-        round.max_participants = round_detail.max_participants.unwrap_or(10);
+        // Validate referrer fee if present
+        if let Some(fee) = round_detail.referrer_fee_basis_points {
+            if fee > MAX_REFERRER_FEE_BASIS_POINTS {
+                panic_with_error!(env, Error::ReferrerFeeTooHigh);
+            }
+        }
+
         round.name = round_detail.name;
-        round.voting_wl_list_id = round_detail.wl_list_id;
+        round.description = round_detail.description;
+        round.contacts = round_detail.contacts;
+        round.is_video_required = round_detail.is_video_required;
+        
+        round.voting_start_ms = round_detail.voting_start_ms;
+        round.voting_end_ms = round_detail.voting_end_ms;
+        round.application_start_ms = round_detail.application_start_ms;
+        round.application_end_ms = round_detail.application_end_ms;
+
+        if let Some(use_vault) = round_detail.use_vault {
+            // Only allow updating use_vault if no deposits have been made
+            if round.vault_total_deposits > 0 {
+                panic_with_error!(env, RoundError::CannotUpdateVaultAfterDeposits);
+            }
+            round.use_vault = Some(use_vault);
+        }
+
+        if let Some(max_participants) = round_detail.max_participants {
+            round.max_participants = max_participants;
+        }
+
+        if let Some(num_picks) = round_detail.num_picks_per_voter {
+            validate_pick_per_votes(env, num_picks);
+            round.num_picks_per_voter = num_picks;
+        }
+
+        if let Some(use_whitelist) = round_detail.use_whitelist_voting {
+            round.use_whitelist_voting = use_whitelist;
+        }
+
+        if let Some(voting_wl_list_id) = round_detail.voting_wl_list_id {
+            let list_client = ListsClient::new(env, &read_config(env).list_contract);
+            let valid_list = list_client.get_list(&voting_wl_list_id);
+            assert!(valid_list.id == voting_wl_list_id, "Invalid voting whitelist list id");
+            round.voting_wl_list_id = Some(voting_wl_list_id);
+        }
+
+        if let Some(application_wl_list_id) = round_detail.application_wl_list_id {
+            let list_client = ListsClient::new(env, &read_config(env).list_contract);
+            let valid_list = list_client.get_list(&application_wl_list_id);
+            assert!(valid_list.id == application_wl_list_id, "Invalid application whitelist list id");
+            round.application_wl_list_id = Some(application_wl_list_id);
+        }
+
+        if let Some(fee) = round_detail.referrer_fee_basis_points {
+            round.referrer_fee_basis_points = Some(fee);
+        }
 
         write_round_info(env, round_id, &round);
         extend_instance(env);
+        extend_round(env, round_id);
         log_update_round(env, round.clone());
 
-        round.clone()
+        round
     }
 
     fn delete_round(env: &Env, round_id: u128) -> RoundDetail {

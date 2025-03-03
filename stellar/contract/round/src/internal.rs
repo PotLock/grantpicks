@@ -1188,6 +1188,11 @@ impl IsRound for RoundContract {
 
         let round = read_round_info(env, round_id);
         validate_owner_or_admin(env, &caller, &round);
+        
+        let current_ms = get_ledger_second_as_millis(env);
+        if current_ms < round.voting_end_ms {
+            panic_with_error!(env, VoteError::VotingPeriodNotEnded);
+        }
 
         let approved_project = read_approved_projects(env, round_id);
 

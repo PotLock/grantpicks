@@ -25,6 +25,8 @@ use crate::{
     }
 };
 
+const MIN_DURATION_MS: u64 = 3600000;
+
 #[contract]
 pub struct RoundContract;
 
@@ -1006,26 +1008,41 @@ impl IsRound for RoundContract {
         caller.require_auth();
 
         if allow_applications && (start_ms.is_none() || end_ms.is_none()) {
-            panic_with_error!(env, RoundError::ApplicationPeriodMustBeSet);
-        }
-
-        if start_ms.is_some() && end_ms.is_some() {
-            if start_ms.unwrap() >= end_ms.unwrap() {
-                panic_with_error!(env, RoundError::ApplicationStartGreaterThanApplicationEnd);
-            }
+            panic_with_error!(env, ApplicationError::ApplicationPeriodMustBeSet);
         }
 
         let mut round = read_round_info(env, round_id);
 
         validate_owner_or_admin(env, &caller, &round);
 
-        if !allow_applications && (start_ms.is_some() || end_ms.is_some()) {
+        if !allow_applications {
             round.application_start_ms = None;
             round.application_end_ms = None;
         } else {
-            round.application_start_ms = start_ms;
-            round.application_end_ms = end_ms;
+            let current_ms = get_ledger_second_as_millis(env);
+            let start = start_ms.unwrap();
+            let end = end_ms.unwrap();
+    
+            // Validate start time is not in the past
+            if start <= current_ms {
+                panic_with_error!(env, ApplicationError::ApplicationStartInPast);
+            }
+                
+            if end - start < MIN_DURATION_MS {
+                panic_with_error!(env, ApplicationError::ApplicationPeriodTooShort);
+            }
+    
+            // Validate application end is before voting start
+            if round.voting_start_ms <= end {
+                panic_with_error!(env, ApplicationError::ApplicationOverlapsVoting);
+            }
+    
+            // Set the validated times
+            round.application_start_ms = Some(start);
+            round.application_end_ms = Some(end);
         }
+
+        
 
         round.allow_applications = allow_applications;
 

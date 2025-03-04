@@ -1428,6 +1428,11 @@ impl IsRound for RoundContract {
             panic_with_error!(env, RoundError::RedistributionAlreadyDone);
         }
 
+        let current_ms = get_ledger_second_as_millis(env);
+        if current_ms <= round.voting_end_ms {
+            panic_with_error!(env, VoteError::VotingPeriodNotEnded);
+        }
+
         round.assert_cooldown_period_complete(env);
         round.assert_compliance_period_complete(env);
         round.assert_all_payouts_challenges_resolved(env);

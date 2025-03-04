@@ -526,9 +526,7 @@ impl ListsTrait for ListsContract {
                 let is_admin_or_owner = ulist.owner == submitter || admins.contains(&submitter);
 
                 if uregistration.registrant_id != submitter && !is_admin_or_owner {
-                    if  uregistration.registered_by != submitter{
-                      panic_with_error!(env, Error::AdminOrOwnerOnly);
-                    }
+                    panic_with_error!(env, Error::AdminOrOwnerOnly);
                 }
 
                 remove_registration(env, uregistration_id);

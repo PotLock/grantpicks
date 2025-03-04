@@ -365,7 +365,7 @@ impl IsRound for RoundContract {
             submited_ms: current_ms,
             review_note: review_note_internal,
             applicant_note: applicant_note_internal,
-            updated_ms: None,
+            updated_ms: Some(current_ms),
         };
 
         applications.set(application.applicant_id.clone(), application.clone());
@@ -1131,7 +1131,7 @@ impl IsRound for RoundContract {
                 submited_ms: current_ms,
                 review_note: review_note_internal,
                 applicant_note: applicant_note_internal,
-                updated_ms: None,
+                updated_ms: Some(current_ms),
             };
 
             internal_applications.set(application.applicant_id.clone(), application.clone());

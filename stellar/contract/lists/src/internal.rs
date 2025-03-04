@@ -1022,31 +1022,32 @@ impl ListsTrait for ListsContract {
 
     fn is_registered(
         env: &Env,
-        list_id: Option<u128>,
+        list_id: u128,
         registrant_id: Address,
         required_status: Option<RegistrationStatus>,
     ) -> bool {
         extend_instance(env);
-        let registration_ids = get_user_registration_ids_of(env, &registrant_id);
+        
+        let list = get_list_by_id(env, list_id);
+        if list.is_none() {
+            panic_with_error!(env, Error::ListNotFound);
+        }
 
-        if required_status.is_none() && list_id.is_none() {
-            return !registration_ids.is_empty();
+        let registered_lists = get_lists_registered_by(env, &registrant_id);
+        if !registered_lists.contains(list_id) {
+            return false;
         }
 
         if required_status.is_none() {
-            return get_lists_registered_by(env, &registrant_id).contains(list_id.unwrap());
+            return true;
         }
 
+        let user_registrations = get_user_registration_ids_of(env, &registrant_id);
         let status = required_status.unwrap();
-        let ulist_id = list_id.unwrap();
 
-        registration_ids.iter().any(|registration_id| {
-            let registration = get_registration_by_id(env, registration_id);
-            if registration.is_some() {
-                let uregistration = registration.unwrap();
-                return uregistration.list_id == ulist_id && uregistration.status == status;
-            }
-            false
+        user_registrations.iter().any(|registration_id| {
+            let registration = get_registration_by_id(env, registration_id).unwrap();
+            registration.list_id == list_id && registration.status == status
         })
     }
 

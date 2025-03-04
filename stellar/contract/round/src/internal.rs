@@ -25,6 +25,8 @@ use crate::{
     }
 };
 
+const MIN_DEPOSIT_AMOUNT: u128 = 1_000_000; // 0.1 XLM
+
 #[contract]
 pub struct RoundContract;
 
@@ -453,6 +455,10 @@ impl IsRound for RoundContract {
             if !round.use_vault.unwrap() {
                 panic_with_error!(env, RoundError::RoundDoesNotUseVault);
             }
+        }
+
+        if amount < MIN_DEPOSIT_AMOUNT {
+            panic_with_error!(env, RoundError::DepositAmountTooLow);
         }
 
         let token_contract = read_config(env).token_contract;

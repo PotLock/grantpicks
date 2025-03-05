@@ -46,12 +46,18 @@ pub fn get_random_pairs(env: &Env, round_id: u128, num_pairs: u32) -> Vec<Pair> 
     }
 
     let mut pairs: Vec<Pair> = Vec::new(env);
+    let mut used_indices: Vec<u32> = Vec::new(env);
 
-    for _i in 0..num_pairs {
+    while pairs.len() < num_pairs as u32 {
         let index = env.prng().gen_range::<u64>(0..total_available_pairs.into());
         let index_u32: u32 = index.try_into().unwrap();
-        let pair = get_pair_by_index(env, total_available_pairs, index_u32, &projects);
-        pairs.push_back(pair);
+        
+        // Check pair not already selected
+        if !used_indices.contains(index_u32) {
+            let pair = get_pair_by_index(env, total_available_pairs, index_u32, &projects);
+            pairs.push_back(pair);
+            used_indices.push_back(index_u32);
+        }
     }
 
     pairs

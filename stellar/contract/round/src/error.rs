@@ -52,6 +52,7 @@ pub enum RoundError {
     ApplicationPeriodNotSet = 55,
     CoolDownPeriodNotComplete = 56,
     DepositAmountTooLow = 76,
+    PayoutsAlreadySet = 79,
 }
 
 #[allow(clippy::module_name_repetitions)]

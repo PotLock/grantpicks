@@ -449,6 +449,11 @@ impl IsRound for RoundContract {
 
         let round = read_round_info(env, round_id);
 
+        let payouts = read_payouts(env, round_id);
+        if !payouts.is_empty() {
+            panic_with_error!(env, RoundError::PayoutsAlreadySet);
+        }
+
         if round.use_vault.is_none() {
             panic_with_error!(env, RoundError::RoundDoesNotUseVault);
         }else{

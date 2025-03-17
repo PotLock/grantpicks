@@ -41,6 +41,7 @@ import {
 	LobstrModule,
 	HanaModule,
 	ISupportedWallet,
+	HotWalletModule,
 	StellarWalletsKit,
 	WalletNetwork,
 } from '@creit.tech/stellar-wallets-kit'
@@ -142,6 +143,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 				modules: [
 					new FreighterModule(),
 					new xBullModule(),
+					new HotWalletModule(),
 					new LobstrModule(),
 					new HanaModule(),
 				],
@@ -187,7 +189,8 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 
 			return
 		} else if (kit && localStellarPubKey) {
-			const pubKey = (await kit?.getAddress()).address
+			// console.log(kit)
+			const { address: pubKey } = await kit.getAddress()
 			setConnectedWallet('stellar')
 			localStorage.setItem(localStorageConfigs.CONNECTED_WALLET, 'stellar')
 			setStellarPubKey(localStellarPubKey || pubKey)
@@ -235,7 +238,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 						localStorageConfigs.LAST_STELLAR_WALLET_ID,
 						option.id,
 					)
-					const pubKey = (await stellarKit?.getAddress()).address
+					const { address: pubKey } = await stellarKit?.getAddress()
 					setConnectedWallet('stellar')
 					localStorage.setItem(localStorageConfigs.CONNECTED_WALLET, 'stellar')
 					setStellarPubKey(pubKey)

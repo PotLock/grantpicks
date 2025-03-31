@@ -1539,6 +1539,9 @@ impl IsRound for RoundContract {
       caller.require_auth();
 
       let mut round = read_round_info(env, round_id);
+      if round.owner != caller {
+        panic_with_error!(env, Error::OwnerOnly);
+      }
       validate_owner_or_admin(env, &caller, &round);
 
       round.allow_remaining_dist = Some(allow_remaining_dist);

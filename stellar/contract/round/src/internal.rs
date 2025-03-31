@@ -259,12 +259,10 @@ impl IsRound for RoundContract {
         caller.require_auth();
 
         let mut round = read_round_info(env, round_id);
+        validate_voting_not_started(env, &round);
 
         validate_owner_or_admin(env, &caller, &round);
 
-        if round.round_complete_ms.is_some() {
-            panic_with_error!(env, RoundError::RoundAlreadyCompleted);
-        }
 
         round.expected_amount = amount;
 

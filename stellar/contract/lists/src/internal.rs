@@ -1046,8 +1046,11 @@ impl ListsTrait for ListsContract {
         let status = required_status.unwrap();
 
         user_registrations.iter().any(|registration_id| {
-            let registration = get_registration_by_id(env, registration_id).unwrap();
-            registration.list_id == list_id && registration.status == status
+            let registration = get_registration_by_id(env, registration_id);
+            if let Some(reg) = registration {
+                return reg.list_id == list_id && reg.status == status
+            }
+            false
         })
     }
 

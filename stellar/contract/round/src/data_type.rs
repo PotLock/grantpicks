@@ -28,8 +28,7 @@ pub struct Config {
     pub token_contract: Address,
     pub project_contract: Address,
     pub list_contract: Address,
-    pub voting_wl_list_id: Option<u128>,
-    pub application_wl_list_id: Option<u128>,
+    pub kyc_wl_list_id: Option<u128>,
 }
 
 //Note: Whitelist And Blacklist In Different Storage

@@ -1542,7 +1542,6 @@ impl IsRound for RoundContract {
       if round.owner != caller {
         panic_with_error!(env, Error::OwnerOnly);
       }
-      validate_owner_or_admin(env, &caller, &round);
 
       round.allow_remaining_dist = Some(allow_remaining_dist);
       round.remaining_dist_address = remaining_dist_address.unwrap_or(round.clone().owner);

@@ -1052,11 +1052,12 @@ impl IsRound for RoundContract {
         validate_owner_or_admin(env, &caller, &round);
         validate_round_detail_update(env, &round_detail);
 
-        // Validate referrer fee if present
+        // Validate referrer fee if present and set
         if let Some(fee) = round_detail.referrer_fee_basis_points {
             if fee > MAX_REFERRER_FEE_BASIS_POINTS {
                 panic_with_error!(env, Error::ReferrerFeeTooHigh);
             }
+            round.referrer_fee_basis_points = Some(fee);
         }
 
         round.name = round_detail.name;
@@ -1102,10 +1103,6 @@ impl IsRound for RoundContract {
             let valid_list = list_client.get_list(&application_wl_list_id);
             assert!(valid_list.id == application_wl_list_id, "Invalid application whitelist list id");
             round.application_wl_list_id = Some(application_wl_list_id);
-        }
-
-        if let Some(fee) = round_detail.referrer_fee_basis_points {
-            round.referrer_fee_basis_points = Some(fee);
         }
 
         write_round_info(env, round_id, &round);

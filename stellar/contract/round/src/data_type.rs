@@ -22,6 +22,7 @@ pub enum ApplicationStatus {
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct Config {
     pub owner: Address,
+    pub pending_owner: Option<Address>,
     pub protocol_fee_recipient: Address,
     pub protocol_fee_basis_points: u32,
     pub default_page_size: u64,

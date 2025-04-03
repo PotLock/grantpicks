@@ -18,6 +18,8 @@ pub trait RoundCreator {
     fn get_rounds(env: &Env, from_index: Option<u64>, limit: Option<u64>) -> Vec<RoundDetail>;
     fn upgrade(env: &Env, new_wasm_hash: BytesN<32>);
     fn transfer_ownership(env: &Env, new_owner: Address);
+    fn accept_ownership(env: &Env);
+    fn cancel_ownership_transfer(env: &Env);
     fn owner_set_default_page_size(env: &Env, default_page_size: u64);
     fn owner_set_protocol_fee_config(env: &Env, protocol_fee_recipient: Option<Address>, protocol_fee_basis_points: Option<u32>);
     fn change_voting_wl_list_id(env: &Env, list_id: u128);

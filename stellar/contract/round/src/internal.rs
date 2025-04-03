@@ -63,6 +63,7 @@ impl RoundCreator for RoundContract {
 
         let config = Config {
             owner: caller.clone(),
+            pending_owner: None,
             protocol_fee_basis_points: protocol_fee_basis_points.unwrap_or(0),
             protocol_fee_recipient: protocol_fee_recipient.unwrap_or(caller),
             default_page_size: default_page_size.unwrap_or(10),
@@ -162,8 +163,45 @@ impl RoundCreator for RoundContract {
         config.owner.require_auth();
 
         let mut updated_config = config.clone();
-        updated_config.owner = new_owner;
+        updated_config.pending_owner = Some(new_owner);
 
+        write_config(env, &updated_config);
+        extend_instance(env);
+    }
+
+    fn accept_ownership(env: &Env) {
+        let config = read_config(env);
+        
+        if config.pending_owner.is_none() {
+            panic_with_error!(env, Error::NoPendingOwnershipTransfer);
+        }
+
+        let mut updated_config = config.clone();
+        
+        let pending_owner = config.pending_owner.unwrap();
+        pending_owner.require_auth();
+        
+        
+        updated_config.owner = pending_owner;
+        updated_config.pending_owner = None;
+        
+        write_config(env, &updated_config);
+        extend_instance(env);
+    }
+
+    fn cancel_ownership_transfer(env: &Env) {
+        let config = read_config(env);
+        
+        config.owner.require_auth();
+        
+        if config.pending_owner.is_none() {
+            panic_with_error!(env, Error::NoPendingOwnershipTransfer);
+        }
+        
+        let mut updated_config = config.clone();
+        updated_config.pending_owner = None;
+        
+        write_config(env, &updated_config);
         extend_instance(env);
     }
 

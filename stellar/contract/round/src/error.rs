@@ -12,6 +12,7 @@ pub enum Error {
     SameOwner = 38,
     DataNotFound = 52,
     AlreadyInitialized = 57,
+    NoPendingOwnershipTransfer = 89,
 }
 
 #[allow(clippy::module_name_repetitions)]

@@ -1048,6 +1048,8 @@ impl IsRound for RoundContract {
 
         let mut round = read_round_info(env, round_id);
 
+        validate_voting_not_started(env, &round);
+
         validate_owner_or_admin(env, &caller, &round);
         validate_round_detail_update(env, &round_detail);
 
@@ -1508,6 +1510,7 @@ impl IsRound for RoundContract {
 
         let mut round = read_round_info(env, round_id);
         validate_owner_or_admin(env, &caller, &round);
+        validate_voting_not_started(env, &round);
 
         round.cooldown_period_ms = cooldown_period_ms;
         log_update_round(env, round.clone());
@@ -1530,6 +1533,7 @@ impl IsRound for RoundContract {
 
         let mut round = read_round_info(env, round_id);
         validate_owner_or_admin(env, &caller, &round);
+        validate_voting_not_started(env, &round);
 
         round.compliance_req_desc = compliance_req_desc.unwrap_or(String::from_str(env, ""));
         round.compliance_period_ms = compliance_period_ms;

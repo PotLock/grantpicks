@@ -886,18 +886,21 @@ impl IsRound for RoundContract {
         admin.require_auth();
 
         let mut round = read_round_info(env, round_id);
-
         validate_owner_or_admin(env, &admin, &round);
 
-        if num_picks_per_voter < 1 {
-            panic_with_error!(env, VoteError::EmptyVote);
-        }
+        validate_pick_per_votes(env, num_picks_per_voter);
 
         let states = read_voting_state(env, round_id);
         let votes = states.len();
-
         if votes > 0 {
             panic_with_error!(env, RoundError::VotesAlreadyCast);
+        }
+
+        // Validate against number of possible pairs
+        let approved_projects = read_approved_projects(env, round_id);
+        let total_available_pairs = count_total_available_pairs(approved_projects.len());
+        if num_picks_per_voter > total_available_pairs {
+            panic_with_error!(env, VoteError::TooManyVotesForAvailablePairs);
         }
 
         round.num_picks_per_voter = num_picks_per_voter;

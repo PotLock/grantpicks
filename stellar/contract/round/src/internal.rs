@@ -743,7 +743,7 @@ impl IsRound for RoundContract {
             }
             if round.use_whitelist_voting {
                 if round.voting_wl_list_id.is_none() {
-                    return true;
+                    return false;
                 }
                 let list_id = round.voting_wl_list_id.unwrap();
                 let list_contract = read_config(env).list_contract;

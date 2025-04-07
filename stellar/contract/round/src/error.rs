@@ -51,6 +51,7 @@ pub enum RoundError {
     RoundDoesNotUseVault = 53,
     ApplicationPeriodNotSet = 55,
     CoolDownPeriodNotComplete = 56,
+    WhitelistIdNotSet = 59,
     NotProjectParticipant = 74,
     NotApprovedParticipant = 75,
 }

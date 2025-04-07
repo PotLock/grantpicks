@@ -53,6 +53,16 @@ pub fn validate_round_detail(env: &Env, round_detail: &CreateRoundParams) {
 
     if round_detail.voting_end_ms - round_detail.voting_start_ms < MIN_VOTING_DURATION {
         panic_with_error!(env, RoundError::VotingPeriodTooShort);
+    if round_detail.use_whitelist_voting.unwrap_or(false) {
+        if round_detail.voting_wl_list_id.is_none() {
+            panic_with_error!(env, RoundError::WhitelistIdNotSet)
+        }
+    }
+
+    if round_detail.use_whitelist_application.unwrap_or(false) {
+        if round_detail.application_wl_list_id.is_none() {
+            panic_with_error!(env, RoundError::WhitelistIdNotSet)
+        }
     }
 }
 
@@ -67,24 +77,10 @@ pub fn validate_round_detail_update(env: &Env, round_detail: &UpdateRoundParams)
         panic_with_error!(env, RoundError::VotingStartGreaterThanVotingEnd);
     }
 
-    if round_detail.allow_applications {
-      if round_detail.application_start_ms.is_some() && round_detail.application_end_ms.is_some() {
-        if round_detail.application_start_ms.unwrap() > round_detail.application_end_ms.unwrap() {
-          panic_with_error!(env, RoundError::ApplicationStartGreaterThanApplicationEnd);
-        }
-      }else{
-        panic_with_error!(env, RoundError::ApplicationPeriodNotSet);
-      }
-    }
-
     if round_detail.application_end_ms.is_some(){
       if round_detail.voting_start_ms < round_detail.application_end_ms.unwrap() {
         panic_with_error!(env, RoundError::VotingStartLessThanApplicationEnd);
       }
-    }
-
-    if round_detail.expected_amount == 0 {
-        panic_with_error!(env, RoundError::AmountMustBeGreaterThanZero);
     }
 
     if round_detail.contacts.len() >= 10 {
@@ -151,7 +147,7 @@ pub fn validate_application_period(env: &Env, round: &RoundDetail) {
 pub fn validate_voting_not_started(env: &Env, round: &RoundDetail) {
     let current_time = get_ledger_second_as_millis(env);
 
-    if current_time > round.voting_end_ms {
+    if current_time >= round.voting_start_ms {
         panic_with_error!(env, VoteError::VotingAlreadyStarted);
     }
 }

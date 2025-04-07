@@ -1104,7 +1104,18 @@ impl IsRound for RoundContract {
 
         let mut internal_applications = read_application(env, round_id);
         applicants.iter().for_each(|applicant| {
+            validate_blacklist(env, round_id, &applicant);
+
+            if round.use_whitelist_application {
+                validate_application_whitelist(env, round_id, &applicant);
+            }
+
             let project = project_client.get_precheck(&applicant);
+            
+            if project.is_none() {
+                panic_with_error!(env, ApplicationError::ProjectNotFoundInRegistry);
+            }
+            
             let uproject = project.unwrap();
 
             if round.is_video_required {

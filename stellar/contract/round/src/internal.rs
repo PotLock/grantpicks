@@ -1279,6 +1279,10 @@ impl IsRound for RoundContract {
         let mut round = read_round_info(env, round_id);
         validate_owner_or_admin(env, &caller, &round);
 
+        if round.round_complete_ms.is_some() { // check if round has not being set to "complete"
+            panic_with_error!(env, RoundError::RoundAlreadyCompleted);
+        }
+
         round.round_complete_ms = Some(get_ledger_second_as_millis(env));
 
         write_round_info(env, round_id, &round);

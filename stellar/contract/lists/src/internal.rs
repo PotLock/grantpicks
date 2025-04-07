@@ -177,6 +177,8 @@ impl ListsTrait for ListsContract {
             ulist.admin_only_registration = admin_only_registrations.unwrap();
         }
 
+        ulist.updated_ms = env.ledger().timestamp() * 1000;
+
         add_list(env, list_id, ulist.clone());
         let admins = read_list_admins(env, list_id);
         extend_instance(env);
@@ -186,7 +188,7 @@ impl ListsTrait for ListsContract {
             id: list_id,
             name: ulist.name.clone(),
             description: ulist.description.clone(),
-            cover_img_url: ulist.cover_image_url.clone(),
+            cover_img_url: ulist.cover_image_url,
             owner: ulist.owner.clone(),
             admins,
             created_ms: ulist.created_ms,
@@ -658,6 +660,7 @@ impl ListsTrait for ListsContract {
         if notes.is_some() {
             uregistration.admin_notes = notes.clone().unwrap();
         }
+        uregistration.updated_ms = env.ledger().timestamp() * 1000;
 
         add_registration(env, registration_id, uregistration.clone());
         extend_instance(env);
@@ -696,7 +699,7 @@ impl ListsTrait for ListsContract {
             id: list_id,
             name: ulist.name.clone(),
             description: ulist.description.clone(),
-            cover_img_url: ulist.description.clone(),
+            cover_img_url: ulist.cover_image_url,
             owner: ulist.owner.clone(),
             admins,
             created_ms: ulist.created_ms,
@@ -721,26 +724,25 @@ impl ListsTrait for ListsContract {
         for list_id in internal_skip..internal_skip + internal_limit {
             let list = get_list_by_id(env, list_id as u128);
 
-            if list.is_some() {
-                let total_upvotes_count: u64 = read_list_upvotes(env, list_id as u128).len().into();
-                let total_registrations_count: u64 =
-                    get_registrations_of_list(env, list_id as u128).len().into();
-                let ulist = list.unwrap();
+            if list.is_some(){
+              let total_upvotes_count:u64 = read_list_upvotes(env, list_id as u128).len().into();
+              let total_registrations_count:u64 = get_registrations_of_list(env, list_id as u128).len().into();
+              let ulist = list.unwrap();
 
-                result.push_back(ListExternal {
-                    id: ulist.id,
-                    name: ulist.name.clone(),
-                    description: ulist.description.clone(),
-                    cover_img_url: ulist.description.clone(),
-                    owner: ulist.owner.clone(),
-                    admins: read_list_admins(env, ulist.id),
-                    created_ms: ulist.created_ms,
-                    updated_ms: ulist.updated_ms,
-                    default_registration_status: ulist.default_registration_status.clone(),
-                    admin_only_registrations: ulist.admin_only_registration,
-                    total_registrations_count,
-                    total_upvotes_count,
-                });
+              result.push_back(ListExternal {
+                  id: ulist.id,
+                  name: ulist.name.clone(),
+                  description: ulist.description.clone(),
+                  cover_img_url: ulist.cover_image_url,
+                  owner: ulist.owner.clone(),
+                  admins: read_list_admins(env, ulist.id),
+                  created_ms: ulist.created_ms,
+                  updated_ms: ulist.updated_ms,
+                  default_registration_status: ulist.default_registration_status.clone(),
+                  admin_only_registrations: ulist.admin_only_registration,
+                  total_registrations_count,
+                  total_upvotes_count,
+              });
             }
         }
 
@@ -760,7 +762,7 @@ impl ListsTrait for ListsContract {
                     id: ulist.id,
                     name: ulist.name.clone(),
                     description: ulist.description.clone(),
-                    cover_img_url: ulist.description.clone(),
+                    cover_img_url: ulist.cover_image_url,
                     owner: ulist.owner.clone(),
                     admin_only_registrations: ulist.admin_only_registration,
                     default_registration_status: ulist.default_registration_status.clone(),
@@ -789,7 +791,7 @@ impl ListsTrait for ListsContract {
                     id: ulist.id,
                     name: ulist.name.clone(),
                     description: ulist.description.clone(),
-                    cover_img_url: ulist.description.clone(),
+                    cover_img_url: ulist.cover_image_url,
                     owner: ulist.owner.clone(),
                     admin_only_registrations: ulist.admin_only_registration,
                     default_registration_status: ulist.default_registration_status.clone(),
@@ -868,7 +870,7 @@ impl ListsTrait for ListsContract {
                     id: ulist.id,
                     name: ulist.name.clone(),
                     description: ulist.description.clone(),
-                    cover_img_url: ulist.description.clone(),
+                    cover_img_url: ulist.cover_image_url,
                     owner: ulist.owner.clone(),
                     admin_only_registrations: ulist.admin_only_registration,
                     default_registration_status: ulist.default_registration_status.clone(),
@@ -1035,29 +1037,33 @@ impl ListsTrait for ListsContract {
 
     fn is_registered(
         env: &Env,
-        list_id: Option<u128>,
+        list_id: u128,
         registrant_id: Address,
         required_status: Option<RegistrationStatus>,
     ) -> bool {
         extend_instance(env);
-        let registration_ids = get_user_registration_ids_of(env, &registrant_id);
+        
+        let list = get_list_by_id(env, list_id);
+        if list.is_none() {
+            panic_with_error!(env, Error::ListNotFound);
+        }
 
-        if required_status.is_none() && list_id.is_none() {
-            return !registration_ids.is_empty();
+        let registered_lists = get_lists_registered_by(env, &registrant_id);
+        if !registered_lists.contains(list_id) {
+            return false;
         }
 
         if required_status.is_none() {
-            return get_lists_registered_by(env, &registrant_id).contains(list_id.unwrap());
+            return true;
         }
 
+        let user_registrations = get_user_registration_ids_of(env, &registrant_id);
         let status = required_status.unwrap();
-        let ulist_id = list_id.unwrap();
 
-        registration_ids.iter().any(|registration_id| {
+        user_registrations.iter().any(|registration_id| {
             let registration = get_registration_by_id(env, registration_id);
-            if registration.is_some() {
-                let uregistration = registration.unwrap();
-                return uregistration.list_id == ulist_id && uregistration.status == status;
+            if let Some(reg) = registration {
+                return reg.list_id == list_id && reg.status == status
             }
             false
         })

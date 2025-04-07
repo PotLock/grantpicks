@@ -653,7 +653,7 @@ impl IsRound for RoundContract {
 
         if round.use_vault.is_none() {
             panic_with_error!(env, RoundError::RoundDoesNotUseVault);
-        }else{
+        } else {
             if !round.use_vault.unwrap() {
                 panic_with_error!(env, RoundError::RoundDoesNotUseVault);
             }
@@ -681,6 +681,8 @@ impl IsRound for RoundContract {
         let token_client = TokenClient::new(env, &token_contract);
         let list_contract = config.list_contract;
         let list_client = ListsClient::new(env, &list_contract);
+        let project_contract = config.project_contract;
+        let project_client = ProjectRegistryClient::new(env, &project_contract);
 
         let mut updated_round = round.clone();
         let mut total_amount_paid: i128 = 0;
@@ -703,8 +705,24 @@ impl IsRound for RoundContract {
                 }
 
                 if round.compliance_period_ms.is_some() {
-                   let is_kcy_passed = list_client.is_registered(&config.voting_wl_list_id, &payout.recipient_id, &Some(RegistrationStatus::Approved));
-                    if !is_kcy_passed {
+                    let project = project_client.get_precheck_by_id(&project_id);
+                    
+                    if project.is_none() {
+                        payout.paid_at_ms = Some(get_ledger_second_as_millis(env));
+                        write_payout_info(env, payout_id, &payout);
+                        return;
+                    }
+                    
+                    let project_owner = project.unwrap().applicant;
+                    
+                    // Check KYC on project owner instead of recipient
+                    let is_kyc_passed = list_client.is_registered(
+                        &config.voting_wl_list_id, 
+                        &project_owner, 
+                        &Some(RegistrationStatus::Approved)
+                    );
+                    
+                    if !is_kyc_passed {
                         payout.paid_at_ms = Some(get_ledger_second_as_millis(env));
                         write_payout_info(env, payout_id, &payout);
                         return;

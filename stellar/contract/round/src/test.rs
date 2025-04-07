@@ -128,7 +128,6 @@ fn generate_fake_project(
             video_url: String::from_str(&env, "video_url"),
             name: String::from_str(&env, "name"),
             overview: String::from_str(&env, "overview"),
-            payout_address: owner.clone(),
             contacts: project_contacts.clone(),
             contracts: project_contracts.clone(),
             team_members: project_team_members.clone(),

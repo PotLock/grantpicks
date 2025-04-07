@@ -46,7 +46,6 @@ impl ProjectRegistryTrait for ProjectRegistry {
             contracts: project_params.contracts,
             team_members: project_params.team_members,
             repositories: project_params.repositories,
-            payout_address: project_params.payout_address,
             funding_histories: project_params.fundings,
             image_url: project_params.image_url,
             video_url: project_params.video_url,
@@ -92,7 +91,6 @@ impl ProjectRegistryTrait for ProjectRegistry {
         uproject.contracts = new_project_params.contracts;
         uproject.team_members = new_project_params.team_members;
         uproject.repositories = new_project_params.repositories;
-        uproject.payout_address = new_project_params.payout_address;
         uproject.funding_histories = new_project_params.fundings;
         uproject.updated_ms = Some(env.ledger().timestamp() * 1000);
 

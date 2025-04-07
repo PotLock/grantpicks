@@ -1,28 +1,43 @@
-use soroban_sdk::{self, contract, contractimpl, panic_with_error, Address, BytesN, Env, Map, String, Vec};
+use soroban_sdk::{
+    self, contract, contractimpl, panic_with_error, Address, BytesN, Env, Map, String, Vec,
+};
 
 use crate::{
     data_type::{
         ListExternal, ListInternal, RegistrationExternal, RegistrationInput, RegistrationInternal,
         RegistrationStatus,
-    }, error::Error, events::{
+    },
+    error::Error,
+    events::{
         log_create_list_event, log_create_registration_event, log_delete_list_event,
         log_delete_registration_event, log_transfer_ownership_event, log_unvote_list_event,
         log_update_admins_event, log_update_list_event, log_update_registration_event,
         log_upvote_list_event,
-    }, lists_writer::{
-        add_admin_to_list, add_list, add_list_to_owned_list, add_list_to_registrant_lists, clear_admins, get_list_by_id, get_lists_registered_by, increment_lists_number, read_list_admins, read_lists_owned_by, remove_admin_from_list, remove_list, remove_list_from_owned_list, remove_list_to_registrant_lists
-    }, methods::ListsTrait, owner_writer::{read_contract_owner, write_contract_owner}, registration_writer::{
+    },
+    lists_writer::{
+        add_admin_to_list, add_list, add_list_to_owned_list, add_list_to_registrant_lists,
+        clear_admins, get_list_by_id, get_lists_registered_by, increment_lists_number,
+        read_list_admins, read_lists_owned_by, remove_admin_from_list, remove_list,
+        remove_list_from_owned_list, remove_list_to_registrant_lists,
+    },
+    methods::ListsTrait,
+    owner_writer::{read_contract_owner, write_contract_owner},
+    registration_writer::{
         add_registration, add_registration_id_to_user, add_registration_to_list,
         get_registration_by_id, get_registrations_of_list, get_user_registration_ids_of,
         increment_registration_number, read_registration_number, remove_registration,
         remove_registration_id_to_user, remove_registration_to_list,
-    }, storage::{extend_instance, extend_list, extend_user}, upvotes_writer::{
+    },
+    storage::{extend_instance, extend_list, extend_user},
+    upvotes_writer::{
         add_upvote_to_list, add_upvoted_list_to_user, clear_upvotes_for_list, read_list_upvotes,
         read_user_upvoted_lists, remove_upvote_from_list, remove_upvoted_list_from_user,
-    }, utils::unwrap_or_blank, validation::{
-        validate_cover_image_url, validate_description,
-        validate_has_upvoted_list, validate_name, validate_upvotes_status, validate_valid_list_id,
-    }
+    },
+    utils::unwrap_or_blank,
+    validation::{
+        validate_cover_image_url, validate_description, validate_has_upvoted_list, validate_name,
+        validate_upvotes_status, validate_valid_list_id,
+    },
 };
 
 #[contract]
@@ -120,17 +135,16 @@ impl ListsTrait for ListsContract {
         default_registration_status: Option<RegistrationStatus>,
         admin_only_registrations: Option<bool>,
     ) -> ListExternal {
-
         validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
-        
-        if list.is_none(){
-          panic_with_error!(env, Error::ListNotFound);
+
+        if list.is_none() {
+            panic_with_error!(env, Error::ListNotFound);
         }
 
         let mut ulist = list.unwrap();
-        
+
         ulist.owner.require_auth();
 
         if name.is_some() {
@@ -191,17 +205,16 @@ impl ListsTrait for ListsContract {
     }
 
     fn delete_list(env: &Env, list_id: u128) {
-
         validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
-        
-        if list.is_none(){
-          panic_with_error!(env, Error::ListNotFound);
+
+        if list.is_none() {
+            panic_with_error!(env, Error::ListNotFound);
         }
 
         let ulist = list.unwrap();
-        
+
         ulist.owner.require_auth();
 
         remove_list(env, list_id);
@@ -218,9 +231,9 @@ impl ListsTrait for ListsContract {
         validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
-       
-        if list.is_none(){
-          panic_with_error!(env, Error::ListNotFound);
+
+        if list.is_none() {
+            panic_with_error!(env, Error::ListNotFound);
         }
 
         validate_upvotes_status(env, &voter, list_id);
@@ -238,9 +251,9 @@ impl ListsTrait for ListsContract {
         validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
-        
-        if list.is_none(){
-          panic_with_error!(env, Error::ListNotFound);
+
+        if list.is_none() {
+            panic_with_error!(env, Error::ListNotFound);
         }
 
         validate_has_upvoted_list(env, &voter, list_id);
@@ -251,21 +264,17 @@ impl ListsTrait for ListsContract {
         log_unvote_list_event(env, list_id);
     }
 
-    fn transfer_ownership(
-        env: &Env,
-        list_id: u128,
-        new_owner_id: Address,
-    ) -> Address {
+    fn transfer_ownership(env: &Env, list_id: u128, new_owner_id: Address) -> Address {
         validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
-       
-        if list.is_none(){
-          panic_with_error!(env, Error::ListNotFound);
+
+        if list.is_none() {
+            panic_with_error!(env, Error::ListNotFound);
         }
 
         let mut ulist = list.unwrap();
-        
+
         ulist.owner.require_auth();
 
         remove_list_from_owned_list(env, &ulist.owner, list_id);
@@ -283,13 +292,13 @@ impl ListsTrait for ListsContract {
         validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
-      
-        if list.is_none(){
-          panic_with_error!(env, Error::ListNotFound);
+
+        if list.is_none() {
+            panic_with_error!(env, Error::ListNotFound);
         }
 
         let ulist = list.unwrap();
-       
+
         ulist.owner.require_auth();
 
         let current_admins = read_list_admins(env, list_id);
@@ -312,21 +321,17 @@ impl ListsTrait for ListsContract {
         new_admins
     }
 
-    fn remove_admins(
-        env: &Env,
-        list_id: u128,
-        admins: Vec<Address>,
-    ) -> Vec<Address> {
+    fn remove_admins(env: &Env, list_id: u128, admins: Vec<Address>) -> Vec<Address> {
         validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
-        
-        if list.is_none(){
-          panic_with_error!(env, Error::ListNotFound);
+
+        if list.is_none() {
+            panic_with_error!(env, Error::ListNotFound);
         }
 
         let ulist = list.unwrap();
-        
+
         ulist.owner.require_auth();
 
         let current_admins = read_list_admins(env, list_id);
@@ -353,13 +358,13 @@ impl ListsTrait for ListsContract {
         validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
-        
-        if list.is_none(){
-          panic_with_error!(env, Error::ListNotFound);
+
+        if list.is_none() {
+            panic_with_error!(env, Error::ListNotFound);
         }
 
         let ulist = list.unwrap();
-       
+
         ulist.owner.require_auth();
 
         clear_admins(env, list_id);
@@ -380,9 +385,9 @@ impl ListsTrait for ListsContract {
         validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
-        
-        if list.is_none(){
-          panic_with_error!(env, Error::ListNotFound);
+
+        if list.is_none() {
+            panic_with_error!(env, Error::ListNotFound);
         }
 
         let ulist = list.unwrap();
@@ -498,16 +503,16 @@ impl ListsTrait for ListsContract {
             validate_valid_list_id(env, list_id.unwrap());
 
             list = get_list_by_id(env, list_id.unwrap());
-            
-            if list.is_none(){
-              panic_with_error!(env, Error::ListNotFound);
+
+            if list.is_none() {
+                panic_with_error!(env, Error::ListNotFound);
             }
         }
 
         if registration_id.is_some() {
             let current_registration_number = read_registration_number(env);
-            if registration_id.unwrap() > current_registration_number{
-              panic_with_error!(env, Error::InvalidRegistrationId);
+            if registration_id.unwrap() > current_registration_number {
+                panic_with_error!(env, Error::InvalidRegistrationId);
             }
         }
 
@@ -519,17 +524,21 @@ impl ListsTrait for ListsContract {
                 let uregistration_id = registration_id.unwrap();
                 let registration = get_registration_by_id(env, uregistration_id);
 
-                if registration.is_none(){
-                  panic_with_error!(env, Error::RegistrationNotFound);
+                if registration.is_none() {
+                    panic_with_error!(env, Error::RegistrationNotFound);
                 }
 
                 let uregistration = registration.unwrap();
 
+                if uregistration.list_id != list_id.unwrap() {
+                    panic_with_error!(env, Error::RegistrationListMismatch);
+                }
+
                 let is_admin_or_owner = ulist.owner == submitter || admins.contains(&submitter);
 
                 if uregistration.registrant_id != submitter && !is_admin_or_owner {
-                    if  uregistration.registered_by != submitter{
-                      panic_with_error!(env, Error::AdminOrOwnerOnly);
+                    if uregistration.registered_by != submitter {
+                        panic_with_error!(env, Error::AdminOrOwnerOnly);
                     }
                 }
 
@@ -576,9 +585,8 @@ impl ListsTrait for ListsContract {
                     }
                 });
             }
-          
 
-          extend_list(env, ulist.id);
+            extend_list(env, ulist.id);
         } else {
             let registrant_id = submitter.clone();
             let registration_ids = get_user_registration_ids_of(env, &registrant_id);
@@ -620,29 +628,33 @@ impl ListsTrait for ListsContract {
     ) -> RegistrationExternal {
         submitter.require_auth();
 
+        let registration = get_registration_by_id(env, registration_id);
+
+        if registration.is_none() {
+            panic_with_error!(env, Error::RegistrationNotFound);
+        }
+        let mut uregistration = registration.unwrap();
+        if uregistration.list_id != list_id {
+            panic_with_error!(env, Error::RegistrationListMismatch);
+        }
+
         validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
-       
-        if list.is_none(){
-          panic_with_error!(env, Error::ListNotFound);
-        }
 
-        let registration = get_registration_by_id(env, registration_id);
-       
-        if registration.is_none(){
-          panic_with_error!(env, Error::RegistrationNotFound);
+        if list.is_none() {
+            panic_with_error!(env, Error::ListNotFound);
         }
 
         let ulist = list.unwrap();
         let admins = read_list_admins(env, list_id);
         let is_admin_or_owner = ulist.owner == submitter || admins.contains(&submitter);
-       
+
         if !is_admin_or_owner {
             panic_with_error!(env, Error::AdminOrOwnerOnly);
         }
 
-        let mut uregistration = registration.unwrap();
+        // let mut uregistration = registration;
         uregistration.status = status;
 
         if notes.is_some() {
@@ -675,9 +687,9 @@ impl ListsTrait for ListsContract {
         validate_valid_list_id(env, list_id);
 
         let list = get_list_by_id(env, list_id);
-        
-        if list.is_none(){
-          panic_with_error!(env, Error::ListNotFound);
+
+        if list.is_none() {
+            panic_with_error!(env, Error::ListNotFound);
         }
 
         let ulist = list.unwrap();
@@ -709,7 +721,7 @@ impl ListsTrait for ListsContract {
 
         let mut result: Vec<ListExternal> = Vec::new(env);
 
-        for list_id in internal_skip..internal_skip+internal_limit{
+        for list_id in internal_skip..internal_skip + internal_limit {
             let list = get_list_by_id(env, list_id as u128);
 
             if list.is_some(){
@@ -806,7 +818,7 @@ impl ListsTrait for ListsContract {
 
         let internal_skip: usize = from_index.unwrap_or(0).try_into().unwrap();
         let mut internal_limit: usize = limit.unwrap_or(10).try_into().unwrap();
-      
+
         if internal_limit > 20 {
             internal_limit = 20;
         }
@@ -842,7 +854,7 @@ impl ListsTrait for ListsContract {
 
         let internal_skip: usize = from_index.unwrap_or(0).try_into().unwrap();
         let mut internal_limit: usize = limit.unwrap_or(10).try_into().unwrap();
-        
+
         if internal_limit > 20 {
             internal_limit = 20;
         }
@@ -875,9 +887,9 @@ impl ListsTrait for ListsContract {
 
     fn get_registration(env: &Env, registration_id: u128) -> RegistrationExternal {
         let registration = get_registration_by_id(env, registration_id);
-        
-        if registration.is_none(){
-          panic_with_error!(env, Error::RegistrationNotFound);
+
+        if registration.is_none() {
+            panic_with_error!(env, Error::RegistrationNotFound);
         }
 
         let uregistration = registration.unwrap();
@@ -929,7 +941,7 @@ impl ListsTrait for ListsContract {
 
         let internal_skip: usize = from_index.unwrap_or(0).try_into().unwrap();
         let mut internal_limit: usize = limit.unwrap_or(10).try_into().unwrap();
-        
+
         if internal_limit > 20 {
             internal_limit = 20;
         }
@@ -993,7 +1005,7 @@ impl ListsTrait for ListsContract {
 
         let internal_skip: usize = from_index.unwrap_or(0).try_into().unwrap();
         let mut internal_limit: usize = limit.unwrap_or(10).try_into().unwrap();
-        
+
         if internal_limit > 20 {
             internal_limit = 20;
         }
@@ -1063,7 +1075,7 @@ impl ListsTrait for ListsContract {
 
     fn upgrade(env: &Env, wasm_hash: BytesN<32>) {
         let contract_owner = read_contract_owner(env);
-        
+
         contract_owner.unwrap().require_auth();
 
         env.deployer().update_current_contract_wasm(wasm_hash);

@@ -402,7 +402,11 @@ impl IsRound for RoundContract {
         }
 
         let mut updated_application = application.unwrap();
-        updated_application.status = status;
+        let status_changing = updated_application.status != status;
+        if status_changing {
+            updated_application.status = status;
+        }
+        
 
         if note.is_some() {
             let review_note = note.unwrap();
@@ -414,18 +418,24 @@ impl IsRound for RoundContract {
         updated_application.updated_ms = Some(get_ledger_second_as_millis(env));
 
         let mut approved_projects = read_approved_projects(env, round_id);
-        if updated_application.status == ApplicationStatus::Approved {
-            validate_max_participant(env, &round);
-
-            approved_projects.push_back(updated_application.project_id);
-        } else {
-            let is_approved = is_project_approved(env, round_id, updated_application.project_id);
-
-            if is_approved {
-                let index = approved_projects
-                    .first_index_of(updated_application.project_id)
-                    .unwrap();
-                approved_projects.remove(index);
+        let is_already_approved = is_project_approved(env, round_id, updated_application.project_id);
+        
+        if status_changing {
+            if updated_application.status == ApplicationStatus::Approved {
+                
+                if !is_already_approved {
+                    validate_max_participant(env, &round);
+                    approved_projects.push_back(updated_application.project_id);
+                }
+    
+            } else {
+    
+                if is_already_approved {
+                    let index = approved_projects
+                        .first_index_of(updated_application.project_id)
+                        .unwrap();
+                    approved_projects.remove(index);
+                }
             }
         }
 

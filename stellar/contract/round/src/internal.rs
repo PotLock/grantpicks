@@ -165,6 +165,7 @@ impl RoundCreator for RoundContract {
 
         let mut updated_config = config.clone();
         updated_config.owner = new_owner;
+        write_config(env, &updated_config);
 
         extend_instance(env);
     }
@@ -603,7 +604,7 @@ impl IsRound for RoundContract {
         validate_owner_or_admin(env, &admin, &round);
 
         voters.iter().for_each(|voter| {
-            validate_not_blacklist(env, round_id, &voter);
+            validate_blacklist(env, round_id, &voter); // validate that user is not already blacklisted
             add_to_blacklist(env, round_id, voter.clone());
             log_update_user_flag(env, round.id, voter.clone(), true);
         });
@@ -738,20 +739,19 @@ impl IsRound for RoundContract {
         let current_ms = get_ledger_second_as_millis(env);
 
         if round.voting_start_ms <= current_ms && current_ms <= round.voting_end_ms {
+            let is_blacklisted = is_blacklisted(env, round_id, voter.clone());
+            if is_blacklisted {
+                return false;
+            }
             if round.use_whitelist_voting {
                 if round.voting_wl_list_id.is_none() {
-                    return true;
+                    return false;
                 }
                 let list_id = round.voting_wl_list_id.unwrap();
                 let list_contract = read_config(env).list_contract;
                 let list_client = ListsClient::new(env, &list_contract);
                 let is_whitelisted = list_client.is_registered(&Some(list_id), &voter, &Some(RegistrationStatus::Approved));
                 return is_whitelisted;
-            }
-
-            let is_blacklisted = is_blacklisted(env, round_id, voter.clone());
-            if is_blacklisted {
-                return false;
             }
 
             return true;
@@ -817,6 +817,8 @@ impl IsRound for RoundContract {
 
         let round = read_round_info(env, round_id);
 
+        validate_voting_not_started(env, &round);
+
         validate_owner_or_admin(env, &admin, &round);
         validate_max_participants(env, &round, &project_ids);
         validate_project_to_approve(env, round_id, &project_ids);
@@ -837,6 +839,8 @@ impl IsRound for RoundContract {
         admin.require_auth();
 
         let round = read_round_info(env, round_id);
+
+        validate_voting_not_started(env, &round);
 
         validate_owner_or_admin(env, &admin, &round);
 
@@ -888,18 +892,21 @@ impl IsRound for RoundContract {
         admin.require_auth();
 
         let mut round = read_round_info(env, round_id);
-
         validate_owner_or_admin(env, &admin, &round);
 
-        if num_picks_per_voter < 1 {
-            panic_with_error!(env, VoteError::EmptyVote);
-        }
+        validate_pick_per_votes(env, num_picks_per_voter);
 
         let states = read_voting_state(env, round_id);
         let votes = states.len();
-
         if votes > 0 {
             panic_with_error!(env, RoundError::VotesAlreadyCast);
+        }
+
+        // Validate against number of possible pairs
+        let approved_projects = read_approved_projects(env, round_id);
+        let total_available_pairs = count_total_available_pairs(approved_projects.len());
+        if num_picks_per_voter > total_available_pairs {
+            panic_with_error!(env, VoteError::TooManyVotesForAvailablePairs);
         }
 
         round.num_picks_per_voter = num_picks_per_voter;
@@ -1049,6 +1056,8 @@ impl IsRound for RoundContract {
 
         let mut round = read_round_info(env, round_id);
 
+        validate_voting_not_started(env, &round);
+
         validate_owner_or_admin(env, &caller, &round);
         validate_round_detail_update(env, &round_detail);
 
@@ -1148,11 +1157,22 @@ impl IsRound for RoundContract {
 
         let mut internal_applications = read_application(env, round_id);
         applicants.iter().for_each(|applicant| {
+            validate_blacklist(env, round_id, &applicant);
+
+            if round.use_whitelist_application {
+                validate_application_whitelist(env, round_id, &applicant);
+            }
+
             let project = project_client.get_precheck(&applicant);
+            
+            if project.is_none() {
+                panic_with_error!(env, ApplicationError::ProjectNotFoundInRegistry);
+            }
+            
             let uproject = project.unwrap();
 
             if round.is_video_required {
-                if uproject.has_video {
+                if !uproject.has_video {
                     panic_with_error!(env, ApplicationError::VideoUrlNotValid);
                 }
             }
@@ -1324,6 +1344,10 @@ impl IsRound for RoundContract {
         let mut round = read_round_info(env, round_id);
         validate_owner_or_admin(env, &caller, &round);
 
+        if round.round_complete_ms.is_some() { // check if round has not being set to "complete"
+            panic_with_error!(env, RoundError::RoundAlreadyCompleted);
+        }
+
         round.round_complete_ms = Some(get_ledger_second_as_millis(env));
 
         write_round_info(env, round_id, &round);
@@ -1341,6 +1365,21 @@ impl IsRound for RoundContract {
         reason: String,
     ) -> PayoutsChallenge {
         caller.require_auth();
+        
+        let round = read_round_info(env, round_id);
+        round.assert_cooldown_period_in_process(env);
+
+        let application = get_application_by_applicant(env, round_id, &caller);
+        if application.is_none() {
+            panic_with_error!(env, RoundError::NotProjectParticipant);
+        }
+
+        // Verify caller is an approved applicant
+        let application = application.unwrap();
+        if application.status != ApplicationStatus::Approved {
+            panic_with_error!(env, RoundError::NotApprovedParticipant);
+        }
+
         let challenger_id = caller.clone();
 
         let challenges = PayoutsChallenge {
@@ -1416,8 +1455,8 @@ impl IsRound for RoundContract {
         challenges.keys().iter().for_each(|challenger_id| {
             let challenge = challenges.get(challenger_id.clone()).unwrap();
 
-            if challenge.resolved {
-                challenges_internal.remove(challenger_id);
+            if !challenge.resolved {
+                challenges_internal.set(challenger_id, challenge);
             }
         });
 
@@ -1472,6 +1511,11 @@ impl IsRound for RoundContract {
 
         if round.remaining_dist_at_ms.is_some() {
             panic_with_error!(env, RoundError::RedistributionAlreadyDone);
+        }
+
+        let current_ms = get_ledger_second_as_millis(env);
+        if current_ms <= round.voting_end_ms {
+            panic_with_error!(env, VoteError::VotingPeriodNotEnded);
         }
 
         round.assert_cooldown_period_complete(env);
@@ -1534,6 +1578,7 @@ impl IsRound for RoundContract {
 
         let mut round = read_round_info(env, round_id);
         validate_owner_or_admin(env, &caller, &round);
+        validate_voting_not_started(env, &round);
 
         round.cooldown_period_ms = cooldown_period_ms;
         log_update_round(env, round.clone());
@@ -1556,6 +1601,7 @@ impl IsRound for RoundContract {
 
         let mut round = read_round_info(env, round_id);
         validate_owner_or_admin(env, &caller, &round);
+        validate_voting_not_started(env, &round);
 
         round.compliance_req_desc = compliance_req_desc.unwrap_or(String::from_str(env, ""));
         round.compliance_period_ms = compliance_period_ms;

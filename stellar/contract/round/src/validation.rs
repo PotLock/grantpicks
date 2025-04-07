@@ -31,6 +31,18 @@ pub fn validate_round_detail(env: &Env, round_detail: &CreateRoundParams) {
     if round_detail.contacts.len() >= 10 {
         panic_with_error!(env, RoundError::ContactMustBeLessThanTen);
     }
+
+    if round_detail.use_whitelist_voting.unwrap_or(false) {
+        if round_detail.voting_wl_list_id.is_none() {
+            panic_with_error!(env, RoundError::WhitelistIdNotSet)
+        }
+    }
+
+    if round_detail.use_whitelist_application.unwrap_or(false) {
+        if round_detail.application_wl_list_id.is_none() {
+            panic_with_error!(env, RoundError::WhitelistIdNotSet)
+        }
+    }
 }
 
 pub fn validate_round_detail_update(env: &Env, round_detail: &UpdateRoundParams) {
@@ -108,7 +120,7 @@ pub fn validate_application_period(env: &Env, round: &RoundDetail) {
 pub fn validate_voting_not_started(env: &Env, round: &RoundDetail) {
     let current_time = get_ledger_second_as_millis(env);
 
-    if current_time > round.voting_end_ms {
+    if current_time >= round.voting_start_ms {
         panic_with_error!(env, VoteError::VotingAlreadyStarted);
     }
 }

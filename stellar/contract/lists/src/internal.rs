@@ -163,6 +163,8 @@ impl ListsTrait for ListsContract {
             ulist.admin_only_registration = admin_only_registrations.unwrap();
         }
 
+        ulist.updated_ms = env.ledger().timestamp() * 1000;
+
         add_list(env, list_id, ulist.clone());
         let admins = read_list_admins(env, list_id);
         extend_instance(env);
@@ -646,6 +648,7 @@ impl ListsTrait for ListsContract {
         if notes.is_some() {
             uregistration.admin_notes = notes.clone().unwrap();
         }
+        uregistration.updated_ms = env.ledger().timestamp() * 1000;
 
         add_registration(env, registration_id, uregistration.clone());
         extend_instance(env);

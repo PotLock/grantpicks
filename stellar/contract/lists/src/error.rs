@@ -23,5 +23,6 @@ pub enum Error {
   AdminOrOwnerOnly = 15,
   AlreadyInitialized = 16,
   InvalidRegistrationId = 17,
+  AlreadyRegistered = 18,
   RegistrationListMismatch = 18,
 }

@@ -1107,7 +1107,7 @@ impl IsRound for RoundContract {
             let uproject = project.unwrap();
 
             if round.is_video_required {
-                if uproject.has_video {
+                if !uproject.has_video {
                     panic_with_error!(env, ApplicationError::VideoUrlNotValid);
                 }
             }

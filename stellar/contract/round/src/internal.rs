@@ -815,6 +815,8 @@ impl IsRound for RoundContract {
 
         let round = read_round_info(env, round_id);
 
+        validate_voting_not_started(env, &round);
+
         validate_owner_or_admin(env, &admin, &round);
         validate_max_participants(env, &round, &project_ids);
         validate_project_to_approve(env, round_id, &project_ids);
@@ -835,6 +837,8 @@ impl IsRound for RoundContract {
         admin.require_auth();
 
         let round = read_round_info(env, round_id);
+
+        validate_voting_not_started(env, &round);
 
         validate_owner_or_admin(env, &admin, &round);
 

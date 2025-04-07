@@ -1402,8 +1402,8 @@ impl IsRound for RoundContract {
         challenges.keys().iter().for_each(|challenger_id| {
             let challenge = challenges.get(challenger_id.clone()).unwrap();
 
-            if challenge.resolved {
-                challenges_internal.remove(challenger_id);
+            if !challenge.resolved {
+                challenges_internal.set(challenger_id, challenge);
             }
         });
 

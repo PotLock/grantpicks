@@ -1296,6 +1296,21 @@ impl IsRound for RoundContract {
         reason: String,
     ) -> PayoutsChallenge {
         caller.require_auth();
+        
+        let round = read_round_info(env, round_id);
+        round.assert_cooldown_period_in_process(env);
+
+        let application = get_application_by_applicant(env, round_id, &caller);
+        if application.is_none() {
+            panic_with_error!(env, RoundError::NotProjectParticipant);
+        }
+
+        // Verify caller is an approved applicant
+        let application = application.unwrap();
+        if application.status != ApplicationStatus::Approved {
+            panic_with_error!(env, RoundError::NotApprovedParticipant);
+        }
+
         let challenger_id = caller.clone();
 
         let challenges = PayoutsChallenge {

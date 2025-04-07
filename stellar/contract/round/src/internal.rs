@@ -163,6 +163,7 @@ impl RoundCreator for RoundContract {
 
         let mut updated_config = config.clone();
         updated_config.owner = new_owner;
+        write_config(env, &updated_config);
 
         extend_instance(env);
     }

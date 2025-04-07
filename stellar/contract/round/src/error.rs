@@ -52,6 +52,8 @@ pub enum RoundError {
     ApplicationPeriodNotSet = 55,
     CoolDownPeriodNotComplete = 56,
     WhitelistIdNotSet = 59,
+    NotProjectParticipant = 74,
+    NotApprovedParticipant = 75,
 }
 
 #[allow(clippy::module_name_repetitions)]

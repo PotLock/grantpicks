@@ -96,4 +96,8 @@ pub enum ApplicationError {
     VideoUrlNotValid = 42,
     ProjectAlreadyApplied = 43,
     ApplicationNotAllowed = 54,
+    ApplicationStartInPast = 81,
+    ApplicationPeriodTooShort = 82,
+    ApplicationOverlapsVoting = 83,
+    ApplicationPeriodMustBeSet = 84,
 }

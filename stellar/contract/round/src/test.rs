@@ -1544,10 +1544,10 @@ fn test_application_period() {
         name: String::from_str(&env, "name"),
         is_video_required: false,
         contacts: Vec::new(&env),
-        voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
-        voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
+        voting_start_ms: get_ledger_second_as_millis(&env) + 7600020,
+        voting_end_ms: get_ledger_second_as_millis(&env) + 9600010,
         application_start_ms: Some(get_ledger_second_as_millis(&env)),
-        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
+        application_end_ms: Some(get_ledger_second_as_millis(&env) + 3600010),
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist_voting: Some(false),
@@ -1581,7 +1581,7 @@ fn test_application_period() {
 
     let created_round = round.create_round(&admin, &round_detail);
     let new_application_start_ms = get_ledger_second_as_millis(&env) + 1000;
-    let new_application_end_ms = get_ledger_second_as_millis(&env) + 2000;
+    let new_application_end_ms = new_application_start_ms + 3700000;
     round.set_applications_config(
         &created_round.id,
         &admin,

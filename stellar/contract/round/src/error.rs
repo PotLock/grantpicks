@@ -78,6 +78,7 @@ pub enum VoteError {
     EmptyVote = 24,
     TooManyVotes = 25,
     ProjectNotInPair = 33,
+    DuplicatePick = 58,
     TooManyVotesForAvailablePairs = 60,
 }
 

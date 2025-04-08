@@ -11,7 +11,6 @@ pub fn extend_instance(env: &Env) {
     extend_persistent(env, &ContractKey::NextRoundId);
     extend_persistent(env, &ContractKey::NextPayoutId);
     extend_persistent(env, &ContractKey::NextDepositId);
-    extend_persistent(env, &ContractKey::ProjectPayoutIds);
     extend_persistent(env, &ContractKey::VotedRoundIds);
 }
 
@@ -27,6 +26,7 @@ pub fn extend_round(env: &Env, round_id: u128) {
     extend_persistent(env, &ContractKey::FlaggedProjects(round_id));
     extend_persistent(env, &ContractKey::BlackList(round_id));
     extend_persistent(env, &ContractKey::Deposit(round_id));
+    extend_persistent(env, &ContractKey::ProjectPayoutIds(round_id));
 
     let payouts = read_payouts(env, round_id);
 

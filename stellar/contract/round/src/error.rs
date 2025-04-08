@@ -12,6 +12,8 @@ pub enum Error {
     SameOwner = 38,
     DataNotFound = 52,
     AlreadyInitialized = 57,
+    ProtocolFeeTooHigh = 65,
+    ReferrerFeeTooHigh = 66
 }
 
 #[allow(clippy::module_name_repetitions)]
@@ -52,7 +54,13 @@ pub enum RoundError {
     ApplicationPeriodNotSet = 55,
     CoolDownPeriodNotComplete = 56,
     VotingPeriodTooShort = 61,
+    ApplicationPeriodTooShort = 62,
+    ApplicationStartInPast = 63,
     VotingStartInPast = 64,
+    CannotUpdateVaultAfterDeposits = 69,
+    WhitelistIdNotSet = 59,
+    NotProjectParticipant = 74,
+    NotApprovedParticipant = 75,
 }
 
 #[allow(clippy::module_name_repetitions)]
@@ -69,6 +77,7 @@ pub enum VoteError {
     EmptyVote = 24,
     TooManyVotes = 25,
     ProjectNotInPair = 33,
+    TooManyVotesForAvailablePairs = 60,
 }
 
 #[allow(clippy::module_name_repetitions)]

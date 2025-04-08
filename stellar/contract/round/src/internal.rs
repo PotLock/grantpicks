@@ -412,7 +412,7 @@ impl IsRound for RoundContract {
         let round = read_round_info(env, round_id);
 
         validate_owner_or_admin(env, &caller, &round);
-        validate_application_period(env, &round);
+        validate_voting_not_started(env, &round);
 
         let application = get_application_by_applicant(env, round_id, &applicant);
 

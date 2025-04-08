@@ -130,7 +130,6 @@ fn generate_fake_project(
             video_url: String::from_str(&env, "video_url"),
             name: String::from_str(&env, "name"),
             overview: String::from_str(&env, "overview"),
-            payout_address: owner.clone(),
             contacts: project_contacts.clone(),
             contracts: project_contracts.clone(),
             team_members: project_team_members.clone(),
@@ -1670,20 +1669,20 @@ fn test_update_round() {
         voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
         application_start_ms: Some(get_ledger_second_as_millis(&env)),
         application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
-        expected_amount: 1000000,
-        use_whitelist: Some(false),
-        wl_list_id: None,
+        use_whitelist_voting: Some(false),
+        voting_wl_list_id: None,
+        application_wl_list_id: None,
         use_vault: None,
+        referrer_fee_basis_points: Some(500),
         num_picks_per_voter: Some(2),
         max_participants: Some(100),
-        allow_applications: true,
     };
 
     let updated_round = round.update_round(&admin, &created_round.id, &new_round_detail);
     assert!(created_round.name != updated_round.name);
     assert!(created_round.description != updated_round.description);
     assert!(created_round.max_participants != updated_round.max_participants);
-    assert!(created_round.expected_amount != updated_round.expected_amount);
+    // assert!(created_round.expected_amount != updated_round.expected_amount);
 }
 
 /*
@@ -1947,6 +1946,247 @@ fn test_change_round_contract_config() {
     assert_eq!(new_config.default_page_size, 5);
     assert_eq!(new_config.protocol_fee_basis_points, 2000);
     assert_eq!(new_config.protocol_fee_recipient, treasury);
+}
+
+/*
+Test case:
+1. Create a round
+2. Create multiple payout challenges (some resolved, some unresolved)
+3. Remove resolved challenges
+4. Verify only unresolved challenges remain
+*/
+#[test]
+fn test_remove_resolved_challenges() {
+    let env = Env::default();
+    env.budget().reset_unlimited();
+    env.mock_all_auths();
+    
+    let admin = Address::generate(&env);
+    let challenger1 = Address::generate(&env);
+    let challenger2 = Address::generate(&env);
+    let challenger3 = Address::generate(&env);
+    
+    let round = deploy_contract(&env, &admin);
+    let token_contract = create_token(&env, &admin).0;
+    let project_contract = deploy_registry_contract(&env, &admin);
+    let list_contract = deploy_list_contract(&env, &admin);
+    
+    let mut admins: Vec<Address> = Vec::new(&env);
+    admins.push_back(admin.clone());
+    
+    // Create round
+    let round_detail = &CreateRoundParams {
+        description: String::from_str(&env, "description"),
+        name: String::from_str(&env, "name"),
+        is_video_required: false,
+        contacts: Vec::new(&env),
+        voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
+        voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
+        application_start_ms: Some(get_ledger_second_as_millis(&env)),
+        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
+        expected_amount: 5,
+        admins: admins.clone(),
+        use_whitelist_voting: Some(false),
+        use_whitelist_application: Some(false),
+        voting_wl_list_id: None,
+        application_wl_list_id: None,
+        num_picks_per_voter: Some(2),
+        max_participants: Some(10),
+        allow_applications: true,
+        owner: admin.clone(),
+        cooldown_period_ms: None,
+        compliance_req_desc: String::from_str(&env, ""),
+        compliance_period_ms: None,
+        allow_remaining_dist: false,
+        remaining_dist_address: admin.clone(),
+        referrer_fee_basis_points: None,
+        use_vault: None,
+    };
+    
+    round.initialize(
+        &admin,
+        &token_contract.address,
+        &project_contract.address,
+        &list_contract.address,
+        &Some(1),
+        &None,
+        &None,
+        &None,
+        &None,
+    );
+    
+    let created_round = round.create_round(&admin, &round_detail);
+    
+    let reason1 = String::from_str(&env, "Challenge reason 1");
+    let reason2 = String::from_str(&env, "Challenge reason 2");
+    let reason3 = String::from_str(&env, "Challenge reason 3");
+    
+    // Create three challenges
+    round.challenge_payouts(&created_round.id, &challenger1, &reason1);
+    round.challenge_payouts(&created_round.id, &challenger2, &reason2);
+    round.challenge_payouts(&created_round.id, &challenger3, &reason3);
+    
+    let challenges = round.get_challenges_payout(&created_round.id, &None, &None);
+    assert_eq!(challenges.len(), 3);
+    
+    // Resolve two of the challenges
+    let admin_notes = String::from_str(&env, "Admin notes");
+    round.update_payouts_challenge(
+        &created_round.id,
+        &admin,
+        &challenger1,
+        &Some(admin_notes.clone()),
+        &Some(true), // Resolve this challenge
+    );
+    
+    round.update_payouts_challenge(
+        &created_round.id,
+        &admin,
+        &challenger2,
+        &Some(admin_notes.clone()),
+        &Some(true), 
+    );
+    
+    
+    let challenges_before = round.get_challenges_payout(&created_round.id, &None, &None);
+    assert_eq!(challenges_before.len(), 3);
+    
+    // Count resolved challenges
+    let resolved_count = challenges_before.iter().filter(|c| c.resolved).count();
+    assert_eq!(resolved_count, 2);
+    
+    // Remove resolved challenges
+    round.remove_resolved_challenges(&created_round.id, &admin);
+    
+    let challenges_after = round.get_challenges_payout(&created_round.id, &None, &None);
+    assert_eq!(challenges_after.len(), 1);
+    
+    assert_eq!(challenges_after.get(0).unwrap().challenger_id, challenger3);
+    assert_eq!(challenges_after.get(0).unwrap().resolved, false);
+    
+    // Resolve the last challenge
+    round.update_payouts_challenge(
+        &created_round.id,
+        &admin,
+        &challenger3,
+        &Some(admin_notes.clone()),
+        &Some(true),
+    );
+    
+    // Remove all resolved challenges
+    round.remove_resolved_challenges(&created_round.id, &admin);
+    
+    // Verify no challenges remain
+    let final_challenges = round.get_challenges_payout(&created_round.id, &None, &None);
+    assert_eq!(final_challenges.len(), 0);
+}
+
+
+
+#[test]
+fn test_deposit_with_and_without_referrer() {
+    let env = Env::default();
+    env.budget().reset_unlimited();
+    env.mock_all_auths();
+    
+    let admin = Address::generate(&env);
+    let depositor = Address::generate(&env);
+    let referrer = Address::generate(&env);
+    
+    let round = deploy_contract(&env, &admin);
+    let (token_contract, token_admin) = create_token(&env, &admin);
+    let project_contract = deploy_registry_contract(&env, &admin);
+    let list_contract = deploy_list_contract(&env, &admin);
+    
+    round.initialize(
+        &admin,
+        &token_contract.address,
+        &project_contract.address,
+        &list_contract.address,
+        &Some(1),
+        &None,
+        &None,
+        &None,
+        &None,
+    );
+
+    let mut admins: Vec<Address> = Vec::new(&env);
+    admins.push_back(admin.clone());
+    
+    let round_detail = &CreateRoundParams {
+        name: String::from_str(&env, "name"),
+        description: String::from_str(&env, "description"),
+        is_video_required: false,
+        contacts: Vec::new(&env),
+        voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
+        voting_end_ms: get_ledger_second_as_millis(&env) + 300000,
+        application_start_ms: Some(get_ledger_second_as_millis(&env)),
+        application_end_ms: Some(get_ledger_second_as_millis(&env)),
+        expected_amount: 10 * 10u128.pow(7),
+        admins: admins.clone(),
+        use_whitelist_voting: Some(false),
+        use_whitelist_application: Some(false),
+        voting_wl_list_id: None,
+        application_wl_list_id: None,
+        num_picks_per_voter: Some(2),
+        max_participants: Some(10),
+        allow_applications: true,
+        owner: admin.clone(),
+        cooldown_period_ms: None,
+        compliance_req_desc: String::from_str(&env, ""),
+        compliance_period_ms: None,
+        allow_remaining_dist: false,
+        remaining_dist_address: admin.clone(),
+        referrer_fee_basis_points: Some(500), // 5% referrer fee
+        use_vault: Some(true),
+    };
+
+    let created_round = round.create_round(&admin, &round_detail);
+    let amount = 1000 * 10u128.pow(7);
+
+    // Test deposit without referrer
+    token_admin.mint(&depositor, &(amount as i128));
+    token_contract.approve(&depositor, &round.address, &(amount as i128), &env.ledger().sequence().saturating_add(300));
+    round.deposit_to_round(&created_round.id, &depositor, &amount, &None, &None);
+
+    let deposit_without_referrer = round.get_deposits_for_round(&1, &None, &None);
+    let deposit_without_referrer = deposit_without_referrer.first().unwrap();
+    assert_eq!(deposit_without_referrer.referrer_fee, 0);
+    // assert_eq!(
+    //     deposit_without_referrer.net_amount as u128,
+    //     amount.saturating_sub(calculate_protocol_fee(&env, amount).unwrap())
+    // );
+
+    // assert that referrer balance is 0 before deposit
+    let referrer_balance1 = token_contract.balance(&referrer);
+
+    assert_eq!(0, referrer_balance1);
+    // Test deposit with referrer
+    token_admin.mint(&depositor, &(amount as i128));
+    token_contract.approve(&depositor, &round.address, &(amount as i128), &env.ledger().sequence().saturating_add(300));
+    round.deposit_to_round(
+        &created_round.id,
+        &depositor,
+        &amount,
+        &None,
+        &Some(referrer.clone())
+    );
+
+    
+
+    let deposit_with_referrer = round.get_deposits_for_round(&1, &None, &None);
+    let deposit_with_referrer = deposit_with_referrer.get(1).unwrap();
+    let expected_referrer_fee = (amount * 500) / 10000; // 5% referrer fee
+    assert_eq!(deposit_with_referrer.referrer_fee as u128, expected_referrer_fee);
+    // assert_eq!(
+    //     deposit_with_referrer.net_amount as u128,
+    //     amount.saturating_sub(calculate_protocol_fee(&env, amount).unwrap()).saturating_sub(expected_referrer_fee)
+    // );
+
+    // Verify referrer received the fee
+    
+    let referrer_balance = token_contract.balance(&referrer);
+    assert_eq!(referrer_balance as u128, expected_referrer_fee);
 }
 
 

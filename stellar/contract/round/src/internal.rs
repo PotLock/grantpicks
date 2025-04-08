@@ -723,8 +723,10 @@ impl IsRound for RoundContract {
                     );
                     
                     if !is_kyc_passed {
-                        payout.paid_at_ms = Some(get_ledger_second_as_millis(env));
-                        write_payout_info(env, payout_id, &payout);
+                        if round.compliance_end_ms.unwrap_or(0) < get_ledger_second_as_millis(env) {
+                            payout.paid_at_ms = Some(get_ledger_second_as_millis(env));
+                            write_payout_info(env, payout_id, &payout);
+                        }
                         return;
                     }
                 }

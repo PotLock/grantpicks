@@ -31,6 +31,8 @@ const MAX_REFERRER_FEE_BASIS_POINTS: u32 = 500; // 5% max referrer fee
 #[contract]
 pub struct RoundContract;
 
+const MAX_REFERRER_FEE_BASIS_POINTS: u32 = 500;
+
 #[contractimpl]
 impl RoundCreator for RoundContract {
     fn initialize(
@@ -179,6 +181,7 @@ impl RoundCreator for RoundContract {
 
         let mut updated_config = config.clone();
         updated_config.owner = new_owner;
+        write_config(env, &updated_config);
 
         extend_instance(env);
     }
@@ -418,7 +421,11 @@ impl IsRound for RoundContract {
         }
 
         let mut updated_application = application.unwrap();
-        updated_application.status = status;
+        let status_changing = updated_application.status != status;
+        if status_changing {
+            updated_application.status = status;
+        }
+        
 
         if note.is_some() {
             let review_note = note.unwrap();
@@ -430,18 +437,24 @@ impl IsRound for RoundContract {
         updated_application.updated_ms = Some(get_ledger_second_as_millis(env));
 
         let mut approved_projects = read_approved_projects(env, round_id);
-        if updated_application.status == ApplicationStatus::Approved {
-            validate_max_participant(env, &round);
-
-            approved_projects.push_back(updated_application.project_id);
-        } else {
-            let is_approved = is_project_approved(env, round_id, updated_application.project_id);
-
-            if is_approved {
-                let index = approved_projects
-                    .first_index_of(updated_application.project_id)
-                    .unwrap();
-                approved_projects.remove(index);
+        let is_already_approved = is_project_approved(env, round_id, updated_application.project_id);
+        
+        if status_changing {
+            if updated_application.status == ApplicationStatus::Approved {
+                
+                if !is_already_approved {
+                    validate_max_participant(env, &round);
+                    approved_projects.push_back(updated_application.project_id);
+                }
+    
+            } else {
+    
+                if is_already_approved {
+                    let index = approved_projects
+                        .first_index_of(updated_application.project_id)
+                        .unwrap();
+                    approved_projects.remove(index);
+                }
             }
         }
 
@@ -620,7 +633,7 @@ impl IsRound for RoundContract {
         validate_owner_or_admin(env, &admin, &round);
 
         voters.iter().for_each(|voter| {
-            validate_not_blacklist(env, round_id, &voter);
+            validate_blacklist(env, round_id, &voter); // validate that user is not already blacklisted
             add_to_blacklist(env, round_id, voter.clone());
             log_update_user_flag(env, round.id, voter.clone(), true);
         });
@@ -659,7 +672,7 @@ impl IsRound for RoundContract {
 
         if round.use_vault.is_none() {
             panic_with_error!(env, RoundError::RoundDoesNotUseVault);
-        }else{
+        } else {
             if !round.use_vault.unwrap() {
                 panic_with_error!(env, RoundError::RoundDoesNotUseVault);
             }
@@ -687,6 +700,8 @@ impl IsRound for RoundContract {
         let token_client = TokenClient::new(env, &token_contract);
         let list_contract = config.list_contract;
         let list_client = ListsClient::new(env, &list_contract);
+        let project_contract = config.project_contract;
+        let project_client = ProjectRegistryClient::new(env, &project_contract);
 
         let mut updated_round = round.clone();
         let mut total_amount_paid: i128 = 0;
@@ -709,10 +724,28 @@ impl IsRound for RoundContract {
                 }
 
                 if round.compliance_period_ms.is_some() {
-                   let is_kcy_passed = list_client.is_registered(&config.voting_wl_list_id, &payout.recipient_id, &Some(RegistrationStatus::Approved));
-                    if !is_kcy_passed {
+                    let project = project_client.get_precheck_by_id(&project_id);
+                    
+                    if project.is_none() {
                         payout.paid_at_ms = Some(get_ledger_second_as_millis(env));
                         write_payout_info(env, payout_id, &payout);
+                        return;
+                    }
+                    
+                    let project_owner = project.unwrap().applicant;
+                    
+                    // Check KYC on project owner instead of recipient
+                    let is_kyc_passed = list_client.is_registered(
+                        &config.voting_wl_list_id, 
+                        &project_owner, 
+                        &Some(RegistrationStatus::Approved)
+                    );
+                    
+                    if !is_kyc_passed {
+                        if round.compliance_end_ms.unwrap_or(0) < get_ledger_second_as_millis(env) {
+                            payout.paid_at_ms = Some(get_ledger_second_as_millis(env));
+                            write_payout_info(env, payout_id, &payout);
+                        }
                         return;
                     }
                 }
@@ -755,20 +788,19 @@ impl IsRound for RoundContract {
         let current_ms = get_ledger_second_as_millis(env);
 
         if round.voting_start_ms <= current_ms && current_ms <= round.voting_end_ms {
+            let is_blacklisted = is_blacklisted(env, round_id, voter.clone());
+            if is_blacklisted {
+                return false;
+            }
             if round.use_whitelist_voting {
                 if round.voting_wl_list_id.is_none() {
-                    return true;
+                    return false;
                 }
                 let list_id = round.voting_wl_list_id.unwrap();
                 let list_contract = read_config(env).list_contract;
                 let list_client = ListsClient::new(env, &list_contract);
                 let is_whitelisted = list_client.is_registered(&Some(list_id), &voter, &Some(RegistrationStatus::Approved));
                 return is_whitelisted;
-            }
-
-            let is_blacklisted = is_blacklisted(env, round_id, voter.clone());
-            if is_blacklisted {
-                return false;
             }
 
             return true;
@@ -834,6 +866,8 @@ impl IsRound for RoundContract {
 
         let round = read_round_info(env, round_id);
 
+        validate_voting_not_started(env, &round);
+
         validate_owner_or_admin(env, &admin, &round);
         validate_max_participants(env, &round, &project_ids);
         validate_project_to_approve(env, round_id, &project_ids);
@@ -854,6 +888,8 @@ impl IsRound for RoundContract {
         admin.require_auth();
 
         let round = read_round_info(env, round_id);
+
+        validate_voting_not_started(env, &round);
 
         validate_owner_or_admin(env, &admin, &round);
 
@@ -905,18 +941,21 @@ impl IsRound for RoundContract {
         admin.require_auth();
 
         let mut round = read_round_info(env, round_id);
-
         validate_owner_or_admin(env, &admin, &round);
 
-        if num_picks_per_voter < 1 {
-            panic_with_error!(env, VoteError::EmptyVote);
-        }
+        validate_pick_per_votes(env, num_picks_per_voter);
 
         let states = read_voting_state(env, round_id);
         let votes = states.len();
-
         if votes > 0 {
             panic_with_error!(env, RoundError::VotesAlreadyCast);
+        }
+
+        // Validate against number of possible pairs
+        let approved_projects = read_approved_projects(env, round_id);
+        let total_available_pairs = count_total_available_pairs(approved_projects.len());
+        if num_picks_per_voter > total_available_pairs {
+            panic_with_error!(env, VoteError::TooManyVotesForAvailablePairs);
         }
 
         round.num_picks_per_voter = num_picks_per_voter;
@@ -1066,24 +1105,70 @@ impl IsRound for RoundContract {
 
         let mut round = read_round_info(env, round_id);
 
+        validate_voting_not_started(env, &round);
+
         validate_owner_or_admin(env, &caller, &round);
         validate_round_detail_update(env, &round_detail);
 
-        round.allow_applications = round_detail.allow_applications;
-        round.application_end_ms = round_detail.application_end_ms;
-        round.application_start_ms = round_detail.application_start_ms;
-        round.contacts = round_detail.contacts;
-        round.expected_amount = round_detail.expected_amount;
-        round.description = round_detail.description;
-        round.max_participants = round_detail.max_participants.unwrap_or(10);
+        // Validate referrer fee if present and set
+        if let Some(fee) = round_detail.referrer_fee_basis_points {
+            if fee > MAX_REFERRER_FEE_BASIS_POINTS {
+                panic_with_error!(env, Error::ReferrerFeeTooHigh);
+            }
+            round.referrer_fee_basis_points = Some(fee);
+        }
+
         round.name = round_detail.name;
-        round.voting_wl_list_id = round_detail.wl_list_id;
+        round.description = round_detail.description;
+        round.contacts = round_detail.contacts;
+        round.is_video_required = round_detail.is_video_required;
+        
+        round.voting_start_ms = round_detail.voting_start_ms;
+        round.voting_end_ms = round_detail.voting_end_ms;
+        round.application_start_ms = round_detail.application_start_ms;
+        round.application_end_ms = round_detail.application_end_ms;
+
+        if let Some(use_vault) = round_detail.use_vault {
+            // Only allow updating use_vault if no deposits have been made
+            if round.vault_total_deposits > 0 {
+                panic_with_error!(env, RoundError::CannotUpdateVaultAfterDeposits);
+            }
+            round.use_vault = Some(use_vault);
+        }
+
+        if let Some(max_participants) = round_detail.max_participants {
+            round.max_participants = max_participants;
+        }
+
+        if let Some(num_picks) = round_detail.num_picks_per_voter {
+            validate_pick_per_votes(env, num_picks);
+            round.num_picks_per_voter = num_picks;
+        }
+
+        if let Some(use_whitelist) = round_detail.use_whitelist_voting {
+            round.use_whitelist_voting = use_whitelist;
+        }
+
+        if let Some(voting_wl_list_id) = round_detail.voting_wl_list_id {
+            let list_client = ListsClient::new(env, &read_config(env).list_contract);
+            let valid_list = list_client.get_list(&voting_wl_list_id);
+            assert!(valid_list.id == voting_wl_list_id, "Invalid voting whitelist list id");
+            round.voting_wl_list_id = Some(voting_wl_list_id);
+        }
+
+        if let Some(application_wl_list_id) = round_detail.application_wl_list_id {
+            let list_client = ListsClient::new(env, &read_config(env).list_contract);
+            let valid_list = list_client.get_list(&application_wl_list_id);
+            assert!(valid_list.id == application_wl_list_id, "Invalid application whitelist list id");
+            round.application_wl_list_id = Some(application_wl_list_id);
+        }
 
         write_round_info(env, round_id, &round);
         extend_instance(env);
+        extend_round(env, round_id);
         log_update_round(env, round.clone());
 
-        round.clone()
+        round
     }
 
     fn delete_round(env: &Env, round_id: u128) -> RoundDetail {
@@ -1121,11 +1206,22 @@ impl IsRound for RoundContract {
 
         let mut internal_applications = read_application(env, round_id);
         applicants.iter().for_each(|applicant| {
+            validate_blacklist(env, round_id, &applicant);
+
+            if round.use_whitelist_application {
+                validate_application_whitelist(env, round_id, &applicant);
+            }
+
             let project = project_client.get_precheck(&applicant);
+            
+            if project.is_none() {
+                panic_with_error!(env, ApplicationError::ProjectNotFoundInRegistry);
+            }
+            
             let uproject = project.unwrap();
 
             if round.is_video_required {
-                if uproject.has_video {
+                if !uproject.has_video {
                     panic_with_error!(env, ApplicationError::VideoUrlNotValid);
                 }
             }
@@ -1297,6 +1393,10 @@ impl IsRound for RoundContract {
         let mut round = read_round_info(env, round_id);
         validate_owner_or_admin(env, &caller, &round);
 
+        if round.round_complete_ms.is_some() { // check if round has not being set to "complete"
+            panic_with_error!(env, RoundError::RoundAlreadyCompleted);
+        }
+
         round.round_complete_ms = Some(get_ledger_second_as_millis(env));
 
         write_round_info(env, round_id, &round);
@@ -1314,6 +1414,21 @@ impl IsRound for RoundContract {
         reason: String,
     ) -> PayoutsChallenge {
         caller.require_auth();
+        
+        let round = read_round_info(env, round_id);
+        round.assert_cooldown_period_in_process(env);
+
+        let application = get_application_by_applicant(env, round_id, &caller);
+        if application.is_none() {
+            panic_with_error!(env, RoundError::NotProjectParticipant);
+        }
+
+        // Verify caller is an approved applicant
+        let application = application.unwrap();
+        if application.status != ApplicationStatus::Approved {
+            panic_with_error!(env, RoundError::NotApprovedParticipant);
+        }
+
         let challenger_id = caller.clone();
 
         let challenges = PayoutsChallenge {
@@ -1389,8 +1504,8 @@ impl IsRound for RoundContract {
         challenges.keys().iter().for_each(|challenger_id| {
             let challenge = challenges.get(challenger_id.clone()).unwrap();
 
-            if challenge.resolved {
-                challenges_internal.remove(challenger_id);
+            if !challenge.resolved {
+                challenges_internal.set(challenger_id, challenge);
             }
         });
 
@@ -1445,6 +1560,11 @@ impl IsRound for RoundContract {
 
         if round.remaining_dist_at_ms.is_some() {
             panic_with_error!(env, RoundError::RedistributionAlreadyDone);
+        }
+
+        let current_ms = get_ledger_second_as_millis(env);
+        if current_ms <= round.voting_end_ms {
+            panic_with_error!(env, VoteError::VotingPeriodNotEnded);
         }
 
         round.assert_cooldown_period_complete(env);
@@ -1507,6 +1627,7 @@ impl IsRound for RoundContract {
 
         let mut round = read_round_info(env, round_id);
         validate_owner_or_admin(env, &caller, &round);
+        validate_voting_not_started(env, &round);
 
         round.cooldown_period_ms = cooldown_period_ms;
         log_update_round(env, round.clone());
@@ -1529,6 +1650,7 @@ impl IsRound for RoundContract {
 
         let mut round = read_round_info(env, round_id);
         validate_owner_or_admin(env, &caller, &round);
+        validate_voting_not_started(env, &round);
 
         round.compliance_req_desc = compliance_req_desc.unwrap_or(String::from_str(env, ""));
         round.compliance_period_ms = compliance_period_ms;

@@ -1365,6 +1365,7 @@ impl IsRound for RoundContract {
         validate_owner_or_admin(env, &caller, &round);
 
         let approved_project = read_approved_projects(env, round_id);
+        let mut total_existing_payouts: i128 = 0;
 
         if clear_existing {
             clear_payouts(env, round_id);
@@ -1377,6 +1378,17 @@ impl IsRound for RoundContract {
                 });
 
                 clear_project_payout_ids(env, round_id, project_id);
+            });
+        } else {
+            approved_project.iter().for_each(|project_id| {
+                let project_payout_ids = read_project_payout_ids_for_project(env, project_id);
+                project_payout_ids.iter().for_each(|payout_id| {
+                    if let Some(payout) = read_payout_info(env, payout_id) {
+                        if payout.paid_at_ms.is_none() { // Only count unpaid payouts
+                            total_existing_payouts += payout.amount;
+                        }
+                    }
+                });
             });
         }
 
@@ -1435,7 +1447,7 @@ impl IsRound for RoundContract {
             .try_into()
             .expect("Conversion failed");
 
-        if running_total > vault_balance {
+        if running_total + total_existing_payouts > vault_balance {
             panic_with_error!(env, RoundError::InsufficientFunds);
         }
 

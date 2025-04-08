@@ -43,8 +43,7 @@ impl RoundCreator for RoundContract {
         token_address: Address,
         registry_address: Address,
         list_address: Address,
-        voting_wl_list_id: Option<u128>, // list for whitelisted/eligible voted
-        application_wl_list_id: Option<u128>, // list for whitelisted/eligible projects
+        kyc_wl_list_id: Option<u128>, // list for whitelisted/eligible voted
         protocol_fee_basis_points: Option<u32>,
         protocol_fee_recipient: Option<Address>,
         default_page_size: Option<u64>,
@@ -55,16 +54,10 @@ impl RoundCreator for RoundContract {
             panic_with_error!(env, Error::AlreadyInitialized);
         }
 
-        if voting_wl_list_id.is_some() {
+        if kyc_wl_list_id.is_some() {
             let list_client = ListsClient::new(env, &list_address);
-            let valid_list = list_client.get_list(&voting_wl_list_id.unwrap());
-            assert!(valid_list.id == voting_wl_list_id.unwrap(), "Invalid voting whitelist list id");
-        }
-
-        if application_wl_list_id.is_some() {
-            let list_client = ListsClient::new(env, &list_address);
-            let valid_list = list_client.get_list(&application_wl_list_id.unwrap());
-            assert!(valid_list.id == application_wl_list_id.unwrap(), "Invalid application whitelist list id");
+            let valid_list = list_client.get_list(&kyc_wl_list_id.unwrap());
+            assert!(valid_list.id == kyc_wl_list_id.unwrap(), "Invalid voting whitelist list id");
         }
         
         // Validate protocol fee
@@ -83,8 +76,7 @@ impl RoundCreator for RoundContract {
             token_contract: token_address,
             project_contract: registry_address,
             list_contract: list_address,
-            voting_wl_list_id,
-            application_wl_list_id,
+            kyc_wl_list_id,
         };
 
         write_config(env, &config);
@@ -265,27 +257,22 @@ impl RoundCreator for RoundContract {
         write_config(env, &updated_config);
     }
 
-    fn change_voting_wl_list_id(env: &Env, list_id: u128){
+    fn change_kyc_wl_list_id(env: &Env, list_id: u128){
         let config = read_config(env);
 
         config.owner.require_auth();
 
+        let list_client = ListsClient::new(env, &config.list_contract);
+        let valid_list = list_client.get_list(&list_id);
+        assert!(valid_list.id == list_id, "Invalid voting whitelist list id");
+
         let mut updated_config = config.clone();
-        updated_config.voting_wl_list_id = Some(list_id);
+        updated_config.kyc_wl_list_id = Some(list_id);
 
         write_config(env, &updated_config);
     }
 
-    fn change_application_wl_list_id(env: &Env, list_id: u128){
-        let config = read_config(env);
-
-        config.owner.require_auth();
-
-        let mut updated_config = config.clone();
-        updated_config.application_wl_list_id = Some(list_id);
-
-        write_config(env, &updated_config);
-    }
+    
 }
 
 #[contractimpl]
@@ -798,7 +785,7 @@ impl IsRound for RoundContract {
                     
                     // Check KYC on project owner instead of recipient
                     let is_kyc_passed = list_client.is_registered(
-                        &config.voting_wl_list_id, 
+                        &config.kyc_wl_list_id, 
                         &project_owner, 
                         &Some(RegistrationStatus::Approved)
                     );

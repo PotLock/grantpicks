@@ -8,8 +8,7 @@ pub trait RoundCreator {
       token_address: Address, 
       registry_address: Address, 
       list_address: Address,
-      voting_wl_list_id: Option<u128>,
-      application_wl_list_id: Option<u128>,
+      kyc_wl_list_id: Option<u128>,
       protocol_fee_basis_points: Option<u32>, 
       protocol_fee_recipient: Option<Address>, 
       default_page_size: Option<u64>
@@ -22,7 +21,6 @@ pub trait RoundCreator {
     fn cancel_ownership_transfer(env: &Env);
     fn owner_set_default_page_size(env: &Env, default_page_size: u64);
     fn owner_set_protocol_fee_config(env: &Env, protocol_fee_recipient: Option<Address>, protocol_fee_basis_points: Option<u32>);
-    fn change_voting_wl_list_id(env: &Env, list_id: u128);
-    fn change_application_wl_list_id(env: &Env, list_id: u128);
+    fn change_kyc_wl_list_id(env: &Env, list_id: u128);
     fn get_config(env: &Env) -> Config;
 }

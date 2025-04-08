@@ -208,7 +208,6 @@ fn test_round_create() {
         &None,
         &None,
         &None,
-        &None,
     );
 
     let created_round = round.create_round(&admin, &round_detail);
@@ -288,7 +287,6 @@ fn test_apply_applications() {
         &None,
         &None,
         &None,
-        &None,
     );
 
     let created_round = round.create_round(&admin, &round_detail);
@@ -365,7 +363,6 @@ fn test_review_application() {
         &project_contract.address,
         &list_contract.address,
         &Some(1),
-        &None,
         &None,
         &None,
         &None,
@@ -459,7 +456,6 @@ fn test_whitelist_applicant() {
         &Some(2),
         &None,
         &None,
-        &None,
     );
 
     let created_round = round.create_round(&admin, &round_detail);
@@ -531,7 +527,6 @@ fn test_unwhitelisted_voters_should_panic() {
         &project_contract.address,
         &list_contract.address,
         &Some(1), // use kyc list that was created with contract
-        &None,
         &None,
         &None,
         &None,
@@ -650,7 +645,6 @@ fn test_whitelisted_voter_can_vote() {
         &None,
         &None,
         &None,
-        &None,
     );
 
     let created_round = round.create_round(&admin, &round_detail);
@@ -762,7 +756,6 @@ fn test_blacklist() {
         &None,
         &None,
         &None,
-        &None,
     );
 
     let created_round = round.create_round(&admin, &round_detail);
@@ -870,7 +863,6 @@ fn test_voting() {
         &project_contract.address,
         &list_contract.address,
         &Some(1),
-        &None,
         &None,
         &None,
         &None,
@@ -1031,7 +1023,6 @@ fn test_add_remove_admin() {
         &None,
         &None,
         &None,
-        &None,
     );
 
     let created_round = round.create_round(&admin, &round_detail);
@@ -1111,7 +1102,6 @@ fn test_voting_deposit_and_payout() {
         &project_contract.address,
         &list_contract.address,
         &Some(1),
-        &None,
         &None,
         &None,
         &None,
@@ -1271,7 +1261,6 @@ fn test_get_all_pairs() {
         &None,
         &None,
         &None,
-        &None,
     );
 
     let created_round = round.create_round(&admin, &round_detail);
@@ -1376,7 +1365,6 @@ fn test_change_number_of_votes() {
         &None,
         &None,
         &None,
-        &None,
     );
 
     let created_round = round.create_round(&admin, &round_detail);
@@ -1439,7 +1427,6 @@ fn test_change_amount() {
         &project_contract.address,
         &list_contract.address,
         &Some(1),
-        &None,
         &None,
         &None,
         &None,
@@ -1508,7 +1495,6 @@ fn test_set_voting_period() {
         &None,
         &None,
         &None,
-        &None,
     );
 
     let created_round = round.create_round(&admin, &round_detail);
@@ -1573,7 +1559,6 @@ fn test_application_period() {
         &project_contract.address,
         &list_contract.address,
         &Some(1),
-        &None,
         &None,
         &None,
         &None,
@@ -1653,7 +1638,6 @@ fn test_update_round() {
         &project_contract.address,
         &list_contract.address,
         &Some(1),
-        &None,
         &None,
         &None,
         &None,
@@ -1740,7 +1724,6 @@ fn test_change_allow_applications() {
         &None,
         &None,
         &None,
-        &None,
     );
 
     let created_round = round.create_round(&admin, &round_detail);
@@ -1812,7 +1795,6 @@ fn test_unapply_from_round() {
         &project_contract.address,
         &list_contract.address,
         &Some(1),
-        &None,
         &None,
         &None,
         &None,
@@ -1889,7 +1871,6 @@ fn test_apply_to_round_batch() {
         &None,
         &None,
         &None,
-        &None,
     );
 
     let created_round = round.create_round(&admin, &round_detail);
@@ -1926,7 +1907,6 @@ fn test_change_round_contract_config() {
         &project_contract.address,
         &list_contract.address,
         &Some(1),
-        &None,
         &None,
         &None,
         &None,

@@ -68,31 +68,25 @@ pub fn update_project(env: &Env, project: Project) {
     write_project(env, project.id, &project);
 }
 
-pub fn read_applicant_project(env: &Env) -> Map<Address, u128> {
-    let key = ContractKey::ApplicantToProjectID;
-    match env.storage().persistent().get(&key) {
-        Some(data) => data,
-        None => Map::new(env),
-    }
+pub fn read_applicant_project(env: &Env, applicant: &Address) -> Option<u128> {
+    let key = ContractKey::ApplicantToProjectID(applicant.clone());
+    env.storage().persistent().get(&key)
 }
 
-pub fn write_applicant_project(env: &Env, data: &Map<Address, u128>) {
-    let key = ContractKey::ApplicantToProjectID;
-    env.storage().persistent().set(&key, data);
+pub fn write_applicant_project(env: &Env, applicant: &Address, project_id: u128) {
+    let key = ContractKey::ApplicantToProjectID(applicant.clone());
+    env.storage().persistent().set(&key, &project_id);
 }
 
 pub fn add_applicant_project(env: &Env, applicant: &Address, project_id: u128) {
-    let mut data = read_applicant_project(env);
-    data.set(applicant.clone(), project_id);
-    write_applicant_project(env, &data);
+    write_applicant_project(env, applicant, project_id);
 }
 
 pub fn is_applied(env: &Env, applicant: &Address) -> bool {
-    let data = read_applicant_project(env);
-    data.contains_key(applicant.clone())
+    let key = ContractKey::ApplicantToProjectID(applicant.clone());
+    env.storage().persistent().has(&key)
 }
 
 pub fn get_applicant_project_id(env: &Env, applicant: &Address) -> Option<u128> {
-  let data = read_applicant_project(env);
-  data.get(applicant.clone())
+    read_applicant_project(env, applicant)
 }

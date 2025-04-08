@@ -9,7 +9,7 @@ use crate::project_writer::{
     add_applicant_project, add_project, find_projects, get_applicant_project_id, get_project, increment_project_num, read_old_projects, read_project_num, update_project
 };
 use crate::soroban_sdk::{self, contract, contractimpl, Address, Env, Vec};
-use crate::storage::{extend_instance, extend_project};
+use crate::storage::{extend_instance, extend_project, extend_applicant};
 use crate::validation::{
     validate_applicant, validate_application,
     validate_owner_or_admin, validate_update_project,
@@ -46,7 +46,6 @@ impl ProjectRegistryTrait for ProjectRegistry {
             contracts: project_params.contracts,
             team_members: project_params.team_members,
             repositories: project_params.repositories,
-            payout_address: project_params.payout_address,
             funding_histories: project_params.fundings,
             image_url: project_params.image_url,
             video_url: project_params.video_url,
@@ -59,6 +58,7 @@ impl ProjectRegistryTrait for ProjectRegistry {
         add_project(env, project.clone());
         add_applicant_project(env, &applicant, project_id);
         extend_instance(env);
+        extend_applicant(env, &applicant);
         log_create_project_event(env, project.clone());
 
         project
@@ -92,8 +92,8 @@ impl ProjectRegistryTrait for ProjectRegistry {
         uproject.contracts = new_project_params.contracts;
         uproject.team_members = new_project_params.team_members;
         uproject.repositories = new_project_params.repositories;
-        uproject.payout_address = new_project_params.payout_address;
         uproject.funding_histories = new_project_params.fundings;
+        uproject.updated_ms = Some(env.ledger().timestamp() * 1000);
 
         log_update_project_event(env, uproject.clone());
         update_project(env, uproject);

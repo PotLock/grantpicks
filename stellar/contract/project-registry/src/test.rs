@@ -67,7 +67,6 @@ fn test_apply() {
             video_url: String::from_str(&env, "video url"),
             name: String::from_str(&env, "name"),
             overview: String::from_str(&env, "overview"),
-            payout_address: bob.clone(),
             contacts: project_contacts,
             contracts: project_contracts,
             team_members: project_team_members,
@@ -78,14 +77,12 @@ fn test_apply() {
     );
 
     assert_eq!(project.owner, bob);
-    assert_eq!(project.payout_address, bob);
 
     let result = contract.get_project_from_applicant(&bob);
     assert_eq!(result.name, project.name);
     assert_eq!(result.overview, project.overview);
     assert_eq!(result.image_url, project.image_url);
     assert_eq!(result.video_url, project.video_url);
-    assert_eq!(result.payout_address, project.payout_address);
     assert_eq!(result.contacts.len(), 1);
 }
 
@@ -143,7 +140,6 @@ fn test_add_admin() {
             video_url: String::from_str(&env, "video url"),
             name: String::from_str(&env, "name"),
             overview: String::from_str(&env, "overview"),
-            payout_address: bob.clone(),
             contacts: project_contacts,
             contracts: project_contracts,
             team_members: project_team_members,
@@ -215,7 +211,6 @@ fn test_remove_admin() {
             video_url: String::from_str(&env, "video url"),
             name: String::from_str(&env, "name"),
             overview: String::from_str(&env, "overview"),
-            payout_address: bob.clone(),
             contacts: project_contacts,
             contracts: project_contracts,
             team_members: project_team_members,
@@ -292,7 +287,6 @@ fn test_get_projects() {
             video_url: String::from_str(&env, "video url"),
             name: String::from_str(&env, "name"),
             overview: String::from_str(&env, "overview"),
-            payout_address: bob.clone(),
             contacts: project_contacts,
             contracts: project_contracts,
             team_members: project_team_members,
@@ -362,7 +356,6 @@ fn test_get_project_admins() {
             video_url: String::from_str(&env, "video url"),
             name: String::from_str(&env, "name"),
             overview: String::from_str(&env, "overview"),
-            payout_address: bob.clone(),
             contacts: project_contacts,
             contracts: project_contracts,
             team_members: project_team_members,
@@ -433,7 +426,6 @@ fn test_get_project_by_id() {
             video_url: String::from_str(&env, "video url"),
             name: String::from_str(&env, "name"),
             overview: String::from_str(&env, "overview"),
-            payout_address: bob.clone(),
             contacts: project_contacts,
             contracts: project_contracts,
             team_members: project_team_members,
@@ -445,7 +437,6 @@ fn test_get_project_by_id() {
 
     let project = contract.get_project_by_id(&project.id);
 
-    assert_eq!(project.payout_address, bob);
     assert_eq!(project.admins.len(), 1);
 }
 
@@ -502,7 +493,6 @@ fn test_update_project() {
             video_url: String::from_str(&env, "video url"),
             name: String::from_str(&env, "name"),
             overview: String::from_str(&env, "overview"),
-            payout_address: bob.clone(),
             contacts: project_contacts,
             contracts: project_contracts,
             team_members: project_team_members,
@@ -554,7 +544,6 @@ fn test_update_project() {
             video_url: String::from_str(&env, "video url 2"),
             name: String::from_str(&env, "name 2"),
             overview: String::from_str(&env, "overview 2"),
-            payout_address: bob.clone(),
             contacts: project_contacts2.clone(),
             contracts: project_contracts2.clone(),
             team_members: project_team_members2.clone(),

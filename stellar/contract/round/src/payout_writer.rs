@@ -68,38 +68,38 @@ pub fn remove_payout_info(env: &Env, payout_id: u32) {
     get_storage(env).remove(&key);
 }
 
-pub fn read_project_payout_ids(env: &Env) -> Map<u128, Vec<u32>> {
-    let key = ContractKey::ProjectPayoutIds;
+pub fn read_project_payout_ids(env: &Env, round_id: u128) -> Map<u128, Vec<u32>> {
+    let key = ContractKey::ProjectPayoutIds(round_id);
     match get_storage(env).get(&key) {
         Some(payouts) => payouts,
         None => Map::new(env),
     }
 }
 
-pub fn write_project_payout_ids(env: &Env, project_id: u128, payout_ids: &Vec<u32>) {
-    let key = ContractKey::ProjectPayoutIds;
-    let mut project_payout_ids = read_project_payout_ids(env);
+pub fn write_project_payout_ids(env: &Env, round_id: u128, project_id: u128, payout_ids: &Vec<u32>) {
+    let key = ContractKey::ProjectPayoutIds(round_id);
+    let mut project_payout_ids = read_project_payout_ids(env, round_id);
     project_payout_ids.set(project_id, payout_ids.clone());
     get_storage(env).set(&key, &project_payout_ids);
 }
 
-pub fn read_project_payout_ids_for_project(env: &Env, project_id: u128) -> Vec<u32> {
-    let project_payout_ids = read_project_payout_ids(env);
+pub fn read_project_payout_ids_for_project(env: &Env, round_id: u128, project_id: u128) -> Vec<u32> {
+    let project_payout_ids = read_project_payout_ids(env, round_id);
     match project_payout_ids.get(project_id) {
         Some(payout_ids) => payout_ids.clone(),
         None => Vec::new(env),
     }
 }
 
-pub fn add_payout_id_to_project_payout_ids(env: &Env, project_id: u128, payout_id: u32) {
-    let mut payout_ids = read_project_payout_ids_for_project(env, project_id);
+pub fn add_payout_id_to_project_payout_ids(env: &Env, round_id: u128, project_id: u128, payout_id: u32) {
+    let mut payout_ids = read_project_payout_ids_for_project(env, round_id, project_id);
     payout_ids.push_back(payout_id);
-    write_project_payout_ids(env, project_id, &payout_ids);
+    write_project_payout_ids(env, round_id, project_id, &payout_ids);
 }
 
-pub fn clear_project_payout_ids(env: &Env, project_id: u128) {
-    let key = ContractKey::ProjectPayoutIds;
-    let mut project_payout_ids = read_project_payout_ids(env);
+pub fn clear_project_payout_ids(env: &Env, round_id: u128, project_id: u128) {
+    let key = ContractKey::ProjectPayoutIds(round_id);
+    let mut project_payout_ids = read_project_payout_ids(env, round_id);
     project_payout_ids.remove(project_id);
     get_storage(env).set(&key, &project_payout_ids);
 }

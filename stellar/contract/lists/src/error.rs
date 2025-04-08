@@ -24,5 +24,5 @@ pub enum Error {
   AlreadyInitialized = 16,
   InvalidRegistrationId = 17,
   AlreadyRegistered = 18,
-  RegistrationListMismatch = 18,
+  RegistrationListMismatch = 19,
 }

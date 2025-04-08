@@ -785,7 +785,7 @@ impl IsRound for RoundContract {
                     
                     // Check KYC on project owner instead of recipient
                     let is_kyc_passed = list_client.is_registered(
-                        &config.voting_wl_list_id, 
+                        &config.kyc_wl_list_id, 
                         &project_owner, 
                         &Some(RegistrationStatus::Approved)
                     );

@@ -708,7 +708,7 @@ impl IsRound for RoundContract {
         let round_payouts = read_payouts(env, round_id);
 
         approved_projects.iter().for_each(|project_id| {
-            let project_payout_ids = read_project_payout_ids_for_project(env, project_id);
+            let project_payout_ids = read_project_payout_ids_for_project(env, round_id, project_id);
 
             project_payout_ids.iter().for_each(|payout_id| {
                 let payout_exist_on_round = round_payouts.contains(payout_id);
@@ -1310,13 +1310,13 @@ impl IsRound for RoundContract {
             clear_payouts(env, round_id);
 
             approved_project.iter().for_each(|project_id| {
-                let payout_ids = read_project_payout_ids_for_project(env, project_id);
+                let payout_ids = read_project_payout_ids_for_project(env, round_id, project_id);
 
                 payout_ids.iter().for_each(|payout_id| {
                     remove_payout_info(env, payout_id);
                 });
 
-                clear_project_payout_ids(env, project_id);
+                clear_project_payout_ids(env, round_id, project_id);
             });
         }
 
@@ -1364,7 +1364,7 @@ impl IsRound for RoundContract {
             write_payout_info(env, payout_id, &payout);
             log_create_payout(env, round.id, &payout);
             payouts_internal.push_back(payout_id);
-            add_payout_id_to_project_payout_ids(env, project_id, payout_id);
+            add_payout_id_to_project_payout_ids(env, round_id, project_id, payout_id);
             payouts_external.push_back(payout.clone());
 
             running_total += payout_input.amount;

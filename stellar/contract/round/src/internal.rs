@@ -260,13 +260,31 @@ impl IsRound for RoundContract {
     ) {
         caller.require_auth();
 
-        if start_ms > end_ms {
-            panic_with_error!(env, RoundError::VotingStartGreaterThanVotingEnd);
-        }
-
         let mut round = read_round_info(env, round_id);
+        let current_ms = get_ledger_second_as_millis(env);
 
         validate_owner_or_admin(env, &caller, &round);
+
+        // Check if voting period is in the future
+        if start_ms <= current_ms {
+            panic_with_error!(env, RoundError::VotingStartInPast);
+        }
+
+        if start_ms >= end_ms {
+            panic_with_error!(env, RoundError::VotingStartGreaterThanVotingEnd);
+        }
+        const MIN_VOTING_DURATION: u64 = 24 * 60 * 60 * 1000;
+        if end_ms - start_ms < MIN_VOTING_DURATION {
+            panic_with_error!(env, RoundError::VotingPeriodTooShort);
+        }
+
+        // Check compatibility with application period if it exists
+        if round.allow_applications && round.application_end_ms.is_some() {
+            let app_end = round.application_end_ms.unwrap();
+            if start_ms < app_end {
+                panic_with_error!(env, RoundError::VotingStartLessThanApplicationEnd);
+            }
+        }
 
         round.voting_start_ms = start_ms;
         round.voting_end_ms = end_ms;

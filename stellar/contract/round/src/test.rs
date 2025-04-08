@@ -1,8 +1,10 @@
 #![cfg(test)]
 
 use list_contract::ListExternal;
+use soroban_sdk::testutils::{AuthorizedFunction, AuthorizedInvocation};
 use soroban_sdk::token::{StellarAssetClient, TokenClient};
-use soroban_sdk::{self, contracttype, Map, Vec};
+use soroban_sdk::xdr::FromXdr;
+use soroban_sdk::{self, contracttype, symbol_short, Bytes, FromVal, IntoVal, Map, Symbol, Vec};
 
 use crate::data_type::{
     ApplicationStatus, CreateRoundParams, Pair, PayoutInput, PickedPair, UpdateRoundParams,
@@ -2186,3 +2188,103 @@ fn test_deposit_with_and_without_referrer() {
     let referrer_balance = token_contract.balance(&referrer);
     assert_eq!(referrer_balance as u128, expected_referrer_fee);
 }
+
+
+
+// commenting out because function names have to be shortened to test, did that locally.
+// #[test]
+// fn test_two_step_ownership_transfer() {
+//     let env = Env::default();
+//     env.budget().reset_unlimited();
+//     env.mock_all_auths();
+    
+//     // Setup initial owner
+//     let initial_owner = Address::generate(&env);
+//     let round = deploy_contract(&env, &initial_owner);
+//     let token_contract = create_token(&env, &initial_owner).0;
+//     let project_contract = deploy_registry_contract(&env, &initial_owner);
+//     let list_contract = deploy_list_contract(&env, &initial_owner);
+    
+//     // Initialize contract
+//     round.initialize(
+//         &initial_owner,
+//         &token_contract.address,
+//         &project_contract.address,
+//         &list_contract.address,
+//         &Some(1),
+//         &None,
+//         &None,
+//         &None,
+//         &None,
+//     );
+    
+//     // Verify initial owner
+//     let config = round.get_config();
+//     assert_eq!(config.owner, initial_owner);
+//     assert_eq!(config.pending_owner, None);
+    
+//     // Create new owner address
+//     let new_owner = Address::generate(&env);
+    
+//     // Transfer ownership (step 1)
+//     round.transfer_ownership(&new_owner);
+    
+//     // Verify pending owner is set
+//     let config = round.get_config();
+//     assert_eq!(config.owner, initial_owner);
+//     assert_eq!(config.pending_owner, Some(new_owner.clone()));
+        
+    
+//     // Accept ownership with correct pending owner (step 2)
+//     round.acceptown();
+
+//     assert_eq!(
+//         // Get the auths that were seen in the last invocation.
+//         env.auths(),
+//         [(
+//             // Address for which auth is performed
+//             new_owner.clone(),
+//             AuthorizedInvocation {
+//                 // Function that is authorized. Can be a contract function or
+//                 // a host function that requires authorization.
+//                 function: AuthorizedFunction::Contract((
+//                     // Address of the called contract
+//                     round.address.clone(),
+//                     // Name of the called function
+//                     symbol_short!("acceptown"),
+//                     // Arguments used to call `increment` (converted to the
+//                     // env-managed vector via `into_val`)
+//                     ().into_val(&env),
+//                 )),
+//                 // The contract doesn't call any other contracts that require
+//                 // authorization,
+//                 sub_invocations: [].to_vec()
+//             }
+//         )]
+//     );
+    
+//     // Verify ownership has been transferred
+//     let config = round.get_config();
+//     assert_eq!(config.owner, new_owner);
+//     assert_eq!(config.pending_owner, None);
+    
+//     // Test ownership transfer cancellation
+//     let another_owner = Address::generate(&env);
+    
+//     // Initiate another transfer
+//     round.transfer_ownership(&another_owner);
+    
+//     // Verify pending owner is set
+//     let config = round.get_config();
+//     assert_eq!(config.owner, new_owner);
+//     assert_eq!(config.pending_owner, Some(another_owner.clone()));
+    
+//     // Cancel the transfer
+//     round.cancel_ownership_transfer();
+    
+//     // Verify pending owner is cleared
+//     let config = round.get_config();
+//     assert_eq!(config.owner, new_owner);
+//     assert_eq!(config.pending_owner, None);
+    
+// }

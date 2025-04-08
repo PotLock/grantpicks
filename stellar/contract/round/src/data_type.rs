@@ -22,6 +22,7 @@ pub enum ApplicationStatus {
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct Config {
     pub owner: Address,
+    pub pending_owner: Option<Address>,
     pub protocol_fee_recipient: Address,
     pub protocol_fee_basis_points: u32,
     pub default_page_size: u64,
@@ -110,14 +111,14 @@ pub struct UpdateRoundParams {
     pub voting_end_ms: u64,
     pub application_start_ms: Option<u64>,
     pub application_end_ms: Option<u64>,
-    pub expected_amount: u128,
-    pub use_whitelist: Option<bool>,
-    pub wl_list_id: Option<u128>,
+    pub use_whitelist_voting: Option<bool>,
+    pub application_wl_list_id: Option<u128>,
+    pub voting_wl_list_id: Option<u128>,
     pub use_vault: Option<bool>,
     pub num_picks_per_voter: Option<u32>,
     pub max_participants: Option<u32>,
-    pub allow_applications: bool,
     pub is_video_required: bool,
+    pub referrer_fee_basis_points: Option<u32>,
 }
 
 //Note: use String for Option<String>. soroban SDK not allow Option<soroban_sdk::String>

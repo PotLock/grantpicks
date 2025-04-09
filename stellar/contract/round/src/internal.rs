@@ -25,7 +25,6 @@ use crate::{
     }
 };
 
-const MIN_DEPOSIT_AMOUNT: u128 = 1_000_000; // 0.1 XLM
 
 #[contract]
 pub struct RoundContract;
@@ -110,6 +109,7 @@ impl RoundCreator for RoundContract {
             application_start_ms: round_detail.application_start_ms,
             application_end_ms: round_detail.application_end_ms,
             expected_amount: round_detail.expected_amount,
+            minimum_deposit: round_detail.minimum_deposit,
             use_whitelist_voting: round_detail.use_whitelist_voting.unwrap_or(false),
             use_whitelist_application: round_detail.use_whitelist_application.unwrap_or(false),
             voting_wl_list_id: round_detail.voting_wl_list_id,
@@ -269,6 +269,25 @@ impl IsRound for RoundContract {
         }
 
         round.expected_amount = amount;
+
+        write_round_info(env, round_id, &round);
+        extend_instance(env);
+        extend_round(env, round_id);
+        log_update_round(env, round.clone());
+    }
+
+    fn set_minimum_deposit(env: &Env, round_id: u128, caller: Address, amount: u128) {
+        caller.require_auth();
+
+        let mut round = read_round_info(env, round_id);
+
+        validate_owner_or_admin(env, &caller, &round);
+
+        if round.round_complete_ms.is_some() {
+            panic_with_error!(env, RoundError::RoundAlreadyCompleted);
+        }
+
+        round.minimum_deposit = amount;
 
         write_round_info(env, round_id, &round);
         extend_instance(env);
@@ -462,7 +481,7 @@ impl IsRound for RoundContract {
             }
         }
 
-        if amount < MIN_DEPOSIT_AMOUNT {
+        if amount < round.minimum_deposit {
             panic_with_error!(env, RoundError::DepositAmountTooLow);
         }
 

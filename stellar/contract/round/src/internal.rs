@@ -16,7 +16,7 @@ use crate::{
         log_create_app, log_create_deposit, log_create_payout, log_create_round, log_create_vote, log_delete_app, log_update_admin, log_update_app, log_update_approved_projects, log_update_payout, log_update_round, log_update_user_flag
     }, external::{ListsClient, ProjectRegistryClient, RegistrationStatus}, factory::RoundCreator, pair::{get_all_pairs, get_all_rounds, get_pair_by_index, get_random_pairs}, payout_writer::{
         add_payout_id_to_project_payout_ids, clear_payouts, clear_project_payout_ids, has_paid, increment_payout_id, read_payout_challenge, read_payout_challenges, read_payout_info, read_payouts, read_project_payout_ids_for_project, remove_payout_challenge, remove_payout_info, write_payout_challenge, write_payout_challenges, write_payout_info, write_payouts
-    }, round_writer::{increment_round_number, is_initialized, read_round_info, write_round_info}, storage::{clear_round, extend_instance, extend_round}, utils::{calculate_protocol_fee, count_total_available_pairs, get_ledger_second_as_millis}, validation::{
+    }, round_writer::{increment_round_number, is_initialized, read_round_info, write_round_info}, storage::{clear_round, extend_instance, extend_round, extend_voter_storage}, utils::{calculate_protocol_fee, count_total_available_pairs, get_ledger_second_as_millis}, validation::{
         validate_application_period, validate_application_whitelist, validate_approved_projects, validate_blacklist, validate_can_payout, validate_has_voted, validate_max_participant, validate_max_participants, validate_not_blacklist, validate_number_of_votes, validate_owner_or_admin, validate_pick_per_votes, validate_project_to_approve, validate_review_notes, validate_round_detail, validate_round_detail_update, validate_specify_applicant, validate_vault_fund, validate_voting_not_started, validate_voting_period, validate_voting_whitelist
     }, voter_writer::{
         add_to_blacklist, add_voted_round, get_voted_rounds_for_voter, is_blacklisted, read_all_blacklist, remove_from_blacklist
@@ -670,9 +670,10 @@ impl IsRound for RoundContract {
         write_voting_count(env, round_id, &voting_count);
         write_voting_results(env, round_id, &voting_results);
         set_voting_state(env, round_id, voter.clone(), voting_results.len()-1);
-        add_voted_round(env, voter, round_id);
+        add_voted_round(env, voter.clone(), round_id);
         extend_instance(env);
         extend_round(env, round_id);
+        extend_voter_storage(env, &voter);
         log_create_vote(env, round.id, voting_result);
     }
 

@@ -12,6 +12,7 @@ pub enum Error {
     SameOwner = 38,
     DataNotFound = 52,
     AlreadyInitialized = 57,
+    OwnerOnly = 83,
     NoPendingOwnershipTransfer = 89,
     ProtocolFeeTooHigh = 65,
     ReferrerFeeTooHigh = 66

@@ -1,4 +1,4 @@
-use soroban_sdk::Env;
+use soroban_sdk::{Address, Env};
 
 use crate::storage_key::ContractKey;
 
@@ -10,7 +10,6 @@ pub fn extend_instance(env: &Env) {
     extend_persistent(env, &ContractKey::Projects);
     extend_persistent(env, &ContractKey::NumOfProjects);
     extend_persistent(env, &ContractKey::RegistryAdmin);
-    extend_persistent(env, &ContractKey::ApplicantToProjectID);
 }
 
 pub fn extend_persistent(env: &Env, key: &ContractKey) {
@@ -25,4 +24,8 @@ pub fn extend_persistent(env: &Env, key: &ContractKey) {
 
 pub fn extend_project(env: &Env, project_id: u128) {
     extend_persistent(env, &ContractKey::Project(project_id));
+}
+
+pub fn extend_applicant(env: &Env, applicant: &Address) {
+    extend_persistent(env, &ContractKey::ApplicantToProjectID(applicant.clone()));
 }

@@ -1,3 +1,5 @@
+use soroban_sdk::Address;
+
 use crate::soroban_sdk::{self, contracttype};
 
 #[contracttype]
@@ -7,7 +9,7 @@ pub enum ContractKey {
     NextRoundId,
     NextPayoutId,
     NextDepositId,
-    ProjectPayoutIds,
+    ProjectPayoutIds(u128),
     VotedRoundIds,
     PayoutInfo(u128),
     DepositInfo(u128),
@@ -19,6 +21,7 @@ pub enum ContractKey {
     Payouts(u128),
     PayoutChallenges(u128),
     VotingState(u128),
+    VotedRoundIds(Address),
     Votes(u128),
     ProjectVotingCount(u128),
     Admin(u128),

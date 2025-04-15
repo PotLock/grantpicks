@@ -12,10 +12,10 @@ pub enum Error {
     SameOwner = 38,
     DataNotFound = 52,
     AlreadyInitialized = 57,
-    OwnerOnly = 83,
+    OwnerOnly = 88,
     NoPendingOwnershipTransfer = 89,
     ProtocolFeeTooHigh = 65,
-    ReferrerFeeTooHigh = 66
+    ReferrerFeeTooHigh = 66,
 }
 
 #[allow(clippy::module_name_repetitions)]

@@ -12,6 +12,10 @@ pub enum Error {
     SameOwner = 38,
     DataNotFound = 52,
     AlreadyInitialized = 57,
+    OwnerOnly = 88,
+    NoPendingOwnershipTransfer = 89,
+    ProtocolFeeTooHigh = 65,
+    ReferrerFeeTooHigh = 66,
 }
 
 #[allow(clippy::module_name_repetitions)]
@@ -51,6 +55,14 @@ pub enum RoundError {
     RoundDoesNotUseVault = 53,
     ApplicationPeriodNotSet = 55,
     CoolDownPeriodNotComplete = 56,
+    VotingPeriodTooShort = 61,
+    ApplicationPeriodTooShort = 62,
+    ApplicationStartInPast = 63,
+    VotingStartInPast = 64,
+    CannotUpdateVaultAfterDeposits = 69,
+    WhitelistIdNotSet = 59,
+    NotProjectParticipant = 74,
+    NotApprovedParticipant = 75,
     DepositAmountTooLow = 76,
     PayoutsAlreadySet = 79,
     MinimumDepositMustBeLessThanExpectedAmount = 90
@@ -70,6 +82,8 @@ pub enum VoteError {
     EmptyVote = 24,
     TooManyVotes = 25,
     ProjectNotInPair = 33,
+    DuplicatePick = 58,
+    TooManyVotesForAvailablePairs = 60,
 }
 
 #[allow(clippy::module_name_repetitions)]
@@ -87,4 +101,8 @@ pub enum ApplicationError {
     VideoUrlNotValid = 42,
     ProjectAlreadyApplied = 43,
     ApplicationNotAllowed = 54,
+    ApplicationStartInPast = 81,
+    ApplicationPeriodTooShort = 82,
+    ApplicationOverlapsVoting = 83,
+    ApplicationPeriodMustBeSet = 84,
 }

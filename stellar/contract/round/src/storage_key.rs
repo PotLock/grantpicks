@@ -10,7 +10,6 @@ pub enum ContractKey {
     NextPayoutId,
     NextDepositId,
     ProjectPayoutIds(u128),
-    VotedRoundIds,
     PayoutInfo(u128),
     DepositInfo(u128),
     RoundInfo(u128),

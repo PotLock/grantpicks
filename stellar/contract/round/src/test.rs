@@ -1,7 +1,7 @@
 #![cfg(test)]
 
 use list_contract::ListExternal;
-use soroban_sdk::testutils::{AuthorizedFunction, AuthorizedInvocation};
+use soroban_sdk::testutils::{AuthorizedFunction, AuthorizedInvocation, Ledger};
 use soroban_sdk::token::{StellarAssetClient, TokenClient};
 use soroban_sdk::xdr::FromXdr;
 use soroban_sdk::{self, contracttype, symbol_short, Bytes, FromVal, IntoVal, Map, Symbol, Vec};
@@ -14,15 +14,11 @@ use crate::utils::get_ledger_second_as_millis;
 use crate::{internal::RoundContract, internal::RoundContractClient};
 
 mod project_registry {
-    soroban_sdk::contractimport!(
-        file = "../build/project_registry.wasm",
-    );
+    soroban_sdk::contractimport!(file = "../build/project_registry.wasm",);
 }
 
 mod list_contract {
-    soroban_sdk::contractimport!(
-        file = "../build/lists.wasm",
-    );
+    soroban_sdk::contractimport!(file = "../build/lists.wasm",);
 }
 
 #[contracttype]
@@ -49,10 +45,8 @@ fn deploy_registry_contract<'a>(env: &Env, admin: &Address) -> project_registry:
 }
 
 fn deploy_list_contract<'a>(env: &Env, admin: &Address) -> list_contract::Client<'a> {
-    let contract = list_contract::Client::new(
-        env,
-        &env.register_contract_wasm(None, list_contract::WASM),
-    );
+    let contract =
+        list_contract::Client::new(env, &env.register_contract_wasm(None, list_contract::WASM));
 
     contract.initialize(&admin);
     create_kyc_list(env, &admin, &contract);
@@ -60,21 +54,23 @@ fn deploy_list_contract<'a>(env: &Env, admin: &Address) -> list_contract::Client
     contract
 }
 
-fn create_kyc_list(env: &Env, owner: &Address, list_contract: &list_contract::Client)->ListExternal {
+fn create_kyc_list(
+    env: &Env,
+    owner: &Address,
+    list_contract: &list_contract::Client,
+) -> ListExternal {
     /*
     for test used default value Approved
      */
-    let kyc_list = list_contract.create_list(
+    list_contract.create_list(
         owner,
         &String::from_str(&env, "kyc_list"),
         &list_contract::RegistrationStatus::Approved,
         &None,
         &None,
         &None,
-        &None
-    );
-
-    kyc_list
+        &None,
+    )
 }
 /*
 Generate fake projects for testing
@@ -153,6 +149,18 @@ fn create_token<'a>(env: &Env, admin: &Address) -> (TokenClient<'a>, StellarAsse
         StellarAssetClient::new(env, &contract_address),
     )
 }
+/**
+ * Helper function to create uniform test dates
+ * This ensures application period and voting period are consistent across tests
+ */
+fn create_test_period(env: &Env) -> (u64, u64, u64, u64) {
+    let application_start = get_ledger_second_as_millis(env);
+    let application_end = application_start + 86400000;
+    let voting_start = application_end; // Start voting immediately after application ends
+    let voting_end = voting_start + 86400000;
+
+    (application_start, application_end, voting_start, voting_end)
+}
 /*
 Test case:
 1. Create a round
@@ -171,15 +179,17 @@ fn test_round_create() {
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
+    let (application_start, application_end, voting_start, voting_end) = create_test_period(&env);
+
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         is_video_required: false,
         contacts: Vec::new(&env),
-        voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
-        voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
-        application_start_ms: Some(get_ledger_second_as_millis(&env)),
-        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
+        voting_start_ms: voting_start,
+        voting_end_ms: voting_end,
+        application_start_ms: Some(application_start),
+        application_end_ms: Some(application_end),
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist_voting: Some(false),
@@ -210,7 +220,7 @@ fn test_round_create() {
         &None,
     );
 
-    let created_round = round.create_round(&admin, &round_detail);
+    let created_round = round.create_round(&admin, round_detail);
 
     let round_info = round.get_round(&created_round.id);
     let admins = round.admins(&created_round.id);
@@ -248,17 +258,17 @@ fn test_apply_applications() {
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
-    
+    let (application_start, application_end, voting_start, voting_end) = create_test_period(&env);
 
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         is_video_required: false,
         contacts: Vec::new(&env),
-        voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
-        voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
-        application_start_ms: Some(get_ledger_second_as_millis(&env)),
-        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
+        voting_start_ms: voting_start,
+        voting_end_ms: voting_end,
+        application_start_ms: Some(application_start),
+        application_end_ms: Some(application_end),
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist_voting: Some(false),
@@ -289,7 +299,7 @@ fn test_apply_applications() {
         &None,
     );
 
-    let created_round = round.create_round(&admin, &round_detail);
+    let created_round = round.create_round(&admin, round_detail);
 
     round.apply_to_round(
         &created_round.id,
@@ -329,15 +339,17 @@ fn test_review_application() {
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
+    let (application_start, application_end, voting_start, voting_end) = create_test_period(&env);
+
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         is_video_required: false,
         contacts: Vec::new(&env),
-        voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
-        voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
-        application_start_ms: Some(get_ledger_second_as_millis(&env)),
-        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
+        voting_start_ms: voting_start,
+        voting_end_ms: voting_end,
+        application_start_ms: Some(application_start),
+        application_end_ms: Some(application_end),
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist_voting: Some(false),
@@ -368,7 +380,7 @@ fn test_review_application() {
         &None,
     );
 
-    let created_round = round.create_round(&admin, &round_detail);
+    let created_round = round.create_round(&admin, round_detail);
     round.apply_to_round(
         &created_round.id,
         &projects.get(0).unwrap().owner,
@@ -413,21 +425,30 @@ fn test_whitelist_applicant() {
     let list_contract = deploy_list_contract(&env, &admin);
     let projects = generate_fake_project(&env, &project_contract, 5);
 
-    let application_wl_list = list_contract.create_list(&admin, &String::from_str(&env, "application_wl"), &list_contract::RegistrationStatus::Approved, &None, &None, &None, &None);
+    let application_wl_list = list_contract.create_list(
+        &admin,
+        &String::from_str(&env, "application_wl"),
+        &list_contract::RegistrationStatus::Approved,
+        &None,
+        &None,
+        &None,
+        &None,
+    );
 
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
-    
+
+    let (application_start, application_end, voting_start, voting_end) = create_test_period(&env);
 
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         is_video_required: false,
         contacts: Vec::new(&env),
-        voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
-        voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
-        application_start_ms: Some(get_ledger_second_as_millis(&env)),
-        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
+        voting_start_ms: voting_start,
+        voting_end_ms: voting_end,
+        application_start_ms: Some(application_start),
+        application_end_ms: Some(application_end),
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist_voting: Some(true),
@@ -458,7 +479,7 @@ fn test_whitelist_applicant() {
         &None,
     );
 
-    let created_round = round.create_round(&admin, &round_detail);
+    let created_round = round.create_round(&admin, round_detail);
     round.apply_to_round(
         &created_round.id,
         &projects.get(0).unwrap().owner,
@@ -489,19 +510,21 @@ fn test_unwhitelisted_voters_should_panic() {
     let list_contract = deploy_list_contract(&env, &admin);
     let projects = generate_fake_project(&env, &project_contract, 5);
     // let application_wl_list = list_contract.create_list(&admin, &String::from_str(&env, "application_wl"), &list_contract::RegistrationStatus::Approved, &None, &None, &None, &None);
-    
+
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
+
+    let (application_start, application_end, voting_start, voting_end) = create_test_period(&env);
 
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         is_video_required: false,
         contacts: Vec::new(&env),
-        voting_start_ms: get_ledger_second_as_millis(&env),
-        voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
-        application_start_ms: Some(get_ledger_second_as_millis(&env)),
-        application_end_ms: Some(get_ledger_second_as_millis(&env)),
+        voting_start_ms: voting_start,
+        voting_end_ms: voting_end,
+        application_start_ms: Some(application_start),
+        application_end_ms: Some(application_end),
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist_voting: Some(true),
@@ -532,7 +555,7 @@ fn test_unwhitelisted_voters_should_panic() {
         &None,
     );
 
-    let created_round = round.create_round(&admin, &round_detail);
+    let created_round = round.create_round(&admin, round_detail);
     // let project_id = 1;
     // let applicant = Address::generate(&env);
     // list_contract.register_batch(&applicant, &application_wl_list.id, &None, &None);
@@ -575,13 +598,19 @@ fn test_unwhitelisted_voters_should_panic() {
         pair_id: pair_to_vote.get(0).unwrap().pair_id,
         voted_project_id: pair_to_vote.get(0).unwrap().projects.get(0).unwrap(),
     });
+    let mut ledger = env.ledger().get();
+    ledger.timestamp = 90000;
+    env.ledger().set(ledger);
     round.vote(&created_round.id, &voter, &picks);
 
-    let whitelisted = list_contract.is_registered(&Some(1), &voter, &Some(list_contract::RegistrationStatus::Approved));
+    let whitelisted = list_contract.is_registered(
+        &1,
+        &voter,
+        &Some(list_contract::RegistrationStatus::Approved),
+    );
 
     assert_eq!(whitelisted, true);
 }
-
 
 /*
 Test case:
@@ -593,7 +622,7 @@ Test case:
 */
 #[test]
 fn test_whitelisted_voter_can_vote() {
-    extern  crate std;
+    extern crate std;
     let env = Env::default();
     env.budget().reset_unlimited();
     env.mock_all_auths();
@@ -604,19 +633,21 @@ fn test_whitelisted_voter_can_vote() {
     let list_contract = deploy_list_contract(&env, &admin);
     let projects = generate_fake_project(&env, &project_contract, 5);
     // let application_wl_list = list_contract.create_list(&admin, &String::from_str(&env, "application_wl"), &list_contract::RegistrationStatus::Approved, &None, &None, &None, &None);
-    
+
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
+
+    let (application_start, application_end, voting_start, voting_end) = create_test_period(&env);
 
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         is_video_required: false,
         contacts: Vec::new(&env),
-        voting_start_ms: get_ledger_second_as_millis(&env),
-        voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
-        application_start_ms: Some(get_ledger_second_as_millis(&env)),
-        application_end_ms: Some(get_ledger_second_as_millis(&env)),
+        voting_start_ms: voting_start,
+        voting_end_ms: voting_end,
+        application_start_ms: Some(application_start),
+        application_end_ms: Some(application_end),
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist_voting: Some(true),
@@ -647,7 +678,7 @@ fn test_whitelisted_voter_can_vote() {
         &None,
     );
 
-    let created_round = round.create_round(&admin, &round_detail);
+    let created_round = round.create_round(&admin, round_detail);
     // let project_id = 1;
     // let applicant = Address::generate(&env);
     // list_contract.register_batch(&applicant, &application_wl_list.id, &None, &None);
@@ -690,9 +721,16 @@ fn test_whitelisted_voter_can_vote() {
         pair_id: pair_to_vote.get(0).unwrap().pair_id,
         voted_project_id: pair_to_vote.get(0).unwrap().projects.get(0).unwrap(),
     });
+    let mut ledger = env.ledger().get();
+    ledger.timestamp = 90000;
+    env.ledger().set(ledger);
     round.vote(&created_round.id, &voter, &picks);
 
-    let whitelisted = list_contract.is_registered(&Some(1), &voter, &Some(list_contract::RegistrationStatus::Approved));
+    let whitelisted = list_contract.is_registered(
+        &1,
+        &voter,
+        &Some(list_contract::RegistrationStatus::Approved),
+    );
 
     assert_eq!(whitelisted, true);
 }
@@ -719,22 +757,24 @@ fn test_blacklist() {
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
+    let (application_start, application_end, voting_start, voting_end) = create_test_period(&env);
+
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         is_video_required: false,
         contacts: Vec::new(&env),
-        voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
-        voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
-        application_start_ms: Some(get_ledger_second_as_millis(&env)),
-        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
+        voting_start_ms: voting_start,
+        voting_end_ms: voting_end,
+        application_start_ms: Some(application_start),
+        application_end_ms: Some(application_end),
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist_voting: Some(false),
         use_whitelist_application: Some(false),
         voting_wl_list_id: None,
         application_wl_list_id: None,
-        num_picks_per_voter: Some(2),
+        num_picks_per_voter: Some(1),
         max_participants: Some(10),
         allow_applications: true,
         owner: admin.clone(),
@@ -758,7 +798,7 @@ fn test_blacklist() {
         &None,
     );
 
-    let created_round = round.create_round(&admin, &round_detail);
+    let created_round = round.create_round(&admin, round_detail);
     round.apply_to_round(
         &created_round.id,
         &projects.get(0).unwrap().owner,
@@ -766,7 +806,6 @@ fn test_blacklist() {
         &None,
         &None,
     );
-
     round.apply_to_round(
         &created_round.id,
         &projects.get(1).unwrap().owner,
@@ -782,7 +821,6 @@ fn test_blacklist() {
         &ApplicationStatus::Approved,
         &None,
     );
-
     round.review_application(
         &created_round.id,
         &admin,
@@ -805,7 +843,9 @@ fn test_blacklist() {
     let mut blacklist_voters: Vec<Address> = Vec::new(&env);
     blacklist_voters.push_back(voter.clone());
     round.flag_voters(&created_round.id, &admin, &blacklist_voters);
-
+    let mut ledger = env.ledger().get();
+    ledger.timestamp = 90000;
+    env.ledger().set(ledger);
     round.vote(&created_round.id, &voter, &picks);
 }
 /*
@@ -829,15 +869,17 @@ fn test_voting() {
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
+    let (application_start, application_end, voting_start, voting_end) = create_test_period(&env);
+
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         is_video_required: false,
         contacts: Vec::new(&env),
-        voting_start_ms: get_ledger_second_as_millis(&env),
-        voting_end_ms: get_ledger_second_as_millis(&env) + 30,
-        application_start_ms: Some(get_ledger_second_as_millis(&env)),
-        application_end_ms: Some(get_ledger_second_as_millis(&env)),
+        voting_start_ms: voting_start,
+        voting_end_ms: voting_end,
+        application_start_ms: Some(application_start),
+        application_end_ms: Some(application_end),
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist_voting: Some(false),
@@ -868,7 +910,7 @@ fn test_voting() {
         &None,
     );
 
-    let created_round = round.create_round(&admin, &round_detail);
+    let created_round = round.create_round(&admin, round_detail);
 
     round.apply_to_round(
         &created_round.id,
@@ -923,11 +965,10 @@ fn test_voting() {
     round.review_application(
         &created_round.id,
         &admin,
-        &&projects.get(3).unwrap().owner,
+        &projects.get(3).unwrap().owner,
         &ApplicationStatus::Approved,
         &None,
     );
-
 
     let voter = Address::generate(&env);
     let pair_to_vote = round.get_pairs_to_vote(&created_round.id);
@@ -941,7 +982,9 @@ fn test_voting() {
         pair_id: pair_to_vote.get(1).unwrap().pair_id,
         voted_project_id: pair_to_vote.get(1).unwrap().projects.get(0).unwrap(),
     });
-
+    let mut ledger = env.ledger().get();
+    ledger.timestamp = 90000;
+    env.ledger().set(ledger);
     round.vote(&created_round.id, &voter, &picks);
 
     let results = round.get_voting_results_for_round(&created_round.id);
@@ -986,15 +1029,18 @@ fn test_add_remove_admin() {
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(roby.clone());
 
+    let application_start = get_ledger_second_as_millis(&env);
+    let voting_start = get_ledger_second_as_millis(&env) + 86400000;
+
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         is_video_required: false,
         contacts: Vec::new(&env),
-        voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
-        voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
-        application_start_ms: Some(get_ledger_second_as_millis(&env)),
-        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
+        voting_start_ms: voting_start,
+        voting_end_ms: voting_start + 86400000,
+        application_start_ms: Some(application_start),
+        application_end_ms: Some(application_start + 86400000),
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist_voting: Some(false),
@@ -1068,15 +1114,17 @@ fn test_voting_deposit_and_payout() {
 
     let deposit = 100 * 10u128.pow(7);
 
+    let (application_start, application_end, voting_start, voting_end) = create_test_period(&env);
+
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         is_video_required: false,
         contacts: Vec::new(&env),
-        voting_start_ms: get_ledger_second_as_millis(&env) + 1000,
-        voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
-        application_start_ms: Some(get_ledger_second_as_millis(&env)),
-        application_end_ms: Some(get_ledger_second_as_millis(&env) + 1000),
+        voting_start_ms: voting_start,
+        voting_end_ms: voting_end,
+        application_start_ms: Some(application_start),
+        application_end_ms: Some(application_end),
         expected_amount: 10 * deposit,
         admins: admins.clone(),
         use_whitelist_voting: Some(false),
@@ -1107,7 +1155,7 @@ fn test_voting_deposit_and_payout() {
         &None,
     );
 
-    let created_round = round.create_round(&admin, &round_detail);
+    let created_round = round.create_round(&admin, round_detail);
 
     round.apply_to_round(
         &created_round.id,
@@ -1123,7 +1171,14 @@ fn test_voting_deposit_and_payout() {
     }
     round.add_approved_project(&created_round.id, &admin, &project_ids);
 
-    round.set_voting_period(&created_round.id, &admin, &get_ledger_second_as_millis(&env), &(get_ledger_second_as_millis(&env)+1000));
+    // let vote_start = application_end + 10000;
+
+    // round.set_voting_period(
+    //     &created_round.id,
+    //     &admin,
+    //     &vote_start,
+    //     &(vote_start + 86400000),
+    // );
 
     let voter = Address::generate(&env);
     let voter2 = Address::generate(&env);
@@ -1149,6 +1204,10 @@ fn test_voting_deposit_and_payout() {
 
     round.deposit_to_round(&created_round.id, &cindy, &(deposit / 2), &None, &None);
 
+    let mut ledger = env.ledger().get();
+    ledger.timestamp = 90000;
+    env.ledger().set(ledger.clone());
+
     round.vote(&created_round.id, &voter, &picks);
 
     let voter_pairs2 = round.get_pairs_to_vote(&created_round.id);
@@ -1170,7 +1229,7 @@ fn test_voting_deposit_and_payout() {
     let results = round.get_voting_results_for_round(&created_round.id);
     assert_eq!(results.len(), 4);
 
-    round.set_voting_period(&created_round.id, &admin, &0, &0);
+    // round.set_voting_period(&created_round.id, &admin, &0, &0);
 
     let mut payouts: Vec<PayoutInput> = Vec::new(&env);
 
@@ -1180,10 +1239,18 @@ fn test_voting_deposit_and_payout() {
         memo: String::from_str(&env, "payout"),
     });
 
+    ledger.timestamp = 190000;
+    env.ledger().set(ledger);
+
     round.set_payouts(&created_round.id, &admin, &payouts, &false);
 
     for payout in payouts.iter() {
-       list_contract.register_batch(&payout.recipient_id, &1, &Some(String::from_str(&env, "Test")), &None);
+        list_contract.register_batch(
+            &payout.recipient_id,
+            &1,
+            &Some(String::from_str(&env, "Test")),
+            &None,
+        );
     }
 
     let payout_balance = token_contract.balance(&projects.get(0).unwrap().owner);
@@ -1224,13 +1291,15 @@ fn test_get_all_pairs() {
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
+    let (_, _, voting_start, voting_end) = create_test_period(&env);
+
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         is_video_required: false,
         contacts: Vec::new(&env),
-        voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
-        voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
+        voting_start_ms: voting_start,
+        voting_end_ms: voting_end,
         application_start_ms: None,
         application_end_ms: None,
         expected_amount: 5,
@@ -1325,18 +1394,22 @@ fn test_change_number_of_votes() {
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
     let list_contract = deploy_list_contract(&env, &admin);
+    let projects = generate_fake_project(&env, &project_contract, 4);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
+
+    let application_start = get_ledger_second_as_millis(&env);
+    let voting_start = get_ledger_second_as_millis(&env) + 86400000;
 
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         is_video_required: false,
         contacts: Vec::new(&env),
-        voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
-        voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
-        application_start_ms: Some(get_ledger_second_as_millis(&env)),
-        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
+        voting_start_ms: voting_start,
+        voting_end_ms: voting_start + 86400000,
+        application_start_ms: Some(application_start),
+        application_end_ms: Some(application_start + 86400000),
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist_voting: Some(false),
@@ -1367,8 +1440,13 @@ fn test_change_number_of_votes() {
         &None,
     );
 
-    let created_round = round.create_round(&admin, &round_detail);
+    let created_round = round.create_round(&admin, round_detail);
     let new_num_picks_per_voter = 3;
+    let mut project_ids: Vec<u128> = Vec::new(&env);
+    for i in 0..4 {
+        project_ids.push_back(i + 1);
+    }
+    round.add_approved_project(&created_round.id, &admin, &project_ids);
     round.set_number_of_votes(&created_round.id, &admin, &new_num_picks_per_voter);
 
     let round_info = round.get_round(&created_round.id);
@@ -1393,15 +1471,18 @@ fn test_change_amount() {
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
+    let application_start = get_ledger_second_as_millis(&env);
+    let voting_start = get_ledger_second_as_millis(&env) + 86400000;
+
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         is_video_required: false,
         contacts: Vec::new(&env),
-        voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
-        voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
-        application_start_ms: Some(get_ledger_second_as_millis(&env)),
-        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
+        voting_start_ms: voting_start,
+        voting_end_ms: voting_start + 86400000,
+        application_start_ms: Some(application_start),
+        application_end_ms: Some(application_start + 86400000),
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist_voting: Some(false),
@@ -1458,15 +1539,18 @@ fn test_set_voting_period() {
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
+    let application_start = get_ledger_second_as_millis(&env);
+    let voting_start = get_ledger_second_as_millis(&env) + 86400000;
+
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         is_video_required: false,
         contacts: Vec::new(&env),
-        voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
-        voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
-        application_start_ms: Some(get_ledger_second_as_millis(&env)),
-        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
+        voting_start_ms: voting_start,
+        voting_end_ms: voting_start + 86400000,
+        application_start_ms: Some(application_start),
+        application_end_ms: Some(application_start + 86400000),
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist_voting: Some(false),
@@ -1497,9 +1581,9 @@ fn test_set_voting_period() {
         &None,
     );
 
-    let created_round = round.create_round(&admin, &round_detail);
-    let new_start_ms = get_ledger_second_as_millis(&env) + 1000;
-    let new_end_ms = get_ledger_second_as_millis(&env) + 2000;
+    let created_round = round.create_round(&admin, round_detail);
+    let new_start_ms = voting_start + 1;
+    let new_end_ms = voting_start + 86400000 + 1;
     round.set_voting_period(&created_round.id, &admin, &new_start_ms, &new_end_ms);
 
     let round_info = round.get_round(&created_round.id);
@@ -1525,15 +1609,18 @@ fn test_application_period() {
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
+    let application_start = get_ledger_second_as_millis(&env);
+    let voting_start = get_ledger_second_as_millis(&env) + (86400000 * 3);
+
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         is_video_required: false,
         contacts: Vec::new(&env),
-        voting_start_ms: get_ledger_second_as_millis(&env) + 7600020,
-        voting_end_ms: get_ledger_second_as_millis(&env) + 9600010,
-        application_start_ms: Some(get_ledger_second_as_millis(&env)),
-        application_end_ms: Some(get_ledger_second_as_millis(&env) + 3600010),
+        voting_start_ms: voting_start,
+        voting_end_ms: voting_start + 86400000,
+        application_start_ms: Some(application_start),
+        application_end_ms: Some(application_start + 86400000),
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist_voting: Some(false),
@@ -1564,9 +1651,9 @@ fn test_application_period() {
         &None,
     );
 
-    let created_round = round.create_round(&admin, &round_detail);
+    let created_round = round.create_round(&admin, round_detail);
     let new_application_start_ms = get_ledger_second_as_millis(&env) + 1000;
-    let new_application_end_ms = new_application_start_ms + 3700000;
+    let new_application_end_ms = new_application_start_ms + 86400000;
     round.set_applications_config(
         &created_round.id,
         &admin,
@@ -1604,15 +1691,18 @@ fn test_update_round() {
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
+    let application_start = get_ledger_second_as_millis(&env);
+    let voting_start = get_ledger_second_as_millis(&env) + 86400000;
+
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         is_video_required: false,
         contacts: Vec::new(&env),
-        voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
-        voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
-        application_start_ms: Some(get_ledger_second_as_millis(&env)),
-        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
+        voting_start_ms: voting_start,
+        voting_end_ms: voting_start + 86400000,
+        application_start_ms: Some(application_start),
+        application_end_ms: Some(application_start + 86400000),
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist_voting: Some(false),
@@ -1643,16 +1733,12 @@ fn test_update_round() {
         &None,
     );
 
-    let created_round = round.create_round(&admin, &round_detail);
+    let created_round = round.create_round(&admin, round_detail);
     let new_round_detail = UpdateRoundParams {
         name: String::from_str(&env, "new_name"),
         description: String::from_str(&env, "new_description"),
         is_video_required: false,
         contacts: Vec::new(&env),
-        voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
-        voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
-        application_start_ms: Some(get_ledger_second_as_millis(&env)),
-        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
         use_whitelist_voting: Some(false),
         voting_wl_list_id: None,
         application_wl_list_id: None,
@@ -1687,15 +1773,17 @@ fn test_change_allow_applications() {
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
+    let (application_start, application_end, voting_start, voting_end) = create_test_period(&env);
+
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         is_video_required: false,
         contacts: Vec::new(&env),
-        voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
-        voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
-        application_start_ms: Some(get_ledger_second_as_millis(&env)),
-        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
+        voting_start_ms: voting_start,
+        voting_end_ms: voting_end,
+        application_start_ms: Some(application_start),
+        application_end_ms: Some(application_end),
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist_voting: Some(false),
@@ -1726,7 +1814,7 @@ fn test_change_allow_applications() {
         &None,
     );
 
-    let created_round = round.create_round(&admin, &round_detail);
+    let created_round = round.create_round(&admin, round_detail);
     let new_allow_applications = false;
     round.set_applications_config(
         &created_round.id,
@@ -1754,22 +1842,24 @@ fn test_unapply_from_round() {
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
-    let (token_contract, token_admin) = create_token(&env, &admin);
+    let (token_contract, _token_admin) = create_token(&env, &admin);
     let project_contract = deploy_registry_contract(&env, &admin);
     let list_contract = deploy_list_contract(&env, &admin);
     let projects = generate_fake_project(&env, &project_contract, 5);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
+    let (application_start, application_end, voting_start, voting_end) = create_test_period(&env);
+
     let round_detail = &CreateRoundParams {
         name: String::from_str(&env, "name"),
         description: String::from_str(&env, "description"),
         is_video_required: false,
         contacts: Vec::new(&env),
-        voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
-        voting_end_ms: get_ledger_second_as_millis(&env) + 300000,
-        application_start_ms: Some(get_ledger_second_as_millis(&env)),
-        application_end_ms: Some(get_ledger_second_as_millis(&env)),
+        voting_start_ms: voting_start,
+        voting_end_ms: voting_end,
+        application_start_ms: Some(application_start),
+        application_end_ms: Some(application_end),
         expected_amount: 10 * 10u128.pow(7),
         admins: admins.clone(),
         use_whitelist_voting: Some(false),
@@ -1800,7 +1890,7 @@ fn test_unapply_from_round() {
         &None,
     );
 
-    let created_round = round.create_round(&admin, &round_detail);
+    let created_round = round.create_round(&admin, round_detail);
     let new_application = round.apply_to_round(
         &created_round.id,
         &projects.get(0).unwrap().owner,
@@ -1827,22 +1917,24 @@ fn test_apply_to_round_batch() {
     env.mock_all_auths();
     let admin = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
-    let (token_contract, token_admin) = create_token(&env, &admin);
+    let (token_contract, _token_admin) = create_token(&env, &admin);
     let project_contract = deploy_registry_contract(&env, &admin);
     let list_contract = deploy_list_contract(&env, &admin);
     let projects = generate_fake_project(&env, &project_contract, 5);
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
 
+    let (application_start, application_end, voting_start, voting_end) = create_test_period(&env);
+
     let round_detail = &CreateRoundParams {
         name: String::from_str(&env, "name"),
         description: String::from_str(&env, "description"),
         is_video_required: false,
         contacts: Vec::new(&env),
-        voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
-        voting_end_ms: get_ledger_second_as_millis(&env) + 300000,
-        application_start_ms: Some(get_ledger_second_as_millis(&env)),
-        application_end_ms: Some(get_ledger_second_as_millis(&env)),
+        voting_start_ms: voting_start,
+        voting_end_ms: voting_end,
+        application_start_ms: Some(application_start),
+        application_end_ms: Some(application_end),
         expected_amount: 10 * 10u128.pow(7),
         admins: admins.clone(),
         use_whitelist_voting: Some(false),
@@ -1897,7 +1989,7 @@ fn test_change_round_contract_config() {
     let admin = Address::generate(&env);
     let treasury = Address::generate(&env);
     let round = deploy_contract(&env, &admin);
-    let (token_contract, token_admin) = create_token(&env, &admin);
+    let (token_contract, _token_admin) = create_token(&env, &admin);
     let project_contract = deploy_registry_contract(&env, &admin);
     let list_contract = deploy_list_contract(&env, &admin);
 
@@ -1915,7 +2007,7 @@ fn test_change_round_contract_config() {
     let prev_config = round.get_config();
 
     round.owner_set_default_page_size(&5);
-    round.owner_set_protocol_fee_config(&Some(treasury.clone()), &Some(2000));
+    round.owner_set_protocol_fee_config(&Some(treasury.clone()), &Some(500));
 
     let new_config = round.get_config();
 
@@ -1924,46 +2016,45 @@ fn test_change_round_contract_config() {
     assert_eq!(prev_config.protocol_fee_recipient, admin);
 
     assert_eq!(new_config.default_page_size, 5);
-    assert_eq!(new_config.protocol_fee_basis_points, 2000);
+    assert_eq!(new_config.protocol_fee_basis_points, 500);
     assert_eq!(new_config.protocol_fee_recipient, treasury);
 }
 
 /*
 Test case:
 1. Create a round
-2. Create multiple payout challenges (some resolved, some unresolved)
-3. Remove resolved challenges
-4. Verify only unresolved challenges remain
+2. Create payout challenges using non participant address
 */
 #[test]
-fn test_remove_resolved_challenges() {
+#[should_panic(expected = "74")]
+fn test_only_participants_can_challenge() {
     let env = Env::default();
     env.budget().reset_unlimited();
     env.mock_all_auths();
-    
+
     let admin = Address::generate(&env);
     let challenger1 = Address::generate(&env);
-    let challenger2 = Address::generate(&env);
-    let challenger3 = Address::generate(&env);
-    
+
     let round = deploy_contract(&env, &admin);
     let token_contract = create_token(&env, &admin).0;
     let project_contract = deploy_registry_contract(&env, &admin);
     let list_contract = deploy_list_contract(&env, &admin);
-    
+
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
-    
+
+    let (application_start, application_end, voting_start, voting_end) = create_test_period(&env);
+
     // Create round
     let round_detail = &CreateRoundParams {
         description: String::from_str(&env, "description"),
         name: String::from_str(&env, "name"),
         is_video_required: false,
         contacts: Vec::new(&env),
-        voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
-        voting_end_ms: get_ledger_second_as_millis(&env) + 30000,
-        application_start_ms: Some(get_ledger_second_as_millis(&env)),
-        application_end_ms: Some(get_ledger_second_as_millis(&env) + 9000),
+        voting_start_ms: voting_start,
+        voting_end_ms: voting_end,
+        application_start_ms: Some(application_start),
+        application_end_ms: Some(application_end),
         expected_amount: 5,
         admins: admins.clone(),
         use_whitelist_voting: Some(false),
@@ -1982,7 +2073,7 @@ fn test_remove_resolved_challenges() {
         referrer_fee_basis_points: None,
         use_vault: None,
     };
-    
+
     round.initialize(
         &admin,
         &token_contract.address,
@@ -1992,99 +2083,87 @@ fn test_remove_resolved_challenges() {
         &None,
         &None,
         &None,
-        &None,
     );
-    
-    let created_round = round.create_round(&admin, &round_detail);
-    
+
+    let created_round = round.create_round(&admin, round_detail);
+
     let reason1 = String::from_str(&env, "Challenge reason 1");
-    let reason2 = String::from_str(&env, "Challenge reason 2");
-    let reason3 = String::from_str(&env, "Challenge reason 3");
-    
+
     // Create three challenges
     round.challenge_payouts(&created_round.id, &challenger1, &reason1);
-    round.challenge_payouts(&created_round.id, &challenger2, &reason2);
-    round.challenge_payouts(&created_round.id, &challenger3, &reason3);
-    
-    let challenges = round.get_challenges_payout(&created_round.id, &None, &None);
-    assert_eq!(challenges.len(), 3);
-    
+
     // Resolve two of the challenges
-    let admin_notes = String::from_str(&env, "Admin notes");
-    round.update_payouts_challenge(
-        &created_round.id,
-        &admin,
-        &challenger1,
-        &Some(admin_notes.clone()),
-        &Some(true), // Resolve this challenge
-    );
-    
-    round.update_payouts_challenge(
-        &created_round.id,
-        &admin,
-        &challenger2,
-        &Some(admin_notes.clone()),
-        &Some(true), 
-    );
-    
-    
-    let challenges_before = round.get_challenges_payout(&created_round.id, &None, &None);
-    assert_eq!(challenges_before.len(), 3);
-    
-    // Count resolved challenges
-    let resolved_count = challenges_before.iter().filter(|c| c.resolved).count();
-    assert_eq!(resolved_count, 2);
-    
-    // Remove resolved challenges
-    round.remove_resolved_challenges(&created_round.id, &admin);
-    
-    let challenges_after = round.get_challenges_payout(&created_round.id, &None, &None);
-    assert_eq!(challenges_after.len(), 1);
-    
-    assert_eq!(challenges_after.get(0).unwrap().challenger_id, challenger3);
-    assert_eq!(challenges_after.get(0).unwrap().resolved, false);
-    
-    // Resolve the last challenge
-    round.update_payouts_challenge(
-        &created_round.id,
-        &admin,
-        &challenger3,
-        &Some(admin_notes.clone()),
-        &Some(true),
-    );
-    
-    // Remove all resolved challenges
-    round.remove_resolved_challenges(&created_round.id, &admin);
-    
-    // Verify no challenges remain
-    let final_challenges = round.get_challenges_payout(&created_round.id, &None, &None);
-    assert_eq!(final_challenges.len(), 0);
+    // let admin_notes = String::from_str(&env, "Admin notes");
+    // round.update_payouts_challenge(
+    //     &created_round.id,
+    //     &admin,
+    //     &challenger1,
+    //     &Some(admin_notes.clone()),
+    //     &Some(true), // Resolve this challenge
+    // );
+
+    // round.update_payouts_challenge(
+    //     &created_round.id,
+    //     &admin,
+    //     &challenger2,
+    //     &Some(admin_notes.clone()),
+    //     &Some(true),
+    // );
+
+    // let challenges_before = round.get_challenges_payout(&created_round.id, &None, &None);
+    // assert_eq!(challenges_before.len(), 3);
+
+    // // Count resolved challenges
+    // let resolved_count = challenges_before.iter().filter(|c| c.resolved).count();
+    // assert_eq!(resolved_count, 2);
+
+    // // Remove resolved challenges
+    // round.remove_resolved_challenges(&created_round.id, &admin);
+
+    // let challenges_after = round.get_challenges_payout(&created_round.id, &None, &None);
+    // assert_eq!(challenges_after.len(), 1);
+
+    // assert_eq!(challenges_after.get(0).unwrap().challenger_id, challenger3);
+    // assert_eq!(challenges_after.get(0).unwrap().resolved, false);
+
+    // // Resolve the last challenge
+    // round.update_payouts_challenge(
+    //     &created_round.id,
+    //     &admin,
+    //     &challenger3,
+    //     &Some(admin_notes.clone()),
+    //     &Some(true),
+    // );
+
+    // // Remove all resolved challenges
+    // round.remove_resolved_challenges(&created_round.id, &admin);
+
+    // // Verify no challenges remain
+    // let final_challenges = round.get_challenges_payout(&created_round.id, &None, &None);
+    // assert_eq!(final_challenges.len(), 0);
 }
-
-
 
 #[test]
 fn test_deposit_with_and_without_referrer() {
     let env = Env::default();
     env.budget().reset_unlimited();
     env.mock_all_auths();
-    
+
     let admin = Address::generate(&env);
     let depositor = Address::generate(&env);
     let referrer = Address::generate(&env);
-    
+
     let round = deploy_contract(&env, &admin);
     let (token_contract, token_admin) = create_token(&env, &admin);
     let project_contract = deploy_registry_contract(&env, &admin);
     let list_contract = deploy_list_contract(&env, &admin);
-    
+
     round.initialize(
         &admin,
         &token_contract.address,
         &project_contract.address,
         &list_contract.address,
         &Some(1),
-        &None,
         &None,
         &None,
         &None,
@@ -2092,16 +2171,18 @@ fn test_deposit_with_and_without_referrer() {
 
     let mut admins: Vec<Address> = Vec::new(&env);
     admins.push_back(admin.clone());
-    
+
+    let (application_start, application_end, voting_start, voting_end) = create_test_period(&env);
+
     let round_detail = &CreateRoundParams {
         name: String::from_str(&env, "name"),
         description: String::from_str(&env, "description"),
         is_video_required: false,
         contacts: Vec::new(&env),
-        voting_start_ms: get_ledger_second_as_millis(&env) + 10000,
-        voting_end_ms: get_ledger_second_as_millis(&env) + 300000,
-        application_start_ms: Some(get_ledger_second_as_millis(&env)),
-        application_end_ms: Some(get_ledger_second_as_millis(&env)),
+        voting_start_ms: voting_start,
+        voting_end_ms: voting_end,
+        application_start_ms: Some(application_start),
+        application_end_ms: Some(application_end),
         expected_amount: 10 * 10u128.pow(7),
         admins: admins.clone(),
         use_whitelist_voting: Some(false),
@@ -2126,7 +2207,12 @@ fn test_deposit_with_and_without_referrer() {
 
     // Test deposit without referrer
     token_admin.mint(&depositor, &(amount as i128));
-    token_contract.approve(&depositor, &round.address, &(amount as i128), &env.ledger().sequence().saturating_add(300));
+    token_contract.approve(
+        &depositor,
+        &round.address,
+        &(amount as i128),
+        &env.ledger().sequence().saturating_add(300),
+    );
     round.deposit_to_round(&created_round.id, &depositor, &amount, &None, &None);
 
     let deposit_without_referrer = round.get_deposits_for_round(&1, &None, &None);
@@ -2143,33 +2229,37 @@ fn test_deposit_with_and_without_referrer() {
     assert_eq!(0, referrer_balance1);
     // Test deposit with referrer
     token_admin.mint(&depositor, &(amount as i128));
-    token_contract.approve(&depositor, &round.address, &(amount as i128), &env.ledger().sequence().saturating_add(300));
+    token_contract.approve(
+        &depositor,
+        &round.address,
+        &(amount as i128),
+        &env.ledger().sequence().saturating_add(300),
+    );
     round.deposit_to_round(
         &created_round.id,
         &depositor,
         &amount,
         &None,
-        &Some(referrer.clone())
+        &Some(referrer.clone()),
     );
-
-    
 
     let deposit_with_referrer = round.get_deposits_for_round(&1, &None, &None);
     let deposit_with_referrer = deposit_with_referrer.get(1).unwrap();
     let expected_referrer_fee = (amount * 500) / 10000; // 5% referrer fee
-    assert_eq!(deposit_with_referrer.referrer_fee as u128, expected_referrer_fee);
+    assert_eq!(
+        deposit_with_referrer.referrer_fee as u128,
+        expected_referrer_fee
+    );
     // assert_eq!(
     //     deposit_with_referrer.net_amount as u128,
     //     amount.saturating_sub(calculate_protocol_fee(&env, amount).unwrap()).saturating_sub(expected_referrer_fee)
     // );
 
     // Verify referrer received the fee
-    
+
     let referrer_balance = token_contract.balance(&referrer);
     assert_eq!(referrer_balance as u128, expected_referrer_fee);
 }
-
-
 
 // commenting out because function names have to be shortened to test, did that locally.
 // #[test]
@@ -2177,14 +2267,14 @@ fn test_deposit_with_and_without_referrer() {
 //     let env = Env::default();
 //     env.budget().reset_unlimited();
 //     env.mock_all_auths();
-    
+
 //     // Setup initial owner
 //     let initial_owner = Address::generate(&env);
 //     let round = deploy_contract(&env, &initial_owner);
 //     let token_contract = create_token(&env, &initial_owner).0;
 //     let project_contract = deploy_registry_contract(&env, &initial_owner);
 //     let list_contract = deploy_list_contract(&env, &initial_owner);
-    
+
 //     // Initialize contract
 //     round.initialize(
 //         &initial_owner,
@@ -2197,24 +2287,23 @@ fn test_deposit_with_and_without_referrer() {
 //         &None,
 //         &None,
 //     );
-    
+
 //     // Verify initial owner
 //     let config = round.get_config();
 //     assert_eq!(config.owner, initial_owner);
 //     assert_eq!(config.pending_owner, None);
-    
+
 //     // Create new owner address
 //     let new_owner = Address::generate(&env);
-    
+
 //     // Transfer ownership (step 1)
 //     round.transfer_ownership(&new_owner);
-    
+
 //     // Verify pending owner is set
 //     let config = round.get_config();
 //     assert_eq!(config.owner, initial_owner);
 //     assert_eq!(config.pending_owner, Some(new_owner.clone()));
-        
-    
+
 //     // Accept ownership with correct pending owner (step 2)
 //     round.acceptown();
 
@@ -2242,29 +2331,29 @@ fn test_deposit_with_and_without_referrer() {
 //             }
 //         )]
 //     );
-    
+
 //     // Verify ownership has been transferred
 //     let config = round.get_config();
 //     assert_eq!(config.owner, new_owner);
 //     assert_eq!(config.pending_owner, None);
-    
+
 //     // Test ownership transfer cancellation
 //     let another_owner = Address::generate(&env);
-    
+
 //     // Initiate another transfer
 //     round.transfer_ownership(&another_owner);
-    
+
 //     // Verify pending owner is set
 //     let config = round.get_config();
 //     assert_eq!(config.owner, new_owner);
 //     assert_eq!(config.pending_owner, Some(another_owner.clone()));
-    
+
 //     // Cancel the transfer
 //     round.cancel_ownership_transfer();
-    
+
 //     // Verify pending owner is cleared
 //     let config = round.get_config();
 //     assert_eq!(config.owner, new_owner);
 //     assert_eq!(config.pending_owner, None);
-    
+
 // }

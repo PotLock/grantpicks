@@ -36,7 +36,7 @@ use crate::{
     utils::unwrap_or_blank,
     validation::{
         validate_cover_image_url, validate_description, validate_has_upvoted_list, validate_name,
-        validate_upvotes_status, validate_valid_list_id,
+        validate_no_existing_registration, validate_upvotes_status, validate_valid_list_id,
     },
 };
 
@@ -590,7 +590,7 @@ impl ListsTrait for ListsContract {
                         }
                     }
                 });
-            }          
+            }
             extend_list(env, ulist.id);
         } else if registration_id.is_some() {
             let uregistration_id = registration_id.unwrap();
@@ -601,12 +601,12 @@ impl ListsTrait for ListsContract {
             }
 
             let uregistration = registration.unwrap();
-            
-            if uregistration.registrant_id != submitter && uregistration.registered_by != submitter {
+
+            if uregistration.registrant_id != submitter {
                 let ulist = get_list_by_id(env, uregistration.list_id).unwrap();
                 let admins = read_list_admins(env, uregistration.list_id);
                 let is_admin_or_owner = ulist.owner == submitter || admins.contains(&submitter);
-                
+
                 if !is_admin_or_owner {
                     panic_with_error!(env, Error::AdminOrOwnerOnly);
                 }
@@ -621,7 +621,7 @@ impl ListsTrait for ListsContract {
             remove_registration_to_list(env, uregistration.list_id, uregistration_id);
             remove_registration_id_to_user(env, uregistration.registrant_id, uregistration_id);
             log_delete_registration_event(env, uregistration.list_id, uregistration_id);
-            
+
             extend_list(env, uregistration.list_id);
         }
         extend_instance(env);
@@ -733,25 +733,26 @@ impl ListsTrait for ListsContract {
         for list_id in internal_skip..internal_skip + internal_limit {
             let list = get_list_by_id(env, list_id as u128);
 
-            if list.is_some(){
-              let total_upvotes_count:u64 = read_list_upvotes(env, list_id as u128).len().into();
-              let total_registrations_count:u64 = get_registrations_of_list(env, list_id as u128).len().into();
-              let ulist = list.unwrap();
+            if list.is_some() {
+                let total_upvotes_count: u64 = read_list_upvotes(env, list_id as u128).len().into();
+                let total_registrations_count: u64 =
+                    get_registrations_of_list(env, list_id as u128).len().into();
+                let ulist = list.unwrap();
 
-              result.push_back(ListExternal {
-                  id: ulist.id,
-                  name: ulist.name.clone(),
-                  description: ulist.description.clone(),
-                  cover_img_url: ulist.cover_image_url,
-                  owner: ulist.owner.clone(),
-                  admins: read_list_admins(env, ulist.id),
-                  created_ms: ulist.created_ms,
-                  updated_ms: ulist.updated_ms,
-                  default_registration_status: ulist.default_registration_status.clone(),
-                  admin_only_registrations: ulist.admin_only_registration,
-                  total_registrations_count,
-                  total_upvotes_count,
-              });
+                result.push_back(ListExternal {
+                    id: ulist.id,
+                    name: ulist.name.clone(),
+                    description: ulist.description.clone(),
+                    cover_img_url: ulist.cover_image_url,
+                    owner: ulist.owner.clone(),
+                    admins: read_list_admins(env, ulist.id),
+                    created_ms: ulist.created_ms,
+                    updated_ms: ulist.updated_ms,
+                    default_registration_status: ulist.default_registration_status.clone(),
+                    admin_only_registrations: ulist.admin_only_registration,
+                    total_registrations_count,
+                    total_upvotes_count,
+                });
             }
         }
 
@@ -1051,7 +1052,7 @@ impl ListsTrait for ListsContract {
         required_status: Option<RegistrationStatus>,
     ) -> bool {
         extend_instance(env);
-        
+
         let list = get_list_by_id(env, list_id);
         if list.is_none() {
             panic_with_error!(env, Error::ListNotFound);
@@ -1072,7 +1073,7 @@ impl ListsTrait for ListsContract {
         user_registrations.iter().any(|registration_id| {
             let registration = get_registration_by_id(env, registration_id);
             if let Some(reg) = registration {
-                return reg.list_id == list_id && reg.status == status
+                return reg.list_id == list_id && reg.status == status;
             }
             false
         })

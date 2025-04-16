@@ -47,6 +47,10 @@ pub fn validate_round_detail(env: &Env, round_detail: &CreateRoundParams) {
         panic_with_error!(env, RoundError::AmountMustBeGreaterThanZero);
     }
 
+    if round_detail.minimum_deposit > round_detail.expected_amount {
+        panic_with_error!(env, RoundError::MinimumDepositMustBeLessThanExpectedAmount);
+    }
+
     if round_detail.contacts.len() >= 10 {
         panic_with_error!(env, RoundError::ContactMustBeLessThanTen);
     }

@@ -174,6 +174,7 @@ impl RoundCreator for RoundContract {
             application_start_ms: round_detail.application_start_ms,
             application_end_ms: round_detail.application_end_ms,
             expected_amount: round_detail.expected_amount,
+            minimum_deposit: round_detail.minimum_deposit,
             use_whitelist_voting: round_detail.use_whitelist_voting.unwrap_or(false),
             use_whitelist_application: round_detail.use_whitelist_application.unwrap_or(false),
             voting_wl_list_id: round_detail.voting_wl_list_id,
@@ -380,6 +381,26 @@ impl IsRound for RoundContract {
         log_update_round(env, round.clone());
     }
 
+    fn set_minimum_deposit(env: &Env, round_id: u128, caller: Address, amount: u128) {
+        caller.require_auth();
+
+        let mut round = read_round_info(env, round_id);
+        validate_voting_not_started(env, &round);
+
+        validate_owner_or_admin(env, &caller, &round);
+
+        if round.round_complete_ms.is_some() {
+            panic_with_error!(env, RoundError::RoundAlreadyCompleted);
+        }
+
+        round.minimum_deposit = amount;
+
+        write_round_info(env, round_id, &round);
+        extend_instance(env);
+        extend_round(env, round_id);
+        log_update_round(env, round.clone());
+    }
+
     fn set_admins(env: &Env, round_id: u128, round_admin: Vec<Address>) {
         let round = read_round_info(env, round_id);
 
@@ -560,12 +581,21 @@ impl IsRound for RoundContract {
 
         let round = read_round_info(env, round_id);
 
+        let payouts = read_payouts(env, round_id);
+        if !payouts.is_empty() {
+            panic_with_error!(env, RoundError::PayoutsAlreadySet);
+        }
+
         if round.use_vault.is_none() {
             panic_with_error!(env, RoundError::RoundDoesNotUseVault);
         } else {
             if !round.use_vault.unwrap() {
                 panic_with_error!(env, RoundError::RoundDoesNotUseVault);
             }
+        }
+
+        if amount < round.minimum_deposit {
+            panic_with_error!(env, RoundError::DepositAmountTooLow);
         }
 
         let config = read_config(env);

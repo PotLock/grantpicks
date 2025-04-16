@@ -63,6 +63,9 @@ pub enum RoundError {
     WhitelistIdNotSet = 59,
     NotProjectParticipant = 74,
     NotApprovedParticipant = 75,
+    DepositAmountTooLow = 76,
+    PayoutsAlreadySet = 79,
+    MinimumDepositMustBeLessThanExpectedAmount = 90
 }
 
 #[allow(clippy::module_name_repetitions)]

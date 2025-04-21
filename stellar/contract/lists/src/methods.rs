@@ -105,7 +105,7 @@ pub trait ListsTrait {
 
     fn is_registered(
         env: &Env,
-        list_id: Option<u128>, // Optional for now because it has to be compatible with current Pot implementation of RegistryProvider, which calls a contract providing only "account_id" arg
+        list_id: u128,
         registrant_id: Address,
         required_status: Option<RegistrationStatus>, // defaults to Approved
     ) -> bool;

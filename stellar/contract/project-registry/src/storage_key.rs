@@ -1,3 +1,5 @@
+use soroban_sdk::Address;
+
 use crate::soroban_sdk::{self, contracttype};
 
 #[contracttype]
@@ -7,5 +9,5 @@ pub enum ContractKey {
     Projects,
     Project(u128),
     RegistryAdmin,
-    ApplicantToProjectID,
+    ApplicantToProjectID(Address),
 }

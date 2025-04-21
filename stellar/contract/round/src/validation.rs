@@ -3,14 +3,33 @@ use crate::{
 };
 use soroban_sdk::{panic_with_error, Address, Env, String, Vec};
 
+// Add minimum duration checks
+pub const MIN_VOTING_DURATION: u64 = 24 * 60 * 60 * 1000;
+pub const MIN_APPLICATION_DURATION: u64 = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
 pub fn validate_round_detail(env: &Env, round_detail: &CreateRoundParams) {
+    let current_time = get_ledger_second_as_millis(env);
+
+    // Validate voting period is in the future
+    if round_detail.voting_start_ms <= current_time {
+        panic_with_error!(env, RoundError::VotingStartInPast);
+    }
+
     if round_detail.voting_start_ms > round_detail.voting_end_ms {
         panic_with_error!(env, RoundError::VotingStartGreaterThanVotingEnd);
     }
 
     if round_detail.allow_applications {
       if round_detail.application_start_ms.is_some() && round_detail.application_end_ms.is_some() {
-        if round_detail.application_start_ms.unwrap() > round_detail.application_end_ms.unwrap() {
+        let app_start = round_detail.application_start_ms.unwrap();
+        let app_end = round_detail.application_end_ms.unwrap();
+        if app_start < current_time {
+            panic_with_error!(env, RoundError::ApplicationStartInPast);
+        }
+        if app_end - app_start < MIN_APPLICATION_DURATION {
+            panic_with_error!(env, RoundError::ApplicationPeriodTooShort);
+        }
+        if app_start > app_end {
           panic_with_error!(env, RoundError::ApplicationStartGreaterThanApplicationEnd);
         }
       }else{
@@ -26,37 +45,35 @@ pub fn validate_round_detail(env: &Env, round_detail: &CreateRoundParams) {
 
     if round_detail.expected_amount == 0 {
         panic_with_error!(env, RoundError::AmountMustBeGreaterThanZero);
+    }
+
+    if round_detail.minimum_deposit > round_detail.expected_amount {
+        panic_with_error!(env, RoundError::MinimumDepositMustBeLessThanExpectedAmount);
     }
 
     if round_detail.contacts.len() >= 10 {
         panic_with_error!(env, RoundError::ContactMustBeLessThanTen);
     }
+
+    if round_detail.voting_end_ms - round_detail.voting_start_ms < MIN_VOTING_DURATION {
+        panic_with_error!(env, RoundError::VotingPeriodTooShort);
+    }
+    if round_detail.use_whitelist_voting.unwrap_or(false) {
+        if round_detail.voting_wl_list_id.is_none() {
+            panic_with_error!(env, RoundError::WhitelistIdNotSet)
+        }
+    }
+
+    if round_detail.use_whitelist_application.unwrap_or(false) {
+        if round_detail.application_wl_list_id.is_none() {
+            panic_with_error!(env, RoundError::WhitelistIdNotSet)
+        }
+    }
 }
 
+
 pub fn validate_round_detail_update(env: &Env, round_detail: &UpdateRoundParams) {
-    if round_detail.voting_start_ms > round_detail.voting_end_ms {
-        panic_with_error!(env, RoundError::VotingStartGreaterThanVotingEnd);
-    }
-
-    if round_detail.allow_applications {
-      if round_detail.application_start_ms.is_some() && round_detail.application_end_ms.is_some() {
-        if round_detail.application_start_ms.unwrap() > round_detail.application_end_ms.unwrap() {
-          panic_with_error!(env, RoundError::ApplicationStartGreaterThanApplicationEnd);
-        }
-      }else{
-        panic_with_error!(env, RoundError::ApplicationPeriodNotSet);
-      }
-    }
-
-    if round_detail.application_end_ms.is_some(){
-      if round_detail.voting_start_ms < round_detail.application_end_ms.unwrap() {
-        panic_with_error!(env, RoundError::VotingStartLessThanApplicationEnd);
-      }
-    }
-
-    if round_detail.expected_amount == 0 {
-        panic_with_error!(env, RoundError::AmountMustBeGreaterThanZero);
-    }
+    let current_time = get_ledger_second_as_millis(env);
 
     if round_detail.contacts.len() >= 10 {
         panic_with_error!(env, RoundError::ContactMustBeLessThanTen);
@@ -122,7 +139,7 @@ pub fn validate_application_period(env: &Env, round: &RoundDetail) {
 pub fn validate_voting_not_started(env: &Env, round: &RoundDetail) {
     let current_time = get_ledger_second_as_millis(env);
 
-    if current_time > round.voting_end_ms {
+    if current_time >= round.voting_start_ms {
         panic_with_error!(env, VoteError::VotingAlreadyStarted);
     }
 }

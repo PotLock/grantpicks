@@ -4,6 +4,7 @@ import {
   AssembledTransaction,
   Client as ContractClient,
   ClientOptions as ContractClientOptions,
+  MethodOptions,
   Result,
   Spec as ContractSpec,
 } from '@stellar/stellar-sdk/contract';
@@ -33,7 +34,7 @@ if (typeof window !== 'undefined') {
 export const networks = {
   testnet: {
     networkPassphrase: "Test SDF Network ; September 2015",
-    contractId: "CAHWUQNN54A53HIWJZRTLUVQFA4UD3IR5EJSZCA3R63WCY4DPVKHNLV5",
+    contractId: "CBD4OK7KMJERD2HM775IXQGY4XE5G3QBV5BFBYMQ6LB4ONFCPBZAXENP",
   }
 } as const
 
@@ -138,7 +139,11 @@ export const Errors = {
 
   16: {message:"AlreadyInitialized"},
 
-  17: {message:"InvalidRegistrationId"}
+  17: {message:"InvalidRegistrationId"},
+
+  18: {message:"AlreadyRegistered"},
+
+  19: {message:"RegistrationListMismatch"}
 }
 
 export interface Client {
@@ -585,7 +590,7 @@ export interface Client {
   /**
    * Construct and simulate a is_registered transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
    */
-  is_registered: ({list_id, registrant_id, required_status}: {list_id: Option<u128>, registrant_id: string, required_status: Option<RegistrationStatus>}, options?: {
+  is_registered: ({list_id, registrant_id, required_status}: {list_id: u128, registrant_id: string, required_status: Option<RegistrationStatus>}, options?: {
     /**
      * The fee to pay for the transaction. Default: BASE_FEE
      */
@@ -664,6 +669,20 @@ export interface Client {
 
 }
 export class Client extends ContractClient {
+  static async deploy<T = Client>(
+    /** Options for initalizing a Client as well as for calling a method, with extras specific to deploying. */
+    options: MethodOptions &
+      Omit<ContractClientOptions, "contractId"> & {
+        /** The hash of the Wasm blob, which must already be installed on-chain. */
+        wasmHash: Buffer | string;
+        /** Salt used to generate the contract's ID. Passed through to {@link Operation.createCustomContract}. Default: random. */
+        salt?: Buffer | Uint8Array;
+        /** The format used to decode `wasmHash`, if it's provided as a string. */
+        format?: "hex" | "base64";
+      }
+  ): Promise<AssembledTransaction<T>> {
+    return ContractClient.deploy(null, options)
+  }
   constructor(public readonly options: ContractClientOptions) {
     super(
       new ContractSpec([ "AAAAAgAAAAAAAAAAAAAAElJlZ2lzdHJhdGlvblN0YXR1cwAAAAAABQAAAAAAAAAAAAAAB1BlbmRpbmcAAAAAAAAAAAAAAAAIQXBwcm92ZWQAAAAAAAAAAAAAAAhSZWplY3RlZAAAAAAAAAAAAAAACkdyYXlsaXN0ZWQAAAAAAAAAAAAAAAAAC0JsYWNrbGlzdGVkAA==",
@@ -694,12 +713,12 @@ export class Client extends ContractClient {
         "AAAAAAAAAAAAAAAQZ2V0X3JlZ2lzdHJhdGlvbgAAAAEAAAAAAAAAD3JlZ2lzdHJhdGlvbl9pZAAAAAAKAAAAAQAAB9AAAAAUUmVnaXN0cmF0aW9uRXh0ZXJuYWw=",
         "AAAAAAAAAAAAAAAaZ2V0X3JlZ2lzdHJhdGlvbnNfZm9yX2xpc3QAAAAAAAQAAAAAAAAAB2xpc3RfaWQAAAAACgAAAAAAAAAPcmVxdWlyZWRfc3RhdHVzAAAAA+gAAAfQAAAAElJlZ2lzdHJhdGlvblN0YXR1cwAAAAAAAAAAAApmcm9tX2luZGV4AAAAAAPoAAAABgAAAAAAAAAFbGltaXQAAAAAAAPoAAAABgAAAAEAAAPqAAAH0AAAABRSZWdpc3RyYXRpb25FeHRlcm5hbA==",
         "AAAAAAAAAAAAAAAgZ2V0X3JlZ2lzdHJhdGlvbnNfZm9yX3JlZ2lzdHJhbnQAAAAEAAAAAAAAAA1yZWdpc3RyYW50X2lkAAAAAAAAEwAAAAAAAAAPcmVxdWlyZWRfc3RhdHVzAAAAA+gAAAfQAAAAElJlZ2lzdHJhdGlvblN0YXR1cwAAAAAAAAAAAApmcm9tX2luZGV4AAAAAAPoAAAABgAAAAAAAAAFbGltaXQAAAAAAAPoAAAABgAAAAEAAAPqAAAH0AAAABRSZWdpc3RyYXRpb25FeHRlcm5hbA==",
-        "AAAAAAAAAAAAAAANaXNfcmVnaXN0ZXJlZAAAAAAAAAMAAAAAAAAAB2xpc3RfaWQAAAAD6AAAAAoAAAAAAAAADXJlZ2lzdHJhbnRfaWQAAAAAAAATAAAAAAAAAA9yZXF1aXJlZF9zdGF0dXMAAAAD6AAAB9AAAAASUmVnaXN0cmF0aW9uU3RhdHVzAAAAAAABAAAAAQ==",
+        "AAAAAAAAAAAAAAANaXNfcmVnaXN0ZXJlZAAAAAAAAAMAAAAAAAAAB2xpc3RfaWQAAAAACgAAAAAAAAANcmVnaXN0cmFudF9pZAAAAAAAABMAAAAAAAAAD3JlcXVpcmVkX3N0YXR1cwAAAAPoAAAH0AAAABJSZWdpc3RyYXRpb25TdGF0dXMAAAAAAAEAAAAB",
         "AAAAAAAAAAAAAAAFb3duZXIAAAAAAAAAAAAAAQAAABM=",
         "AAAAAAAAAAAAAAAHdXBncmFkZQAAAAABAAAAAAAAAAl3YXNtX2hhc2gAAAAAAAPuAAAAIAAAAAA=",
         "AAAAAAAAAAAAAAAGYWRtaW5zAAAAAAABAAAAAAAAAAdsaXN0X2lkAAAAAAoAAAABAAAD6gAAABM=",
         "AAAAAgAAAAAAAAAAAAAAC0NvbnRyYWN0S2V5AAAAAAwAAAAAAAAAAAAAAA1Db250cmFjdE93bmVyAAAAAAAAAAAAAAAAAAALTGlzdHNOdW1iZXIAAAAAAQAAAAAAAAAFTGlzdHMAAAAAAAABAAAACgAAAAEAAAAAAAAACkxpc3RBZG1pbnMAAAAAAAEAAAAKAAAAAQAAAAAAAAAJT3duZWRMaXN0AAAAAAAAAQAAABMAAAABAAAAAAAAAA5SZWdpc3RyYW50TGlzdAAAAAAAAQAAABMAAAAAAAAAAAAAABNSZWdpc3RyYXRpb25zTnVtYmVyAAAAAAEAAAAAAAAADVJlZ2lzdHJhdGlvbnMAAAAAAAABAAAACgAAAAEAAAAAAAAAEExpc3RSZWdpc3RyYXRpb24AAAABAAAACgAAAAEAAAAAAAAAEFJlZ2lzdHJhdGlvbnNJRHMAAAABAAAAEwAAAAEAAAAAAAAAB1Vwdm90ZXMAAAAAAQAAAAoAAAABAAAAAAAAAAtVc2VyVXB2b3RlcwAAAAABAAAAEw==",
-        "AAAABAAAAAAAAAAAAAAABUVycm9yAAAAAAAAEQAAAAAAAAARTmFtZUNhbm5vdEJlRW1wdHkAAAAAAAABAAAAAAAAABJEZXNjcmlwdGlvblRvb0xvbmcAAAAAAAIAAAAAAAAAFENvdmVySW1hZ2VVcmxUb29Mb25nAAAAAwAAAAAAAAANSW52YWxpZExpc3RJZAAAAAAAAAQAAAAAAAAADkFscmVhZHlVcHZvdGVkAAAAAAAFAAAAAAAAAApOb3RVcHZvdGVkAAAAAAAGAAAAAAAAABFDb250cmFjdE93bmVyT25seQAAAAAAAAcAAAAAAAAADUFkbWluTm90Rm91bmQAAAAAAAAIAAAAAAAAAAxMaXN0Tm90Rm91bmQAAAAJAAAAAAAAABJBZG1pbkFscmVhZHlFeGlzdHMAAAAAAAoAAAAAAAAAEUFkbWluRG9lc05vdEV4aXN0AAAAAAAACwAAAAAAAAAMTm90ZVJlcXVpcmVkAAAADAAAAAAAAAAVUmVnaXN0cmF0aW9uc1JlcXVpcmVkAAAAAAAADQAAAAAAAAAUUmVnaXN0cmF0aW9uTm90Rm91bmQAAAAOAAAAAAAAABBBZG1pbk9yT3duZXJPbmx5AAAADwAAAAAAAAASQWxyZWFkeUluaXRpYWxpemVkAAAAAAAQAAAAAAAAABVJbnZhbGlkUmVnaXN0cmF0aW9uSWQAAAAAAAAR" ]),
+        "AAAABAAAAAAAAAAAAAAABUVycm9yAAAAAAAAEwAAAAAAAAARTmFtZUNhbm5vdEJlRW1wdHkAAAAAAAABAAAAAAAAABJEZXNjcmlwdGlvblRvb0xvbmcAAAAAAAIAAAAAAAAAFENvdmVySW1hZ2VVcmxUb29Mb25nAAAAAwAAAAAAAAANSW52YWxpZExpc3RJZAAAAAAAAAQAAAAAAAAADkFscmVhZHlVcHZvdGVkAAAAAAAFAAAAAAAAAApOb3RVcHZvdGVkAAAAAAAGAAAAAAAAABFDb250cmFjdE93bmVyT25seQAAAAAAAAcAAAAAAAAADUFkbWluTm90Rm91bmQAAAAAAAAIAAAAAAAAAAxMaXN0Tm90Rm91bmQAAAAJAAAAAAAAABJBZG1pbkFscmVhZHlFeGlzdHMAAAAAAAoAAAAAAAAAEUFkbWluRG9lc05vdEV4aXN0AAAAAAAACwAAAAAAAAAMTm90ZVJlcXVpcmVkAAAADAAAAAAAAAAVUmVnaXN0cmF0aW9uc1JlcXVpcmVkAAAAAAAADQAAAAAAAAAUUmVnaXN0cmF0aW9uTm90Rm91bmQAAAAOAAAAAAAAABBBZG1pbk9yT3duZXJPbmx5AAAADwAAAAAAAAASQWxyZWFkeUluaXRpYWxpemVkAAAAAAAQAAAAAAAAABVJbnZhbGlkUmVnaXN0cmF0aW9uSWQAAAAAAAARAAAAAAAAABFBbHJlYWR5UmVnaXN0ZXJlZAAAAAAAABIAAAAAAAAAGFJlZ2lzdHJhdGlvbkxpc3RNaXNtYXRjaAAAABM=" ]),
       options
     )
   }

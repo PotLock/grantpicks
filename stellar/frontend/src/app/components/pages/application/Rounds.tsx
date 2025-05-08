@@ -139,7 +139,7 @@ const ApplicationRoundsItem = ({
 		if (selectedRoundType === 'upcoming') {
 			if (
 				new Date().getTime() >=
-					new Date(doc.application_start || '').getTime() &&
+				new Date(doc.application_start || '').getTime() &&
 				new Date().getTime() < new Date(doc.application_end || '').getTime()
 			) {
 				return `upcoming-open`
@@ -244,8 +244,8 @@ const ApplicationRoundsItem = ({
 								getSpecificTime() === 'on-going'
 								? `border-grantpicks-green-400 text-grantpicks-green-700 bg-grantpicks-green-50`
 								: getSpecificTime() === 'upcoming' ||
-									  getSpecificTime() === 'upcoming-closed' ||
-									  getSpecificTime() == 'ended'
+									getSpecificTime() === 'upcoming-closed' ||
+									getSpecificTime() == 'ended'
 									? `border-grantpicks-black-400 text-grantpicks-black-950 bg-grantpicks-black-50`
 									: `border-grantpicks-amber-400 text-grantpicks-amber-700 bg-grantpicks-amber-50`,
 						)}
@@ -255,7 +255,7 @@ const ApplicationRoundsItem = ({
 						) : getSpecificTime() === 'upcoming-open' ? (
 							<IconProject size={18} className="fill-grantpicks-green-400" />
 						) : getSpecificTime() === 'upcoming' ||
-						  getSpecificTime() === 'upcoming-closed' ? (
+							getSpecificTime() === 'upcoming-closed' ? (
 							<IconProject size={18} className="fill-grantpicks-black-950" />
 						) : getSpecificTime() === 'ended' ? (
 							<IconDollar size={18} className="fill-grantpicks-black-950" />
@@ -420,29 +420,29 @@ const ApplicationRoundsItem = ({
 				getSpecificTime() === 'upcoming' ||
 				getSpecificTime() === 'upcoming-open' ||
 				getSpecificTime() === 'upcoming-closed') && (
-				<div className="mt-6">
-					<RoundMenu
-						data={doc}
-						onViewDetails={() => {
-							setShowDetailDrawer(true)
-							router.push(
-								`?round_type=${selectedRoundType}&round_id=${doc.on_chain_id}`,
-								{ scroll: false },
-							)
-						}}
-						onViewApps={() => {
-							setShowAppsDrawer(true)
-						}}
-						onFundRound={() => {
-							if (!connectedWallet) {
-								setShowMenu('choose-wallet')
-								return
-							}
-							setShowFundRoundModal(true)
-						}}
-					/>
-				</div>
-			)}
+					<div className="mt-6">
+						<RoundMenu
+							data={doc}
+							onViewDetails={() => {
+								setShowDetailDrawer(true)
+								router.push(
+									`?round_type=${selectedRoundType}&round_id=${doc.on_chain_id}`,
+									{ scroll: false },
+								)
+							}}
+							onViewApps={() => {
+								setShowAppsDrawer(true)
+							}}
+							onFundRound={() => {
+								if (!connectedWallet) {
+									setShowMenu('choose-wallet')
+									return
+								}
+								setShowFundRoundModal(true)
+							}}
+						/>
+					</div>
+				)}
 
 			<RoundDetailDrawer
 				isOpen={showDetailDrawer}
@@ -512,6 +512,7 @@ const ApplicationRounds = () => {
 				return rounds
 		}
 	}
+
 
 	const onFetchRounds = async (key: { url: string; page: number }) => {
 		let beChainId = null

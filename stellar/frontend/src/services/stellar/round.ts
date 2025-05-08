@@ -63,6 +63,7 @@ export interface CreateRoundParams {
 	cooldown_period_ms?: u64
 	description: string
 	expected_amount: u128
+	minimum_deposit: u128
 	is_video_required: boolean
 	max_participants?: u32
 	name: string

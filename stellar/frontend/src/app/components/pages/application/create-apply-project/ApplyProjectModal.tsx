@@ -91,17 +91,17 @@ const ApplyProjectModal = ({
 			if (storage.chainId === 'stellar') {
 				let contracts = storage.getStellarContracts()
 
-				if (!contracts) {
+				if (!contracts || !round_id) {
 					return
 				}
 
 				const applyParams: ApplyProjectToRoundParams = {
-					round_id: round_id as bigint,
+					round_id: round_id,
 					caller: stellarPubKey,
 					note: applyNote,
 				}
-
 				const txApplyProject = await applyProjectToRound(applyParams, contracts)
+				console.log(txApplyProject)
 
 				const txHashApplyProject = await contracts.signAndSendTx(
 					stellarKit as StellarWalletsKit,
@@ -219,7 +219,7 @@ const ApplyProjectModal = ({
 											</p>
 										</div>
 									</div>
-									<Button color="alpha-50" onClick={() => {}}>
+									<Button color="alpha-50" onClick={() => { }}>
 										Update
 									</Button>
 								</div>

@@ -102,6 +102,7 @@ const CreateRoundPage = () => {
 		reset,
 		watch,
 		trigger,
+		setError,
 		formState: { errors },
 	} = useForm<CreateRoundData>({
 		mode: 'onChange',
@@ -212,6 +213,52 @@ const CreateRoundPage = () => {
 	const onCreateRound: SubmitHandler<CreateRoundData> = async (data) => {
 		try {
 			openPageLoading()
+
+			// Adjust application times
+			if (data.apply_duration_start && data.apply_duration_end) {
+				const startDate = new Date(data.apply_duration_start)
+				const endDate = new Date(data.apply_duration_end)
+
+				// If start is today, set to current time + 15 mins
+				if (startDate.toDateString() === new Date().toDateString()) {
+					startDate.setHours(new Date().getHours())
+					startDate.setMinutes(new Date().getMinutes() + 15)
+				}
+
+				// If end is tomorrow, set to current time + 3 hours
+				if (endDate.toDateString() === new Date(new Date().setDate(new Date().getDate() + 1)).toDateString()) {
+					endDate.setHours(new Date().getHours() + 3)
+					endDate.setMinutes(new Date().getMinutes())
+				}
+
+				data.apply_duration_start = startDate
+				data.apply_duration_end = endDate
+			}
+
+			// Adjust voting times
+			if (data.voting_duration_start && data.voting_duration_end) {
+				const startDate = new Date(data.voting_duration_start)
+				const endDate = new Date(data.voting_duration_end)
+				const applyEndDate = data.apply_duration_end as Date
+
+				// If voting starts same day as application ends
+				if (startDate.toDateString() === applyEndDate.toDateString()) {
+					startDate.setHours(applyEndDate.getHours() + 3)
+					startDate.setMinutes(applyEndDate.getMinutes())
+				}
+				// If voting starts next day
+				else if (startDate.toDateString() === new Date(new Date().setDate(applyEndDate.getDate() + 1)).toDateString()) {
+					startDate.setHours(applyEndDate.getHours())
+					startDate.setMinutes(applyEndDate.getMinutes())
+				}
+
+				// Set end time to start time + 24 hours
+				endDate.setHours(startDate.getHours())
+				endDate.setMinutes(startDate.getMinutes())
+
+				data.voting_duration_start = startDate
+				data.voting_duration_end = endDate
+			}
 
 			if (storage.chainId === 'stellar') {
 				let contracts = storage.getStellarContracts()
@@ -697,8 +744,33 @@ const CreateRoundPage = () => {
 														placeholderText="Apply Duration"
 														isClearable={true}
 														onChange={(date) => {
-															field.onChange(date[0])
-															setValue('apply_duration_end', date[1])
+															const [start, end] = date
+
+															field.onChange(start)
+															setValue('apply_duration_end', end)
+
+															if (!start || !end) return
+
+															const startDate = new Date(start)
+															const endDate = new Date(end)
+															const hoursDiff = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60)
+
+															if (hoursDiff < 24) {
+																toast.error('Application duration must be at least 24 hours', {
+																	style: toastOptions.error.style,
+																})
+																setError('apply_duration_start', {
+																	type: 'manual',
+																	message: 'Application duration must be at least 24 hours apart'
+																})
+																setValue('apply_duration_end', null, {
+																	shouldValidate: true,
+																	shouldDirty: true,
+																	shouldTouch: true
+																})
+																field.onChange(null)
+																return
+															}
 														}}
 														className="border border-grantpicks-black-200 rounded-xl w-full h-12"
 														wrapperClassName="w-full mb-1"

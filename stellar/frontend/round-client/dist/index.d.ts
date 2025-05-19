@@ -67,8 +67,8 @@ export interface RoundDetail {
     use_whitelist_application: boolean;
     use_whitelist_voting: boolean;
     vault_total_deposits: u128;
-    voting_end_ms: u128;
-    voting_start_ms: u128;
+    voting_end_ms: u64;
+    voting_start_ms: u64;
     voting_wl_list_id: Option<u128>;
 }
 export interface CreateRoundParams {

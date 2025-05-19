@@ -115,21 +115,17 @@ export interface GetMyVotedRoundsParams {
 }
 
 export interface UpdateRoundParams {
-	allow_applications: boolean
-	application_end_ms?: u64
-	application_start_ms?: u64
+	application_wl_list_id?: u128
 	contacts: Contact[]
 	description: string
-	expected_amount: u128
 	is_video_required: boolean
 	max_participants?: u32
 	name: string
 	num_picks_per_voter?: u32
-	use_whitelist?: boolean
-	voting_end_ms: u64
-	voting_start_ms: u64
+	referrer_fee_basis_points?: u32
 	use_vault?: boolean
-	wl_list_id: bigint | undefined
+	use_whitelist_voting?: boolean
+	voting_wl_list_id?: u128
 }
 
 export interface DepositFundRoundParams {

@@ -26,11 +26,7 @@ import {
 import toast from 'react-hot-toast'
 import { useMyProject } from './MyProjectProvider'
 import useAppStorage from '@/stores/zustand/useAppStorage'
-import { ProjectFundingHistory } from 'project-registry-client'
-import {
-	NearProjectFundingHistory,
-	NearSocialGPProject,
-} from '@/services/near/type'
+import { NearSocialGPProject } from '@/services/near/type'
 
 interface IFunding {
 	id: string

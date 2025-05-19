@@ -38,11 +38,11 @@ class Contracts {
 		if (wallet) {
 			config.signAuthEntry = async () => {
 				const signedAuth = await wallet.signAuth()
-				return { signedAuthEntry: signedAuth }
+				return signedAuth
 			}
 			config.signTransaction = async (tx: string, opts?: any) => {
 				const signedTx = await wallet.signTransaction(tx, opts)
-				return { signedTxXdr: signedTx }
+				return signedTx
 			}
 		}
 

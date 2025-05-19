@@ -298,6 +298,10 @@ export const editRound = async (
 			name: params.name,
 			num_picks_per_voter: params.num_picks_per_voter || undefined,
 			use_vault: params.use_vault || undefined,
+			application_wl_list_id: params.application_wl_list_id,
+			referrer_fee_basis_points: params.referrer_fee_basis_points,
+			use_whitelist_voting: params.use_whitelist_voting,
+			voting_wl_list_id: params.voting_wl_list_id
 		},
 	})
 	return round

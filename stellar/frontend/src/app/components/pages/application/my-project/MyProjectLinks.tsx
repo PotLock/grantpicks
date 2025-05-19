@@ -9,14 +9,11 @@ import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { DEFAULT_IMAGE_URL } from '@/constants/project'
 import { toastOptions } from '@/constants/style'
-import Contracts from '@/lib/contracts'
-import CMDWallet from '@/lib/wallet'
 import {
 	IUpdateProjectParams,
 	updateProject,
 } from '@/services/stellar/project-registry'
 import { CreateProjectStep3Data } from '@/types/form'
-import { Network } from '@/types/on-chain'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import React, { useEffect, useState } from 'react'
 import { SubmitHandler, useFieldArray, useForm } from 'react-hook-form'

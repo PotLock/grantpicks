@@ -20,7 +20,7 @@ import useSWRInfinite from 'swr/infinite'
 import InfiniteScroll from 'react-infinite-scroll-component'
 import IconLoading from '../../svgs/IconLoading'
 import { UseFieldArrayAppend, UseFieldArrayRemove } from 'react-hook-form'
-import { CreateRoundData } from '@/types/form'
+import { CreateRoundData, UpdateRoundData } from '@/types/form'
 import { prettyTruncate } from '@/utils/helper'
 import ProjectDetailDrawer from '../round-vote/ProjectDetailDrawer'
 import { IProjectDetailOwner } from '@/app/rounds/round-vote/[roundId]/page'
@@ -29,10 +29,12 @@ import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 
+type RoundData = CreateRoundData | UpdateRoundData
+
 interface AddProjectsModalProps extends BaseModalProps {
 	selectedProjects: IGetProjectsResponse[]
 	setSelectedProjects: Dispatch<SetStateAction<IGetProjectsResponse[]>>
-	append: UseFieldArrayAppend<CreateRoundData, 'projects'>
+	append: UseFieldArrayAppend<RoundData, 'projects'>
 	remove: UseFieldArrayRemove
 }
 
@@ -128,8 +130,8 @@ const AddProjectsModal = ({
 	})
 	const projects = projectData
 		? ([] as IGetProjectsResponse[]).concat(
-				...(projectData as any as IGetProjectsResponse[]),
-			)
+			...(projectData as any as IGetProjectsResponse[]),
+		)
 		: []
 	const hasMore = projectData ? projectData.length >= LIMIT_SIZE : false
 
@@ -261,12 +263,12 @@ const AddProjectsModal = ({
 											onClick={() =>
 												tempSelectedProjects.length < 10
 													? setTempSelectedProjects((prev) => [
-															project,
-															...prev,
-														])
+														project,
+														...prev,
+													])
 													: toast.error('Max. 10 projects', {
-															style: toastOptions.error.style,
-														})
+														style: toastOptions.error.style,
+													})
 											}
 										>
 											<Image

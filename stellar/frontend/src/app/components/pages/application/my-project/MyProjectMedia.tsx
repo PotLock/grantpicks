@@ -1,7 +1,5 @@
 import Button from '@/app/components/commons/Button'
 import InputText from '@/app/components/commons/InputText'
-import InputTextArea from '@/app/components/commons/InputTextArea'
-import IconCloseFilled from '@/app/components/svgs/IconCloseFilled'
 import IconPause from '@/app/components/svgs/IconPause'
 import IconPlay from '@/app/components/svgs/IconPlay'
 import IconTrash from '@/app/components/svgs/IconTrash'
@@ -12,8 +10,6 @@ import { YOUTUBE_URL_REGEX } from '@/constants/regex'
 import { toastOptions } from '@/constants/style'
 import { requestUpload, retrieveAsset, uploadFile } from '@/services/upload'
 import {
-	CreateProjectStep1Data,
-	CreateProjectStep2Data,
 	CreateProjectStep5Data,
 } from '@/types/form'
 import { fetchYoutubeIframe, onFetchingBlobToFile } from '@/utils/helper'
@@ -160,7 +156,6 @@ const MyProjectMedia = () => {
 					contacts: projectData?.contacts || [],
 					contracts: projectData?.contracts || [],
 					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
-					payout_address: projectData?.payout_address || '',
 					repositories: projectData?.repositories || [],
 					team_members: projectData?.team_members || [],
 					video_url: watch().video.url || '',
@@ -201,7 +196,6 @@ const MyProjectMedia = () => {
 					contacts: projectData?.contacts || [],
 					contracts: projectData?.contracts || [],
 					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
-					payout_address: projectData?.payout_address || '',
 					repositories: projectData?.repositories || [],
 					team_members:
 						(projectData?.team_members as unknown as string[]) || [],

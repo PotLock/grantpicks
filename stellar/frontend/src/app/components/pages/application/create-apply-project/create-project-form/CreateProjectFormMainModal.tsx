@@ -181,7 +181,6 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 						funded_ms: parseInt(f.date.getTime().toString()),
 					})),
 					image_url: DEFAULT_IMAGE_URL,
-					payout_address: storage.my_address || '',
 					repositories: dataForm.github_urls.map((g) => ({
 						label: 'github',
 						url: g,

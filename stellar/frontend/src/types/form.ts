@@ -108,6 +108,7 @@ export type UpdateRoundData = {
 	contact_address: string
 	amount: string
 	expected_amount: string
+	minimum_deposit: string
 	allow_application: boolean
 	max_participants: number
 	apply_duration_start: Date | null

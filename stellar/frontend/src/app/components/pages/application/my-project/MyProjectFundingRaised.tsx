@@ -127,7 +127,6 @@ const MyProjectFundingRaised = () => {
 					contacts: projectData?.contacts || [],
 					contracts: projectData?.contracts || [],
 					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
-					payout_address: projectData?.payout_address || '',
 					repositories: projectData?.repositories || [],
 					team_members: projectData?.team_members || [],
 					video_url: projectData?.video_url || '',
@@ -172,7 +171,6 @@ const MyProjectFundingRaised = () => {
 					contacts: projectData?.contacts || [],
 					contracts: projectData?.contracts || [],
 					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
-					payout_address: projectData?.payout_address || '',
 					repositories: projectData?.repositories || [],
 					team_members:
 						(projectData?.team_members as unknown as string[]) || [],
@@ -241,7 +239,7 @@ const MyProjectFundingRaised = () => {
 									})}
 									errorMessage={
 										errors?.funding_histories?.[index]?.source?.type ===
-										'required' ? (
+											'required' ? (
 											<p className="text-red-500 text-xs mt-1 ml-2">
 												Source is required
 											</p>
@@ -286,7 +284,7 @@ const MyProjectFundingRaised = () => {
 									})}
 									errorMessage={
 										errors?.funding_histories?.[index]?.denomination?.type ===
-										'required' ? (
+											'required' ? (
 											<p className="text-red-500 text-xs mt-1 ml-2">
 												Denomination is required
 											</p>
@@ -301,7 +299,7 @@ const MyProjectFundingRaised = () => {
 									})}
 									errorMessage={
 										errors?.funding_histories?.[index]?.amount?.type ===
-										'required' ? (
+											'required' ? (
 											<p className="text-red-500 text-xs mt-1 ml-2">
 												Amount is required
 											</p>
@@ -318,7 +316,7 @@ const MyProjectFundingRaised = () => {
 										})}
 										errorMessage={
 											errors.funding_histories?.[index]?.description?.type ===
-											'required' ? (
+												'required' ? (
 												<p className="text-red-500 text-xs mt-1 ml-2">
 													Description is required
 												</p>
@@ -384,7 +382,7 @@ const MyProjectFundingRaised = () => {
 						className="!py-3 !border !border-grantpicks-black-400 disabled:cursor-not-allowed"
 						isDisabled={
 							JSON.stringify(watch().funding_histories) ===
-								JSON.stringify(currentFunding) &&
+							JSON.stringify(currentFunding) &&
 							watch().is_havent_raised === currentHaventRaised
 						}
 					>
@@ -399,7 +397,7 @@ const MyProjectFundingRaised = () => {
 						className="!py-3 disabled:cursor-not-allowed"
 						isDisabled={
 							JSON.stringify(watch().funding_histories) ===
-								JSON.stringify(currentFunding) &&
+							JSON.stringify(currentFunding) &&
 							watch().is_havent_raised === currentHaventRaised
 						}
 					>

@@ -13,7 +13,6 @@ export type NearSocialGPProject = {
 	video_url: string
 	image_url: string
 	owner: string
-	payout_address: string
 	contacts: NearProjectContact[]
 	contracts: NearProjectContract[]
 	team_members: string[]
@@ -294,7 +293,6 @@ export function nearProjectToGPProject(project: NearSocialGPProject) {
 		total_donations_out_usd: 0,
 	} as GPUser
 	gpProject.payout_address = {
-		id: project.payout_address,
 		total_donations_in_usd: 0,
 		total_matching_pool_allocations_usd: 0,
 		total_donations_out_usd: 0,

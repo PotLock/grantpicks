@@ -45,7 +45,6 @@ export interface IUpdateProjectParams {
 	image_url: string
 	name: string
 	overview: string
-	payout_address: string
 	repositories: ProjectRepository[]
 	team_members: ProjectTeamMember[]
 	video_url: string

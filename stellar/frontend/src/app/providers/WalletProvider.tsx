@@ -41,6 +41,7 @@ import {
 	LobstrModule,
 	HanaModule,
 	ISupportedWallet,
+	HotWalletModule,
 	StellarWalletsKit,
 	WalletNetwork,
 } from '@creit.tech/stellar-wallets-kit'
@@ -142,6 +143,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 				modules: [
 					new FreighterModule(),
 					new xBullModule(),
+					new HotWalletModule(),
 					new LobstrModule(),
 					new HanaModule(),
 				],

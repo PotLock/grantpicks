@@ -224,7 +224,6 @@ const EditRoundPage = () => {
 			return
 		}
 
-		console.log('project id from round apps', roundApps)
 		let resProjects: IGetProjectsResponse[] = []
 		roundApps.forEach(async (app, index) => {
 			const currRes = await getProject(
@@ -241,6 +240,7 @@ const EditRoundPage = () => {
 			openPageLoading()
 			const resRoundInfo = await onFetchRoundInfo()
 			const resRoundAdmins = await onFetchAdmins()
+			console.log('resRoundInfo', resRoundInfo)
 			if (resRoundInfo) {
 				setValue('title', resRoundInfo?.name)
 				setValue('description', resRoundInfo?.description)
@@ -261,9 +261,9 @@ const EditRoundPage = () => {
 						formatNearAmount(resRoundInfo?.current_vault_balance) === '0'
 							? '0'
 							: formatNearAmount(resRoundInfo?.current_vault_balance).replace(
-									',',
-									'',
-								),
+								',',
+								'',
+							),
 					)
 				}
 
@@ -271,8 +271,8 @@ const EditRoundPage = () => {
 					'expected_amount',
 					storage.chainId === 'stellar'
 						? (formatStroopToXlm(
-								BigInt(resRoundInfo?.expected_amount),
-							) as string)
+							BigInt(resRoundInfo?.expected_amount),
+						) as string)
 						: (resRoundInfo?.expected_amount as string),
 				)
 				let calculation = 0
@@ -331,26 +331,8 @@ const EditRoundPage = () => {
 					setValue('contact_type', resRoundInfo?.contacts[0].name)
 					setValue('contact_address', resRoundInfo?.contacts[0].value)
 				}
-				if (resRoundInfo.allow_applications) {
-					setValue('allow_application', true)
-					setValue('max_participants', resRoundInfo?.max_participants)
-					setValue(
-						'apply_duration_start',
-						new Date(resRoundInfo.application_start || 0),
-					)
-					setValue(
-						'apply_duration_end',
-						new Date(resRoundInfo.application_end || 0),
-					)
-					setValue('voting_duration_start', new Date(resRoundInfo.voting_start))
-					setValue('voting_duration_end', new Date(resRoundInfo.voting_end))
-					if ('is_video_required' in resRoundInfo) {
-						setValue('is_video_required', resRoundInfo.is_video_required)
-					}
-				}
-				// if (resProjects.length > 0) {
-				// 	setValue(`projects`, resProjects)
-				// }
+
+
 				if (resRoundAdmins && resRoundAdmins.length > 0) {
 					setSelectedAdmins(resRoundAdmins.map((admin) => admin))
 					setValue(
@@ -462,42 +444,31 @@ const EditRoundPage = () => {
 					return
 				}
 
-				const udpateRoundParams: UpdateRoundParams = {
+				const updateRoundParams: UpdateRoundParams = {
 					name: data.title,
 					description: data.description,
-					application_start_ms: BigInt(
-						data.apply_duration_start?.getTime() as number,
-					),
-					application_end_ms: BigInt(
-						data.apply_duration_end?.getTime() as number,
-					),
+
 					contacts: [
 						{
 							name: data.contact_type,
 							value: data.contact_address,
 						},
 					],
-					expected_amount: parseToStroop(data.expected_amount),
 					max_participants:
 						selectedProjects.length > data.max_participants // TODO: must change "Max Participants" when adding projects
 							? selectedProjects.length
 							: data.max_participants,
 					num_picks_per_voter: data.vote_per_person,
-					use_whitelist: checkedListIds.length > 0,
-					wl_list_id: checkedListIds.length > 0 ? checkedListIds[0] : undefined,
+					application_wl_list_id: checkedListIds.length > 0 ? checkedListIds[0] : undefined,
+					voting_wl_list_id: checkedListIds.length > 0 ? checkedListIds[0] : undefined,
 					is_video_required: data.is_video_required,
-					allow_applications: data.allow_application,
-					voting_start_ms: BigInt(
-						data.voting_duration_start?.getTime() as number,
-					),
-					voting_end_ms: BigInt(data.voting_duration_end?.getTime() as number),
 					use_vault: data.use_vault,
 				}
-				console.log('update round params', udpateRoundParams)
+				console.log('update round params', updateRoundParams)
 				const txUpdateRound = await editRound(
 					stellarPubKey,
 					BigInt(params.roundId),
-					udpateRoundParams,
+					updateRoundParams,
 					contracts,
 				)
 				console.log('tx update round', txUpdateRound)
@@ -530,7 +501,7 @@ const EditRoundPage = () => {
 					router.push(`/rounds`)
 				}
 			} else {
-				const udpateRoundParams: NearUpdateRoundParams = {
+				const updateRoundParams: NearUpdateRoundParams = {
 					round_id: parseInt(params.roundId),
 					name: data.title,
 					description: data.description,
@@ -564,7 +535,7 @@ const EditRoundPage = () => {
 				const nearContracts = storage.getNearContracts(nearWallet)
 				console.log('nearContracts', nearContracts)
 				const txNearEditRound =
-					await nearContracts?.round.editRound(udpateRoundParams)
+					await nearContracts?.round.editRound(updateRoundParams)
 
 				console.log('txNearCreateRound', txNearEditRound)
 
@@ -635,8 +606,8 @@ const EditRoundPage = () => {
 
 	const lists = data
 		? ([] as IGetListExternalResponse[]).concat(
-				...(data as any as IGetListExternalResponse[]),
-			)
+			...(data as any as IGetListExternalResponse[]),
+		)
 		: []
 	const isEmpty = data?.[0]?.length === 0
 	const isReachingEnd =
@@ -685,42 +656,6 @@ const EditRoundPage = () => {
 								) : undefined
 							}
 						/>
-						<div className="space-y-2">
-							<div className="border border-grantpicks-black-200 rounded-xl py-2 px-3 flex items-center justify-between">
-								<p className="text-sm font-semibold text-grantpicks-black-950">
-									Votes per person
-									<span className="text-grantpicks-red-600 ml-1">*</span>
-								</p>
-								<div className="flex items-center space-x-4">
-									<Button
-										isDisabled={watch().vote_per_person <= 1}
-										color="transparent"
-										onClick={() => {
-											setValue('vote_per_person', watch().vote_per_person - 1)
-										}}
-									>
-										<IconRemove
-											size={24}
-											className="stroke-grantpicks-black-600"
-										/>
-									</Button>
-									<p className="text-sm font-normal text-grantpicks-black-950">
-										{watch().vote_per_person || 1}
-									</p>
-									<Button
-										color="transparent"
-										onClick={() => {
-											setValue('vote_per_person', watch().vote_per_person + 1)
-										}}
-									>
-										<IconAdd size={24} className="fill-grantpicks-black-600" />
-									</Button>
-								</div>
-							</div>
-							<p className="text-xs font-normal text-grantpicks-black-600">
-								You must have a minimum of 1 Vote.
-							</p>
-						</div>
 
 						<div className="space-y-2">
 							<p className="text-sm font-semibold text-grantpicks-black-950">
@@ -735,7 +670,7 @@ const EditRoundPage = () => {
 										className={clsx(
 											'border border-grantpicks-black-200 rounded-xl py-3 px-3 flex items-center justify-between cursor-pointer hover:opacity-80 transition',
 											errors.contact_address?.type === 'required' &&
-												'border-red-500',
+											'border-red-500',
 										)}
 									>
 										<p
@@ -811,7 +746,7 @@ const EditRoundPage = () => {
 										className={clsx(
 											(errors.contact_address?.type === 'required' ||
 												errors.contact_address) &&
-												'border border-red-500',
+											'border border-red-500',
 										)}
 										disabled={!watch('contact_type')}
 										required
@@ -866,357 +801,110 @@ const EditRoundPage = () => {
 							</p>
 						</div>
 					</div>
-
-					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
-						<div className="flex items-start space-x-4 w-full mb-4">
-							<div className="flex-1">
+					<div className={`pt-4 bg-white p-6 justify-between flex flex-col items-center md:flex-row gap-1 rounded-2xl shadow-md mb-6`}>
+						<div className="flex flex-col w-full md:w-[38%] space-x-4 mb-2">
+							<div className="w-full">
 								<InputText
 									type="number"
-									disabled
-									label="Amount"
-									placeholder="Enter amount..."
-									{...register('amount', {
-										onChange: async (e) => {
-											let calculation = 0
-											if (storage.chainId === 'stellar') {
-												calculation =
-													parseFloat(e.target.value || '0') * stellarPrice
-											} else {
-												calculation =
-													parseFloat(e.target.value || '0') * nearPrice
-											}
-											setAmountUsd(`${calculation.toFixed(3)}`)
-											setValue('amount', e.target.value)
+									disabled={!watch().allow_application}
+									label="Max Participants"
+									placeholder="10"
+									required={watch().allow_application}
+									{...register('max_participants', {
+										required: watch().allow_application === true,
+										onChange: (e) => {
+											setValue(
+												'max_participants',
+												parseInt(e.target.value) || 0,
+											)
 										},
 									})}
 									preffixIcon={
-										storage.chainId === 'stellar' ? (
-											<IconStellar
-												size={24}
-												className="fill-grantpicks-black-400"
-											/>
-										) : (
-											<IconNear
-												size={24}
-												className="fill-grantpicks-black-400"
-											/>
-										)
-									}
-									textAlign="left"
-									suffixIcon={
-										<div className="flex items-center space-x-2">
-											<p className="text-sm font-normal text-grantpicks-black-500">
-												{amountUsd}
-											</p>
-											<p className="text-sm font-normal text-grantpicks-black-400">
-												USD
-											</p>
-										</div>
-									}
-									// errorMessage={
-									// 	parseFloat(watch().amount) <= 0 ? (
-									// 		<p className="text-red-500 text-xs mt-1 ml-2">
-									// 			Initial deposit cannot be less than or equal to 0
-									// 		</p>
-									// 	) : undefined
-									// }
-								/>
-							</div>
-							<div className="flex-1">
-								<InputText
-									type="number"
-									label="Expected Amount"
-									required
-									placeholder="Enter amount..."
-									{...register('expected_amount', {
-										required: true,
-										onChange: async (e) => {
-											let calculation = 0
-											if (storage.chainId === 'stellar') {
-												calculation =
-													parseFloat(e.target.value || '0') * stellarPrice
-											} else {
-												calculation =
-													parseFloat(e.target.value || '0') * nearPrice
+										<Button
+											color="transparent"
+											isDisabled={watch().max_participants <= 10}
+											onClick={() =>
+												setValue(
+													'max_participants',
+													watch().max_participants - 1,
+												)
 											}
-											setExpectAmountUsd(`${calculation.toFixed(3)}`)
-										},
-									})}
-									preffixIcon={
-										storage.chainId === 'stellar' ? (
-											<IconStellar
+										>
+											<IconRemove
 												size={24}
-												className="fill-grantpicks-black-400"
+												className="stroke-grantpicks-black-600"
 											/>
-										) : (
-											<IconNear
-												size={24}
-												className="fill-grantpicks-black-400"
-											/>
-										)
+										</Button>
 									}
-									textAlign="left"
+									textAlign="center"
 									suffixIcon={
-										<div className="flex items-center space-x-2">
-											<p className="text-sm font-normal text-grantpicks-black-500">
-												{expectAmountUsd}
-											</p>
-											<p className="text-sm font-normal text-grantpicks-black-400">
-												USD
-											</p>
-										</div>
-									}
-									errorMessage={
-										errors.expected_amount?.type === 'required' ? (
-											<p className="text-red-500 text-xs mt-1 ml-2">
-												Expected Amount is required
-											</p>
-										) : parseFloat(watch().expected_amount) <
-										  parseFloat(watch().amount) ? (
-											<p className="text-red-500 text-xs mt-1 ml-2">
-												Expected Amount should not be less than intiial deposit
-											</p>
-										) : parseFloat(watch().expected_amount) <= 0 ? (
-											<p className="text-red-500 text-xs mt-1 ml-2">
-												Expected Amount cannot be less than or equal to 0
-											</p>
-										) : undefined
+										<Button
+											color="transparent"
+											onClick={() =>
+												setValue(
+													'max_participants',
+													watch().max_participants + 1,
+												)
+											}
+											isDisabled={!watch().allow_application}
+										>
+											<IconAdd
+												size={24}
+												className="fill-grantpicks-black-600"
+											/>
+										</Button>
 									}
 								/>
+								{errors.max_participants?.type === 'required' ? (
+									<p className="text-red-500 text-xs mt-1 ml-2">
+										Max Participants is required
+									</p>
+								) : watch().max_participants < 10 ? (
+									<p className="text-red-500 text-xs mt-1 ml-2">
+										Min. 10 Participants
+									</p>
+								) : undefined}
 							</div>
+							<p className="text-xs font-normal text-grantpicks-black-600">
+								You must have a minimum of 10 Participants
+							</p>
 						</div>
-						{/* <div className="flex items-center">
-							<Checkbox
-								label="Open Funding Pool"
-								checked={watch().use_vault}
-								onChange={(e) => {
-									setValue('use_vault', e.target.checked)
-									setValue('amount', '')
-								}}
-							/>
-						</div> */}
-					</div>
-
-					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
-						<div className="flex items-center justify-between pb-4 border-b border-black/10">
-							<p className="text-base font-semibold">Allow Applications</p>
-							<Switch
-								checked={watch().allow_application}
-								onChange={async (checked: boolean) => {
-									setValue('allow_application', checked)
-								}}
-								height={22}
-								width={42}
-								checkedIcon={false}
-								uncheckedIcon={false}
-								offColor="#DCDCDC"
-								onColor="#292929"
-								handleDiameter={18}
-							/>
-						</div>
-						{watch('allow_application') && (
-							<>
-								<div className={`pt-4 mb-6`}>
-									<div className="flex space-x-4 mb-2">
-										<div className="w-[35%] space-y-1">
-											<InputText
-												type="number"
-												disabled={!watch().allow_application}
-												label="Max Participants"
-												placeholder="10"
-												required={watch().allow_application}
-												{...register('max_participants', {
-													required: watch().allow_application === true,
-													onChange: (e) => {
-														setValue(
-															'max_participants',
-															parseInt(e.target.value),
-														)
-													},
-												})}
-												preffixIcon={
-													<Button
-														color="transparent"
-														isDisabled={watch().max_participants <= 10}
-														onClick={() =>
-															setValue(
-																'max_participants',
-																watch().max_participants - 1,
-															)
-														}
-													>
-														<IconRemove
-															size={24}
-															className="stroke-grantpicks-black-600"
-														/>
-													</Button>
-												}
-												textAlign="center"
-												suffixIcon={
-													<Button
-														color="transparent"
-														onClick={() =>
-															setValue(
-																'max_participants',
-																watch().max_participants + 1,
-															)
-														}
-													>
-														<IconAdd
-															size={24}
-															className="fill-grantpicks-black-600"
-														/>
-													</Button>
-												}
-											/>
-											{errors.max_participants?.type === 'required' ? (
-												<p className="text-red-500 text-xs mt-1 ml-2">
-													Max Participants is required
-												</p>
-											) : watch().max_participants < 10 ? (
-												<p className="text-red-500 text-xs mt-1 ml-2">
-													Min. 10 Participants
-												</p>
-											) : undefined}
-										</div>
-										<div className="w-[65%]">
-											<p className="text-base font-semibold text-grantpicks-black-950 mb-2">
-												Application Duration{' '}
-												<span className="text-grantpicks-red-600 ml-1">*</span>
-											</p>
-											<div
-												{...register('apply_duration_start', {
-													required: watch().allow_application,
-												})}
-											>
-												<Controller
-													name="apply_duration_start"
-													control={control}
-													rules={{ required: watch().allow_application }}
-													render={({ field }) => (
-														<DatePicker
-															disabled={!watch().allow_application}
-															showIcon
-															selectsRange={true}
-															maxDate={subDays(
-																watch().voting_duration_start as Date,
-																0,
-															)}
-															icon={
-																<div className="flex items-center mt-2 pr-2">
-																	<IconCalendar
-																		size={20}
-																		className="fill-grantpicks-black-400"
-																	/>
-																</div>
-															}
-															calendarIconClassName="flex items-center"
-															startDate={field.value as Date}
-															endDate={watch().apply_duration_end as Date}
-															placeholderText="Apply Duration"
-															isClearable={true}
-															onChange={(date) => {
-																field.onChange(date[0])
-																setValue('apply_duration_end', date[1])
-															}}
-															className="border border-grantpicks-black-200 rounded-xl w-full h-12"
-															wrapperClassName="w-full mb-1"
-														/>
-													)}
-												/>
-											</div>
-											{errors.apply_duration_start?.type === 'required' ? (
-												<p className="text-red-500 text-xs mt-1 ml-2">
-													Start and end apply duration is required
-												</p>
-											) : undefined}
-										</div>
-									</div>
-									<p className="text-xs font-normal text-grantpicks-black-600">
-										You must have a minimum of 10 Participants
-									</p>
-								</div>
-								<div className="flex items-center mb-4">
-									<Checkbox
-										label="Video Required"
-										checked={watch().is_video_required}
-										onChange={(e) =>
-											setValue('is_video_required', e.target.checked)
-										}
-									/>
-								</div>
-								<div className="w-full">
-									<p className="text-base font-semibold text-grantpicks-black-950 mb-2">
-										Voting Duration{' '}
-										<span className="text-grantpicks-red-600 ml-1">*</span>
-									</p>
-									<div
-										{...register('voting_duration_start', { required: true })}
-									>
-										<Controller
-											name="voting_duration_start"
-											control={control}
-											rules={{ required: true }}
-											render={({ field }) => (
-												<DatePicker
-													showIcon
-													minDate={subDays(
-														watch().apply_duration_end as Date,
-														1,
-													)}
-													selectsRange={true}
-													icon={
-														<div className="flex items-center mt-2">
-															<IconCalendar
-																size={20}
-																className="fill-grantpicks-black-400"
-															/>
-														</div>
-													}
-													calendarIconClassName="flex items-center"
-													startDate={field.value as Date}
-													endDate={watch().voting_duration_end as Date}
-													placeholderText="Voting Duration"
-													isClearable={true}
-													onChange={(date) => {
-														field.onChange(date[0])
-														setValue('voting_duration_end', date[1], {
-															shouldValidate: true,
-														})
-													}}
-													className="border border-grantpicks-black-200 rounded-xl w-full h-12"
-													wrapperClassName="w-full mb-1"
-												/>
-											)}
-										/>
-									</div>
-									{errors.voting_duration_start?.type === 'required' ? (
-										<p className="text-red-500 text-xs mt-1 ml-2">
-											Start and end voting duration is required
-										</p>
-									) : undefined}
-									<Controller
-										name="voting_duration_end"
-										control={control}
-										rules={{
-											validate: {
-												validEndDate: (value) => {
-													const currentDate = new Date()
-													return (value && value >= currentDate) || false
-												},
-											},
+						<div className=" w-full md:w-[60%]">
+							<div className="border border-grantpicks-black-200 rounded-xl py-2 px-3 flex items-center justify-between">
+								<p className="text-sm font-semibold text-grantpicks-black-950">
+									Votes per person
+									<span className="text-grantpicks-red-600 ml-1">*</span>
+								</p>
+								<div className="flex items-center space-x-4">
+									<Button
+										isDisabled={watch().vote_per_person <= 1}
+										color="transparent"
+										onClick={() => {
+											setValue('vote_per_person', watch().vote_per_person - 1)
 										}}
-										render={() => <></>}
-									/>
-									{watch('voting_duration_end') &&
-										errors.voting_duration_end?.type === 'validEndDate' && (
-											<p className="text-red-500 text-xs mt-1 ml-2">
-												Voting end date cannot be in the past
-											</p>
-										)}
+									>
+										<IconRemove
+											size={24}
+											className="stroke-grantpicks-black-600"
+										/>
+									</Button>
+									<p className="text-sm font-normal text-grantpicks-black-950">
+										{watch().vote_per_person || 1}
+									</p>
+									<Button
+										color="transparent"
+										onClick={() => {
+											setValue('vote_per_person', watch().vote_per_person + 1)
+										}}
+									>
+										<IconAdd size={24} className="fill-grantpicks-black-600" />
+									</Button>
 								</div>
-							</>
-						)}
+							</div>
+							<p className="text-xs font-normal text-grantpicks-black-600">
+								You must have a minimum of 1 Vote.
+							</p>
+						</div>
 					</div>
 
 					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">

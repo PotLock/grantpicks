@@ -36,8 +36,14 @@ class Contracts {
 						publicKey: wallet ? wallet.account.publicKey : undefined,
 					}
 		if (wallet) {
-			config.signAuthEntry = wallet.signAuth.bind(wallet)
-			config.signTransaction = wallet.signTransaction.bind(wallet)
+			config.signAuthEntry = async () => {
+				const signedAuth = await wallet.signAuth()
+				return signedAuth
+			}
+			config.signTransaction = async (tx: string, opts?: any) => {
+				const signedTx = await wallet.signTransaction(tx, opts)
+				return signedTx
+			}
 		}
 
 		this._template_config = config

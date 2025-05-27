@@ -41,6 +41,7 @@ import {
 	LobstrModule,
 	HanaModule,
 	ISupportedWallet,
+	HotWalletModule,
 	StellarWalletsKit,
 	WalletNetwork,
 } from '@creit.tech/stellar-wallets-kit'
@@ -142,6 +143,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 				modules: [
 					new FreighterModule(),
 					new xBullModule(),
+					new HotWalletModule(),
 					new LobstrModule(),
 					new HanaModule(),
 				],
@@ -288,7 +290,9 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 		}
 		const subscription = nearSelector.store.observable
 			.pipe(
+				// @ts-ignore - Type mismatch between different RxJS versions
 				map((state) => state.accounts),
+				// @ts-ignore - Type mismatch between different RxJS versions
 				distinctUntilChanged(),
 			)
 			.subscribe(async (nextAccounts) => {

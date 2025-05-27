@@ -33,7 +33,7 @@ if (typeof window !== 'undefined') {
 export const networks = {
   testnet: {
     networkPassphrase: "Test SDF Network ; September 2015",
-    contractId: "CDEHHXB2OVYVIDJ2M6VTFUNW6JD7GVREORLNSIYEEXIMNCW72UVTJPDD",
+    contractId: "CA7A2776JYIOYXPAJFONDC7BVPDWWLZU524UTGIJIQH6HWWOR6LKYQQT",
   }
 } as const
 
@@ -42,9 +42,10 @@ export type ApplicationStatus = {tag: "Pending", values: void} | {tag: "Approved
 
 export interface Config {
   default_page_size: u64;
-  kyc_list_id: u128;
+  kyc_wl_list_id: Option<u128>;
   list_contract: string;
   owner: string;
+  pending_owner: Option<string>;
   project_contract: string;
   protocol_fee_basis_points: u32;
   protocol_fee_recipient: string;
@@ -57,6 +58,7 @@ export interface RoundDetail {
   allow_remaining_dist: Option<boolean>;
   application_end_ms: Option<u64>;
   application_start_ms: Option<u64>;
+  application_wl_list_id: Option<u128>;
   compliance_end_ms: Option<u64>;
   compliance_period_ms: Option<u64>;
   compliance_req_desc: string;
@@ -69,6 +71,7 @@ export interface RoundDetail {
   id: u128;
   is_video_required: boolean;
   max_participants: u32;
+  minimum_deposit: u128;
   name: string;
   num_picks_per_voter: u32;
   owner: string;
@@ -79,11 +82,12 @@ export interface RoundDetail {
   remaining_dist_memo: string;
   round_complete_ms: Option<u64>;
   use_vault: Option<boolean>;
-  use_whitelist: boolean;
+  use_whitelist_application: boolean;
+  use_whitelist_voting: boolean;
   vault_total_deposits: u128;
   voting_end_ms: u64;
   voting_start_ms: u64;
-  wl_list_id: Option<u128>;
+  voting_wl_list_id: Option<u128>;
 }
 
 
@@ -93,6 +97,7 @@ export interface CreateRoundParams {
   allow_remaining_dist: boolean;
   application_end_ms: Option<u64>;
   application_start_ms: Option<u64>;
+  application_wl_list_id: Option<u128>;
   compliance_period_ms: Option<u64>;
   compliance_req_desc: string;
   contacts: Array<Contact>;
@@ -101,35 +106,33 @@ export interface CreateRoundParams {
   expected_amount: u128;
   is_video_required: boolean;
   max_participants: Option<u32>;
+  minimum_deposit: u128;
   name: string;
   num_picks_per_voter: Option<u32>;
   owner: string;
   referrer_fee_basis_points: Option<u32>;
   remaining_dist_address: string;
   use_vault: Option<boolean>;
-  use_whitelist: Option<boolean>;
+  use_whitelist_application: Option<boolean>;
+  use_whitelist_voting: Option<boolean>;
   voting_end_ms: u64;
   voting_start_ms: u64;
-  wl_list_id: Option<u128>;
+  voting_wl_list_id: Option<u128>;
 }
 
 
 export interface UpdateRoundParams {
-  allow_applications: boolean;
-  application_end_ms: Option<u64>;
-  application_start_ms: Option<u64>;
+  application_wl_list_id: Option<u128>;
   contacts: Array<Contact>;
   description: string;
-  expected_amount: u128;
   is_video_required: boolean;
   max_participants: Option<u32>;
   name: string;
   num_picks_per_voter: Option<u32>;
+  referrer_fee_basis_points: Option<u32>;
   use_vault: Option<boolean>;
-  use_whitelist: Option<boolean>;
-  voting_end_ms: u64;
-  voting_start_ms: u64;
-  wl_list_id: Option<u128>;
+  use_whitelist_voting: Option<boolean>;
+  voting_wl_list_id: Option<u128>;
 }
 
 
@@ -233,139 +236,60 @@ export interface FlagDetail {
 }
 
 export const Errors = {
-  5: {message:"OwnerOrAdminOnly"},
-
-  26: {message:"ContractNotInitialized"},
-
-  31: {message:"InsufficientBalance"},
-
-  32: {message:"IndexOutOfBound"},
-
-  38: {message:"SameOwner"},
-
-  52: {message:"DataNotFound"},
-
-  57: {message:"AlreadyInitialized"},
-
-  0: {message:"VotingStartGreaterThanVotingEnd"},
-
-  1: {message:"ApplicationStartGreaterThanApplicationEnd"},
-
-  2: {message:"VotingStartLessThanApplicationEnd"},
-
-  3: {message:"AmountMustBeGreaterThanZero"},
-
-  4: {message:"ContactMustBeLessThanTen"},
-
-  8: {message:"InvalidVaultBalance"},
-
-  19: {message:"UserBlacklisted"},
-
-  20: {message:"UserAlreadyBlacklisted"},
-
-  21: {message:"BlacklistNotFound"},
-
-  22: {message:"UserNotWhitelisted"},
-
-  23: {message:"ReviewNotTooLong"},
-
-  27: {message:"RoundAlreadyCompleted"},
-
-  28: {message:"AdminNotFound"},
-
-  29: {message:"OwnerCannotBeAdmin"},
-
-  34: {message:"AlreadyPaidOut"},
-
-  35: {message:"NoApprovedProjects"},
-
-  36: {message:"UserWhitelisted"},
-
-  37: {message:"VotesAlreadyCast"},
-
-  39: {message:"ApplicationPeriodMustBeSet"},
-
-  40: {message:"ZeroValutBalance"},
-
-  41: {message:"BalanceNotEmpty"},
-
-  44: {message:"InsufficientFunds"},
-
-  45: {message:"ChallengeNotFound"},
-
-  46: {message:"PayoutNotFound"},
-
-  47: {message:"RedistributionNotAllowed"},
-
-  48: {message:"RedistributionAlreadyDone"},
-
-  49: {message:"CompliancePeriodInProcess"},
-
-  50: {message:"CooldownPeriodNotInProcess"},
-
-  51: {message:"NotSolveAllPayoutChallenge"},
-
-  53: {message:"RoundDoesNotUseVault"},
-
-  55: {message:"ApplicationPeriodNotSet"},
-
-  56: {message:"CoolDownPeriodNotComplete"},
-
-  6: {message:"VotingPeriodNotStarted"},
-
-  7: {message:"VotingPeriodEnded"},
-
-  9: {message:"VotingPeriodNotEnded"},
-
-  12: {message:"VotingAlreadyStarted"},
-
-  17: {message:"AlreadyVoted"},
-
-  18: {message:"NotVoteAllPairs"},
-
-  24: {message:"EmptyVote"},
-
-  25: {message:"TooManyVotes"},
-
-  33: {message:"ProjectNotInPair"},
-  
-  10: {message:"ApplicationPeriodNotStarted"},
-
-  11: {message:"ApplicationPeriodEnded"},
-
-  13: {message:"ProjectNotApproved"},
-
-  14: {message:"ProjectAlreadyApproved"},
-
-  15: {message:"ProjectNotFoundInRegistry"},
-
-  16: {message:"MaxParticipantsReached"},
-
-  30: {message:"ApplicationNotFound"},
-
-  42: {message:"VideoUrlNotValid"},
-
-  43: {message:"ProjectAlreadyApplied"},
-
-  54: {message:"ApplicationNotAllowed"}
-}
-
-export interface RoundPreCheck {
-  applicant: string;
-  has_video: boolean;
-  project_id: u128;
+  0: { message: 'VotingStartGreaterThanVotingEnd' },
+  1: { message: 'ApplicationStartGreaterThanApplicationEnd' },
+  2: { message: 'VotingStartLessThanApplicationEnd' },
+  3: { message: 'AmountMustBeGreaterThanZero' },
+  4: { message: 'ContactMustBeLessThanTen' },
+  5: { message: 'OwnerOrAdminOnly' },
+  6: { message: 'VotingPeriodNotStarted' },
+  7: { message: 'VotingPeriodEnded' },
+  8: { message: 'InvalidVaultBalance' },
+  9: { message: 'VotingPeriodNotEnded' },
+  10: { message: 'ApplicationPeriodNotStarted' },
+  11: { message: 'ApplicationPeriodEnded' },
+  13: { message: 'ProjectNotApproved' },
+  19: { message: 'UserBlacklisted' },
+  26: { message: 'ContractNotInitialized' },
+  31: { message: 'InsufficientBalance' },
+  32: { message: 'IndexOutOfBound' },
+  38: { message: 'SameOwner' },
+  52: { message: 'DataNotFound' },
+  57: { message: 'AlreadyInitialized' },
+  60: { message: 'TooManyVotesForAvailablePairs' },
+  65: { message: 'ProtocolFeeTooHigh' },
+  66: { message: 'ReferrerFeeTooHigh' },
+  88: { message: 'OwnerOnly' },
+  89: { message: 'NoPendingOwnershipTransfer' },
+  90: { message: 'MinimumDepositMustBeLessThanExpectedAmount' }
 }
 
 export type RegistrationStatus = {tag: "Pending", values: void} | {tag: "Approved", values: void} | {tag: "Rejected", values: void} | {tag: "Graylisted", values: void} | {tag: "Blacklisted", values: void};
 
-export type ContractKey = {tag: "Config", values: void} | {tag: "NextRoundId", values: void} | {tag: "NextPayoutId", values: void} | {tag: "NextDepositId", values: void} | {tag: "ProjectPayoutIds", values: void} | {tag: "VotedRoundIds", values: void} | {tag: "PayoutInfo", values: readonly [u128]} | {tag: "DepositInfo", values: readonly [u128]} | {tag: "RoundInfo", values: readonly [u128]} | {tag: "BlackList", values: readonly [u128]} | {tag: "ProjectApplicants", values: readonly [u128]} | {tag: "ApprovedProjects", values: readonly [u128]} | {tag: "FlaggedProjects", values: readonly [u128]} | {tag: "Payouts", values: readonly [u128]} | {tag: "PayoutChallenges", values: readonly [u128]} | {tag: "VotingState", values: readonly [u128]} | {tag: "Votes", values: readonly [u128]} | {tag: "ProjectVotingCount", values: readonly [u128]} | {tag: "Admin", values: readonly [u128]} | {tag: "Deposit", values: readonly [u128]};
+
+export interface ListExternal {
+  admin_only_registrations: boolean;
+  admins: Array<string>;
+  cover_img_url: string;
+  created_ms: u64;
+  default_registration_status: RegistrationStatus;
+  description: string;
+  id: u128;
+  name: string;
+  owner: string;
+  total_registrations_count: u64;
+  total_upvotes_count: u64;
+  updated_ms: u64;
+}
+
+export type ContractKey = {tag: "Config", values: void} | {tag: "NextRoundId", values: void} | {tag: "NextPayoutId", values: void} | {tag: "NextDepositId", values: void} | {tag: "ProjectPayoutIds", values: readonly [u128]} | {tag: "PayoutInfo", values: readonly [u128]} | {tag: "DepositInfo", values: readonly [u128]} | {tag: "RoundInfo", values: readonly [u128]} | {tag: "BlackList", values: readonly [u128]} | {tag: "ProjectApplicants", values: readonly [u128]} | {tag: "ApprovedProjects", values: readonly [u128]} | {tag: "FlaggedProjects", values: readonly [u128]} | {tag: "Payouts", values: readonly [u128]} | {tag: "PayoutChallenges", values: readonly [u128]} | {tag: "VotingState", values: readonly [u128]} | {tag: "VotedRoundIds", values: readonly [string]} | {tag: "Votes", values: readonly [u128]} | {tag: "ProjectVotingCount", values: readonly [u128]} | {tag: "Admin", values: readonly [u128]} | {tag: "Deposit", values: readonly [u128]};
 
 
 export interface Client {
   /**
    * Construct and simulate a initialize transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
    */
-  initialize: ({caller, token_address, registry_address, list_address, kyc_list_id, protocol_fee_basis_points, protocol_fee_recipient, default_page_size}: {caller: string, token_address: string, registry_address: string, list_address: string, kyc_list_id: u128, protocol_fee_basis_points: Option<u32>, protocol_fee_recipient: Option<string>, default_page_size: Option<u64>}, options?: {
+  initialize: ({caller, token_address, registry_address, list_address, kyc_wl_list_id, protocol_fee_basis_points, protocol_fee_recipient, default_page_size}: {caller: string, token_address: string, registry_address: string, list_address: string, kyc_wl_list_id: Option<u128>, protocol_fee_basis_points: Option<u32>, protocol_fee_recipient: Option<string>, default_page_size: Option<u64>}, options?: {
     /**
      * The fee to pay for the transaction. Default: BASE_FEE
      */
@@ -463,6 +387,46 @@ export interface Client {
   }) => Promise<AssembledTransaction<null>>
 
   /**
+   * Construct and simulate a accept_ownership transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+   */
+  accept_ownership: (options?: {
+    /**
+     * The fee to pay for the transaction. Default: BASE_FEE
+     */
+    fee?: number;
+
+    /**
+     * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+     */
+    timeoutInSeconds?: number;
+
+    /**
+     * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+     */
+    simulate?: boolean;
+  }) => Promise<AssembledTransaction<null>>
+
+  /**
+   * Construct and simulate a cancel_ownership_transfer transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+   */
+  cancel_ownership_transfer: (options?: {
+    /**
+     * The fee to pay for the transaction. Default: BASE_FEE
+     */
+    fee?: number;
+
+    /**
+     * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+     */
+    timeoutInSeconds?: number;
+
+    /**
+     * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+     */
+    simulate?: boolean;
+  }) => Promise<AssembledTransaction<null>>
+
+  /**
    * Construct and simulate a get_config transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
    */
   get_config: (options?: {
@@ -523,9 +487,9 @@ export interface Client {
   }) => Promise<AssembledTransaction<null>>
 
   /**
-   * Construct and simulate a change_kyc_list_id transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+   * Construct and simulate a change_kyc_wl_list_id transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
    */
-  change_kyc_list_id: ({kyc_list_id}: {kyc_list_id: u128}, options?: {
+  change_kyc_wl_list_id: ({list_id}: {list_id: u128}, options?: {
     /**
      * The fee to pay for the transaction. Default: BASE_FEE
      */
@@ -566,6 +530,26 @@ export interface Client {
    * Construct and simulate a set_expected_amount transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
    */
   set_expected_amount: ({round_id, caller, amount}: {round_id: u128, caller: string, amount: u128}, options?: {
+    /**
+     * The fee to pay for the transaction. Default: BASE_FEE
+     */
+    fee?: number;
+
+    /**
+     * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+     */
+    timeoutInSeconds?: number;
+
+    /**
+     * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+     */
+    simulate?: boolean;
+  }) => Promise<AssembledTransaction<null>>
+
+  /**
+   * Construct and simulate a set_minimum_deposit transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+   */
+  set_minimum_deposit: ({round_id, caller, amount}: {round_id: u128, caller: string, amount: u128}, options?: {
     /**
      * The fee to pay for the transaction. Default: BASE_FEE
      */
@@ -1687,10 +1671,10 @@ export class Client extends ContractClient {
   constructor(public readonly options: ContractClientOptions) {
     super(
       new ContractSpec([ "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",
-        "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",
+        "AAAAAQAAAAAAAAAAAAAABkNvbmZpZwAAAAAACQAAAAAAAAARZGVmYXVsdF9wYWdlX3NpemUAAAAAAAAGAAAAAAAAAA5reWNfd2xfbGlzdF9pZAAAAAAD6AAAAAoAAAAAAAAADWxpc3RfY29udHJhY3QAAAAAAAATAAAAAAAAAAVvd25lcgAAAAAAABMAAAAAAAAADXBlbmRpbmdfb3duZXIAAAAAAAPoAAAAEwAAAAAAAAAQcHJvamVjdF9jb250cmFjdAAAABMAAAAAAAAAGXByb3RvY29sX2ZlZV9iYXNpc19wb2ludHMAAAAAAAAEAAAAAAAAABZwcm90b2NvbF9mZWVfcmVjaXBpZW50AAAAAAATAAAAAAAAAA50b2tlbl9jb250cmFjdAAAAAAAEw==",
+        "AAAAAQAAAAAAAAAAAAAAC1JvdW5kRGV0YWlsAAAAACIAAAAAAAAAEmFsbG93X2FwcGxpY2F0aW9ucwAAAAAAAQAAAAAAAAAUYWxsb3dfcmVtYWluaW5nX2Rpc3QAAAPoAAAAAQAAAAAAAAASYXBwbGljYXRpb25fZW5kX21zAAAAAAPoAAAABgAAAAAAAAAUYXBwbGljYXRpb25fc3RhcnRfbXMAAAPoAAAABgAAAAAAAAAWYXBwbGljYXRpb25fd2xfbGlzdF9pZAAAAAAD6AAAAAoAAAAAAAAAEWNvbXBsaWFuY2VfZW5kX21zAAAAAAAD6AAAAAYAAAAAAAAAFGNvbXBsaWFuY2VfcGVyaW9kX21zAAAD6AAAAAYAAAAAAAAAE2NvbXBsaWFuY2VfcmVxX2Rlc2MAAAAAEAAAAAAAAAAIY29udGFjdHMAAAPqAAAH0AAAAAdDb250YWN0AAAAAAAAAAAPY29vbGRvd25fZW5kX21zAAAAA+gAAAAGAAAAAAAAABJjb29sZG93bl9wZXJpb2RfbXMAAAAAA+gAAAAGAAAAAAAAABVjdXJyZW50X3ZhdWx0X2JhbGFuY2UAAAAAAAAKAAAAAAAAAAtkZXNjcmlwdGlvbgAAAAAQAAAAAAAAAA9leHBlY3RlZF9hbW91bnQAAAAACgAAAAAAAAACaWQAAAAAAAoAAAAAAAAAEWlzX3ZpZGVvX3JlcXVpcmVkAAAAAAAAAQAAAAAAAAAQbWF4X3BhcnRpY2lwYW50cwAAAAQAAAAAAAAAD21pbmltdW1fZGVwb3NpdAAAAAAKAAAAAAAAAARuYW1lAAAAEAAAAAAAAAATbnVtX3BpY2tzX3Blcl92b3RlcgAAAAAEAAAAAAAAAAVvd25lcgAAAAAAABMAAAAAAAAAGXJlZmVycmVyX2ZlZV9iYXNpc19wb2ludHMAAAAAAAPoAAAABAAAAAAAAAAWcmVtYWluaW5nX2Rpc3RfYWRkcmVzcwAAAAAAEwAAAAAAAAAUcmVtYWluaW5nX2Rpc3RfYXRfbXMAAAPoAAAABgAAAAAAAAARcmVtYWluaW5nX2Rpc3RfYnkAAAAAAAATAAAAAAAAABNyZW1haW5pbmdfZGlzdF9tZW1vAAAAABAAAAAAAAAAEXJvdW5kX2NvbXBsZXRlX21zAAAAAAAD6AAAAAYAAAAAAAAACXVzZV92YXVsdAAAAAAAA+gAAAABAAAAAAAAABl1c2Vfd2hpdGVsaXN0X2FwcGxpY2F0aW9uAAAAAAAAAQAAAAAAAAAUdXNlX3doaXRlbGlzdF92b3RpbmcAAAABAAAAAAAAABR2YXVsdF90b3RhbF9kZXBvc2l0cwAAAAoAAAAAAAAADXZvdGluZ19lbmRfbXMAAAAAAAAGAAAAAAAAAA92b3Rpbmdfc3RhcnRfbXMAAAAABgAAAAAAAAARdm90aW5nX3dsX2xpc3RfaWQAAAAAAAPoAAAACg==",
+        "AAAAAQAAAAAAAAAAAAAAEUNyZWF0ZVJvdW5kUGFyYW1zAAAAAAAAGgAAAAAAAAAGYWRtaW5zAAAAAAPqAAAAEwAAAAAAAAASYWxsb3dfYXBwbGljYXRpb25zAAAAAAABAAAAAAAAABRhbGxvd19yZW1haW5pbmdfZGlzdAAAAAEAAAAAAAAAEmFwcGxpY2F0aW9uX2VuZF9tcwAAAAAD6AAAAAYAAAAAAAAAFGFwcGxpY2F0aW9uX3N0YXJ0X21zAAAD6AAAAAYAAAAAAAAAFmFwcGxpY2F0aW9uX3dsX2xpc3RfaWQAAAAAA+gAAAAKAAAAAAAAABRjb21wbGlhbmNlX3BlcmlvZF9tcwAAA+gAAAAGAAAAAAAAABNjb21wbGlhbmNlX3JlcV9kZXNjAAAAABAAAAAAAAAACGNvbnRhY3RzAAAD6gAAB9AAAAAHQ29udGFjdAAAAAAAAAAAEmNvb2xkb3duX3BlcmlvZF9tcwAAAAAD6AAAAAYAAAAAAAAAC2Rlc2NyaXB0aW9uAAAAABAAAAAAAAAAD2V4cGVjdGVkX2Ftb3VudAAAAAAKAAAAAAAAABFpc192aWRlb19yZXF1aXJlZAAAAAAAAAEAAAAAAAAAEG1heF9wYXJ0aWNpcGFudHMAAAPoAAAABAAAAAAAAAAPbWluaW11bV9kZXBvc2l0AAAAAAoAAAAAAAAABG5hbWUAAAAQAAAAAAAAABNudW1fcGlja3NfcGVyX3ZvdGVyAAAAA+gAAAAEAAAAAAAAAAVvd25lcgAAAAAAABMAAAAAAAAAGXJlZmVycmVyX2ZlZV9iYXNpc19wb2ludHMAAAAAAAPoAAAABAAAAAAAAAAWcmVtYWluaW5nX2Rpc3RfYWRkcmVzcwAAAAAAEwAAAAAAAAAJdXNlX3ZhdWx0AAAAAAAD6AAAAAEAAAAAAAAAGXVzZV93aGl0ZWxpc3RfYXBwbGljYXRpb24AAAAAAAPoAAAAAQAAAAAAAAAUdXNlX3doaXRlbGlzdF92b3RpbmcAAAPoAAAAAQAAAAAAAAARdm90aW5nX3dsX2xpc3RfaWQAAAAAAAPoAAAACg==",
+        "AAAAAQAAAAAAAAAAAAAAEVVwZGF0ZVJvdW5kUGFyYW1zAAAAAAAACwAAAAAAAAAWYXBwbGljYXRpb25fd2xfbGlzdF9pZAAAAAAD6AAAAAoAAAAAAAAACGNvbnRhY3RzAAAD6gAAB9AAAAAHQ29udGFjdAAAAAAAAAAAC2Rlc2NyaXB0aW9uAAAAABAAAAAAAAAAEWlzX3ZpZGVvX3JlcXVpcmVkAAAAAAAAAQAAAAAAAAAQbWF4X3BhcnRpY2lwYW50cwAAA+gAAAAEAAAAAAAAAARuYW1lAAAAEAAAAAAAAAATbnVtX3BpY2tzX3Blcl92b3RlcgAAAAPoAAAABAAAAAAAAAAZcmVmZXJyZXJfZmVlX2Jhc2lzX3BvaW50cwAAAAAAA+gAAAAEAAAAAAAAAAl1c2VfdmF1bHQAAAAAAAPoAAAAAQAAAAAAAAAUdXNlX3doaXRlbGlzdF92b3RpbmcAAAPoAAAAAQAAAAAAAAARdm90aW5nX3dsX2xpc3RfaWQAAAAAAAPoAAAACg==",
         "AAAAAQAAAAAAAAAAAAAAEFJvdW5kQXBwbGljYXRpb24AAAAHAAAAAAAAAAxhcHBsaWNhbnRfaWQAAAATAAAAAAAAAA5hcHBsaWNhbnRfbm90ZQAAAAAAEAAAAAAAAAAKcHJvamVjdF9pZAAAAAAACgAAAAAAAAALcmV2aWV3X25vdGUAAAAAEAAAAAAAAAAGc3RhdHVzAAAAAAfQAAAAEUFwcGxpY2F0aW9uU3RhdHVzAAAAAAAAAAAAAAtzdWJtaXRlZF9tcwAAAAAGAAAAAAAAAAp1cGRhdGVkX21zAAAAAAPoAAAABg==",
         "AAAAAQAAAAAAAAAAAAAABFBhaXIAAAACAAAAAAAAAAdwYWlyX2lkAAAAAAQAAAAAAAAACHByb2plY3RzAAAD6gAAAAo=",
         "AAAAAQAAAAAAAAAAAAAAClBpY2tlZFBhaXIAAAAAAAIAAAAAAAAAB3BhaXJfaWQAAAAABAAAAAAAAAAQdm90ZWRfcHJvamVjdF9pZAAAAAo=",
@@ -1703,23 +1687,28 @@ export class Client extends ContractClient {
         "AAAAAQAAAAAAAAAAAAAAEFBheW91dHNDaGFsbGVuZ2UAAAAHAAAAAAAAAAthZG1pbl9ub3RlcwAAAAAQAAAAAAAAAA1jaGFsbGVuZ2VyX2lkAAAAAAAAEwAAAAAAAAAKY3JlYXRlZF9hdAAAAAAABgAAAAAAAAAGcmVhc29uAAAAAAAQAAAAAAAAAAhyZXNvbHZlZAAAAAEAAAAAAAAAC3Jlc29sdmVkX2J5AAAAABAAAAAAAAAACHJvdW5kX2lkAAAACg==",
         "AAAAAQAAAAAAAAAAAAAAB0RlcG9zaXQAAAAACQAAAAAAAAAKZGVwb3NpdF9pZAAAAAAACgAAAAAAAAAMZGVwb3NpdGVkX2F0AAAABgAAAAAAAAAMZGVwb3NpdG9yX2lkAAAAEwAAAAAAAAAEbWVtbwAAABAAAAAAAAAACm5ldF9hbW91bnQAAAAAAAsAAAAAAAAADHByb3RvY29sX2ZlZQAAAAsAAAAAAAAADHJlZmVycmVyX2ZlZQAAAAsAAAAAAAAACHJvdW5kX2lkAAAACgAAAAAAAAAMdG90YWxfYW1vdW50AAAACw==",
         "AAAAAQAAAAAAAAAAAAAACkZsYWdEZXRhaWwAAAAAAAUAAAAAAAAADGFwcGxpY2FudF9pZAAAABMAAAAAAAAACmZsYWdnZWRfYnkAAAAAABMAAAAAAAAACmZsYWdnZWRfbXMAAAAAAAYAAAAAAAAACnByb2plY3RfaWQAAAAAAAoAAAAAAAAABnJlYXNvbgAAAAAAEA==",
-        "AAAABAAAAAAAAAAAAAAABUVycm9yAAAAAAAABwAAAAAAAAAQT3duZXJPckFkbWluT25seQAAAAUAAAAAAAAAFkNvbnRyYWN0Tm90SW5pdGlhbGl6ZWQAAAAAABoAAAAAAAAAE0luc3VmZmljaWVudEJhbGFuY2UAAAAAHwAAAAAAAAAPSW5kZXhPdXRPZkJvdW5kAAAAACAAAAAAAAAACVNhbWVPd25lcgAAAAAAACYAAAAAAAAADERhdGFOb3RGb3VuZAAAADQAAAAAAAAAEkFscmVhZHlJbml0aWFsaXplZAAAAAAAOQ==",
-        "AAAABAAAAAAAAAAAAAAAClJvdW5kRXJyb3IAAAAAACAAAAAAAAAAH1ZvdGluZ1N0YXJ0R3JlYXRlclRoYW5Wb3RpbmdFbmQAAAAAAAAAAAAAAAApQXBwbGljYXRpb25TdGFydEdyZWF0ZXJUaGFuQXBwbGljYXRpb25FbmQAAAAAAAABAAAAAAAAACFWb3RpbmdTdGFydExlc3NUaGFuQXBwbGljYXRpb25FbmQAAAAAAAACAAAAAAAAABtBbW91bnRNdXN0QmVHcmVhdGVyVGhhblplcm8AAAAAAwAAAAAAAAAYQ29udGFjdE11c3RCZUxlc3NUaGFuVGVuAAAABAAAAAAAAAATSW52YWxpZFZhdWx0QmFsYW5jZQAAAAAIAAAAAAAAAA9Vc2VyQmxhY2tsaXN0ZWQAAAAAEwAAAAAAAAAWVXNlckFscmVhZHlCbGFja2xpc3RlZAAAAAAAFAAAAAAAAAARQmxhY2tsaXN0Tm90Rm91bmQAAAAAAAAVAAAAAAAAABJVc2VyTm90V2hpdGVsaXN0ZWQAAAAAABYAAAAAAAAAEFJldmlld05vdFRvb0xvbmcAAAAXAAAAAAAAABVSb3VuZEFscmVhZHlDb21wbGV0ZWQAAAAAAAAbAAAAAAAAAA1BZG1pbk5vdEZvdW5kAAAAAAAAHAAAAAAAAAAST3duZXJDYW5ub3RCZUFkbWluAAAAAAAdAAAAAAAAAA5BbHJlYWR5UGFpZE91dAAAAAAAIgAAAAAAAAASTm9BcHByb3ZlZFByb2plY3RzAAAAAAAjAAAAAAAAAA9Vc2VyV2hpdGVsaXN0ZWQAAAAAJAAAAAAAAAAQVm90ZXNBbHJlYWR5Q2FzdAAAACUAAAAAAAAAGkFwcGxpY2F0aW9uUGVyaW9kTXVzdEJlU2V0AAAAAAAnAAAAAAAAABBaZXJvVmFsdXRCYWxhbmNlAAAAKAAAAAAAAAAPQmFsYW5jZU5vdEVtcHR5AAAAACkAAAAAAAAAEUluc3VmZmljaWVudEZ1bmRzAAAAAAAALAAAAAAAAAARQ2hhbGxlbmdlTm90Rm91bmQAAAAAAAAtAAAAAAAAAA5QYXlvdXROb3RGb3VuZAAAAAAALgAAAAAAAAAYUmVkaXN0cmlidXRpb25Ob3RBbGxvd2VkAAAALwAAAAAAAAAZUmVkaXN0cmlidXRpb25BbHJlYWR5RG9uZQAAAAAAADAAAAAAAAAAGUNvbXBsaWFuY2VQZXJpb2RJblByb2Nlc3MAAAAAAAAxAAAAAAAAABpDb29sZG93blBlcmlvZE5vdEluUHJvY2VzcwAAAAAAMgAAAAAAAAAaTm90U29sdmVBbGxQYXlvdXRDaGFsbGVuZ2UAAAAAADMAAAAAAAAAFFJvdW5kRG9lc05vdFVzZVZhdWx0AAAANQAAAAAAAAAXQXBwbGljYXRpb25QZXJpb2ROb3RTZXQAAAAANwAAAAAAAAAZQ29vbERvd25QZXJpb2ROb3RDb21wbGV0ZQAAAAAAADg=",
-        "AAAABAAAAAAAAAAAAAAACVZvdGVFcnJvcgAAAAAAAAkAAAAAAAAAFlZvdGluZ1BlcmlvZE5vdFN0YXJ0ZWQAAAAAAAYAAAAAAAAAEVZvdGluZ1BlcmlvZEVuZGVkAAAAAAAABwAAAAAAAAAUVm90aW5nUGVyaW9kTm90RW5kZWQAAAAJAAAAAAAAABRWb3RpbmdBbHJlYWR5U3RhcnRlZAAAAAwAAAAAAAAADEFscmVhZHlWb3RlZAAAABEAAAAAAAAAD05vdFZvdGVBbGxQYWlycwAAAAASAAAAAAAAAAlFbXB0eVZvdGUAAAAAAAAYAAAAAAAAAAxUb29NYW55Vm90ZXMAAAAZAAAAAAAAABBQcm9qZWN0Tm90SW5QYWlyAAAAIQ==",
-        "AAAABAAAAAAAAAAAAAAAEEFwcGxpY2F0aW9uRXJyb3IAAAAKAAAAAAAAABtBcHBsaWNhdGlvblBlcmlvZE5vdFN0YXJ0ZWQAAAAACgAAAAAAAAAWQXBwbGljYXRpb25QZXJpb2RFbmRlZAAAAAAACwAAAAAAAAASUHJvamVjdE5vdEFwcHJvdmVkAAAAAAANAAAAAAAAABZQcm9qZWN0QWxyZWFkeUFwcHJvdmVkAAAAAAAOAAAAAAAAABlQcm9qZWN0Tm90Rm91bmRJblJlZ2lzdHJ5AAAAAAAADwAAAAAAAAAWTWF4UGFydGljaXBhbnRzUmVhY2hlZAAAAAAAEAAAAAAAAAATQXBwbGljYXRpb25Ob3RGb3VuZAAAAAAeAAAAAAAAABBWaWRlb1VybE5vdFZhbGlkAAAAKgAAAAAAAAAVUHJvamVjdEFscmVhZHlBcHBsaWVkAAAAAAAAKwAAAAAAAAAVQXBwbGljYXRpb25Ob3RBbGxvd2VkAAAAAAAANg==",
+        "AAAABAAAAAAAAAAAAAAABUVycm9yAAAAAAAACwAAAAAAAAAQT3duZXJPckFkbWluT25seQAAAAUAAAAAAAAAFkNvbnRyYWN0Tm90SW5pdGlhbGl6ZWQAAAAAABoAAAAAAAAAE0luc3VmZmljaWVudEJhbGFuY2UAAAAAHwAAAAAAAAAPSW5kZXhPdXRPZkJvdW5kAAAAACAAAAAAAAAACVNhbWVPd25lcgAAAAAAACYAAAAAAAAADERhdGFOb3RGb3VuZAAAADQAAAAAAAAAEkFscmVhZHlJbml0aWFsaXplZAAAAAAAOQAAAAAAAAAJT3duZXJPbmx5AAAAAAAAWAAAAAAAAAAaTm9QZW5kaW5nT3duZXJzaGlwVHJhbnNmZXIAAAAAAFkAAAAAAAAAElByb3RvY29sRmVlVG9vSGlnaAAAAAAAQQAAAAAAAAASUmVmZXJyZXJGZWVUb29IaWdoAAAAAABC",
+        "AAAABAAAAAAAAAAAAAAAClJvdW5kRXJyb3IAAAAAACsAAAAAAAAAH1ZvdGluZ1N0YXJ0R3JlYXRlclRoYW5Wb3RpbmdFbmQAAAAAAAAAAAAAAAApQXBwbGljYXRpb25TdGFydEdyZWF0ZXJUaGFuQXBwbGljYXRpb25FbmQAAAAAAAABAAAAAAAAACFWb3RpbmdTdGFydExlc3NUaGFuQXBwbGljYXRpb25FbmQAAAAAAAACAAAAAAAAABtBbW91bnRNdXN0QmVHcmVhdGVyVGhhblplcm8AAAAAAwAAAAAAAAAYQ29udGFjdE11c3RCZUxlc3NUaGFuVGVuAAAABAAAAAAAAAATSW52YWxpZFZhdWx0QmFsYW5jZQAAAAAIAAAAAAAAAA9Vc2VyQmxhY2tsaXN0ZWQAAAAAEwAAAAAAAAAWVXNlckFscmVhZHlCbGFja2xpc3RlZAAAAAAAFAAAAAAAAAARQmxhY2tsaXN0Tm90Rm91bmQAAAAAAAAVAAAAAAAAABJVc2VyTm90V2hpdGVsaXN0ZWQAAAAAABYAAAAAAAAAEFJldmlld05vdFRvb0xvbmcAAAAXAAAAAAAAABVSb3VuZEFscmVhZHlDb21wbGV0ZWQAAAAAAAAbAAAAAAAAAA1BZG1pbk5vdEZvdW5kAAAAAAAAHAAAAAAAAAAST3duZXJDYW5ub3RCZUFkbWluAAAAAAAdAAAAAAAAAA5BbHJlYWR5UGFpZE91dAAAAAAAIgAAAAAAAAASTm9BcHByb3ZlZFByb2plY3RzAAAAAAAjAAAAAAAAAA9Vc2VyV2hpdGVsaXN0ZWQAAAAAJAAAAAAAAAAQVm90ZXNBbHJlYWR5Q2FzdAAAACUAAAAAAAAAGkFwcGxpY2F0aW9uUGVyaW9kTXVzdEJlU2V0AAAAAAAnAAAAAAAAABBaZXJvVmFsdXRCYWxhbmNlAAAAKAAAAAAAAAAPQmFsYW5jZU5vdEVtcHR5AAAAACkAAAAAAAAAEUluc3VmZmljaWVudEZ1bmRzAAAAAAAALAAAAAAAAAARQ2hhbGxlbmdlTm90Rm91bmQAAAAAAAAtAAAAAAAAAA5QYXlvdXROb3RGb3VuZAAAAAAALgAAAAAAAAAYUmVkaXN0cmlidXRpb25Ob3RBbGxvd2VkAAAALwAAAAAAAAAZUmVkaXN0cmlidXRpb25BbHJlYWR5RG9uZQAAAAAAADAAAAAAAAAAGUNvbXBsaWFuY2VQZXJpb2RJblByb2Nlc3MAAAAAAAAxAAAAAAAAABpDb29sZG93blBlcmlvZE5vdEluUHJvY2VzcwAAAAAAMgAAAAAAAAAaTm90U29sdmVBbGxQYXlvdXRDaGFsbGVuZ2UAAAAAADMAAAAAAAAAFFJvdW5kRG9lc05vdFVzZVZhdWx0AAAANQAAAAAAAAAXQXBwbGljYXRpb25QZXJpb2ROb3RTZXQAAAAANwAAAAAAAAAZQ29vbERvd25QZXJpb2ROb3RDb21wbGV0ZQAAAAAAADgAAAAAAAAAFFZvdGluZ1BlcmlvZFRvb1Nob3J0AAAAPQAAAAAAAAAZQXBwbGljYXRpb25QZXJpb2RUb29TaG9ydAAAAAAAAD4AAAAAAAAAFkFwcGxpY2F0aW9uU3RhcnRJblBhc3QAAAAAAD8AAAAAAAAAEVZvdGluZ1N0YXJ0SW5QYXN0AAAAAAAAQAAAAAAAAAAeQ2Fubm90VXBkYXRlVmF1bHRBZnRlckRlcG9zaXRzAAAAAABFAAAAAAAAABFXaGl0ZWxpc3RJZE5vdFNldAAAAAAAADsAAAAAAAAAFU5vdFByb2plY3RQYXJ0aWNpcGFudAAAAAAAAEoAAAAAAAAAFk5vdEFwcHJvdmVkUGFydGljaXBhbnQAAAAAAEsAAAAAAAAAE0RlcG9zaXRBbW91bnRUb29Mb3cAAAAATAAAAAAAAAARUGF5b3V0c0FscmVhZHlTZXQAAAAAAABPAAAAAAAAACpNaW5pbXVtRGVwb3NpdE11c3RCZUxlc3NUaGFuRXhwZWN0ZWRBbW91bnQAAAAAAFo=",
+        "AAAABAAAAAAAAAAAAAAACVZvdGVFcnJvcgAAAAAAAAsAAAAAAAAAFlZvdGluZ1BlcmlvZE5vdFN0YXJ0ZWQAAAAAAAYAAAAAAAAAEVZvdGluZ1BlcmlvZEVuZGVkAAAAAAAABwAAAAAAAAAUVm90aW5nUGVyaW9kTm90RW5kZWQAAAAJAAAAAAAAABRWb3RpbmdBbHJlYWR5U3RhcnRlZAAAAAwAAAAAAAAADEFscmVhZHlWb3RlZAAAABEAAAAAAAAAD05vdFZvdGVBbGxQYWlycwAAAAASAAAAAAAAAAlFbXB0eVZvdGUAAAAAAAAYAAAAAAAAAAxUb29NYW55Vm90ZXMAAAAZAAAAAAAAABBQcm9qZWN0Tm90SW5QYWlyAAAAIQAAAAAAAAANRHVwbGljYXRlUGljawAAAAAAADoAAAAAAAAAHVRvb01hbnlWb3Rlc0ZvckF2YWlsYWJsZVBhaXJzAAAAAAAAPA==",
+        "AAAABAAAAAAAAAAAAAAAEEFwcGxpY2F0aW9uRXJyb3IAAAAOAAAAAAAAABtBcHBsaWNhdGlvblBlcmlvZE5vdFN0YXJ0ZWQAAAAACgAAAAAAAAAWQXBwbGljYXRpb25QZXJpb2RFbmRlZAAAAAAACwAAAAAAAAASUHJvamVjdE5vdEFwcHJvdmVkAAAAAAANAAAAAAAAABZQcm9qZWN0QWxyZWFkeUFwcHJvdmVkAAAAAAAOAAAAAAAAABlQcm9qZWN0Tm90Rm91bmRJblJlZ2lzdHJ5AAAAAAAADwAAAAAAAAAWTWF4UGFydGljaXBhbnRzUmVhY2hlZAAAAAAAEAAAAAAAAAATQXBwbGljYXRpb25Ob3RGb3VuZAAAAAAeAAAAAAAAABBWaWRlb1VybE5vdFZhbGlkAAAAKgAAAAAAAAAVUHJvamVjdEFscmVhZHlBcHBsaWVkAAAAAAAAKwAAAAAAAAAVQXBwbGljYXRpb25Ob3RBbGxvd2VkAAAAAAAANgAAAAAAAAAWQXBwbGljYXRpb25TdGFydEluUGFzdAAAAAAAUQAAAAAAAAAZQXBwbGljYXRpb25QZXJpb2RUb29TaG9ydAAAAAAAAFIAAAAAAAAAGUFwcGxpY2F0aW9uT3ZlcmxhcHNWb3RpbmcAAAAAAABTAAAAAAAAABpBcHBsaWNhdGlvblBlcmlvZE11c3RCZVNldAAAAAAAVA==",
         "AAAAAQAAAAAAAAAAAAAADVJvdW5kUHJlQ2hlY2sAAAAAAAADAAAAAAAAAAlhcHBsaWNhbnQAAAAAAAATAAAAAAAAAAloYXNfdmlkZW8AAAAAAAABAAAAAAAAAApwcm9qZWN0X2lkAAAAAAAK",
         "AAAAAgAAAAAAAAAAAAAAElJlZ2lzdHJhdGlvblN0YXR1cwAAAAAABQAAAAAAAAAAAAAAB1BlbmRpbmcAAAAAAAAAAAAAAAAIQXBwcm92ZWQAAAAAAAAAAAAAAAhSZWplY3RlZAAAAAAAAAAAAAAACkdyYXlsaXN0ZWQAAAAAAAAAAAAAAAAAC0JsYWNrbGlzdGVkAA==",
-        "AAAAAAAAAAAAAAAKaW5pdGlhbGl6ZQAAAAAACAAAAAAAAAAGY2FsbGVyAAAAAAATAAAAAAAAAA10b2tlbl9hZGRyZXNzAAAAAAAAEwAAAAAAAAAQcmVnaXN0cnlfYWRkcmVzcwAAABMAAAAAAAAADGxpc3RfYWRkcmVzcwAAABMAAAAAAAAAC2t5Y19saXN0X2lkAAAAAAoAAAAAAAAAGXByb3RvY29sX2ZlZV9iYXNpc19wb2ludHMAAAAAAAPoAAAABAAAAAAAAAAWcHJvdG9jb2xfZmVlX3JlY2lwaWVudAAAAAAD6AAAABMAAAAAAAAAEWRlZmF1bHRfcGFnZV9zaXplAAAAAAAD6AAAAAYAAAAA",
+        "AAAAAQAAAAAAAAAAAAAADExpc3RFeHRlcm5hbAAAAAwAAAAAAAAAGGFkbWluX29ubHlfcmVnaXN0cmF0aW9ucwAAAAEAAAAAAAAABmFkbWlucwAAAAAD6gAAABMAAAAAAAAADWNvdmVyX2ltZ191cmwAAAAAAAAQAAAAAAAAAApjcmVhdGVkX21zAAAAAAAGAAAAAAAAABtkZWZhdWx0X3JlZ2lzdHJhdGlvbl9zdGF0dXMAAAAH0AAAABJSZWdpc3RyYXRpb25TdGF0dXMAAAAAAAAAAAALZGVzY3JpcHRpb24AAAAAEAAAAAAAAAACaWQAAAAAAAoAAAAAAAAABG5hbWUAAAAQAAAAAAAAAAVvd25lcgAAAAAAABMAAAAAAAAAGXRvdGFsX3JlZ2lzdHJhdGlvbnNfY291bnQAAAAAAAAGAAAAAAAAABN0b3RhbF91cHZvdGVzX2NvdW50AAAAAAYAAAAAAAAACnVwZGF0ZWRfbXMAAAAAAAY=",
+        "AAAAAAAAAAAAAAAKaW5pdGlhbGl6ZQAAAAAACAAAAAAAAAAGY2FsbGVyAAAAAAATAAAAAAAAAA10b2tlbl9hZGRyZXNzAAAAAAAAEwAAAAAAAAAQcmVnaXN0cnlfYWRkcmVzcwAAABMAAAAAAAAADGxpc3RfYWRkcmVzcwAAABMAAAAAAAAADmt5Y193bF9saXN0X2lkAAAAAAPoAAAACgAAAAAAAAAZcHJvdG9jb2xfZmVlX2Jhc2lzX3BvaW50cwAAAAAAA+gAAAAEAAAAAAAAABZwcm90b2NvbF9mZWVfcmVjaXBpZW50AAAAAAPoAAAAEwAAAAAAAAARZGVmYXVsdF9wYWdlX3NpemUAAAAAAAPoAAAABgAAAAA=",
         "AAAAAAAAAAAAAAAMY3JlYXRlX3JvdW5kAAAAAgAAAAAAAAAGY2FsbGVyAAAAAAATAAAAAAAAAAxyb3VuZF9kZXRhaWwAAAfQAAAAEUNyZWF0ZVJvdW5kUGFyYW1zAAAAAAAAAQAAB9AAAAALUm91bmREZXRhaWwA",
         "AAAAAAAAAAAAAAAKZ2V0X3JvdW5kcwAAAAAAAgAAAAAAAAAKZnJvbV9pbmRleAAAAAAD6AAAAAYAAAAAAAAABWxpbWl0AAAAAAAD6AAAAAYAAAABAAAD6gAAB9AAAAALUm91bmREZXRhaWwA",
         "AAAAAAAAAAAAAAAHdXBncmFkZQAAAAABAAAAAAAAAA1uZXdfd2FzbV9oYXNoAAAAAAAD7gAAACAAAAAA",
         "AAAAAAAAAAAAAAASdHJhbnNmZXJfb3duZXJzaGlwAAAAAAABAAAAAAAAAAluZXdfb3duZXIAAAAAAAATAAAAAA==",
+        "AAAAAAAAAAAAAAAQYWNjZXB0X293bmVyc2hpcAAAAAAAAAAA",
+        "AAAAAAAAAAAAAAZY2FuY2VsX293bmVyc2hpcF90cmFuc2ZlcgAAAAAAAAAAAAAA",
+        "AAAAAAAAAAAAAAAZY2FuY2VsX293bmVyc2hpcF90cmFuc2ZlcgAAAAAAAAAAAAAA",
         "AAAAAAAAAAAAAAAKZ2V0X2NvbmZpZwAAAAAAAAAAAAEAAAfQAAAABkNvbmZpZwAA",
         "AAAAAAAAAAAAAAAbb3duZXJfc2V0X2RlZmF1bHRfcGFnZV9zaXplAAAAAAEAAAAAAAAAEWRlZmF1bHRfcGFnZV9zaXplAAAAAAAABgAAAAA=",
         "AAAAAAAAAAAAAAAdb3duZXJfc2V0X3Byb3RvY29sX2ZlZV9jb25maWcAAAAAAAACAAAAAAAAABZwcm90b2NvbF9mZWVfcmVjaXBpZW50AAAAAAPoAAAAEwAAAAAAAAAZcHJvdG9jb2xfZmVlX2Jhc2lzX3BvaW50cwAAAAAAA+gAAAAEAAAAAA==",
-        "AAAAAAAAAAAAAAASY2hhbmdlX2t5Y19saXN0X2lkAAAAAAABAAAAAAAAAAtreWNfbGlzdF9pZAAAAAAKAAAAAA==",
+        "AAAAAAAAAAAAAAAVY2hhbmdlX2t5Y193bF9saXN0X2lkAAAAAAAAAQAAAAAAAAAHbGlzdF9pZAAAAAAKAAAAAA==",
         "AAAAAAAAAAAAAAARc2V0X3ZvdGluZ19wZXJpb2QAAAAAAAAEAAAAAAAAAAhyb3VuZF9pZAAAAAoAAAAAAAAABmNhbGxlcgAAAAAAEwAAAAAAAAAIc3RhcnRfbXMAAAAGAAAAAAAAAAZlbmRfbXMAAAAAAAYAAAAA",
         "AAAAAAAAAAAAAAATc2V0X2V4cGVjdGVkX2Ftb3VudAAAAAADAAAAAAAAAAhyb3VuZF9pZAAAAAoAAAAAAAAABmNhbGxlcgAAAAAAEwAAAAAAAAAGYW1vdW50AAAAAAAKAAAAAA==",
+        "AAAAAAAAAAAAAAATc2V0X21pbmltdW1fZGVwb3NpdAAAAAADAAAAAAAAAAhyb3VuZF9pZAAAAAoAAAAAAAAABmNhbGxlcgAAAAAAEwAAAAAAAAAGYW1vdW50AAAAAAAKAAAAAA==",
         "AAAAAAAAAAAAAAAKc2V0X2FkbWlucwAAAAAAAgAAAAAAAAAIcm91bmRfaWQAAAAKAAAAAAAAAAtyb3VuZF9hZG1pbgAAAAPqAAAAEwAAAAA=",
         "AAAAAAAAAAAAAAAOYXBwbHlfdG9fcm91bmQAAAAAAAUAAAAAAAAACHJvdW5kX2lkAAAACgAAAAAAAAAGY2FsbGVyAAAAAAATAAAAAAAAAAlhcHBsaWNhbnQAAAAAAAPoAAAAEwAAAAAAAAAEbm90ZQAAA+gAAAAQAAAAAAAAAAtyZXZpZXdfbm90ZQAAAAPoAAAAEAAAAAEAAAfQAAAAEFJvdW5kQXBwbGljYXRpb24=",
         "AAAAAAAAAAAAAAAScmV2aWV3X2FwcGxpY2F0aW9uAAAAAAAFAAAAAAAAAAhyb3VuZF9pZAAAAAoAAAAAAAAABmNhbGxlcgAAAAAAEwAAAAAAAAAJYXBwbGljYW50AAAAAAAAEwAAAAAAAAAGc3RhdHVzAAAAAAfQAAAAEUFwcGxpY2F0aW9uU3RhdHVzAAAAAAAAAAAAAARub3RlAAAD6AAAABAAAAABAAAH0AAAABBSb3VuZEFwcGxpY2F0aW9u",
@@ -1775,7 +1764,7 @@ export class Client extends ContractClient {
         "AAAAAAAAAAAAAAAMZmxhZ19wcm9qZWN0AAAABAAAAAAAAAAIcm91bmRfaWQAAAAKAAAAAAAAAAZjYWxsZXIAAAAAABMAAAAAAAAACnByb2plY3RfaWQAAAAAAAoAAAAAAAAABnJlYXNvbgAAAAAAEAAAAAEAAAfQAAAACkZsYWdEZXRhaWwAAA==",
         "AAAAAAAAAAAAAAAOdW5mbGFnX3Byb2plY3QAAAAAAAMAAAAAAAAACHJvdW5kX2lkAAAACgAAAAAAAAAGY2FsbGVyAAAAAAATAAAAAAAAAApwcm9qZWN0X2lkAAAAAAAKAAAAAA==",
         "AAAAAAAAAAAAAAAVZ2V0X2FwcHJvdmVkX3Byb2plY3RzAAAAAAAAAQAAAAAAAAAIcm91bmRfaWQAAAAKAAAAAQAAA+oAAAAK",
-        "AAAAAgAAAAAAAAAAAAAAC0NvbnRyYWN0S2V5AAAAABQAAAAAAAAAAAAAAAZDb25maWcAAAAAAAAAAAAAAAAAC05leHRSb3VuZElkAAAAAAAAAAAAAAAADE5leHRQYXlvdXRJZAAAAAAAAAAAAAAADU5leHREZXBvc2l0SWQAAAAAAAAAAAAAAAAAABBQcm9qZWN0UGF5b3V0SWRzAAAAAAAAAAAAAAANVm90ZWRSb3VuZElkcwAAAAAAAAEAAAAAAAAAClBheW91dEluZm8AAAAAAAEAAAAKAAAAAQAAAAAAAAALRGVwb3NpdEluZm8AAAAAAQAAAAoAAAABAAAAAAAAAAlSb3VuZEluZm8AAAAAAAABAAAACgAAAAEAAAAAAAAACUJsYWNrTGlzdAAAAAAAAAEAAAAKAAAAAQAAAAAAAAARUHJvamVjdEFwcGxpY2FudHMAAAAAAAABAAAACgAAAAEAAAAAAAAAEEFwcHJvdmVkUHJvamVjdHMAAAABAAAACgAAAAEAAAAAAAAAD0ZsYWdnZWRQcm9qZWN0cwAAAAABAAAACgAAAAEAAAAAAAAAB1BheW91dHMAAAAAAQAAAAoAAAABAAAAAAAAABBQYXlvdXRDaGFsbGVuZ2VzAAAAAQAAAAoAAAABAAAAAAAAAAtWb3RpbmdTdGF0ZQAAAAABAAAACgAAAAEAAAAAAAAABVZvdGVzAAAAAAAAAQAAAAoAAAABAAAAAAAAABJQcm9qZWN0Vm90aW5nQ291bnQAAAAAAAEAAAAKAAAAAQAAAAAAAAAFQWRtaW4AAAAAAAABAAAACgAAAAEAAAAAAAAAB0RlcG9zaXQAAAAAAQAAAAo=" ]),
+        "AAAAAgAAAAAAAAAAAAAAC0NvbnRyYWN0S2V5AAAAABQAAAAAAAAAAAAAAAZDb25maWcAAAAAAAAAAAAAAAAAC05leHRSb3VuZElkAAAAAAAAAAAAAAAADE5leHRQYXlvdXRJZAAAAAAAAAAAAAAADU5leHREZXBvc2l0SWQAAAAAAAABAAAAAAAAABBQcm9qZWN0UGF5b3V0SWRzAAAAAQAAAAoAAAABAAAAAAAAAApQYXlvdXRJbmZvAAAAAAABAAAACgAAAAEAAAAAAAAAC0RlcG9zaXRJbmZvAAAAAAEAAAAKAAAAAQAAAAAAAAAJUm91bmRJbmZvAAAAAAAAAQAAAAoAAAABAAAAAAAAAAlCbGFja0xpc3QAAAAAAAABAAAACgAAAAEAAAAAAAAAEVByb2plY3RBcHBsaWNhbnRzAAAAAAAAAQAAAAoAAAABAAAAAAAAABBBcHByb3ZlZFByb2plY3RzAAAAAQAAAAoAAAABAAAAAAAAAA9GbGFnZ2VkUHJvamVjdHMAAAAAAQAAAAoAAAABAAAAAAAAAAdQYXlvdXRzAAAAAAEAAAAKAAAAAQAAAAAAAAAQUGF5b3V0Q2hhbGxlbmdlcwAAAAEAAAAKAAAAAQAAAAAAAAALVm90aW5nU3RhdGUAAAAAAQAAAAoAAAABAAAAAAAAAA1Wb3RlZFJvdW5kSWRzAAAAAAAAAQAAABMAAAABAAAAAAAAAAVWb3RlcwAAAAAAAAEAAAAKAAAAAQAAAAAAAAASUHJvamVjdFZvdGluZ0NvdW50AAAAAAABAAAACgAAAAEAAAAAAAAABUFkbWluAAAAAAAAAQAAAAoAAAABAAAAAAAAAAdEZXBvc2l0AAAAAAEAAAAK" ]),
       options
     )
   }
@@ -1785,12 +1774,15 @@ export class Client extends ContractClient {
         get_rounds: this.txFromJSON<Array<RoundDetail>>,
         upgrade: this.txFromJSON<null>,
         transfer_ownership: this.txFromJSON<null>,
+        accept_ownership: this.txFromJSON<null>,
+        cancel_ownership_transfer: this.txFromJSON<null>,
         get_config: this.txFromJSON<Config>,
         owner_set_default_page_size: this.txFromJSON<null>,
         owner_set_protocol_fee_config: this.txFromJSON<null>,
-        change_kyc_list_id: this.txFromJSON<null>,
+        change_kyc_wl_list_id: this.txFromJSON<null>,
         set_voting_period: this.txFromJSON<null>,
         set_expected_amount: this.txFromJSON<null>,
+        set_minimum_deposit: this.txFromJSON<null>,
         set_admins: this.txFromJSON<null>,
         apply_to_round: this.txFromJSON<RoundApplication>,
         review_application: this.txFromJSON<RoundApplication>,

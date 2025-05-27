@@ -82,7 +82,6 @@ const MyProjectOverview = () => {
 					contacts: projectData?.contacts || [],
 					contracts: projectData?.contracts || [],
 					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
-					payout_address: projectData?.payout_address || '',
 					repositories: projectData?.repositories || [],
 					team_members: projectData?.team_members || [],
 					video_url: projectData?.video_url || 'https://video.com/asdfgh',
@@ -123,7 +122,6 @@ const MyProjectOverview = () => {
 					contacts: projectData?.contacts || [],
 					contracts: projectData?.contracts || [],
 					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
-					payout_address: projectData?.payout_address || '',
 					repositories: projectData?.repositories || [],
 					team_members:
 						(projectData?.team_members as unknown as string[]) || [],

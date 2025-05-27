@@ -26,7 +26,7 @@ import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import {
 	payoutChallengeToGPPayoutChallenge,
 	projectToGPProject,
-	roundDetailToGPRound,
+	// roundDetailToGPRound,
 } from '@/services/stellar/type'
 import { formatNearAmount, parseNearAmount } from 'near-api-js/lib/utils/format'
 import {
@@ -621,15 +621,15 @@ const RoundResultPage = () => {
 							<span className="text-xs md:text-base font-normal text-grantpicks-black-600">
 								{storage.chainId === 'stellar'
 									? (
-											Number(
-												formatStroopToXlm(
-													BigInt(roundData?.expected_amount || 0),
-												),
-											) * global.stellarPrice
-										).toFixed(2)
+										Number(
+											formatStroopToXlm(
+												BigInt(roundData?.expected_amount || 0),
+											),
+										) * global.stellarPrice
+									).toFixed(2)
 									: (
-											Number(roundData?.expected_amount) * global.nearPrice
-										).toFixed(2)}{' '}
+										Number(roundData?.expected_amount) * global.nearPrice
+									).toFixed(2)}{' '}
 								USD
 							</span>
 						</p>
@@ -651,28 +651,28 @@ const RoundResultPage = () => {
 							<p className="text-[25px] font-normal text-grantpicks-black-950">
 								{storage.chainId === 'stellar'
 									? formatStroopToXlm(
-											BigInt(roundData?.vault_total_deposits || 0),
-										)
+										BigInt(roundData?.vault_total_deposits || 0),
+									)
 									: formatNearAmount(
-											roundData?.vault_total_deposits || '0',
-										)}{' '}
+										roundData?.vault_total_deposits || '0',
+									)}{' '}
 								{storage.chainId === 'stellar' ? 'XLM' : 'NEAR'}{' '}
 								<span className="text-xs md:text-base font-normal text-grantpicks-black-600">
 									{storage.chainId === 'stellar'
 										? (
-												Number(
-													formatStroopToXlm(
-														BigInt(roundData?.vault_total_deposits || 0),
-													),
-												) * global.stellarPrice
-											).toFixed(2)
+											Number(
+												formatStroopToXlm(
+													BigInt(roundData?.vault_total_deposits || 0),
+												),
+											) * global.stellarPrice
+										).toFixed(2)
 										: (
-												Number(
-													formatNearAmount(
-														roundData?.vault_total_deposits || '0',
-													).replace(',', ''),
-												) * global.nearPrice
-											).toFixed(2)}{' '}
+											Number(
+												formatNearAmount(
+													roundData?.vault_total_deposits || '0',
+												).replace(',', ''),
+											) * global.nearPrice
+										).toFixed(2)}{' '}
 									USD
 								</span>
 							</p>

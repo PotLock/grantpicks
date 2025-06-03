@@ -21,8 +21,6 @@ import {
 } from './type'
 import { BaseContract } from './contract'
 import { parseNearAmount } from 'near-api-js/lib/utils/format'
-import { from } from 'rxjs'
-import { memo } from 'react'
 
 export class RoundContract extends BaseContract {
 	constructor(wallet: Wallet | null, network: string, contractId: string) {

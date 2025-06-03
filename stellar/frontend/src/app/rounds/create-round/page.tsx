@@ -70,7 +70,6 @@ import useSWRInfinite from 'swr/infinite'
 import { GPRound } from '@/models/round'
 import { parseNearAmount } from 'near-api-js/lib/utils/format'
 import { FinalExecutionOutcome, Transaction } from '@near-wallet-selector/core'
-import { create } from 'domain'
 
 const CreateRoundPage = () => {
 	const router = useRouter()
@@ -87,6 +86,7 @@ const CreateRoundPage = () => {
 	const { setSuccessCreateRoundModalProps } = useModalContext()
 	const [amountUsd, setAmountUsd] = useState<string>('0.00')
 	const [expectAmountUsd, setExpectAmountUsd] = useState<string>('0.00')
+	const [minimumDepositUsd, setMinimumDepositUsd] = useState<string>('0.00')
 	const [showAddProjectsModal, setShowAddProjectsModal] =
 		useState<boolean>(false)
 	const [showAddAdminsModal, setShowAddAdminsModal] = useState<boolean>(false)
@@ -215,6 +215,7 @@ const CreateRoundPage = () => {
 			openPageLoading()
 
 			// Adjust application times
+
 			if (data.apply_duration_start && data.apply_duration_end) {
 				const startDate = new Date(data.apply_duration_start)
 				const endDate = new Date(data.apply_duration_end)
@@ -239,17 +240,29 @@ const CreateRoundPage = () => {
 			if (data.voting_duration_start && data.voting_duration_end) {
 				const startDate = new Date(data.voting_duration_start)
 				const endDate = new Date(data.voting_duration_end)
-				const applyEndDate = data.apply_duration_end as Date
+				const applyEndDate = data.apply_duration_end ? new Date(data.apply_duration_end) : null
+				const currentDate = new Date()
 
-				// If voting starts same day as application ends
-				if (startDate.toDateString() === applyEndDate.toDateString()) {
+				// If voting starts same day as application ends and we have an apply end date
+				if (applyEndDate && startDate.toDateString() === applyEndDate.toDateString()) {
 					startDate.setHours(applyEndDate.getHours() + 3)
 					startDate.setMinutes(applyEndDate.getMinutes())
 				}
-				// If voting starts next day
-				else if (startDate.toDateString() === new Date(new Date().setDate(applyEndDate.getDate() + 1)).toDateString()) {
+				// If voting starts next day and we have an apply end date
+				else if (applyEndDate && startDate.toDateString() === new Date(new Date().setDate(applyEndDate.getDate() + 1)).toDateString()) {
 					startDate.setHours(applyEndDate.getHours())
 					startDate.setMinutes(applyEndDate.getMinutes())
+				}
+				// If no application period, ensure voting starts 15 minutes after set time
+				else if (!applyEndDate) {
+					if (startDate.toDateString() === currentDate.toDateString()) {
+						startDate.setHours(currentDate.getHours())
+						startDate.setMinutes(currentDate.getMinutes() + 15)
+					}
+					if (endDate.toDateString() === new Date(new Date().setDate(new Date().getDate() + 1)).toDateString()) {
+						endDate.setHours(currentDate.getHours() + 3)
+						endDate.setMinutes(currentDate.getMinutes())
+					}
 				}
 
 				// Set end time to start time + 24 hours
@@ -266,6 +279,7 @@ const CreateRoundPage = () => {
 				if (!contracts) {
 					return
 				}
+
 
 				const maxParticipants =
 					data.max_participants < 10 ? 10 : data.max_participants
@@ -311,12 +325,13 @@ const CreateRoundPage = () => {
 					compliance_period_ms: compliancePeriodData.period_ms
 						? BigInt(compliancePeriodData.period_ms)
 						: undefined,
+
 					cooldown_period_ms: cooldownPeriodData.period_ms
 						? BigInt(cooldownPeriodData.period_ms)
 						: undefined,
 					remaining_dist_address:
 						data.remaining_dist_address || storage.my_address || '',
-					referrer_fee_basis_points: 0,
+					referrer_fee_basis_points: data.referrer_fee_basis_points ? Number(data.referrer_fee_basis_points) * 100 : 0,
 				}
 
 				const txCreateRound = await createRound(
@@ -343,17 +358,22 @@ const CreateRoundPage = () => {
 						)
 					}
 
+
 					setSuccessCreateRoundModalProps((prev) => ({
 						...prev,
 						isOpen: true,
 						createRoundRes: {
 							...txCreateRound.result,
 							id: txCreateRound.result.id.toString(),
-							on_chain_id: txCreateRound.result.id.toString,
+							on_chain_id: storage.chainId,
 							voting_start: data.voting_duration_start?.toISOString(),
 							voting_end: data.voting_duration_end?.toISOString(),
-							application_start: data.apply_duration_start?.toISOString(),
-							application_end: data.apply_duration_end?.toISOString(),
+							...(data.apply_duration_start && {
+								application_start: data.apply_duration_start.toISOString()
+							}),
+							...(data.apply_duration_end && {
+								application_end: data.apply_duration_end.toISOString()
+							})
 						} as unknown as GPRound,
 						txHash: txHashCreateRound,
 					}))
@@ -466,8 +486,12 @@ const CreateRoundPage = () => {
 						on_chain_id: txNearCreateRound?.result.id.toString(),
 						voting_start: data.voting_duration_start?.toISOString(),
 						voting_end: data.voting_duration_end?.toISOString(),
-						application_start: data.apply_duration_start?.toISOString(),
-						application_end: data.apply_duration_end?.toISOString(),
+						...(data.apply_duration_start && {
+							application_start: data.apply_duration_start.toISOString()
+						}),
+						...(data.apply_duration_end && {
+							application_end: data.apply_duration_end.toISOString()
+						})
 					} as unknown as GPRound,
 					txHash: txNearCreateRound?.outcome.transaction_outcome.id,
 				}))
@@ -817,7 +841,7 @@ const CreateRoundPage = () => {
 									render={({ field }) => (
 										<DatePicker
 											showIcon
-											minDate={subDays(watch().apply_duration_end as Date, 0)}
+											minDate={subDays(watch().apply_duration_end as Date, 0) || new Date()}
 											selectsRange={true}
 											icon={
 												<div className="flex items-center mt-2">
@@ -833,10 +857,33 @@ const CreateRoundPage = () => {
 											placeholderText="Voting Duration"
 											isClearable={true}
 											onChange={(date) => {
-												field.onChange(date[0])
-												setValue('voting_duration_end', date[1], {
-													shouldValidate: true,
-												})
+												const [start, end] = date
+
+												field.onChange(start)
+												setValue('voting_duration_end', end)
+
+												if (!start || !end) return
+
+												const startDate = new Date(start)
+												const endDate = new Date(end)
+												const hoursDiff = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60)
+
+												if (hoursDiff < 24) {
+													toast.error('Voting duration must be at least 24 hours', {
+														style: toastOptions.error.style,
+													})
+													setError('voting_duration_start', {
+														type: 'manual',
+														message: 'Voting duration must be at least 24 hours apart'
+													})
+													setValue('voting_duration_end', null, {
+														shouldValidate: true,
+														shouldDirty: true,
+														shouldTouch: true
+													})
+													field.onChange(null)
+													return
+												}
 											}}
 											className="border border-grantpicks-black-200 rounded-xl w-full h-12"
 											wrapperClassName="w-full mb-1"
@@ -1052,126 +1099,8 @@ const CreateRoundPage = () => {
 					</div>
 
 					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
+
 						<div className="flex items-start flex-wrap md:flex-row flex-col md:space-x-4 w-full mb-4">
-							<div className="flex-1">
-								<InputText
-									type="number"
-									disabled={!watch().use_vault}
-									label="Initial Deposit"
-									className='text-sm'
-									placeholder={isMobile ? '' : 'Enter amount...'}
-									{...register('amount', {
-										onChange: async (e) => {
-											let calculation = 0
-
-											if (storage.chainId === 'stellar') {
-												calculation =
-													parseFloat(e.target.value || '0') * stellarPrice
-											} else {
-												calculation =
-													parseFloat(e.target.value || '0') * nearPrice
-											}
-
-											setAmountUsd(`${calculation.toFixed(3)}`)
-											setValue('amount', e.target.value)
-										},
-									})}
-									preffixIcon={
-										storage.chainId === 'stellar' ? (
-											<IconStellar
-												size={24}
-												className="fill-grantpicks-black-400"
-											/>
-										) : (
-											<IconNear
-												size={24}
-												className="fill-grantpicks-black-400"
-											/>
-										)
-									}
-									textAlign="left"
-									suffixIcon={
-										<div className="flex items-center space-x-2">
-											<p className="text-sm font-normal text-grantpicks-black-500">
-												{amountUsd}
-											</p>
-											<p className="text-sm font-normal text-grantpicks-black-400">
-												USD
-											</p>
-										</div>
-									}
-									errorMessage={
-										parseFloat(watch().amount) < 0 ? (
-											<p className="text-red-500 text-xs mt-1 ml-2">
-												Initial deposit cannot be less than 0
-											</p>
-										) : undefined
-									}
-								/>
-							</div>
-							<div className="flex-1">
-								<InputText
-									type="number"
-									label="Minimum Deposit"
-									required
-									className='text-sm'
-									placeholder={isMobile ? '' : 'Enter amount...'}
-									{...register('minimum_deposit', {
-										required: true,
-										onChange: async (e) => {
-											if (storage.chainId === 'stellar') {
-												const calculation =
-													parseFloat(e.target.value || '0') * stellarPrice
-												setExpectAmountUsd(`${calculation.toFixed(3)}`)
-											} else {
-												const calculation =
-													parseFloat(e.target.value || '0') * nearPrice
-												setExpectAmountUsd(`${calculation.toFixed(3)}`)
-											}
-										},
-									})}
-									preffixIcon={
-										storage.chainId === 'stellar' ? (
-											<IconStellar
-												size={24}
-												className="fill-grantpicks-black-400"
-											/>
-										) : (
-											<IconNear
-												size={24}
-												className="fill-grantpicks-black-400"
-											/>
-										)
-									}
-									textAlign="left"
-									suffixIcon={
-										<div className="flex items-center space-x-2">
-											<p className="text-sm font-normal text-grantpicks-black-500">
-												{expectAmountUsd}
-											</p>
-											<p className="text-sm font-normal text-grantpicks-black-400">
-												USD
-											</p>
-										</div>
-									}
-									errorMessage={
-										errors.minimum_deposit?.type === 'required' ? (
-											<p className="text-red-500 text-xs mt-1 ml-2">
-												Minimum Deposit is required
-											</p>
-										) : parseFloat(watch().minimum_deposit) >
-											parseFloat(watch().amount) ? (
-											<p className="text-red-500 text-xs mt-1 ml-2">
-												Minimum Deposit should not be greater than initial deposit
-											</p>
-										) : parseFloat(watch().minimum_deposit) <= 0 ? (
-											<p className="text-red-500 text-xs mt-1 ml-2">
-												Minimum Deposit cannot be less than or equal to 0
-											</p>
-										) : undefined
-									}
-								/>
-							</div>
 							<div className="flex-1">
 								<InputText
 									type="number"
@@ -1230,6 +1159,145 @@ const CreateRoundPage = () => {
 										) : parseFloat(watch().expected_amount) <= 0 ? (
 											<p className="text-red-500 text-xs mt-1 ml-2">
 												Expected Amount cannot be less than or equal to 0
+											</p>
+										) : undefined
+									}
+								/>
+							</div>
+
+							<div className="flex-1">
+								<InputText
+									type="number"
+									disabled={!watch().use_vault}
+									label="Initial Deposit"
+									className='text-sm'
+									placeholder={isMobile ? '' : 'Enter amount...'}
+									{...register('amount', {
+										onChange: async (e) => {
+											let calculation = 0
+
+											if (storage.chainId === 'stellar') {
+												calculation =
+													parseFloat(e.target.value || '0') * stellarPrice
+											} else {
+												calculation =
+													parseFloat(e.target.value || '0') * nearPrice
+											}
+
+											setAmountUsd(`${calculation.toFixed(3)}`)
+											setValue('amount', e.target.value)
+										},
+										validate: (value) => {
+											const minDeposit = watch('minimum_deposit')
+											if (!minDeposit) return true // Skip validation if minimum deposit not set
+											if (parseFloat(value) < parseFloat(minDeposit)) {
+												return 'Initial deposit cannot be less than minimum deposit'
+											}
+											return true
+										}
+									})}
+									preffixIcon={
+										storage.chainId === 'stellar' ? (
+											<IconStellar
+												size={24}
+												className="fill-grantpicks-black-400"
+											/>
+										) : (
+											<IconNear
+												size={24}
+												className="fill-grantpicks-black-400"
+											/>
+										)
+									}
+									textAlign="left"
+									suffixIcon={
+										<div className="flex items-center space-x-2">
+											<p className="text-sm font-normal text-grantpicks-black-500">
+												{amountUsd}
+											</p>
+											<p className="text-sm font-normal text-grantpicks-black-400">
+												USD
+											</p>
+										</div>
+									}
+									errorMessage={
+										parseFloat(watch().amount) < 0 ? (
+											<p className="text-red-500 text-xs mt-1 ml-2">
+												Initial deposit cannot be less than 0
+											</p>
+										) : errors.amount?.message ? (
+											<p className="text-red-500 text-xs mt-1 ml-2">
+												{errors.amount.message}
+											</p>
+										) : undefined
+									}
+								/>
+							</div>
+							<div className="flex-1">
+								<InputText
+									type="number"
+									label="Minimum Deposit"
+									required
+									className='text-sm'
+									placeholder={isMobile ? '' : 'Enter amount...'}
+									{...register('minimum_deposit', {
+										required: true,
+										onChange: async (e) => {
+											if (storage.chainId === 'stellar') {
+												const calculation =
+													parseFloat(e.target.value || '0') * stellarPrice
+												setMinimumDepositUsd(`${calculation.toFixed(3)}`)
+											} else {
+												const calculation =
+													parseFloat(e.target.value || '0') * nearPrice
+												setMinimumDepositUsd(`${calculation.toFixed(3)}`)
+											}
+										},
+										validate: (value) => {
+											const expectedAmount = watch().expected_amount
+											if (!expectedAmount) return true // Skip validation if expected amount not set
+											if (parseFloat(value) > parseFloat(expectedAmount)) {
+												return 'Minimum deposit cannot be greater than expected amount'
+											}
+											return true
+										}
+									})}
+									preffixIcon={
+										storage.chainId === 'stellar' ? (
+											<IconStellar
+												size={24}
+												className="fill-grantpicks-black-400"
+											/>
+										) : (
+											<IconNear
+												size={24}
+												className="fill-grantpicks-black-400"
+											/>
+										)
+									}
+									textAlign="left"
+									suffixIcon={
+										<div className="flex items-center space-x-2">
+											<p className="text-sm font-normal text-grantpicks-black-500">
+												{minimumDepositUsd}
+											</p>
+											<p className="text-sm font-normal text-grantpicks-black-400">
+												USD
+											</p>
+										</div>
+									}
+									errorMessage={
+										errors.minimum_deposit?.type === 'required' ? (
+											<p className="text-red-500 text-xs mt-1 ml-2">
+												Minimum Deposit is required
+											</p>
+										) : errors.minimum_deposit?.message ? (
+											<p className="text-red-500 text-xs mt-1 ml-2">
+												{errors.minimum_deposit.message}
+											</p>
+										) : parseFloat(watch().minimum_deposit) <= 0 ? (
+											<p className="text-red-500 text-xs mt-1 ml-2">
+												Minimum Deposit cannot be less than or equal to 0
 											</p>
 										) : undefined
 									}
@@ -1796,7 +1864,35 @@ const CreateRoundPage = () => {
 							)}
 						</div>
 					</div>
-
+					<div className="flex bg-white p-5 rounded-2xl shadow-md mb-4">
+						<InputText
+							label="Referral Fee (%)"
+							placeholder="0-10"
+							type="number"
+							min={0}
+							max={10}
+							{...register('referrer_fee_basis_points', {
+								required: false,
+								validate: (value) => {
+									if (value < 0) return 'Referral fee cannot be negative'
+									if (value > 10) return 'Referral fee cannot be greater than 10%'
+									return true
+								},
+							})}
+							errorMessage={
+								errors.referrer_fee_basis_points?.message ? (
+									<p className="text-red-500 text-xs mt-1 ml-2">
+										{errors.referrer_fee_basis_points.message}
+									</p>
+								) : undefined
+							}
+							suffixIcon={
+								<p className="text-sm font-normal text-grantpicks-black-400">
+									%
+								</p>
+							}
+						/>
+					</div>
 					<Button
 						color="black-950"
 						className="!py-3"

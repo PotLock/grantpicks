@@ -107,7 +107,7 @@ const RoundDetailDrawer = ({
 
 	const fetchRoundApplication = async () => {
 		if (selectedRoundType === 'upcoming') {
-			if (chainId == 'stellar') {
+			if (chainId != 'near') {
 				try {
 					const contracts = storage.getStellarContracts()
 

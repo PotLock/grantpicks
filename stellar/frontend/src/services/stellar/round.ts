@@ -4,7 +4,6 @@ import {
 	IGetRoundsResponse,
 } from '@/types/on-chain'
 import {
-	AssembledTransaction,
 	Option,
 	u128,
 	u32,
@@ -14,7 +13,6 @@ import {
 	ApplicationStatus,
 	Contact,
 	Pair,
-	PayoutsChallenge,
 	PickedPair,
 	ProjectVotingResult,
 	RoundApplication,
@@ -161,6 +159,21 @@ export interface SetAdminsRoundParams {
 	round_admin: string[]
 }
 
+export interface SetApplicationConfigParams {
+	round_id: u128
+	caller: string
+	application_start?: u64 | null
+	application_end: u64 | null
+	allow_applications: boolean
+}
+
+export interface SetVotingConfigParams {
+	round_id: u128
+	caller: string
+	voting_start: u64
+	voting_end: u64
+}
+
 interface GetListsParams {
 	skip: number
 	limit: number
@@ -246,7 +259,6 @@ export const createRound = async (
 	params: CreateRoundParams,
 	contract: Contracts,
 ) => {
-
 	let round = await contract.round_contract.create_round({
 		caller,
 		round_detail: {
@@ -264,7 +276,7 @@ export const createRound = async (
 			expected_amount: params.expected_amount,
 			is_video_required: params.is_video_required,
 			max_participants: params.max_participants,
-			minimum_deposit: params.expected_amount,
+			minimum_deposit: params.minimum_deposit,
 			name: params.name,
 			num_picks_per_voter: params.num_picks_per_voter,
 			owner: params.owner,
@@ -277,6 +289,37 @@ export const createRound = async (
 			voting_start_ms: params.voting_start_ms,
 			voting_wl_list_id: params.wl_list_id,
 		},
+	})
+	return round
+}
+
+export const updateRoundApplicationDuration = async (
+	caller: string,
+	round_id: bigint,
+	params: SetApplicationConfigParams,
+	contract: Contracts,
+) => {
+	let round = await contract.round_contract.set_applications_config({
+		caller,
+		round_id,
+			start_ms: params?.application_start ? params.application_start : undefined,
+			end_ms: params?.application_end ? params.application_end : undefined,
+			allow_applications: params.allow_applications,
+	})
+	return round
+}
+
+export const updateRoundVotingDuration = async (
+	caller: string,
+	round_id: bigint,
+	params: SetVotingConfigParams,
+	contract: Contracts,
+) => {
+	let round = await contract.round_contract.set_voting_period({
+		caller,
+		round_id,
+		start_ms: params?.voting_start,
+		end_ms: params?.voting_end,
 	})
 	return round
 }
@@ -306,6 +349,8 @@ export const editRound = async (
 	})
 	return round
 }
+
+// export const updateRoundDuration = async (
 
 export const setAdminRound = async (
 	round_id: bigint,

@@ -26,6 +26,7 @@ import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { GPRound } from '@/models/round'
 import RoundMenu from './RoundMenu'
+import { TimePeriodDrawer } from './TimePeriodDrawer'
 
 
 export const RoundCard = ({
@@ -48,8 +49,10 @@ export const RoundCard = ({
   const [isUserApplied, setIsUserApplied] = useState<boolean>(false)
   const { setShowMenu } = useGlobalContext()
   const [hasVoted, setHasVoted] = useState<boolean>(false)
+  const [showTimePeriodDrawer, setShowTimePeriodDrawer] = useState<boolean>(false)
   const chainId = extractChainId(doc)
   const storage = useAppStorage()
+
 
   const fetchTotalApprovedProjects = async () => {
     if (chainId === 'stellar') {
@@ -78,6 +81,7 @@ export const RoundCard = ({
       setTotalApprovedProjects(results.length)
     }
   }
+
 
   const fetchRoundApplication = async () => {
     if (selectedRoundType === 'upcoming') {
@@ -354,6 +358,7 @@ export const RoundCard = ({
       <div className="w-full">
         <Button
           onClick={() => {
+            if (getSpecificTime() === 'upcoming-not-started') return
             if (selectedRoundType === 'on-going') {
               if (hasVoted) {
                 router.push(
@@ -389,7 +394,8 @@ export const RoundCard = ({
               totalApprovedProjects == 0) ||
             getSpecificTime() === 'upcoming' ||
             getSpecificTime() === 'upcoming-closed' ||
-            (isUserApplied && getSpecificTime() == 'upcoming-open')
+            (isUserApplied && getSpecificTime() == 'upcoming-open') ||
+            getSpecificTime() === 'upcoming-not-started' || doc.owner?.id === storage.my_address
           }
         >
           {isUserApplied && getSpecificTime() === 'upcoming-open'
@@ -398,26 +404,30 @@ export const RoundCard = ({
               ? hasVoted
                 ? `You've voted in this round`
                 : 'Vote'
-              : getSpecificTime() === 'upcoming'
-                ? 'No application allowed'
-                : getSpecificTime() === 'upcoming-open'
-                  ? 'Apply'
-                  : getSpecificTime() === 'upcoming-closed'
-                    ? 'Application Closed'
-                    : !storage.my_address
-                      ? 'Connect Wallet'
-                      : totalApprovedProjects == 0
-                        ? 'No projects Participated'
-                        : 'View Result'}
+              : getSpecificTime() === 'upcoming-not-started'
+                ? `Application starts in ${moment(new Date(doc.application_start || '')).fromNow()}`
+                : getSpecificTime() === 'upcoming'
+                  ? 'No application allowed'
+                  : getSpecificTime() === 'upcoming-open'
+                    ? 'Apply'
+                    : getSpecificTime() === 'upcoming-closed'
+                      ? 'Application Closed'
+                      : !storage.my_address
+                        ? 'Connect Wallet'
+                        : totalApprovedProjects == 0
+                          ? 'No projects Participated'
+                          : 'View Result'}
         </Button>
       </div>
       {(getSpecificTime() === 'on-going' ||
         getSpecificTime() === 'upcoming' ||
+        getSpecificTime() === 'upcoming-not-started' ||
         getSpecificTime() === 'upcoming-open' ||
         getSpecificTime() === 'upcoming-closed') && (
           <div className="mt-6">
             <RoundMenu
               data={doc}
+              onUpdateTimePeriod={() => setShowTimePeriodDrawer(true)}
               onViewDetails={() => {
                 setShowDetailDrawer(true)
                 router.push(
@@ -463,11 +473,18 @@ export const RoundCard = ({
         onClose={() => setShowAppsDrawer(false)}
         doc={doc}
       />
-      <FundRoundModal
-        isOpen={showFundRoundModal}
+      {showFundRoundModal && (
+        <FundRoundModal
+          isOpen={showFundRoundModal}
+          doc={doc}
+          mutateRounds={mutateRounds}
+          onClose={() => setShowFundRoundModal(false)}
+        />
+      )}
+      <TimePeriodDrawer
+        isOpen={showTimePeriodDrawer}
+        onClose={() => setShowTimePeriodDrawer(false)}
         doc={doc}
-        mutateRounds={mutateRounds}
-        onClose={() => setShowFundRoundModal(false)}
       />
     </div>
   )

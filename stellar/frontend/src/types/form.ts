@@ -99,6 +99,15 @@ export type CreateRoundData = {
 	is_video_required: boolean
 }
 
+export type UpdateApplicationConfig = {
+	round_id: number
+	allow_applications: boolean
+	application_start: Date | null
+	application_end: Date | null
+	voting_start: Date
+	voting_end: Date
+}
+
 export type UpdateRoundData = {
 	id: number
 	title: string

@@ -40,8 +40,7 @@ const ApplicationRounds = () => {
 				return rounds.filter(
 					(t) =>
 						new Date(t.voting_start).getTime() <= new Date().getTime() &&
-						new Date().getTime() < new Date(t.voting_end).getTime() &&
-						t.approved_projects.length > 0,
+						new Date().getTime() < new Date(t.voting_end).getTime()
 				)
 			case 'ended':
 				return rounds.filter(
@@ -95,6 +94,7 @@ const ApplicationRounds = () => {
 		? ([] as GPRound[]).concat(...(data as any as GPRound[]))
 		: []
 	const hasMore = data ? data.length >= LIMIT_SIZE : false
+
 
 	useEffect(() => {
 		if (data) {

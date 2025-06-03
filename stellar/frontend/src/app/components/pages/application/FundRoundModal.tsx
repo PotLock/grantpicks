@@ -16,6 +16,8 @@ import { GPRound } from '@/models/round'
 import IconNear from '../../svgs/IconNear'
 import { formatNearAmount, parseNearAmount } from 'near-api-js/lib/utils/format'
 import { FinalExecutionOutcome } from '@near-wallet-selector/core'
+import { watch } from 'fs'
+import { useForm } from 'react-hook-form'
 
 interface FundROundModalProps extends BaseModalProps {
 	doc: GPRound
@@ -36,6 +38,8 @@ const FundRoundModal = ({
 		useGlobalContext()
 	const { stellarPubKey, stellarKit, currentBalance, nearWallet } = useWallet()
 	const storage = useAppStorage()
+
+	const { register, handleSubmit, formState: { errors }, setError, clearErrors } = useForm()
 
 	const getFee = async () => {
 		if (storage.chainId === 'stellar') {
@@ -176,29 +180,55 @@ const FundRoundModal = ({
 							: formatNearAmount(doc.current_vault_balance)}{' '}
 						{storage.chainId === 'stellar' ? 'XLM' : 'NEAR'} and have reached{' '}
 						<span className="font-semibold text-grantpicks-green-800">
-							{(
-								((BigInt(doc.current_vault_balance) / BigInt(10 ** 24)) *
-									BigInt(100)) /
-								BigInt(doc.expected_amount)
-							).toString()}
+							{storage.chainId === 'stellar' ?
+								parseFloat(formatStroopToXlm(BigInt(doc.current_vault_balance))) * 100 / parseFloat(formatStroopToXlm(BigInt(doc.minimum_deposit)))
+								:
+								(
+									((BigInt(doc.current_vault_balance) / BigInt(10 ** 24)) *
+										BigInt(100)) /
+									BigInt(doc.expected_amount)
+								).toString()}
 							% of our expected funds.
 						</span>
 					</p>
 				</div>
+				<div className="mb-4">
+					<p className="text-sm font-semibold text-grantpicks-green-800">
+						Minimum Deposit: {formatStroopToXlm(BigInt(doc.minimum_deposit))} XLM
+					</p>
+					<p className="text-sm font-semibold text-grantpicks-green-800">
+						Current Vault Balance: {formatStroopToXlm(BigInt(doc.current_vault_balance))} XLM
+					</p>
+					<p className="text-sm font-semibold text-grantpicks-green-800">
+						Expected Funds: {formatStroopToXlm(BigInt(doc.expected_amount))} XLM
+					</p>
+				</div>
+
 				<div className="flex-1 mb-4 md:mb-6">
 					<InputText
 						type="number"
 						value={amount}
 						placeholder="0.00"
+						{...register('amount', {
+							required: true,
+							onChange: (e) => {
+								const calculation =
+									storage.chainId === 'stellar'
+										? parseFloat(e.target.value || '0') * stellarPrice
+										: parseFloat(e.target.value || '0') * nearPrice
+								setAmountUsd(`${calculation.toFixed(3)}`)
+								setAmount(e.target.value)
+								if (parseFloat(e.target.value) < parseFloat(formatStroopToXlm(BigInt(doc.minimum_deposit))) || e.target.value === '') {
+									setError('amount', {
+										type: 'manual',
+										message: 'Funding amount cannot be less than minimum deposit'
+									})
+								} else {
+									clearErrors('amount')
+								}
+							},
+						})}
 						hintLabel={`included protocol fee ${fee} %`}
-						onChange={(e) => {
-							const calculation =
-								storage.chainId === 'stellar'
-									? parseFloat(e.target.value || '0') * stellarPrice
-									: parseFloat(e.target.value || '0') * nearPrice
-							setAmountUsd(`${calculation.toFixed(3)}`)
-							setAmount(e.target.value)
-						}}
 						preffixIcon={
 							storage.chainId === 'stellar' ? (
 								<IconStellar size={24} className="fill-grantpicks-black-400" />
@@ -231,15 +261,20 @@ const FundRoundModal = ({
 							</div>
 						}
 					/>
+					{errors.amount && (
+						<p className="text-xs font-normal text-grantpicks-red-600">
+							Funding amount cannot be less than minimum deposit
+						</p>
+					)}
+
 				</div>
 				<div className="w-full">
 					<Button
 						color="black-950"
 						className="!py-3"
 						isFullWidth
-						onClick={async () => {
-							await onDepositFundRound()
-						}}
+						isDisabled={!!errors.amount}
+						onClick={handleSubmit(onDepositFundRound)}
 					>
 						Fund Round
 					</Button>

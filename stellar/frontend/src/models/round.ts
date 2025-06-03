@@ -11,6 +11,7 @@ export class GPRound {
 	name: string = ''
 	description: string = ''
 	expected_amount: string = ''
+	minimum_deposit: string = ''
 	allow_applications: boolean = false
 	is_video_required: boolean = false
 	cooldown_end: null | string = null

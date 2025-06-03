@@ -15,11 +15,13 @@ const RoundMenu = ({
 	onViewDetails,
 	onViewApps,
 	onFundRound,
+	onUpdateTimePeriod,
 }: {
 	data: GPRound
 	onViewDetails: () => void
 	onViewApps: () => void
 	onFundRound: () => void
+	onUpdateTimePeriod: () => void
 }) => {
 	const { selectedRoundType } = useRoundStore()
 	const router = useRouter()
@@ -41,16 +43,29 @@ const RoundMenu = ({
 		<div className="bg-white rounded-t-2xl md:rounded-2xl border border-black/10 p-2 whitespace-nowrap min-w-40">
 			{(selectedRoundType === 'upcoming' ||
 				selectedRoundType === 'on-going') && (
-				<div
-					onClick={onViewDetails}
-					className="p-2 flex items-center space-x-2 cursor-pointer hover:opacity-70 transition"
-				>
-					<IconEye size={18} className="fill-grantpicks-black-400" />
-					<p className="text-sm font-normal text-grantpicks-black-950">
-						View Details
-					</p>
-				</div>
-			)}
+					<>
+						<div
+							onClick={onViewDetails}
+							className="p-2 flex items-center space-x-2 cursor-pointer hover:opacity-70 transition"
+						>
+							<IconEye size={18} className="fill-grantpicks-black-400" />
+							<p className="text-sm font-normal text-grantpicks-black-950">
+								View Details
+							</p>
+						</div>
+						{data.owner?.id === storage.my_address && (
+							<div
+								className="p-2 flex items-center space-x-2 cursor-pointer hover:opacity-70 transition"
+								onClick={onUpdateTimePeriod}
+							>
+								<IconEdit size={18} className="fill-grantpicks-black-400" />
+								<p className="text-sm font-normal text-grantpicks-black-950">
+									Update Duration
+								</p>
+							</div>
+						)}
+					</>
+				)}
 			{(selectedRoundType === 'upcoming' || selectedRoundType === 'on-going') &&
 				storage.my_address &&
 				data.allow_applications && (
@@ -66,19 +81,22 @@ const RoundMenu = ({
 				)}
 			{selectedRoundType === 'upcoming' &&
 				data.owner?.id === storage.my_address && (
-					<div
-						className="p-2 flex items-center space-x-2 cursor-pointer hover:opacity-70 transition"
-						onClick={() =>
-							router.push(`/rounds/edit-round/${data.on_chain_id}`)
-						}
-					>
-						<IconEdit size={18} className="fill-grantpicks-black-400" />
-						<p className="text-sm font-normal text-grantpicks-black-950">
-							Edit Round
-						</p>
-					</div>
+					<>
+						<div
+							className="p-2 flex items-center space-x-2 cursor-pointer hover:opacity-70 transition"
+							onClick={() =>
+								router.push(`/rounds/edit-round/${data.on_chain_id}`)
+							}
+						>
+							<IconEdit size={18} className="fill-grantpicks-black-400" />
+							<p className="text-sm font-normal text-grantpicks-black-950">
+								Edit Round
+							</p>
+						</div>
+
+					</>
 				)}
-			{selectedRoundType === 'upcoming' &&
+			{(selectedRoundType === 'upcoming' || selectedRoundType === 'on-going') &&
 				storage.my_address &&
 				data.use_vault && (
 					<div

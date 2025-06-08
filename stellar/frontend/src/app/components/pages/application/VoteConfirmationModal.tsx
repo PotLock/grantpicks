@@ -18,24 +18,28 @@ import { toastOptions } from '@/constants/style'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { GPRound } from '@/models/round'
 import { formatNearAmount } from 'near-api-js/lib/utils/format'
+import { ChainId } from '@/types/context'
 
 interface VoteConfirmationModalProps extends BaseModalProps {
 	data?: GPRound
+	chainId?: ChainId
 }
 
 const VoteConfirmationModal = ({
 	isOpen,
 	onClose,
 	data,
+	chainId,
 }: VoteConfirmationModalProps) => {
 	const router = useRouter()
 	const { connectedWallet, stellarPubKey, nearAccounts } = useWallet()
 	const [totalProjects, setTotalProjects] = useState<number>(0)
 	const storage = useAppStorage()
+	console.log('data', data)
 
 	const onFetchTotalProjects = async () => {
 		try {
-			if (storage.chainId === 'stellar') {
+			if (chainId === ChainId.STELLAR) {
 				let contracts = storage.getStellarContracts()
 
 				if (!contracts) {

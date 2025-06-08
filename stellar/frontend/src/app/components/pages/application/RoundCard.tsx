@@ -27,6 +27,7 @@ import useAppStorage from '@/stores/zustand/useAppStorage'
 import { GPRound } from '@/models/round'
 import RoundMenu from './RoundMenu'
 import { TimePeriodDrawer } from './TimePeriodDrawer'
+import { ChainId } from '@/types/context'
 
 
 export const RoundCard = ({
@@ -369,6 +370,7 @@ export const RoundCard = ({
                   ...prev,
                   isOpen: true,
                   doc: doc,
+                  chainId: doc.chain as ChainId,
                 }))
               }
             } else if (

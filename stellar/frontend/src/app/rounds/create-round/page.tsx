@@ -1736,7 +1736,7 @@ const CreateRoundPage = () => {
 						/>
 					</div>
 
-					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
+					{/* <div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
 						<div className="flex items-center justify-between pb-4 border-b border-black/10">
 							<p className="text-base font-semibold">Voter Requirements</p>
 						</div>
@@ -1863,19 +1863,19 @@ const CreateRoundPage = () => {
 								</div>
 							)}
 						</div>
-					</div>
+					</div> */}
 					<div className="flex bg-white p-5 rounded-2xl shadow-md mb-4">
 						<InputText
 							label="Referral Fee (%)"
-							placeholder="0-10"
+							placeholder="0-5"
 							type="number"
 							min={0}
-							max={10}
+							max={5}
 							{...register('referrer_fee_basis_points', {
 								required: false,
 								validate: (value) => {
 									if (value < 0) return 'Referral fee cannot be negative'
-									if (value > 10) return 'Referral fee cannot be greater than 10%'
+									if (value > 5) return 'Referral fee cannot be greater than 5%'
 									return true
 								},
 							})}

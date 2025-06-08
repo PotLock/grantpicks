@@ -12,6 +12,7 @@ import {
 	ISuccessFundRoundModalProps,
 	ISuccessUpdateRoundModalProps,
 	IVideoPlayerModalProps,
+	ChainId,
 } from '@/types/context'
 import SuccessFundRoundModal from '../components/pages/application/SuccessFundRoundModal'
 import ApplyProjectModal from '../components/pages/application/create-apply-project/ApplyProjectModal'
@@ -66,6 +67,7 @@ const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 		useState<IVoteConfirmationModalContextProps>({
 			isOpen: false,
 			doc: undefined,
+			storage: ChainId.STELLAR,
 		})
 	const [createProjectFormMainProps, setCreateProjectFormMainProps] =
 		useState<IModalContextProps>({
@@ -164,6 +166,7 @@ const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 			<VoteConfirmationModal
 				isOpen={voteConfirmationProps.isOpen}
 				data={voteConfirmationProps.doc}
+				chainId={voteConfirmationProps.chainId}
 				onClose={() =>
 					setVoteConfirmationProps((prev) => ({
 						...prev,

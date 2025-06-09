@@ -67,7 +67,7 @@ const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 		useState<IVoteConfirmationModalContextProps>({
 			isOpen: false,
 			doc: undefined,
-			storage: ChainId.STELLAR,
+			chainId: ChainId.STELLAR,
 		})
 	const [createProjectFormMainProps, setCreateProjectFormMainProps] =
 		useState<IModalContextProps>({

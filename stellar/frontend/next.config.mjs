@@ -17,6 +17,7 @@ const nextConfig = {
 		NEAR_LISTS_CONTRACT_ID: process.env.NEAR_LISTS_CONTRACT_ID,
 		NEAR_PROJECTS_LIST_ID: process.env.NEAR_PROJECTS_LIST_ID,
 		PROJECTS_LIST_ID: process.env.PROJECTS_LIST_ID,
+		IPFS_GATEWAY_URL: process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL,
 	},
 	images: {
 		remotePatterns: [

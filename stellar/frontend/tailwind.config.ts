@@ -9,7 +9,7 @@ const config: Config = {
 	theme: {
 		extend: {
 			fontFamily: {
-				titilumWeb: ['var(--font-titilium-web)'],
+				'titillium-web': ['var(--font-titillium-web)'],
 			},
 			colors: {
 				grantpicks: {

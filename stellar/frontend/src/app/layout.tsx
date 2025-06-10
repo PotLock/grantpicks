@@ -7,10 +7,10 @@ import '@near-wallet-selector/modal-ui/styles.css'
 import { Toaster } from 'react-hot-toast'
 import Providers from './providers'
 
-const titiliumWeb = Titillium_Web({
+const titilliumWeb = Titillium_Web({
 	subsets: ['latin'],
 	display: 'swap',
-	variable: '--font-titilium-web',
+	variable: '--font-titillium-web',
 	weight: ['200', '300', '400', '600', '700', '900'],
 })
 export const metadata: Metadata = {
@@ -46,7 +46,7 @@ export default function RootLayout({
 					content="https://grantpicks.com/assets/images/GrantPicksMeta.png"
 				/>
 			</Head>
-			<body className={titiliumWeb.className}>
+			<body className={`${titilliumWeb.variable} font-titillium-web`}>
 				<Providers>
 					{children}
 					<Toaster />

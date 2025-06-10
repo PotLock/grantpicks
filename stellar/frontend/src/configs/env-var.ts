@@ -11,4 +11,5 @@ export const envVarConfigs = {
 		.PROJECT_REGISTRY_CONTRACT_ID as string,
 	ROUND_CONTRACT_ID: process.env.ROUND_CONTRACT_ID as string,
 	ROUND_WASM_HASH: process.env.ROUND_WASM_HASH as string,
+	IPFS_GATEWAY_URL: process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL as string,
 }

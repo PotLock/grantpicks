@@ -14,11 +14,12 @@ import { toastOptions } from '@/constants/style'
 import Image from 'next/image'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { NEAR_ADDRESS_REGEX } from '@/constants/regex'
+import { CreateListData } from '@/types/list-form'
 
 interface AddAdminsModalProps extends BaseModalProps {
 	selectedAdmins: string[]
 	setSelectedAdmins: Dispatch<SetStateAction<string[]>>
-	append: UseFieldArrayAppend<CreateRoundData, 'admins'>
+	append: UseFieldArrayAppend<CreateRoundData, 'admins'> | UseFieldArrayAppend<CreateListData, 'admins'>
 	remove: UseFieldArrayRemove
 }
 

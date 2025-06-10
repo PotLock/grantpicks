@@ -53,6 +53,7 @@
 		"near-api-js": "^0.44.2",
 		"next": "14.2.4",
 		"npm": "^10.8.1",
+		"pinata-web3": "^0.5.4",
 		"project-registry-client": "./project-registry-client",
 		"react": "^18",
 		"react-datepicker": "^7.2.0",

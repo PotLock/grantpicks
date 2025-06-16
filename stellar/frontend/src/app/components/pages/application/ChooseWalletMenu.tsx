@@ -49,7 +49,6 @@ const ChooseWalletMenu = ({
 						onClick={() => {
 							onOpenStellarWallet()
 							onClose()
-							router.push('/rounds')
 						}}
 						className="border border-grantpicks-black-200 rounded-xl flex-1 px-8 py-4 flex flex-col items-center justify-center cursor-pointer hover:bg-grantpicks-black-200/10 transition"
 					>
@@ -62,7 +61,6 @@ const ChooseWalletMenu = ({
 						onClick={() => {
 							onOpenNearWallet()
 							onClose()
-							router.push('/rounds')
 						}}
 						className="border border-grantpicks-black-200 rounded-xl flex-1 px-8 py-4 flex flex-col items-center justify-center cursor-pointer hover:bg-grantpicks-black-200/10 transition"
 					>

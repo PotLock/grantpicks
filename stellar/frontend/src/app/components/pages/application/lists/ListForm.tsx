@@ -1,8 +1,7 @@
 import Checkbox from "@/app/components/commons/CheckBox"
 import InputText from "@/app/components/commons/InputText"
 import InputTextArea from "@/app/components/commons/InputTextArea"
-import { ChangeEvent, useCallback, useState, useEffect } from "react"
-import { useFieldArray, useForm } from "react-hook-form"
+import { ChangeEvent } from "react"
 import Switch from "react-switch"
 import AddAdminsModal from "../../create-round/AddAdminsModal"
 import { useDropzone } from "react-dropzone"
@@ -12,74 +11,26 @@ import { prettyTruncate } from "@/utils/helper"
 import IconClose from "@/app/components/svgs/IconClose"
 import clsx from "clsx"
 import IconAdd from "@/app/components/svgs/IconAdd"
-import { toast } from "react-hot-toast"
-import { toastOptions } from "@/constants/style"
-import { CreateListData } from "@/types/list-form"
 import IconLoading from "@/app/components/svgs/IconLoading"
-import { useFileUpload } from "@/app/components/hooks/useUploadToPinata"
+import { useListForm } from "@/app/components/hooks/useListForm"
+import Button from "@/app/components/commons/Button"
 
 export const ListForm = () => {
-  const [showAddAdminsModal, setShowAddAdminsModal] = useState(false)
-  const [selectedAdmins, setSelectedAdmins] = useState<string[]>([])
-  const [coverImage, setCoverImage] = useState<File | null>(null)
-  const [coverImageUrl, setCoverImageUrl] = useState<string>("")
-  const { handleFileInputChange, isPending, error } = useFileUpload({
-    onSuccess: (result) => {
-      if (result?.url) {
-        setValue('cover_img_url', result.url)
-      }
-    }
-  })
-
-  const { control, handleSubmit, setValue, watch, register } = useForm<CreateListData>()
-
-  const { append: appendAdmin, remove: removeAdmin } = useFieldArray({
-    control,
-    name: 'admins',
-  })
-
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    const file = acceptedFiles[0]
-    if (file.size / 10 ** 6 > 5) {
-      toast.error('Image size should be less than 5MB', {
-        style: toastOptions.error.style,
-      })
-      return
-    }
-
-    try {
-      setCoverImage(file)
-      const objectUrl = URL.createObjectURL(file)
-      setCoverImageUrl(objectUrl)
-
-      const input = document.createElement('input')
-      input.type = 'file'
-      input.files = new DataTransfer().files
-      const dataTransfer = new DataTransfer()
-      dataTransfer.items.add(file)
-      input.files = dataTransfer.files
-      const event = new Event('change', { bubbles: true }) as unknown as ChangeEvent<HTMLInputElement>
-      Object.defineProperty(event, 'target', { value: input })
-      handleFileInputChange(event)
-    } catch (error: any) {
-      setCoverImage(null)
-      setCoverImageUrl("")
-      console.log('error uploading', error)
-      toast.error('Error uploading image', {
-        style: toastOptions.error.style,
-      })
-    }
-  }, [handleFileInputChange])
-
-  useEffect(() => {
-    if (error) {
-      setCoverImage(null)
-      setCoverImageUrl("")
-      toast.error('Error uploading image', {
-        style: toastOptions.error.style,
-      })
-    }
-  }, [error])
+  const {
+    setValue,
+    watch,
+    register,
+    errors,
+    onSubmit,
+    listFormState,
+    setListFormState,
+    isPending,
+    onDrop,
+    handleRemoveImage,
+    handleRemoveAdmin,
+    appendAdmin,
+    removeAdmin
+  } = useListForm()
 
   const { getRootProps, getInputProps } = useDropzone({
     onDrop,
@@ -100,6 +51,7 @@ export const ListForm = () => {
             placeholder="Enter List Title"
             className="!text-sm w-full"
             required
+            errorMessage={errors.name?.message ? <span>{errors.name.message}</span> : undefined}
             maxLength={60}
             {...register('name', { required: true })}
           />
@@ -108,6 +60,7 @@ export const ListForm = () => {
             placeholder="Enter List Description"
             className="!text-sm w-full"
             required
+            errorMessage={errors.description?.message ? <span>{errors.description.message}</span> : undefined}
             rows={4}
             maxLength={300}
             {...register('description', { required: true })}
@@ -154,7 +107,7 @@ export const ListForm = () => {
               </p>
             </div>
             <button
-              onClick={() => setShowAddAdminsModal(true)}
+              onClick={() => setListFormState(prev => ({ ...prev, showAddAdminsModal: true }))}
               className="rounded-full w-10 lg:w-12 h-10 lg:h-12 flex items-center justify-center bg-grantpicks-alpha-50/5 cursor-pointer hover:opacity-70 transition"
             >
               <IconAdd size={24} className="fill-grantpicks-black-400" />
@@ -163,10 +116,10 @@ export const ListForm = () => {
           <div
             className={clsx(
               `grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4`,
-              selectedAdmins.length > 0 ? `mt-6` : `mt-0`,
+              listFormState.selectedAdmins.length > 0 ? `mt-6` : `mt-0`,
             )}
           >
-            {selectedAdmins.map((selected, index) => (
+            {listFormState.selectedAdmins.map((selected, index) => (
               <div
                 key={index}
                 className="bg-grantpicks-alpha-50/5 p-1 rounded-full flex items-center justify-between"
@@ -185,21 +138,16 @@ export const ListForm = () => {
                 <IconClose
                   size={18}
                   className="fill-grantpicks-black-600 cursor-pointer transition hover:opacity-80"
-                  onClick={() => {
-                    let temp = [...selectedAdmins]
-                    temp.splice(index, 1)
-                    setSelectedAdmins(temp)
-                    removeAdmin(index)
-                  }}
+                  onClick={() => handleRemoveAdmin(index)}
                 />
               </div>
             ))}
           </div>
           <AddAdminsModal
-            isOpen={showAddAdminsModal}
-            onClose={() => setShowAddAdminsModal(false)}
-            selectedAdmins={selectedAdmins}
-            setSelectedAdmins={setSelectedAdmins}
+            isOpen={listFormState.showAddAdminsModal}
+            onClose={() => setListFormState(prev => ({ ...prev, showAddAdminsModal: false }))}
+            selectedAdmins={listFormState.selectedAdmins}
+            setSelectedAdmins={(admins) => setListFormState(prev => ({ ...prev, selectedAdmins: typeof admins === 'function' ? admins(prev.selectedAdmins) : admins }))}
             append={appendAdmin}
             remove={removeAdmin}
           />
@@ -219,7 +167,7 @@ export const ListForm = () => {
                   </p>
                 </div>
               </div>
-            ) : !coverImage ? (
+            ) : !listFormState.coverImage ? (
               <div
                 {...getRootProps()}
                 className="border border-dashed rounded-xl border-black/10 p-4 flex flex-col items-center cursor-pointer hover:opacity-80 transition"
@@ -242,17 +190,13 @@ export const ListForm = () => {
             ) : (
               <div className="relative w-full aspect-video rounded-xl overflow-hidden">
                 <Image
-                  src={coverImageUrl}
+                  src={listFormState.coverImageUrl}
                   alt="Cover"
                   fill
                   className="object-cover"
                 />
                 <button
-                  onClick={() => {
-                    setCoverImage(null)
-                    setCoverImageUrl("")
-                    setValue('cover_img_url', "")
-                  }}
+                  onClick={handleRemoveImage}
                   className="absolute top-2 right-2 p-2 bg-black/50 rounded-full hover:opacity-80 transition"
                 >
                   <IconTrash size={20} className="fill-white" />
@@ -260,6 +204,14 @@ export const ListForm = () => {
               </div>
             )}
           </div>
+        </div>
+        <div className="flex justify-end w-full gap-x-2 mt-8">
+          <Button
+            onClick={onSubmit}
+            className="w-full"
+          >
+            Create List
+          </Button>
         </div>
       </div>
     </div>

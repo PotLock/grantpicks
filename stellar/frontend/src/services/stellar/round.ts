@@ -9,6 +9,7 @@ import {
 	u32,
 	u64,
 } from '@stellar/stellar-sdk/contract'
+import {  RegistrationInput } from 'lists-client'
 import {
 	ApplicationStatus,
 	Contact,
@@ -174,10 +175,6 @@ export interface SetVotingConfigParams {
 	voting_end: u64
 }
 
-interface GetListsParams {
-	skip: number
-	limit: number
-}
 
 export const getRounds: (
 	params: GetRoundsParams,
@@ -553,19 +550,7 @@ export const setAdminsRound = async (
 	return round
 }
 
-export const getLists: (
-	params: GetListsParams,
-	contract: Contracts,
-) => Promise<any[]> = async (params: GetListsParams, contract: Contracts) => {
-	let limit = params.limit ? params.limit : 10
-	let skip = params.skip ? params.skip * limit : 0
 
-	let lists = await contract.lists_contract.get_lists({
-		from_index: BigInt(skip),
-		limit: BigInt(limit),
-	})
-	return lists.result
-}
 
 // export const getChallengePayoutRound: (
 // 	params: UpdateChallengePayoutParams,

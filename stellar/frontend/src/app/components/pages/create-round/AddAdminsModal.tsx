@@ -7,29 +7,33 @@ import IconAdmin from '../../svgs/IconAdmin'
 import InputText from '../../commons/InputText'
 import { prettyTruncate } from '@/utils/helper'
 import { UseFieldArrayAppend, UseFieldArrayRemove } from 'react-hook-form'
-import { CreateRoundData } from '@/types/form'
 import { StrKey } from 'round-client'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
 import Image from 'next/image'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { NEAR_ADDRESS_REGEX } from '@/constants/regex'
-import { CreateListData } from '@/types/list-form'
+import Button from '../../commons/Button'
+import clsx from 'clsx'
 
 interface AddAdminsModalProps extends BaseModalProps {
 	selectedAdmins: string[]
 	setSelectedAdmins: Dispatch<SetStateAction<string[]>>
-	append: UseFieldArrayAppend<CreateRoundData, 'admins'> | UseFieldArrayAppend<CreateListData, 'admins'>
+	append: UseFieldArrayAppend<any, 'admins' | 'projects'>
 	remove: UseFieldArrayRemove
+	header?: string
+	handleSaveChanges?: () => void
 }
 
 const AddAdminsModal = ({
 	isOpen,
 	onClose,
 	selectedAdmins,
+	handleSaveChanges,
 	setSelectedAdmins,
 	append,
 	remove,
+	header,
 }: AddAdminsModalProps) => {
 	const [searchAdmin, setSearchAdmin] = useState<string>('')
 	const [errorMessage, setErrorMessage] = useState<boolean>(false)
@@ -100,7 +104,11 @@ const AddAdminsModal = ({
 				<div className="px-4 md:px-5 lg:px-6 pb-6 pt-8 bg-grantpicks-black-50 rounded-t-xl relative rounded-xl">
 					<IconClose
 						size={24}
-						className="fill-grantpicks-black-400 absolute right-4 top-4 cursor-pointer transition hover:opacity-80"
+						className={clsx("fill-grantpicks-black-400 absolute right-4 top-4 cursor-pointer transition hover:opacity-80",
+							{
+								'hidden': header
+							}
+						)}
 						onClick={() => {
 							setSearchAdmin('')
 							onClose()
@@ -109,11 +117,13 @@ const AddAdminsModal = ({
 						}}
 					/>
 					<div className="flex items-center justify-center mb-6">
-						<div className="border border-black/10 bg-white rounded-full p-3 mb-3">
-							<IconAdmin size={24} className="fill-grantpicks-black-400" />
-						</div>
+						{!header && (
+							<div className="border border-black/10 bg-white rounded-full p-3 mb-3">
+								<IconAdmin size={24} className="fill-grantpicks-black-400" />
+							</div>
+						)}
 						<p className="text-center text-base font-bold text-grantpicks-black-950">
-							Add Admin
+							{header ?? 'Add Admin'}
 						</p>
 					</div>
 					<InputText
@@ -179,6 +189,13 @@ const AddAdminsModal = ({
 						))}
 					</div>
 				)}
+				{
+					handleSaveChanges && (
+						<div className="flex my-3 justify-center items-center gap-2">
+							<Button onClick={handleSaveChanges}>Save Changes</Button>
+						</div>
+					)
+				}
 			</div>
 		</Modal>
 	)

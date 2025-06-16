@@ -19,7 +19,7 @@ export interface InputProps {
 	rows?: number
 	preffixIcon?: React.ReactNode
 	suffixIcon?: React.ReactNode
-	errorMessage?: JSX.Element
+	errorMessage?: JSX.Element | string
 	textAlign?: 'left' | 'center' | 'right'
 	isStopPropagation?: boolean
 	maxLength?: number

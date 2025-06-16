@@ -14,15 +14,17 @@ import {
 	IVideoPlayerModalProps,
 	ChainId,
 } from '@/types/context'
-import SuccessFundRoundModal from '../components/pages/application/SuccessFundRoundModal'
-import ApplyProjectModal from '../components/pages/application/create-apply-project/ApplyProjectModal'
-import CreateProjectFormMainModal from '../components/pages/application/create-apply-project/create-project-form/CreateProjectFormMainModal'
-import VoteConfirmationModal from '../components/pages/application/VoteConfirmationModal'
-import SuccessCreateRoundModal from '../components/pages/create-round/SuccessCreateRoundModal'
-import SuccessEditRoundModal from '../components/pages/application/edit-round/SuccessEditRoundModal'
-import SuccessCreateProjectModal from '../components/pages/application/create-apply-project/SuccessCreateProjectModal'
-import SuccessApplyProjectModal from '../components/pages/application/create-apply-project/SuccessApplyProjectModal'
-import VideoPlayerModal from '../components/commons/VideoPlayerModal'
+import dynamic from 'next/dynamic'
+
+const SuccessFundRoundModal = dynamic(() => import('../components/pages/application/SuccessFundRoundModal'))
+const ApplyProjectModal = dynamic(() => import('../components/pages/application/create-apply-project/ApplyProjectModal'))
+const CreateProjectFormMainModal = dynamic(() => import('../components/pages/application/create-apply-project/create-project-form/CreateProjectFormMainModal'))
+const VoteConfirmationModal = dynamic(() => import('../components/pages/application/VoteConfirmationModal'))
+const SuccessCreateRoundModal = dynamic(() => import('../components/pages/create-round/SuccessCreateRoundModal'))
+const SuccessEditRoundModal = dynamic(() => import('../components/pages/application/edit-round/SuccessEditRoundModal'))
+const SuccessCreateProjectModal = dynamic(() => import('../components/pages/application/create-apply-project/SuccessCreateProjectModal'))
+const SuccessApplyProjectModal = dynamic(() => import('../components/pages/application/create-apply-project/SuccessApplyProjectModal'))
+const VideoPlayerModal = dynamic(() => import('../components/commons/VideoPlayerModal'))
 
 const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 	const [successCreateRoundProps, setSuccessCreateRoundProps] =
@@ -95,104 +97,122 @@ const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 			}}
 		>
 			{children}
-			<SuccessCreateRoundModal
-				isOpen={successCreateRoundProps.isOpen}
-				createRoundRes={successCreateRoundProps.createRoundRes}
-				txHash={successCreateRoundProps.txHash}
-				onClose={() =>
-					setSuccessCreateRoundProps((prev) => ({
-						...prev,
-						isOpen: false,
-					}))
-				}
-			/>
-			<SuccessEditRoundModal
-				isOpen={successUpdateRoundProps.isOpen}
-				updateRoundRes={successUpdateRoundProps.updateRoundRes}
-				txHash={successUpdateRoundProps.txHash}
-				onClose={() =>
-					setSuccessUpdateRoundProps((prev) => ({
-						...prev,
-						isOpen: false,
-					}))
-				}
-			/>
-			<SuccessFundRoundModal
-				isOpen={successFundRoundProps.isOpen}
-				amount={successFundRoundProps.amount}
-				doc={successFundRoundProps.doc}
-				txHash={successFundRoundProps.txHash}
-				onClose={() =>
-					setSuccessFundRoundProps((prev) => ({
-						...prev,
-						isOpen: false,
-					}))
-				}
-			/>
-			<SuccessCreateProjectModal
-				isOpen={successCreateProjectProps.isOpen}
-				createProjectRes={successCreateProjectProps.createProjectRes}
-				txHash={successCreateProjectProps.txHash}
-				onClose={() =>
-					setSuccessCreateProjectProps((prev) => ({
-						...prev,
-						isOpen: false,
-					}))
-				}
-			/>
-			<ApplyProjectModal
-				isOpen={applyProjectInitProps.isOpen}
-				round_id={applyProjectInitProps.round_id}
-				roundData={applyProjectInitProps.roundData}
-				onClose={() =>
-					setApplyProjectInitProps((prev) => ({
-						...prev,
-						isOpen: false,
-					}))
-				}
-			/>
-			<SuccessApplyProjectModal
-				isOpen={successApplyProjectToRoundProps.isOpen}
-				applyProjectRes={successApplyProjectToRoundProps.applyProjectRes}
-				roundData={successApplyProjectToRoundProps.roundData}
-				txHash={successApplyProjectToRoundProps.txHash}
-				onClose={() =>
-					setSuccessApplyProjectToRoundProps((prev) => ({
-						...prev,
-						isOpen: false,
-					}))
-				}
-			/>
-			<VoteConfirmationModal
-				isOpen={voteConfirmationProps.isOpen}
-				data={voteConfirmationProps.doc}
-				chainId={voteConfirmationProps.chainId}
-				onClose={() =>
-					setVoteConfirmationProps((prev) => ({
-						...prev,
-						isOpen: false,
-					}))
-				}
-			/>
-			<CreateProjectFormMainModal
-				isOpen={createProjectFormMainProps.isOpen}
-				onClose={() =>
-					setCreateProjectFormMainProps((prev) => ({
-						...prev,
-						isOpen: false,
-					}))
-				}
-			/>
-			<VideoPlayerModal
-				isOpen={videoPlayerProps.isOpen}
-				videoUrl={videoPlayerProps.videoUrl}
-				onClose={() =>
-					setVideoPlayerProps((prev) => ({
-						...prev,
-						isOpen: false,
-					}))
-				}
-			/>
+			{successCreateRoundProps.isOpen && (
+				<SuccessCreateRoundModal
+					isOpen={successCreateRoundProps.isOpen}
+					createRoundRes={successCreateRoundProps.createRoundRes}
+					txHash={successCreateRoundProps.txHash}
+					onClose={() =>
+						setSuccessCreateRoundProps((prev) => ({
+							...prev,
+							isOpen: false,
+						}))
+					}
+				/>
+			)}
+			{successUpdateRoundProps.isOpen && (
+				<SuccessEditRoundModal
+					isOpen={successUpdateRoundProps.isOpen}
+					updateRoundRes={successUpdateRoundProps.updateRoundRes}
+					txHash={successUpdateRoundProps.txHash}
+					onClose={() =>
+						setSuccessUpdateRoundProps((prev) => ({
+							...prev,
+							isOpen: false,
+						}))
+					}
+				/>
+			)}
+			{successFundRoundProps.isOpen && (
+				<SuccessFundRoundModal
+					isOpen={successFundRoundProps.isOpen}
+					amount={successFundRoundProps.amount}
+					doc={successFundRoundProps.doc}
+					txHash={successFundRoundProps.txHash}
+					onClose={() =>
+						setSuccessFundRoundProps((prev) => ({
+							...prev,
+							isOpen: false,
+						}))
+					}
+				/>
+			)}
+			{successCreateProjectProps.isOpen && (
+				<SuccessCreateProjectModal
+					isOpen={successCreateProjectProps.isOpen}
+					createProjectRes={successCreateProjectProps.createProjectRes}
+					txHash={successCreateProjectProps.txHash}
+					onClose={() =>
+						setSuccessCreateProjectProps((prev) => ({
+							...prev,
+							isOpen: false,
+						}))
+					}
+				/>
+			)}
+			{applyProjectInitProps.isOpen && (
+				<ApplyProjectModal
+					isOpen={applyProjectInitProps.isOpen}
+					round_id={applyProjectInitProps.round_id}
+					roundData={applyProjectInitProps.roundData}
+					onClose={() =>
+						setApplyProjectInitProps((prev) => ({
+							...prev,
+							isOpen: false,
+						}))
+					}
+				/>
+			)}
+			{successApplyProjectToRoundProps.isOpen && (
+				<SuccessApplyProjectModal
+					isOpen={successApplyProjectToRoundProps.isOpen}
+					applyProjectRes={successApplyProjectToRoundProps.applyProjectRes}
+					roundData={successApplyProjectToRoundProps.roundData}
+					txHash={successApplyProjectToRoundProps.txHash}
+					onClose={() =>
+						setSuccessApplyProjectToRoundProps((prev) => ({
+							...prev,
+							isOpen: false,
+						}))
+					}
+				/>
+			)}
+			{voteConfirmationProps.isOpen && (
+				<VoteConfirmationModal
+					isOpen={voteConfirmationProps.isOpen}
+					data={voteConfirmationProps.doc}
+					chainId={voteConfirmationProps.chainId}
+					onClose={() =>
+						setVoteConfirmationProps((prev) => ({
+							...prev,
+							isOpen: false,
+						}))
+					}
+				/>
+			)}
+			{createProjectFormMainProps.isOpen && (
+				<CreateProjectFormMainModal
+					isOpen={createProjectFormMainProps.isOpen}
+					onClose={() =>
+						setCreateProjectFormMainProps((prev) => ({
+							...prev,
+							isOpen: false,
+						}))
+					}
+				/>
+			)}
+			{videoPlayerProps.isOpen && (
+				<VideoPlayerModal
+					isOpen={videoPlayerProps.isOpen}
+					videoUrl={videoPlayerProps.videoUrl}
+					onClose={() =>
+						setVideoPlayerProps((prev) => ({
+							...prev,
+							isOpen: false,
+						}))
+					}
+				/>
+			)}
 		</ModalContext.Provider>
 	)
 }

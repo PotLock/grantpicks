@@ -28,7 +28,18 @@ export interface BatchRegisterToListParams {
 	registrations: RegistrationInput[]
 }
 
+interface GetListRegistrationsParams {
+	list_id: bigint
+	required_status: RegistrationStatus
+}
 
+interface UpdateProjectStatusParams {
+	list_id: bigint
+	registration_id: bigint
+	status: RegistrationStatus
+	notes: string
+	submitter: string
+}
 
 
 export const createList = async (caller: string, params: CreateListParams, contract: Contracts) => {
@@ -49,12 +60,11 @@ export const getLists: (
 	params: GetListsParams,
 	contract: Contracts,
 ) => Promise<any[]> = async (params: GetListsParams, contract: Contracts) => {
-	let limit = params.limit ? params.limit : 10
-	let skip = params.skip ? params.skip * limit : 0
+	let skip = params.skip ? params.skip * 30 : 0
 
 	let lists = await contract.lists_contract.get_lists({
 		from_index: BigInt(skip),
-		limit: BigInt(limit),
+		limit: BigInt(30),
 	})
 	return lists.result
 }
@@ -81,3 +91,32 @@ export const batchRegisterToList: (
 	})
 	return list
 }
+
+export const getListRegistrations: (
+	params: GetListRegistrationsParams,
+	contract: Contracts,
+) => Promise<any> = async (params: GetListRegistrationsParams, contract: Contracts) => {
+	let registrations = await contract.lists_contract.get_registrations_for_list({
+		list_id: params.list_id,
+		required_status: params.required_status,
+		from_index: BigInt(0),
+		limit: BigInt(10)
+	})
+	return registrations.result
+}
+
+export const updateProjectStatusInList: (
+	params: UpdateProjectStatusParams,
+	contract: Contracts,
+) => Promise<any> = async (params: UpdateProjectStatusParams, contract: Contracts) => {
+	let tx = await contract.lists_contract.update_registration({
+		submitter: params.submitter,
+		list_id: params.list_id,
+		registration_id: params.registration_id,
+		status: params.status,
+		notes: params.notes,
+	})
+	return tx;
+}
+
+// Check if user is registered to list

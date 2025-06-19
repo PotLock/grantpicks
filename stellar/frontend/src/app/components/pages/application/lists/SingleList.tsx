@@ -11,6 +11,7 @@ import { useParams } from "next/navigation"
 import { FaUsers, FaCheckCircle, FaUserFriends, FaCalendar } from "react-icons/fa"
 import { useState } from "react"
 import { RegisterUsersModal } from "./RegisterUsersModal"
+import { ListProjects } from "./ListProjects"
 
 
 export const SingleListPage = () => {
@@ -120,24 +121,7 @@ export const SingleListPage = () => {
         </div>
       </div>
 
-      {/* Members Section */}
-      <div className="mt-8  mx-auto px-4">
-        <div className="bg-white rounded-xl shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="font-semibold text-lg">Members <span className="text-gray-500 font-normal">{membersCount}</span></div>
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                placeholder="Search Lists by name or description.."
-                className="border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-                style={{ width: 260 }}
-              />
-
-            </div>
-          </div>
-          {/* Members list would go here */}
-        </div>
-      </div>
+      <ListProjects listId={listId} isOwner={list.owner === stellarPubKey} />
       <Modal isOpen={isOpen.open} onClose={() => setIsOpen({ open: false, type: null })} closeOnBgClick={true} closeOnEscape={true}>
         <RegisterUsersModal
           type={isOpen.type || 'SINGLE'}

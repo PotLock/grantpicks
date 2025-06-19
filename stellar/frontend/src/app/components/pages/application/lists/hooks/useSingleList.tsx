@@ -1,5 +1,5 @@
 import { useWallet } from "@/app/providers/WalletProvider"
-import { batchRegisterToList, getList } from "@/services/stellar/list"
+import { batchRegisterToList, getList, getListRegistrations, updateProjectStatusInList } from "@/services/stellar/list"
 import useAppStorage from "@/stores/zustand/useAppStorage"
 import { StellarWalletsKit } from "@creit.tech/stellar-wallets-kit"
 import { RegistrationInput, RegistrationStatus } from "lists-client"
@@ -8,6 +8,7 @@ import useSWR from "swr"
 
 type UseSingleListProps = {
   listId: string
+  requiredStatus?: RegistrationStatus
 }
 
 type ApplyToListParams = {
@@ -16,7 +17,7 @@ type ApplyToListParams = {
   onClose: () => void
 }
 
-export const useSingleList = ({ listId }: UseSingleListProps) => {
+export const useSingleList = ({ listId, requiredStatus }: UseSingleListProps) => {
   const storage = useAppStorage()
   const { stellarPubKey, stellarKit } = useWallet()
 
@@ -34,6 +35,22 @@ export const useSingleList = ({ listId }: UseSingleListProps) => {
     }
   )
 
+  const getKeyRegistrations = () => {
+    if (!listId || !storage.getStellarContracts()) return null
+    return `list-registrations-${listId}`
+  }
+
+  const { data: registrations, isLoading: isLoadingRegistrations, error: errorRegistrations } = useSWR(
+    getKeyRegistrations(),
+    async () => {
+      const contracts = storage.getStellarContracts()
+      if (!contracts) throw new Error('Contracts not found')
+      return getListRegistrations({ list_id: BigInt(listId), required_status: requiredStatus || { tag: 'Approved', values: undefined } }, contracts)
+    }
+  )
+
+
+  // REGISTER MULTIPLE PROJECTS TO LIST
   const handleBatchRegisterToList = async (registrations: RegistrationInput[], onClose: () => void) => {
     const contracts = storage.getStellarContracts()
     if (!contracts || !stellarPubKey) throw new Error('Contracts not found')
@@ -55,6 +72,8 @@ export const useSingleList = ({ listId }: UseSingleListProps) => {
       toast.error('Failed to register project(s) to list')
     }
   }
+
+  // APPLY TO LIST
   const handleApplyToList = async ({ defaultRegistrationStatus, note, onClose }: ApplyToListParams) => {
     const contracts = storage.getStellarContracts()
     if (!contracts || !stellarPubKey) {
@@ -90,11 +109,48 @@ export const useSingleList = ({ listId }: UseSingleListProps) => {
     }
   }
 
+
+  // UPDATE PROJECT STATUS
+  const handleUpdateProjectStatus = async (registrationId: bigint, status: RegistrationStatus) => {
+    const contracts = storage.getStellarContracts()
+    if (!contracts || !stellarPubKey) throw new Error('Contracts not found')
+    try {
+      const txUpdateProjectStatus = await updateProjectStatusInList({
+        list_id: BigInt(listId),
+        submitter: stellarPubKey,
+        notes: 'test',
+        registration_id: registrationId,
+        status
+      },
+        contracts)
+
+      const txHashUpdateProjectStatus = await contracts.signAndSendTx(
+        stellarKit as StellarWalletsKit,
+        txUpdateProjectStatus.toXDR(),
+        stellarPubKey,
+      )
+
+
+      if (txHashUpdateProjectStatus) {
+        toast.success('Project status updated successfully')
+      } else {
+        toast.error('Failed to update project status')
+      }
+    } catch (error) {
+      console.log(error)
+      toast.error('Failed to update project status')
+    }
+  }
+
   return {
     data,
     isLoading,
     isError: !!error,
     handleBatchRegisterToList,
     handleApplyToList,
+    registrations,
+    isLoadingRegistrations,
+    errorRegistrations,
+    handleUpdateProjectStatus,
   }
 }

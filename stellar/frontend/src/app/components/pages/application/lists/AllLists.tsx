@@ -14,7 +14,7 @@ export const AllLists = () => {
   const { data, size, setSize, isValidating, isLoading } = useLists()
   const { stellarPubKey } = useWallet()
 
-
+  console.log(data)
 
 
   return (
@@ -32,7 +32,7 @@ export const AllLists = () => {
           </Button>
         </div>
       </div>
-      <div className="flex flex-wrap gap-x-4 gap-y-4 text-grantpicks-black-950">
+      <div className="flex flex-wrap gap-x-4 gap-y-4 h-[500px] text-grantpicks-black-950">
         {
           isLoading ? (
             <div className="flex items-center w-full flex-col gap-y-4 justify-center min-h-[500px]">

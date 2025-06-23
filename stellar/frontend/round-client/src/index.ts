@@ -33,7 +33,7 @@ if (typeof window !== 'undefined') {
 export const networks = {
   testnet: {
     networkPassphrase: "Test SDF Network ; September 2015",
-    contractId: "CA7A2776JYIOYXPAJFONDC7BVPDWWLZU524UTGIJIQH6HWWOR6LKYQQT",
+    contractId: "CCWIGVGCIHRVSVLOR4BUODHWY5WWUSR3HR55LB7CTMQ6YSWBPPYQEUQN",
   }
 } as const
 
@@ -236,32 +236,172 @@ export interface FlagDetail {
 }
 
 export const Errors = {
-  0: { message: 'VotingStartGreaterThanVotingEnd' },
-  1: { message: 'ApplicationStartGreaterThanApplicationEnd' },
-  2: { message: 'VotingStartLessThanApplicationEnd' },
-  3: { message: 'AmountMustBeGreaterThanZero' },
-  4: { message: 'ContactMustBeLessThanTen' },
-  5: { message: 'OwnerOrAdminOnly' },
-  6: { message: 'VotingPeriodNotStarted' },
-  7: { message: 'VotingPeriodEnded' },
-  8: { message: 'InvalidVaultBalance' },
-  9: { message: 'VotingPeriodNotEnded' },
-  10: { message: 'ApplicationPeriodNotStarted' },
-  11: { message: 'ApplicationPeriodEnded' },
-  13: { message: 'ProjectNotApproved' },
-  19: { message: 'UserBlacklisted' },
-  26: { message: 'ContractNotInitialized' },
-  31: { message: 'InsufficientBalance' },
-  32: { message: 'IndexOutOfBound' },
-  38: { message: 'SameOwner' },
-  52: { message: 'DataNotFound' },
-  57: { message: 'AlreadyInitialized' },
-  60: { message: 'TooManyVotesForAvailablePairs' },
-  65: { message: 'ProtocolFeeTooHigh' },
-  66: { message: 'ReferrerFeeTooHigh' },
-  88: { message: 'OwnerOnly' },
-  89: { message: 'NoPendingOwnershipTransfer' },
-  90: { message: 'MinimumDepositMustBeLessThanExpectedAmount' }
+  5: {message:"OwnerOrAdminOnly"},
+
+  26: {message:"ContractNotInitialized"},
+
+  31: {message:"InsufficientBalance"},
+
+  32: {message:"IndexOutOfBound"},
+
+  38: {message:"SameOwner"},
+
+  52: {message:"DataNotFound"},
+
+  57: {message:"AlreadyInitialized"},
+
+  88: {message:"OwnerOnly"},
+
+  89: {message:"NoPendingOwnershipTransfer"},
+
+  65: {message:"ProtocolFeeTooHigh"},
+
+  66: {message:"ReferrerFeeTooHigh"}
+}
+export const Errors = {
+  0: {message:"VotingStartGreaterThanVotingEnd"},
+
+  1: {message:"ApplicationStartGreaterThanApplicationEnd"},
+
+  2: {message:"VotingStartLessThanApplicationEnd"},
+
+  3: {message:"AmountMustBeGreaterThanZero"},
+
+  4: {message:"ContactMustBeLessThanTen"},
+
+  8: {message:"InvalidVaultBalance"},
+
+  19: {message:"UserBlacklisted"},
+
+  20: {message:"UserAlreadyBlacklisted"},
+
+  21: {message:"BlacklistNotFound"},
+
+  22: {message:"UserNotWhitelisted"},
+
+  23: {message:"ReviewNotTooLong"},
+
+  27: {message:"RoundAlreadyCompleted"},
+
+  28: {message:"AdminNotFound"},
+
+  29: {message:"OwnerCannotBeAdmin"},
+
+  34: {message:"AlreadyPaidOut"},
+
+  35: {message:"NoApprovedProjects"},
+
+  36: {message:"UserWhitelisted"},
+
+  37: {message:"VotesAlreadyCast"},
+
+  39: {message:"ApplicationPeriodMustBeSet"},
+
+  40: {message:"ZeroValutBalance"},
+
+  41: {message:"BalanceNotEmpty"},
+
+  44: {message:"InsufficientFunds"},
+
+  45: {message:"ChallengeNotFound"},
+
+  46: {message:"PayoutNotFound"},
+
+  47: {message:"RedistributionNotAllowed"},
+
+  48: {message:"RedistributionAlreadyDone"},
+
+  49: {message:"CompliancePeriodInProcess"},
+
+  50: {message:"CooldownPeriodNotInProcess"},
+
+  51: {message:"NotSolveAllPayoutChallenge"},
+
+  53: {message:"RoundDoesNotUseVault"},
+
+  55: {message:"ApplicationPeriodNotSet"},
+
+  56: {message:"CoolDownPeriodNotComplete"},
+
+  61: {message:"VotingPeriodTooShort"},
+
+  62: {message:"ApplicationPeriodTooShort"},
+
+  63: {message:"ApplicationStartInPast"},
+
+  64: {message:"VotingStartInPast"},
+
+  69: {message:"CannotUpdateVaultAfterDeposits"},
+
+  59: {message:"WhitelistIdNotSet"},
+
+  74: {message:"NotProjectParticipant"},
+
+  75: {message:"NotApprovedParticipant"},
+
+  76: {message:"DepositAmountTooLow"},
+
+  79: {message:"PayoutsAlreadySet"},
+
+  90: {message:"MinimumDepositMustBeLessThanExpectedAmount"}
+}
+export const Errors = {
+  6: {message:"VotingPeriodNotStarted"},
+
+  7: {message:"VotingPeriodEnded"},
+
+  9: {message:"VotingPeriodNotEnded"},
+
+  12: {message:"VotingAlreadyStarted"},
+
+  17: {message:"AlreadyVoted"},
+
+  18: {message:"NotVoteAllPairs"},
+
+  24: {message:"EmptyVote"},
+
+  25: {message:"TooManyVotes"},
+
+  33: {message:"ProjectNotInPair"},
+
+  58: {message:"DuplicatePick"},
+
+  60: {message:"TooManyVotesForAvailablePairs"}
+}
+export const Errors = {
+  10: {message:"ApplicationPeriodNotStarted"},
+
+  11: {message:"ApplicationPeriodEnded"},
+
+  13: {message:"ProjectNotApproved"},
+
+  14: {message:"ProjectAlreadyApproved"},
+
+  15: {message:"ProjectNotFoundInRegistry"},
+
+  16: {message:"MaxParticipantsReached"},
+
+  30: {message:"ApplicationNotFound"},
+
+  42: {message:"VideoUrlNotValid"},
+
+  43: {message:"ProjectAlreadyApplied"},
+
+  54: {message:"ApplicationNotAllowed"},
+
+  81: {message:"ApplicationStartInPast"},
+
+  82: {message:"ApplicationPeriodTooShort"},
+
+  83: {message:"ApplicationOverlapsVoting"},
+
+  84: {message:"ApplicationPeriodMustBeSet"}
+}
+
+export interface RoundPreCheck {
+  applicant: string;
+  has_video: boolean;
+  project_id: u128;
 }
 
 export type RegistrationStatus = {tag: "Pending", values: void} | {tag: "Approved", values: void} | {tag: "Rejected", values: void} | {tag: "Graylisted", values: void} | {tag: "Blacklisted", values: void};
@@ -1673,7 +1813,7 @@ export class Client extends ContractClient {
       new ContractSpec([ "AAAAAgAAAAAAAAAAAAAAEUFwcGxpY2F0aW9uU3RhdHVzAAAAAAAABAAAAAAAAAAAAAAAB1BlbmRpbmcAAAAAAAAAAAAAAAAIQXBwcm92ZWQAAAAAAAAAAAAAAAhSZWplY3RlZAAAAAAAAAAAAAAAC0JsYWNrbGlzdGVkAA==",
         "AAAAAQAAAAAAAAAAAAAABkNvbmZpZwAAAAAACQAAAAAAAAARZGVmYXVsdF9wYWdlX3NpemUAAAAAAAAGAAAAAAAAAA5reWNfd2xfbGlzdF9pZAAAAAAD6AAAAAoAAAAAAAAADWxpc3RfY29udHJhY3QAAAAAAAATAAAAAAAAAAVvd25lcgAAAAAAABMAAAAAAAAADXBlbmRpbmdfb3duZXIAAAAAAAPoAAAAEwAAAAAAAAAQcHJvamVjdF9jb250cmFjdAAAABMAAAAAAAAAGXByb3RvY29sX2ZlZV9iYXNpc19wb2ludHMAAAAAAAAEAAAAAAAAABZwcm90b2NvbF9mZWVfcmVjaXBpZW50AAAAAAATAAAAAAAAAA50b2tlbl9jb250cmFjdAAAAAAAEw==",
         "AAAAAQAAAAAAAAAAAAAAC1JvdW5kRGV0YWlsAAAAACIAAAAAAAAAEmFsbG93X2FwcGxpY2F0aW9ucwAAAAAAAQAAAAAAAAAUYWxsb3dfcmVtYWluaW5nX2Rpc3QAAAPoAAAAAQAAAAAAAAASYXBwbGljYXRpb25fZW5kX21zAAAAAAPoAAAABgAAAAAAAAAUYXBwbGljYXRpb25fc3RhcnRfbXMAAAPoAAAABgAAAAAAAAAWYXBwbGljYXRpb25fd2xfbGlzdF9pZAAAAAAD6AAAAAoAAAAAAAAAEWNvbXBsaWFuY2VfZW5kX21zAAAAAAAD6AAAAAYAAAAAAAAAFGNvbXBsaWFuY2VfcGVyaW9kX21zAAAD6AAAAAYAAAAAAAAAE2NvbXBsaWFuY2VfcmVxX2Rlc2MAAAAAEAAAAAAAAAAIY29udGFjdHMAAAPqAAAH0AAAAAdDb250YWN0AAAAAAAAAAAPY29vbGRvd25fZW5kX21zAAAAA+gAAAAGAAAAAAAAABJjb29sZG93bl9wZXJpb2RfbXMAAAAAA+gAAAAGAAAAAAAAABVjdXJyZW50X3ZhdWx0X2JhbGFuY2UAAAAAAAAKAAAAAAAAAAtkZXNjcmlwdGlvbgAAAAAQAAAAAAAAAA9leHBlY3RlZF9hbW91bnQAAAAACgAAAAAAAAACaWQAAAAAAAoAAAAAAAAAEWlzX3ZpZGVvX3JlcXVpcmVkAAAAAAAAAQAAAAAAAAAQbWF4X3BhcnRpY2lwYW50cwAAAAQAAAAAAAAAD21pbmltdW1fZGVwb3NpdAAAAAAKAAAAAAAAAARuYW1lAAAAEAAAAAAAAAATbnVtX3BpY2tzX3Blcl92b3RlcgAAAAAEAAAAAAAAAAVvd25lcgAAAAAAABMAAAAAAAAAGXJlZmVycmVyX2ZlZV9iYXNpc19wb2ludHMAAAAAAAPoAAAABAAAAAAAAAAWcmVtYWluaW5nX2Rpc3RfYWRkcmVzcwAAAAAAEwAAAAAAAAAUcmVtYWluaW5nX2Rpc3RfYXRfbXMAAAPoAAAABgAAAAAAAAARcmVtYWluaW5nX2Rpc3RfYnkAAAAAAAATAAAAAAAAABNyZW1haW5pbmdfZGlzdF9tZW1vAAAAABAAAAAAAAAAEXJvdW5kX2NvbXBsZXRlX21zAAAAAAAD6AAAAAYAAAAAAAAACXVzZV92YXVsdAAAAAAAA+gAAAABAAAAAAAAABl1c2Vfd2hpdGVsaXN0X2FwcGxpY2F0aW9uAAAAAAAAAQAAAAAAAAAUdXNlX3doaXRlbGlzdF92b3RpbmcAAAABAAAAAAAAABR2YXVsdF90b3RhbF9kZXBvc2l0cwAAAAoAAAAAAAAADXZvdGluZ19lbmRfbXMAAAAAAAAGAAAAAAAAAA92b3Rpbmdfc3RhcnRfbXMAAAAABgAAAAAAAAARdm90aW5nX3dsX2xpc3RfaWQAAAAAAAPoAAAACg==",
-        "AAAAAQAAAAAAAAAAAAAAEUNyZWF0ZVJvdW5kUGFyYW1zAAAAAAAAGgAAAAAAAAAGYWRtaW5zAAAAAAPqAAAAEwAAAAAAAAASYWxsb3dfYXBwbGljYXRpb25zAAAAAAABAAAAAAAAABRhbGxvd19yZW1haW5pbmdfZGlzdAAAAAEAAAAAAAAAEmFwcGxpY2F0aW9uX2VuZF9tcwAAAAAD6AAAAAYAAAAAAAAAFGFwcGxpY2F0aW9uX3N0YXJ0X21zAAAD6AAAAAYAAAAAAAAAFmFwcGxpY2F0aW9uX3dsX2xpc3RfaWQAAAAAA+gAAAAKAAAAAAAAABRjb21wbGlhbmNlX3BlcmlvZF9tcwAAA+gAAAAGAAAAAAAAABNjb21wbGlhbmNlX3JlcV9kZXNjAAAAABAAAAAAAAAACGNvbnRhY3RzAAAD6gAAB9AAAAAHQ29udGFjdAAAAAAAAAAAEmNvb2xkb3duX3BlcmlvZF9tcwAAAAAD6AAAAAYAAAAAAAAAC2Rlc2NyaXB0aW9uAAAAABAAAAAAAAAAD2V4cGVjdGVkX2Ftb3VudAAAAAAKAAAAAAAAABFpc192aWRlb19yZXF1aXJlZAAAAAAAAAEAAAAAAAAAEG1heF9wYXJ0aWNpcGFudHMAAAPoAAAABAAAAAAAAAAPbWluaW11bV9kZXBvc2l0AAAAAAoAAAAAAAAABG5hbWUAAAAQAAAAAAAAABNudW1fcGlja3NfcGVyX3ZvdGVyAAAAA+gAAAAEAAAAAAAAAAVvd25lcgAAAAAAABMAAAAAAAAAGXJlZmVycmVyX2ZlZV9iYXNpc19wb2ludHMAAAAAAAPoAAAABAAAAAAAAAAWcmVtYWluaW5nX2Rpc3RfYWRkcmVzcwAAAAAAEwAAAAAAAAAJdXNlX3ZhdWx0AAAAAAAD6AAAAAEAAAAAAAAAGXVzZV93aGl0ZWxpc3RfYXBwbGljYXRpb24AAAAAAAPoAAAAAQAAAAAAAAAUdXNlX3doaXRlbGlzdF92b3RpbmcAAAPoAAAAAQAAAAAAAAARdm90aW5nX3dsX2xpc3RfaWQAAAAAAAPoAAAACg==",
+        "AAAAAQAAAAAAAAAAAAAAEUNyZWF0ZVJvdW5kUGFyYW1zAAAAAAAAGgAAAAAAAAAGYWRtaW5zAAAAAAPqAAAAEwAAAAAAAAASYWxsb3dfYXBwbGljYXRpb25zAAAAAAABAAAAAAAAABRhbGxvd19yZW1haW5pbmdfZGlzdAAAAAEAAAAAAAAAEmFwcGxpY2F0aW9uX2VuZF9tcwAAAAAD6AAAAAYAAAAAAAAAFGFwcGxpY2F0aW9uX3N0YXJ0X21zAAAD6AAAAAYAAAAAAAAAFmFwcGxpY2F0aW9uX3dsX2xpc3RfaWQAAAAAA+gAAAAKAAAAAAAAABRjb21wbGlhbmNlX3BlcmlvZF9tcwAAA+gAAAAGAAAAAAAAABNjb21wbGlhbmNlX3JlcV9kZXNjAAAAABAAAAAAAAAACGNvbnRhY3RzAAAD6gAAB9AAAAAHQ29udGFjdAAAAAAAAAAAEmNvb2xkb3duX3BlcmlvZF9tcwAAAAAD6AAAAAYAAAAAAAAAC2Rlc2NyaXB0aW9uAAAAABAAAAAAAAAAD2V4cGVjdGVkX2Ftb3VudAAAAAAKAAAAAAAAABFpc192aWRlb19yZXF1aXJlZAAAAAAAAAEAAAAAAAAAEG1heF9wYXJ0aWNpcGFudHMAAAPoAAAABAAAAAAAAAAPbWluaW11bV9kZXBvc2l0AAAAAAoAAAAAAAAABG5hbWUAAAAQAAAAAAAAABNudW1fcGlja3NfcGVyX3ZvdGVyAAAAA+gAAAAEAAAAAAAAAAVvd25lcgAAAAAAABMAAAAAAAAAGXJlZmVycmVyX2ZlZV9iYXNpc19wb2ludHMAAAAAAAPoAAAABAAAAAAAAAAWcmVtYWluaW5nX2Rpc3RfYWRkcmVzcwAAAAAAEwAAAAAAAAAJdXNlX3ZhdWx0AAAAAAAD6AAAAAEAAAAAAAAAGXVzZV93aGl0ZWxpc3RfYXBwbGljYXRpb24AAAAAAAPoAAAAAQAAAAAAAAAUdXNlX3doaXRlbGlzdF92b3RpbmcAAAPoAAAAAQAAAAAAAAANdm90aW5nX2VuZF9tcwAAAAAAAAYAAAAAAAAAD3ZvdGluZ19zdGFydF9tcwAAAAAGAAAAAAAAABF2b3Rpbmdfd2xfbGlzdF9pZAAAAAAAA+gAAAAK",
         "AAAAAQAAAAAAAAAAAAAAEVVwZGF0ZVJvdW5kUGFyYW1zAAAAAAAACwAAAAAAAAAWYXBwbGljYXRpb25fd2xfbGlzdF9pZAAAAAAD6AAAAAoAAAAAAAAACGNvbnRhY3RzAAAD6gAAB9AAAAAHQ29udGFjdAAAAAAAAAAAC2Rlc2NyaXB0aW9uAAAAABAAAAAAAAAAEWlzX3ZpZGVvX3JlcXVpcmVkAAAAAAAAAQAAAAAAAAAQbWF4X3BhcnRpY2lwYW50cwAAA+gAAAAEAAAAAAAAAARuYW1lAAAAEAAAAAAAAAATbnVtX3BpY2tzX3Blcl92b3RlcgAAAAPoAAAABAAAAAAAAAAZcmVmZXJyZXJfZmVlX2Jhc2lzX3BvaW50cwAAAAAAA+gAAAAEAAAAAAAAAAl1c2VfdmF1bHQAAAAAAAPoAAAAAQAAAAAAAAAUdXNlX3doaXRlbGlzdF92b3RpbmcAAAPoAAAAAQAAAAAAAAARdm90aW5nX3dsX2xpc3RfaWQAAAAAAAPoAAAACg==",
         "AAAAAQAAAAAAAAAAAAAAEFJvdW5kQXBwbGljYXRpb24AAAAHAAAAAAAAAAxhcHBsaWNhbnRfaWQAAAATAAAAAAAAAA5hcHBsaWNhbnRfbm90ZQAAAAAAEAAAAAAAAAAKcHJvamVjdF9pZAAAAAAACgAAAAAAAAALcmV2aWV3X25vdGUAAAAAEAAAAAAAAAAGc3RhdHVzAAAAAAfQAAAAEUFwcGxpY2F0aW9uU3RhdHVzAAAAAAAAAAAAAAtzdWJtaXRlZF9tcwAAAAAGAAAAAAAAAAp1cGRhdGVkX21zAAAAAAPoAAAABg==",
         "AAAAAQAAAAAAAAAAAAAABFBhaXIAAAACAAAAAAAAAAdwYWlyX2lkAAAAAAQAAAAAAAAACHByb2plY3RzAAAD6gAAAAo=",
@@ -1700,7 +1840,6 @@ export class Client extends ContractClient {
         "AAAAAAAAAAAAAAAHdXBncmFkZQAAAAABAAAAAAAAAA1uZXdfd2FzbV9oYXNoAAAAAAAD7gAAACAAAAAA",
         "AAAAAAAAAAAAAAASdHJhbnNmZXJfb3duZXJzaGlwAAAAAAABAAAAAAAAAAluZXdfb3duZXIAAAAAAAATAAAAAA==",
         "AAAAAAAAAAAAAAAQYWNjZXB0X293bmVyc2hpcAAAAAAAAAAA",
-        "AAAAAAAAAAAAAAZY2FuY2VsX293bmVyc2hpcF90cmFuc2ZlcgAAAAAAAAAAAAAA",
         "AAAAAAAAAAAAAAAZY2FuY2VsX293bmVyc2hpcF90cmFuc2ZlcgAAAAAAAAAAAAAA",
         "AAAAAAAAAAAAAAAKZ2V0X2NvbmZpZwAAAAAAAAAAAAEAAAfQAAAABkNvbmZpZwAA",
         "AAAAAAAAAAAAAAAbb3duZXJfc2V0X2RlZmF1bHRfcGFnZV9zaXplAAAAAAEAAAAAAAAAEWRlZmF1bHRfcGFnZV9zaXplAAAAAAAABgAAAAA=",

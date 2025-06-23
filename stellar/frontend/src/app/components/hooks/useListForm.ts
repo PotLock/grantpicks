@@ -6,11 +6,13 @@ import { toastOptions } from "@/constants/style"
 import { useFileUpload } from "./useUploadToPinata"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { createList } from "@/services/stellar/list"
+import { createList, updateList } from "@/services/stellar/list"
 import useAppStorage from "@/stores/zustand/useAppStorage"
 import { useWallet } from "@/app/providers/WalletProvider"
 import { RegistrationStatus } from "lists-client"
 import { StellarWalletsKit } from "@creit.tech/stellar-wallets-kit"
+import { useRouter } from "next/navigation"
+import { useGlobalContext } from "@/app/providers/GlobalProvider"
 
 type FormState = {
   showAddAdminsModal: boolean
@@ -30,7 +32,11 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>
 
-export const useListForm = () => {
+type UseListFormProps = {
+  listId?: string
+}
+
+export const useListForm = ({ listId }: UseListFormProps) => {
   const [state, setState] = useState<FormState>({
     showAddAdminsModal: false,
     selectedAdmins: [],
@@ -39,7 +45,7 @@ export const useListForm = () => {
   })
   const storage = useAppStorage()
   const { stellarPubKey, stellarKit } = useWallet()
-
+  const router = useRouter()
   const { control, handleSubmit, setValue, watch, register, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema)
   })
@@ -56,6 +62,7 @@ export const useListForm = () => {
     control,
     name: 'admins' as const,
   })
+  const { openPageLoading, dismissPageLoading } = useGlobalContext()
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0]
@@ -125,10 +132,10 @@ export const useListForm = () => {
     removeAdmin(index)
   }, [removeAdmin])
 
-  const onSubmit: SubmitHandler<FormValues> = useCallback(async (data) => {
+  const onSubmit: SubmitHandler<FormValues> = async (data) => {
     if(storage.chainId === 'stellar') {
-
       try {
+        openPageLoading()
         let contracts = storage.getStellarContracts()
         if(!contracts) {
           toast.error('Stellar contracts not found', {
@@ -136,35 +143,58 @@ export const useListForm = () => {
           })
           return
         }
-        const txCreateList = await createList(stellarPubKey, {
-          name: data.name,
-          description: data.description,
-          cover_image_url: data.cover_img_url,
-          admins: data.admins?.map(admin => admin.admin_id) || [],
-          owner: stellarPubKey,
-          default_registration_status: data.approve_applications ? { tag: 'Approved' } as RegistrationStatus : { tag: 'Pending' } as RegistrationStatus,
-          admin_only_registrations: data.allow_applications ? false : true
-        }, contracts)
-
-        const txHashCreateList = await contracts.signAndSendTx(
-          stellarKit as StellarWalletsKit,
-          txCreateList.toXDR(),
-          stellarPubKey,
-        )
-        if(txHashCreateList) {
-          toast.success('List created successfully', {
-            style: toastOptions.success.style,
-          })
+        if(listId) {
+          const txUpdateList = await updateList({
+            list_id: BigInt(listId),
+            name: data.name,
+            description: data.description,
+            cover_image_url: data.cover_img_url || '',
+            default_registration_status: data.approve_applications ? { tag: 'Approved' } as RegistrationStatus : { tag: 'Pending' } as RegistrationStatus,
+            admin_only_registrations: data.allow_applications ? false : true
+          }, contracts)
+          const txHashUpdateList = await contracts.signAndSendTx(
+            stellarKit as StellarWalletsKit,
+            txUpdateList.toXDR(),
+            stellarPubKey,
+          )
+          if(txHashUpdateList) {
+            toast.success('List updated successfully')
+            router.push(`/list/${listId}`)
+          } else {
+            toast.error('Failed to update list')
+          }
         } else {
-          toast.error('Failed to create list', {
-            style: toastOptions.error.style,
-          })
-        }
+          const txCreateList = await createList(stellarPubKey, {
+            name: data.name,
+            description: data.description,
+            cover_image_url: data.cover_img_url,
+            admins: data.admins?.map(admin => admin.admin_id) || [],
+            owner: stellarPubKey,
+            default_registration_status: data.approve_applications ? { tag: 'Approved' } as RegistrationStatus : { tag: 'Pending' } as RegistrationStatus,
+            admin_only_registrations: data.allow_applications ? false : true
+          }, contracts)
+          const txHashCreateList = await contracts.signAndSendTx(
+            stellarKit as StellarWalletsKit,
+            txCreateList.toXDR(),
+            stellarPubKey,
+          )
+          if(txHashCreateList) {
+            toast.success('List created successfully')
+            router.push(`/lists`)
+          } else {
+            toast.error('Failed to create list')
+          }
+        } 
+        
+
       } catch (error) {
+        toast.error('Failed to create list')
         console.log('error', error)
+      } finally {
+        dismissPageLoading()
       }
     }
-  }, [])
+  }
 
   return {
     control,

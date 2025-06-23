@@ -4,7 +4,6 @@ import {
   AssembledTransaction,
   Client as ContractClient,
   ClientOptions as ContractClientOptions,
-  MethodOptions,
   Result,
   Spec as ContractSpec,
 } from '@stellar/stellar-sdk/contract';
@@ -34,7 +33,7 @@ if (typeof window !== 'undefined') {
 export const networks = {
   testnet: {
     networkPassphrase: "Test SDF Network ; September 2015",
-    contractId: "CA56XSY7YEZ7CJ5FYG7YODQIWE3JNRGZ5S7E7VJAQ675KDS4BLZJ5NJH",
+    contractId: "CCPTYQ4WDBAF3OWCLGTRE7E4PXADY2WX7KP3M63VPGM4WKQDVITK5R3M",
   }
 } as const
 
@@ -432,20 +431,6 @@ export interface Client {
 
 }
 export class Client extends ContractClient {
-  static async deploy<T = Client>(
-    /** Options for initalizing a Client as well as for calling a method, with extras specific to deploying. */
-    options: MethodOptions &
-      Omit<ContractClientOptions, "contractId"> & {
-        /** The hash of the Wasm blob, which must already be installed on-chain. */
-        wasmHash: Buffer | string;
-        /** Salt used to generate the contract's ID. Passed through to {@link Operation.createCustomContract}. Default: random. */
-        salt?: Buffer | Uint8Array;
-        /** The format used to decode `wasmHash`, if it's provided as a string. */
-        format?: "hex" | "base64";
-      }
-  ): Promise<AssembledTransaction<T>> {
-    return ContractClient.deploy(null, options)
-  }
   constructor(public readonly options: ContractClientOptions) {
     super(
       new ContractSpec([ "AAAAAQAAAAAAAAAAAAAAB1Byb2plY3QAAAAADgAAAAAAAAAGYWRtaW5zAAAAAAPqAAAAEwAAAAAAAAAIY29udGFjdHMAAAPqAAAH0AAAAA5Qcm9qZWN0Q29udGFjdAAAAAAAAAAAAAljb250cmFjdHMAAAAAAAPqAAAH0AAAAA9Qcm9qZWN0Q29udHJhY3QAAAAAAAAAABFmdW5kaW5nX2hpc3RvcmllcwAAAAAAA+oAAAfQAAAAFVByb2plY3RGdW5kaW5nSGlzdG9yeQAAAAAAAAAAAAACaWQAAAAAAAoAAAAAAAAACWltYWdlX3VybAAAAAAAABAAAAAAAAAABG5hbWUAAAAQAAAAAAAAAAhvdmVydmlldwAAABAAAAAAAAAABW93bmVyAAAAAAAAEwAAAAAAAAAMcmVwb3NpdG9yaWVzAAAD6gAAB9AAAAARUHJvamVjdFJlcG9zaXRvcnkAAAAAAAAAAAAAC3N1Ym1pdGVkX21zAAAAAAYAAAAAAAAADHRlYW1fbWVtYmVycwAAA+oAAAfQAAAAEVByb2plY3RUZWFtTWVtYmVyAAAAAAAAAAAAAAp1cGRhdGVkX21zAAAAAAPoAAAABgAAAAAAAAAJdmlkZW9fdXJsAAAAAAAAEA==",

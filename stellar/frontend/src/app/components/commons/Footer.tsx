@@ -17,21 +17,22 @@ import IconCopy from '../svgs/IconCopy'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
 import { prettyTruncate } from '@/utils/helper'
+import { envVarConfigs } from '@/configs/env-var'
 
 const Footer = () => {
 	const [chainSelect, setChainSelect] = useState<boolean>(false)
-	const [chainName, setChainName] = useState<string>('Near')
+	const [chainName, setChainName] = useState<string>('Stellar')
 
 	const chains = [
+		{
+			name: 'Stellar',
+			icon: <IconStellar size={16} className="fill-grantpicks-black-950" />,
+			contract: envVarConfigs.ROUND_CONTRACT_ID,
+		},
 		{
 			name: 'Near',
 			icon: <IconNear size={16} className="fill-grantpicks-black-950" />,
 			contract: 'v2.grantpicks.potlock.near',
-		},
-		{
-			name: 'Stellar',
-			icon: <IconStellar size={16} className="fill-grantpicks-black-950" />,
-			contract: 'Not Audited',
 		},
 	]
 

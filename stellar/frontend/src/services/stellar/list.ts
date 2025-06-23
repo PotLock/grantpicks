@@ -41,6 +41,14 @@ interface UpdateProjectStatusParams {
 	submitter: string
 }
 
+interface UpdateListParams {
+  list_id: bigint
+  name: string
+  description: string
+  cover_image_url: string
+	default_registration_status: RegistrationStatus
+	admin_only_registrations: boolean
+}
 
 export const createList = async (caller: string, params: CreateListParams, contract: Contracts) => {
   const tx = await contract.lists_contract.create_list({
@@ -54,6 +62,19 @@ export const createList = async (caller: string, params: CreateListParams, contr
   })
 
   return tx
+}
+
+export const updateList = async (params: UpdateListParams, contract: Contracts) => {
+  const tx = await contract.lists_contract.update_list({
+    list_id: params.list_id,
+    name: params.name,
+    description: params.description,
+    cover_image_url: params.cover_image_url,
+    remove_cover_image: params.cover_image_url ? false : true,
+    default_registration_status: params.default_registration_status,
+    admin_only_registrations: params.admin_only_registrations,
+  })
+	return tx
 }
 
 export const getLists: (

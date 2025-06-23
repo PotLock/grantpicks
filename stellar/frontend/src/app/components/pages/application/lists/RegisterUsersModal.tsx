@@ -28,6 +28,7 @@ export const RegisterUsersModal = ({ type, listId, onClose }: RegisterUsersModal
     name: 'projects',
   })
 
+
   return (
     <>
       <div className="p-4 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-11/12 md:w-[35vw] lg:w-[35vw] bg-white rounded-lg flex flex-col gap-4 justify-center items-center">
@@ -79,11 +80,11 @@ export const RegisterUsersModal = ({ type, listId, onClose }: RegisterUsersModal
                   <h2 role="button" onClick={() => setOpenAddProjectsModal(true)} className="text-sm hover:underline text-center">Add / remove Projects</h2>
                   <Button onClick={() => {
                     handleBatchRegisterToList(selectedProjects.map(project => ({
-                      registrant: project?.id as unknown as string,
+                      registrant: project?.owner as unknown as string,
                       status: data?.default_registration_status as RegistrationStatus,
                       submitted_ms: BigInt(Date.now()),
                       updated_ms: BigInt(Date.now()),
-                      notes: note || ''
+                      notes: "test"
                     })), onClose)
                   }}>Save Changes</Button>
                 </div>

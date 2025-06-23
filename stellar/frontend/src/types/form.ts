@@ -97,6 +97,10 @@ export type CreateRoundData = {
 	referrer_fee_basis_points: number
 	use_vault: boolean
 	is_video_required: boolean
+	use_whitelist_application: boolean
+	application_wl_list_id?: bigint
+	use_whitelist_voting: boolean
+	voting_wl_list_id?: bigint
 }
 
 export type UpdateApplicationConfig = {

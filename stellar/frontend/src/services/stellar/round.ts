@@ -74,8 +74,10 @@ export interface CreateRoundParams {
 	voting_end_ms: u64
 	voting_start_ms: u64
 	use_vault?: boolean
-	checked_list_ids?: bigint[]
-	wl_list_id?: bigint | undefined
+	use_whitelist_application?: boolean
+	application_wl_list_id?: bigint | undefined
+	use_whitelist_voting?: boolean
+	voting_wl_list_id?: bigint | undefined
 }
 
 export interface ReviewApplicationParams {
@@ -256,6 +258,7 @@ export const createRound = async (
 	params: CreateRoundParams,
 	contract: Contracts,
 ) => {
+	console.log('debug', params)
 	let round = await contract.round_contract.create_round({
 		caller,
 		round_detail: {
@@ -264,7 +267,7 @@ export const createRound = async (
 			allow_remaining_dist: params.allow_remaining_dist,
 			application_end_ms: params.application_end_ms,
 			application_start_ms: params.application_start_ms,
-			application_wl_list_id: params.wl_list_id,
+			application_wl_list_id: params.application_wl_list_id,
 			compliance_period_ms: params.compliance_period_ms,
 			compliance_req_desc: params.compliance_req_desc,
 			contacts: params.contacts,
@@ -280,11 +283,11 @@ export const createRound = async (
 			referrer_fee_basis_points: params.referrer_fee_basis_points,
 			remaining_dist_address: params.remaining_dist_address,
 			use_vault: params.use_vault,
-			use_whitelist_application: params.use_whitelist,
-			use_whitelist_voting: params.use_whitelist,
+			use_whitelist_application: params.use_whitelist_application,
+			use_whitelist_voting: params.use_whitelist_voting,
 			voting_end_ms: params.voting_end_ms,
 			voting_start_ms: params.voting_start_ms,
-			voting_wl_list_id: params.wl_list_id,
+			voting_wl_list_id: params.voting_wl_list_id,
 		},
 	})
 	return round

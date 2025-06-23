@@ -1,7 +1,7 @@
 import Checkbox from "@/app/components/commons/CheckBox"
 import InputText from "@/app/components/commons/InputText"
 import InputTextArea from "@/app/components/commons/InputTextArea"
-import { ChangeEvent } from "react"
+import { ChangeEvent, useEffect } from "react"
 import Switch from "react-switch"
 import AddAdminsModal from "../../create-round/AddAdminsModal"
 import { useDropzone } from "react-dropzone"
@@ -14,8 +14,14 @@ import IconAdd from "@/app/components/svgs/IconAdd"
 import IconLoading from "@/app/components/svgs/IconLoading"
 import { useListForm } from "@/app/components/hooks/useListForm"
 import Button from "@/app/components/commons/Button"
+import { ListExternal } from "lists-client"
 
-export const ListForm = () => {
+type ListFormProps = {
+  listId?: string
+  existingList?: ListExternal
+}
+
+export const ListForm = ({ listId, existingList }: ListFormProps) => {
   const {
     setValue,
     watch,
@@ -30,7 +36,22 @@ export const ListForm = () => {
     handleRemoveAdmin,
     appendAdmin,
     removeAdmin
-  } = useListForm()
+  } = useListForm({ listId })
+
+  useEffect(() => {
+    if (existingList && listId) {
+      setValue('name', existingList.name)
+      setValue('description', existingList.description)
+      setValue('cover_img_url', existingList.cover_img_url || '')
+      setValue('allow_applications', !existingList.admin_only_registrations)
+      setValue('approve_applications', existingList.default_registration_status.tag === 'Approved')
+      setListFormState(prev => ({
+        ...prev,
+        coverImageUrl: existingList.cover_img_url || '',
+        coverImage: existingList.cover_img_url ? new File([], existingList.cover_img_url) : null,
+      }))
+    }
+  }, [existingList, listId])
 
   const { getRootProps, getInputProps } = useDropzone({
     onDrop,
@@ -40,9 +61,10 @@ export const ListForm = () => {
     maxFiles: 1
   })
 
+
   return (
     <div className="flex flex-col text-grantpicks-black-950 gap-y-4 w-full justify-center items-center">
-      <h1 className="text-4xl font-extrabold text-grantpicks-black-950">CREATE LIST</h1>
+      <h1 className="text-4xl font-extrabold text-grantpicks-black-950">{listId ? 'UPDATE LIST' : 'CREATE LIST'}</h1>
       <div className="flex flex-col gap-y-4 md:p-12 box-shadow-2xl border border-[#b0b0b0] rounded-2xl p-4 w-full md:w-[60%] items-start justify-center">
         <h2 className="text-lg font-semibold text-center text-grantpicks-black-950">List Details</h2>
         <div className="flex flex-col gap-y-4 w-full">
@@ -96,62 +118,66 @@ export const ListForm = () => {
           </div>
         </div>
 
-        <div className="p-5 w-full rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
-          <div className="flex items-center justify-between w-full">
-            <div>
-              <p className="text-base font-bold text-grantpicks-black-950">
-                Add Admins{' '}
-              </p>
-              <p className="text-sm font-normal text-grantpicks-black-600">
-                Add admins that can help manage this list{' '}
-              </p>
-            </div>
-            <button
-              onClick={() => setListFormState(prev => ({ ...prev, showAddAdminsModal: true }))}
-              className="rounded-full w-10 lg:w-12 h-10 lg:h-12 flex items-center justify-center bg-grantpicks-alpha-50/5 cursor-pointer hover:opacity-70 transition"
-            >
-              <IconAdd size={24} className="fill-grantpicks-black-400" />
-            </button>
-          </div>
-          <div
-            className={clsx(
-              `grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4`,
-              listFormState.selectedAdmins.length > 0 ? `mt-6` : `mt-0`,
-            )}
-          >
-            {listFormState.selectedAdmins.map((selected, index) => (
-              <div
-                key={index}
-                className="bg-grantpicks-alpha-50/5 p-1 rounded-full flex items-center justify-between"
-              >
-                <div className="flex items-center space-x-2">
-                  <Image
-                    src={`https://www.tapback.co/api/avatar/${selected}`}
-                    alt="admin"
-                    width={24}
-                    height={24}
-                  />
-                  <p className="text-sm font-semibold text-grantpicks-black-950">
-                    {prettyTruncate(selected, 10, 'address')}
+        {!listId && (
+          <>
+            <div className="p-5 w-full rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
+              <div className="flex items-center justify-between w-full">
+                <div>
+                  <p className="text-base font-bold text-grantpicks-black-950">
+                    Add Admins{' '}
+                  </p>
+                  <p className="text-sm font-normal text-grantpicks-black-600">
+                    Add admins that can help manage this list{' '}
                   </p>
                 </div>
-                <IconClose
-                  size={18}
-                  className="fill-grantpicks-black-600 cursor-pointer transition hover:opacity-80"
-                  onClick={() => handleRemoveAdmin(index)}
-                />
+                <button
+                  onClick={() => setListFormState(prev => ({ ...prev, showAddAdminsModal: true }))}
+                  className="rounded-full w-10 lg:w-12 h-10 lg:h-12 flex items-center justify-center bg-grantpicks-alpha-50/5 cursor-pointer hover:opacity-70 transition"
+                >
+                  <IconAdd size={24} className="fill-grantpicks-black-400" />
+                </button>
               </div>
-            ))}
-          </div>
-          <AddAdminsModal
-            isOpen={listFormState.showAddAdminsModal}
-            onClose={() => setListFormState(prev => ({ ...prev, showAddAdminsModal: false }))}
-            selectedAdmins={listFormState.selectedAdmins}
-            setSelectedAdmins={(admins) => setListFormState(prev => ({ ...prev, selectedAdmins: typeof admins === 'function' ? admins(prev.selectedAdmins) : admins }))}
-            append={appendAdmin}
-            remove={removeAdmin}
-          />
-        </div>
+              <div
+                className={clsx(
+                  `grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4`,
+                  listFormState.selectedAdmins.length > 0 ? `mt-6` : `mt-0`,
+                )}
+              >
+                {listFormState.selectedAdmins.map((selected, index) => (
+                  <div
+                    key={index}
+                    className="bg-grantpicks-alpha-50/5 p-1 rounded-full flex items-center justify-between"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <Image
+                        src={`https://www.tapback.co/api/avatar/${selected}`}
+                        alt="admin"
+                        width={24}
+                        height={24}
+                      />
+                      <p className="text-sm font-semibold text-grantpicks-black-950">
+                        {prettyTruncate(selected, 10, 'address')}
+                      </p>
+                    </div>
+                    <IconClose
+                      size={18}
+                      className="fill-grantpicks-black-600 cursor-pointer transition hover:opacity-80"
+                      onClick={() => handleRemoveAdmin(index)}
+                    />
+                  </div>
+                ))}
+              </div>
+              <AddAdminsModal
+                isOpen={listFormState.showAddAdminsModal}
+                onClose={() => setListFormState(prev => ({ ...prev, showAddAdminsModal: false }))}
+                selectedAdmins={listFormState.selectedAdmins}
+                setSelectedAdmins={(admins) => setListFormState(prev => ({ ...prev, selectedAdmins: typeof admins === 'function' ? admins(prev.selectedAdmins) : admins }))}
+                append={appendAdmin}
+                remove={removeAdmin}
+              />
+            </div>
+          </>
+        )}
         <div className="flex flex-col gap-y-4 w-full">
           <p className="text-lg font-semibold text-grantpicks-black-950">Upload Cover Image</p>
           <div className="flex flex-col gap-y-2">
@@ -210,7 +236,7 @@ export const ListForm = () => {
             onClick={onSubmit}
             className="w-full"
           >
-            Create List
+            {listId ? 'Update List' : 'Create List'}
           </Button>
         </div>
       </div>

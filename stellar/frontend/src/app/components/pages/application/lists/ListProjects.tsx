@@ -21,27 +21,11 @@ export const ListProjects = ({ listId, isOwner }: { listId: string, isOwner: boo
 
   const handleStatusUpdate = async (projectId: bigint, status: { tag: StatusTag, values: undefined }) => {
     await handleUpdateProjectStatus(projectId, status)
-    await mutate(`list-registrations-${listId}`)
+    await mutate(`list-registrations-${listId}-${selectedStatus}`)
   }
 
-  const filteredProjects = selectedStatus
-    ? projects?.filter((p: RegistrationExternal) => p?.status?.tag === selectedStatus)
-    : projects
+  const filteredProjects = projects || []
 
-  if (isLoading) {
-    return (
-      <div className="mt-8 mx-auto px-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {Array.from({ length: 4 }).map((_, i) => <ProjectCardSkeleton key={i} />)}
-        </div>
-      </div>
-    )
-  }
-  if (!projects || projects.length === 0) {
-    return (
-      <div className="mt-8 h-100 flex items-center justify-center text-gray-400">No projects found.</div>
-    )
-  }
   return (
     <div className="mt-8 mx-auto px-4">
       <div className="bg-white rounded-xl shadow p-6">
@@ -82,18 +66,28 @@ export const ListProjects = ({ listId, isOwner }: { listId: string, isOwner: boo
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {filteredProjects.length === 0 ? (
-            <div className="col-span-full text-center text-gray-400">No projects found for this status.</div>
-          ) : (
-            filteredProjects.map((project: RegistrationExternal) => (
-              <ProjectCard
-                key={project.id}
-                project={project}
-                isOwner={isOwner}
-                handleUpdateProjectStatus={handleStatusUpdate}
-              />
-            ))
-          )}
+          {
+            isLoading && !filteredProjects ? (
+              <div className="mt-8 mx-auto px-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  {Array.from({ length: 4 }).map((_, i) => <ProjectCardSkeleton key={i} />)}
+                </div>
+              </div>
+            ) : (
+              filteredProjects.length === 0 ? (
+                <div className="col-span-full text-center h-[200px] flex items-center justify-center text-gray-400">No projects found for this status.</div>
+              ) : (
+                filteredProjects.map((project: RegistrationExternal) => (
+                  <ProjectCard
+                    key={project.id}
+                    project={project}
+                    isOwner={isOwner}
+                    handleUpdateProjectStatus={handleStatusUpdate}
+                  />
+                ))
+              )
+            )
+          }
         </div>
       </div>
     </div>

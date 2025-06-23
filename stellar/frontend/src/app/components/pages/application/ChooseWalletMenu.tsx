@@ -42,7 +42,7 @@ const ChooseWalletMenu = ({
 					</div>
 				)}
 				<p className="text-center font-bold text-base mb-4 text-grantpicks-black-950">
-					{isConnected ? `Switch Wallet` : `Connect Walet`}
+					{isConnected ? `Switch Wallet` : `Connect Wallet`}
 				</p>
 				<div className="flex items-center space-x-3">
 					<div
@@ -57,17 +57,16 @@ const ChooseWalletMenu = ({
 							XLM
 						</p>
 					</div>
-					<div
-						onClick={() => {
-							onOpenNearWallet()
-							onClose()
-						}}
-						className="border border-grantpicks-black-200 rounded-xl flex-1 px-8 py-4 flex flex-col items-center justify-center cursor-pointer hover:bg-grantpicks-black-200/10 transition"
-					>
+					<div className="border border-grantpicks-black-200 rounded-xl flex-1 px-8 py-4 flex flex-col items-center justify-center relative opacity-50 cursor-not-allowed">
 						<IconNear size={32} className="fill-grantpicks-black-400 mb-2" />
 						<p className="text-base font-normal text-grantpicks-black-950">
 							NEAR
 						</p>
+						<div className="absolute inset-0 bg-white/50 rounded-xl flex items-center justify-center">
+							<span className="text-xs font-medium text-grantpicks-black-600 bg-white px-2 py-1 rounded-full border border-grantpicks-black-200">
+								Coming Soon
+							</span>
+						</div>
 					</div>
 				</div>
 			</div>

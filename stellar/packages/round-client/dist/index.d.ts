@@ -1,5 +1,3 @@
-/// <reference types="node" resolution-mode="require"/>
-/// <reference types="node" resolution-mode="require"/>
 import { Buffer } from "buffer";
 import { AssembledTransaction, Client as ContractClient, ClientOptions as ContractClientOptions } from '@stellar/stellar-sdk/contract';
 import type { u32, u64, u128, i128, Option } from '@stellar/stellar-sdk/contract';

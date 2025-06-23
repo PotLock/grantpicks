@@ -1,3 +1,4 @@
+import { useGlobalContext } from "@/app/providers/GlobalProvider"
 import { useWallet } from "@/app/providers/WalletProvider"
 import { batchRegisterToList, getList, getListRegistrations, updateProjectStatusInList } from "@/services/stellar/list"
 import useAppStorage from "@/stores/zustand/useAppStorage"
@@ -20,6 +21,7 @@ type ApplyToListParams = {
 export const useSingleList = ({ listId, requiredStatus }: UseSingleListProps) => {
   const storage = useAppStorage()
   const { stellarPubKey, stellarKit } = useWallet()
+  const { openPageLoading, dismissPageLoading } = useGlobalContext()
 
   const getKey = () => {
     if (!listId || !storage.getStellarContracts()) return null
@@ -37,7 +39,8 @@ export const useSingleList = ({ listId, requiredStatus }: UseSingleListProps) =>
 
   const getKeyRegistrations = () => {
     if (!listId || !storage.getStellarContracts()) return null
-    return `list-registrations-${listId}`
+    const statusTag = requiredStatus?.tag || 'Approved'
+    return `list-registrations-${listId}-${statusTag}`
   }
 
   const { data: registrations, isLoading: isLoadingRegistrations, error: errorRegistrations } = useSWR(
@@ -55,6 +58,7 @@ export const useSingleList = ({ listId, requiredStatus }: UseSingleListProps) =>
     const contracts = storage.getStellarContracts()
     if (!contracts || !stellarPubKey) throw new Error('Contracts not found')
     try {
+      openPageLoading()
       const txBatchRegisterToList = await batchRegisterToList({ list_id: BigInt(listId), submitter: stellarPubKey, notes: 'test', registrations }, contracts)
       const txHashBatchRegisterToList = await contracts.signAndSendTx(
         stellarKit as StellarWalletsKit,
@@ -70,6 +74,8 @@ export const useSingleList = ({ listId, requiredStatus }: UseSingleListProps) =>
       }
     } catch (error) {
       toast.error('Failed to register project(s) to list')
+    } finally {
+      dismissPageLoading()
     }
   }
 
@@ -81,6 +87,7 @@ export const useSingleList = ({ listId, requiredStatus }: UseSingleListProps) =>
       return
     }
     try {
+      openPageLoading()
       const txApplyToList = await batchRegisterToList({
         list_id: BigInt(listId), submitter: stellarPubKey, notes: note || '', registrations: [{
           registrant: stellarPubKey,
@@ -106,6 +113,8 @@ export const useSingleList = ({ listId, requiredStatus }: UseSingleListProps) =>
 
     } catch (error) {
       toast.error('Failed to apply to list')
+    } finally {
+      dismissPageLoading()
     }
   }
 
@@ -115,6 +124,7 @@ export const useSingleList = ({ listId, requiredStatus }: UseSingleListProps) =>
     const contracts = storage.getStellarContracts()
     if (!contracts || !stellarPubKey) throw new Error('Contracts not found')
     try {
+      openPageLoading()
       const txUpdateProjectStatus = await updateProjectStatusInList({
         list_id: BigInt(listId),
         submitter: stellarPubKey,
@@ -139,6 +149,8 @@ export const useSingleList = ({ listId, requiredStatus }: UseSingleListProps) =>
     } catch (error) {
       console.log(error)
       toast.error('Failed to update project status')
+    } finally {
+      dismissPageLoading()
     }
   }
 

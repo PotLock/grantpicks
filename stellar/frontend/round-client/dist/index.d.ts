@@ -1,4 +1,5 @@
 /// <reference types="node" resolution-mode="require"/>
+/// <reference types="node" resolution-mode="require"/>
 import { Buffer } from "buffer";
 import { AssembledTransaction, Client as ContractClient, ClientOptions as ContractClientOptions } from '@stellar/stellar-sdk/contract';
 import type { u32, u64, u128, i128, Option } from '@stellar/stellar-sdk/contract';
@@ -8,7 +9,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CA7A2776JYIOYXPAJFONDC7BVPDWWLZU524UTGIJIQH6HWWOR6LKYQQT";
+        readonly contractId: "CCWIGVGCIHRVSVLOR4BUODHWY5WWUSR3HR55LB7CTMQ6YSWBPPYQEUQN";
     };
 };
 export type ApplicationStatus = {
@@ -189,41 +190,6 @@ export interface FlagDetail {
     reason: string;
 }
 export declare const Errors: {
-    5: {
-        message: string;
-    };
-    26: {
-        message: string;
-    };
-    31: {
-        message: string;
-    };
-    32: {
-        message: string;
-    };
-    38: {
-        message: string;
-    };
-    52: {
-        message: string;
-    };
-    57: {
-        message: string;
-    };
-    88: {
-        message: string;
-    };
-    89: {
-        message: string;
-    };
-    65: {
-        message: string;
-    };
-    66: {
-        message: string;
-    };
-};
-export declare const Errors: {
     0: {
         message: string;
     };
@@ -239,7 +205,46 @@ export declare const Errors: {
     4: {
         message: string;
     };
+    5: {
+        message: string;
+    };
+    6: {
+        message: string;
+    };
+    7: {
+        message: string;
+    };
     8: {
+        message: string;
+    };
+    9: {
+        message: string;
+    };
+    10: {
+        message: string;
+    };
+    11: {
+        message: string;
+    };
+    12: {
+        message: string;
+    };
+    13: {
+        message: string;
+    };
+    14: {
+        message: string;
+    };
+    15: {
+        message: string;
+    };
+    16: {
+        message: string;
+    };
+    17: {
+        message: string;
+    };
+    18: {
         message: string;
     };
     19: {
@@ -257,6 +262,15 @@ export declare const Errors: {
     23: {
         message: string;
     };
+    24: {
+        message: string;
+    };
+    25: {
+        message: string;
+    };
+    26: {
+        message: string;
+    };
     27: {
         message: string;
     };
@@ -264,6 +278,18 @@ export declare const Errors: {
         message: string;
     };
     29: {
+        message: string;
+    };
+    30: {
+        message: string;
+    };
+    31: {
+        message: string;
+    };
+    32: {
+        message: string;
+    };
+    33: {
         message: string;
     };
     34: {
@@ -278,6 +304,9 @@ export declare const Errors: {
     37: {
         message: string;
     };
+    38: {
+        message: string;
+    };
     39: {
         message: string;
     };
@@ -285,6 +314,12 @@ export declare const Errors: {
         message: string;
     };
     41: {
+        message: string;
+    };
+    42: {
+        message: string;
+    };
+    43: {
         message: string;
     };
     44: {
@@ -311,13 +346,31 @@ export declare const Errors: {
     51: {
         message: string;
     };
+    52: {
+        message: string;
+    };
     53: {
+        message: string;
+    };
+    54: {
         message: string;
     };
     55: {
         message: string;
     };
     56: {
+        message: string;
+    };
+    57: {
+        message: string;
+    };
+    58: {
+        message: string;
+    };
+    59: {
+        message: string;
+    };
+    60: {
         message: string;
     };
     61: {
@@ -332,10 +385,13 @@ export declare const Errors: {
     64: {
         message: string;
     };
-    69: {
+    65: {
         message: string;
     };
-    59: {
+    66: {
+        message: string;
+    };
+    69: {
         message: string;
     };
     74: {
@@ -350,76 +406,6 @@ export declare const Errors: {
     79: {
         message: string;
     };
-    90: {
-        message: string;
-    };
-};
-export declare const Errors: {
-    6: {
-        message: string;
-    };
-    7: {
-        message: string;
-    };
-    9: {
-        message: string;
-    };
-    12: {
-        message: string;
-    };
-    17: {
-        message: string;
-    };
-    18: {
-        message: string;
-    };
-    24: {
-        message: string;
-    };
-    25: {
-        message: string;
-    };
-    33: {
-        message: string;
-    };
-    58: {
-        message: string;
-    };
-    60: {
-        message: string;
-    };
-};
-export declare const Errors: {
-    10: {
-        message: string;
-    };
-    11: {
-        message: string;
-    };
-    13: {
-        message: string;
-    };
-    14: {
-        message: string;
-    };
-    15: {
-        message: string;
-    };
-    16: {
-        message: string;
-    };
-    30: {
-        message: string;
-    };
-    42: {
-        message: string;
-    };
-    43: {
-        message: string;
-    };
-    54: {
-        message: string;
-    };
     81: {
         message: string;
     };
@@ -430,6 +416,15 @@ export declare const Errors: {
         message: string;
     };
     84: {
+        message: string;
+    };
+    88: {
+        message: string;
+    };
+    89: {
+        message: string;
+    };
+    90: {
         message: string;
     };
 };

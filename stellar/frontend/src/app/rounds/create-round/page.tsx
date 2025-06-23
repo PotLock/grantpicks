@@ -34,7 +34,6 @@ import {
 	createRound,
 	CreateRoundParams,
 	depositFundRound,
-	getLists,
 } from '@/services/stellar/round'
 import { parseToStroop, prettyTruncate, sleep } from '@/utils/helper'
 import { useModalContext } from '@/app/providers/ModalProvider'
@@ -60,16 +59,17 @@ import useAppStorage from '@/stores/zustand/useAppStorage'
 import Image from 'next/image'
 import { usePotlockService } from '@/services/potlock'
 import { NearCreateRoundParams, NearRound } from '@/services/near/type'
-// import IconLoading from '@/app/components/svgs/IconLoading'
-// import IconExpandLess from '@/app/components/svgs/IconExpandLess'
-// import IconExpandMore from '@/app/components/svgs/IconExpandMore'
-// import InfiniteScroll from 'react-infinite-scroll-component'
+import IconLoading from '@/app/components/svgs/IconLoading'
+import IconExpandLess from '@/app/components/svgs/IconExpandLess'
+import IconExpandMore from '@/app/components/svgs/IconExpandMore'
+import InfiniteScroll from 'react-infinite-scroll-component'
 import { IGetListExternalResponse } from '@/types/on-chain'
 import { LIMIT_SIZE } from '@/constants/query'
 import useSWRInfinite from 'swr/infinite'
 import { GPRound } from '@/models/round'
 import { parseNearAmount } from 'near-api-js/lib/utils/format'
 import { FinalExecutionOutcome, Transaction } from '@near-wallet-selector/core'
+import { getLists } from '@/services/stellar/list'
 
 const CreateRoundPage = () => {
 	const router = useRouter()
@@ -94,6 +94,8 @@ const CreateRoundPage = () => {
 	const potlockService = usePotlockService()
 	const [showLists, setShowLists] = useState<boolean>(true)
 	const [checkedListIds, setCheckedListIds] = useState<bigint[]>([])
+	const [showApplicationLists, setShowApplicationLists] = useState<boolean>(true)
+	const [checkedApplicationListIds, setCheckedApplicationListIds] = useState<bigint[]>([])
 	const {
 		control,
 		register,
@@ -121,6 +123,8 @@ const CreateRoundPage = () => {
 			is_video_required: false,
 			allow_application: false,
 			compliance_req_desc: '',
+			voting_wl_list_id: undefined,
+			application_wl_list_id: undefined,
 		},
 	})
 	const { append: appendProject, remove: removeProject } = useFieldArray({
@@ -227,8 +231,11 @@ const CreateRoundPage = () => {
 				}
 
 				// If end is tomorrow, set to current time + 3 hours
-				if (endDate.toDateString() === new Date(new Date().setDate(new Date().getDate() + 1)).toDateString()) {
-					endDate.setHours(new Date().getHours() + 3)
+				const tomorrow = new Date()
+				tomorrow.setDate(tomorrow.getDate() + 1)
+
+				if (endDate.toDateString() === tomorrow.toDateString()) {
+					endDate.setHours(new Date().getHours() + 1)
 					endDate.setMinutes(new Date().getMinutes())
 				}
 
@@ -245,7 +252,7 @@ const CreateRoundPage = () => {
 
 				// If voting starts same day as application ends and we have an apply end date
 				if (applyEndDate && startDate.toDateString() === applyEndDate.toDateString()) {
-					startDate.setHours(applyEndDate.getHours() + 3)
+					startDate.setHours(applyEndDate.getHours() + 1)
 					startDate.setMinutes(applyEndDate.getMinutes())
 				}
 				// If voting starts next day and we have an apply end date
@@ -260,13 +267,13 @@ const CreateRoundPage = () => {
 						startDate.setMinutes(currentDate.getMinutes() + 15)
 					}
 					if (endDate.toDateString() === new Date(new Date().setDate(new Date().getDate() + 1)).toDateString()) {
-						endDate.setHours(currentDate.getHours() + 3)
+						endDate.setHours(currentDate.getHours() + 1)
 						endDate.setMinutes(currentDate.getMinutes())
 					}
 				}
 
 				// Set end time to start time + 24 hours
-				endDate.setHours(startDate.getHours())
+				endDate.setHours(startDate.getHours() + 4)
 				endDate.setMinutes(startDate.getMinutes())
 
 				data.voting_duration_start = startDate
@@ -308,8 +315,10 @@ const CreateRoundPage = () => {
 					num_picks_per_voter:
 						data.vote_per_person < 1 ? 1 : data.vote_per_person,
 					use_whitelist: checkedListIds.length > 0,
-					wl_list_id: checkedListIds.length > 0 ? checkedListIds[0] : undefined,
+					voting_wl_list_id: checkedListIds.length > 0 ? checkedListIds[0] : undefined,
 					is_video_required: data.is_video_required,
+					use_whitelist_application: checkedApplicationListIds?.length > 0,
+					application_wl_list_id: checkedApplicationListIds.length > 0 ? checkedApplicationListIds[0] : undefined,
 					allow_applications: data.allow_application,
 					use_vault: data.use_vault,
 					voting_start_ms: BigInt(
@@ -1736,7 +1745,7 @@ const CreateRoundPage = () => {
 						/>
 					</div>
 
-					{/* <div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
+					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
 						<div className="flex items-center justify-between pb-4 border-b border-black/10">
 							<p className="text-base font-semibold">Voter Requirements</p>
 						</div>
@@ -1808,15 +1817,17 @@ const CreateRoundPage = () => {
 																onChange={(e) => {
 																	if (e.target.checked) {
 																		setCheckedListIds([list.id])
+																		setValue('voting_wl_list_id', list.id)
 																	} else {
 																		setCheckedListIds(
 																			checkedListIds.filter(
 																				(id) => id !== list.id,
 																			),
 																		)
+																		setValue('voting_wl_list_id', undefined)
 																	}
 																}}
-																name="wl_list_id"
+																name="voting_wl_list_id"
 																value={list.id.toString()}
 															/>
 															<div className="flex justify-between w-full items-center">
@@ -1833,7 +1844,7 @@ const CreateRoundPage = () => {
 																		</p>
 																		<p className="text-sm text-grantpicks-black-700">
 																			{list.total_registrations_count.toString()}{' '}
-																			Voters
+																			Eligible
 																		</p>
 																	</div>
 																</div>
@@ -1863,7 +1874,142 @@ const CreateRoundPage = () => {
 								</div>
 							)}
 						</div>
-					</div> */}
+					</div>
+
+					{/* Application Requirements - Only show when allow_application is true */}
+					{watch().allow_application && (
+						<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
+							<div className="flex items-center justify-between pb-4 border-b border-black/10">
+								<p className="text-base font-semibold">Application Requirements</p>
+							</div>
+							<div>
+								<button
+									onClick={() => {
+										setShowApplicationLists(!showApplicationLists)
+									}}
+									className="flex justify-between w-full items-center py-[14px]"
+								>
+									<p className="font-semibold text-sm text-grantpicks-black-950">
+										List
+									</p>
+									{showApplicationLists ? (
+										<IconExpandLess
+											size={24}
+											className="stroke-grantpicks-black-400"
+										/>
+									) : (
+										<IconExpandMore
+											size={24}
+											className="stroke-grantpicks-black-400"
+										/>
+									)}
+								</button>
+								{showApplicationLists && (
+									<div
+										id="scrollApplicationListsContainer"
+										className="max-h-[522px] overflow-scroll"
+									>
+										<InfiniteScroll
+											scrollableTarget="scrollApplicationListsContainer"
+											dataLength={lists.length}
+											next={() => !isValidating && setSize(size + 1)}
+											hasMore={!isReachingEnd}
+											style={{ display: 'flex', flexDirection: 'column' }}
+											loader={
+												<div className="my-2 flex items-center justify-center">
+													<IconLoading
+														size={24}
+														className="fill-grantpicks-black-600"
+													/>
+												</div>
+											}
+										>
+											{isLoading ? (
+												<div className="h-20 flex items-center justify-center">
+													<IconLoading
+														size={24}
+														className="fill-grantpicks-black-600"
+													/>
+												</div>
+											) : lists.length === 0 ? (
+												<div>
+													<p className="text-sm text-grantpicks-black-950 text-center">
+														There are no Lists Contract yet.
+													</p>
+												</div>
+											) : (
+												<div>
+													{lists?.map((list) => {
+														return (
+															<div
+																key={list.id}
+																className="py-4 flex items-center gap-x-4"
+															>
+																<Checkbox
+																	checked={checkedApplicationListIds.includes(list.id)}
+																	onChange={(e) => {
+																		if (e.target.checked) {
+																			setCheckedApplicationListIds([list.id])
+																			setValue('application_wl_list_id', list.id)
+																		} else {
+																			setCheckedApplicationListIds(
+																				checkedApplicationListIds.filter(
+																					(id) => id !== list.id,
+																				),
+																			)
+																			setValue('application_wl_list_id', undefined)
+																		}
+																	}}
+																	name="application_wl_list_id"
+																	value={list.id.toString()}
+																/>
+																<div className="flex justify-between w-full items-center">
+																	<div className="flex gap-x-3 items-center">
+																		<Image
+																			src="/assets/images/default-list-image.png"
+																			alt="list"
+																			width={72}
+																			height={46}
+																		/>
+																		<div className="grid gap-y-1">
+																			<p className="font-semibold text-sm text-grantpicks-black-950">
+																				{list.name}
+																			</p>
+																			<p className="text-sm text-grantpicks-black-700">
+																				{list.total_registrations_count.toString()}{' '}
+																				Eligible
+																			</p>
+																		</div>
+																	</div>
+																	<div className="flex gap-x-1">
+																		{isOwner(list.owner) && (
+																			<div className="px-3 py-[2px] bg-grantpicks-black-950 rounded-full">
+																				<p className="font-semibold text-xs text-white">
+																					Owner
+																				</p>
+																			</div>
+																		)}
+																		{isAdmin(list.admins) && (
+																			<div className="px-3 py-[2px] bg-grantpicks-black-100 rounded-full">
+																				<p className="font-semibold text-xs text-grantpicks-black-950">
+																					Admin
+																				</p>
+																			</div>
+																		)}
+																	</div>
+																</div>
+															</div>
+														)
+													})}
+												</div>
+											)}
+										</InfiniteScroll>
+									</div>
+								)}
+							</div>
+						</div>
+					)}
+
 					<div className="flex bg-white p-5 rounded-2xl shadow-md mb-4">
 						<InputText
 							label="Referral Fee (%)"

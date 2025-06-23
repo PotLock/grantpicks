@@ -35,7 +35,7 @@ const VoteConfirmationModal = ({
 	const { connectedWallet, stellarPubKey, nearAccounts } = useWallet()
 	const [totalProjects, setTotalProjects] = useState<number>(0)
 	const storage = useAppStorage()
-	console.log('data', data)
+
 
 	const onFetchTotalProjects = async () => {
 		try {

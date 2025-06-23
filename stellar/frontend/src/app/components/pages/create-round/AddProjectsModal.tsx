@@ -14,7 +14,6 @@ import {
 	getProjects,
 	IGetProjectsResponse,
 } from '@/services/stellar/project-registry'
-import { Network } from '@/types/on-chain'
 import { LIMIT_SIZE } from '@/constants/query'
 import useSWRInfinite from 'swr/infinite'
 import InfiniteScroll from 'react-infinite-scroll-component'
@@ -34,8 +33,8 @@ type RoundData = CreateRoundData | UpdateRoundData
 interface AddProjectsModalProps extends BaseModalProps {
 	selectedProjects: IGetProjectsResponse[]
 	setSelectedProjects: Dispatch<SetStateAction<IGetProjectsResponse[]>>
-	append: UseFieldArrayAppend<RoundData, 'projects'>
-	remove: UseFieldArrayRemove
+	append?: UseFieldArrayAppend<any, 'projects'>
+	remove?: UseFieldArrayRemove
 }
 
 const AddProjectsModal = ({
@@ -54,6 +53,9 @@ const AddProjectsModal = ({
 	const [showProjectDetailDrawer, setShowProjectDetailDrawer] =
 		useState<IProjectDetailOwner>({ isOpen: false, project: null })
 	const storage = useAppStorage()
+
+	useEffect(() => {
+	}, [showProjectDetailDrawer])
 
 	const onFetchProjects = async (key: { skip: number; limit: number }) => {
 		if (storage.chainId == 'stellar') {
@@ -143,7 +145,7 @@ const AddProjectsModal = ({
 
 	return (
 		<Modal isOpen={isOpen} onClose={onClose}>
-			<div className="bg-white w-11/12 md:w-[60vw] lg:w-[45vw] mx-auto rounded-xl border border-black/10 shadow">
+			<div className="bg-white w-11/12 md:w-[35vw] lg:w-[35vw] mx-auto rounded-xl border border-black/10 shadow">
 				<div className="p-4 bg-grantpicks-black-50 flex items-center justify-between rounded-t-xl">
 					<div>
 						<p className="text-base font-bold text-grantpicks-black-950">
@@ -304,16 +306,18 @@ const AddProjectsModal = ({
 					</Button>
 				</div>
 			</div>
-			<ProjectDetailDrawer
-				isOpen={showProjectDetailDrawer?.isOpen || false}
-				onClose={() =>
-					setShowProjectDetailDrawer((prev) => ({
-						...prev,
-						isOpen: false,
-					}))
-				}
-				projectData={showProjectDetailDrawer.project || undefined}
-			/>
+			{
+				<ProjectDetailDrawer
+					isOpen={showProjectDetailDrawer?.isOpen || false}
+					onClose={() =>
+						setShowProjectDetailDrawer((prev) => ({
+							...prev,
+							isOpen: false,
+						}))
+					}
+					projectData={showProjectDetailDrawer.project || undefined}
+				/>
+			}
 		</Modal>
 	)
 }

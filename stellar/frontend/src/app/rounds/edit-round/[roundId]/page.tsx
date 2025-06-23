@@ -26,9 +26,7 @@ import {
 	UpdateRoundParams,
 } from '@/services/stellar/round'
 import { useParams, useRouter } from 'next/navigation'
-import {
-	IGetListExternalResponse,
-} from '@/types/on-chain'
+
 import { useWallet } from '@/app/providers/WalletProvider'
 import {
 	formatStroopToXlm,

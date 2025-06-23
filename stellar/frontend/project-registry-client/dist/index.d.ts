@@ -1,4 +1,5 @@
 /// <reference types="node" resolution-mode="require"/>
+/// <reference types="node" resolution-mode="require"/>
 import { Buffer } from "buffer";
 import { AssembledTransaction, Client as ContractClient, ClientOptions as ContractClientOptions } from '@stellar/stellar-sdk/contract';
 import type { u32, u64, u128, Option } from '@stellar/stellar-sdk/contract';
@@ -8,7 +9,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CA56XSY7YEZ7CJ5FYG7YODQIWE3JNRGZ5S7E7VJAQ675KDS4BLZJ5NJH";
+        readonly contractId: "CCPTYQ4WDBAF3OWCLGTRE7E4PXADY2WX7KP3M63VPGM4WKQDVITK5R3M";
     };
 };
 export interface Project {

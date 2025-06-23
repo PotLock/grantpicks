@@ -4,7 +4,6 @@ import {
   AssembledTransaction,
   Client as ContractClient,
   ClientOptions as ContractClientOptions,
-  MethodOptions,
   Result,
   Spec as ContractSpec,
 } from '@stellar/stellar-sdk/contract';
@@ -34,7 +33,7 @@ if (typeof window !== 'undefined') {
 export const networks = {
   testnet: {
     networkPassphrase: "Test SDF Network ; September 2015",
-    contractId: "CA7A2776JYIOYXPAJFONDC7BVPDWWLZU524UTGIJIQH6HWWOR6LKYQQT",
+    contractId: "CCWIGVGCIHRVSVLOR4BUODHWY5WWUSR3HR55LB7CTMQ6YSWBPPYQEUQN",
   }
 } as const
 
@@ -257,7 +256,9 @@ export const Errors = {
 
   65: {message:"ProtocolFeeTooHigh"},
 
-  66: {message:"ReferrerFeeTooHigh"},
+  66: {message:"ReferrerFeeTooHigh"}
+}
+export const Errors = {
   0: {message:"VotingStartGreaterThanVotingEnd"},
 
   1: {message:"ApplicationStartGreaterThanApplicationEnd"},
@@ -342,7 +343,9 @@ export const Errors = {
 
   79: {message:"PayoutsAlreadySet"},
 
-  90: {message:"MinimumDepositMustBeLessThanExpectedAmount"},
+  90: {message:"MinimumDepositMustBeLessThanExpectedAmount"}
+}
+export const Errors = {
   6: {message:"VotingPeriodNotStarted"},
 
   7: {message:"VotingPeriodEnded"},
@@ -363,7 +366,9 @@ export const Errors = {
 
   58: {message:"DuplicatePick"},
 
-  60: {message:"TooManyVotesForAvailablePairs"},
+  60: {message:"TooManyVotesForAvailablePairs"}
+}
+export const Errors = {
   10: {message:"ApplicationPeriodNotStarted"},
 
   11: {message:"ApplicationPeriodEnded"},
@@ -392,7 +397,6 @@ export const Errors = {
 
   84: {message:"ApplicationPeriodMustBeSet"}
 }
-
 
 export interface RoundPreCheck {
   applicant: string;
@@ -1804,20 +1808,6 @@ export interface Client {
 
 }
 export class Client extends ContractClient {
-  static async deploy<T = Client>(
-    /** Options for initalizing a Client as well as for calling a method, with extras specific to deploying. */
-    options: MethodOptions &
-      Omit<ContractClientOptions, "contractId"> & {
-        /** The hash of the Wasm blob, which must already be installed on-chain. */
-        wasmHash: Buffer | string;
-        /** Salt used to generate the contract's ID. Passed through to {@link Operation.createCustomContract}. Default: random. */
-        salt?: Buffer | Uint8Array;
-        /** The format used to decode `wasmHash`, if it's provided as a string. */
-        format?: "hex" | "base64";
-      }
-  ): Promise<AssembledTransaction<T>> {
-    return ContractClient.deploy(null, options)
-  }
   constructor(public readonly options: ContractClientOptions) {
     super(
       new ContractSpec([ "AAAAAgAAAAAAAAAAAAAAEUFwcGxpY2F0aW9uU3RhdHVzAAAAAAAABAAAAAAAAAAAAAAAB1BlbmRpbmcAAAAAAAAAAAAAAAAIQXBwcm92ZWQAAAAAAAAAAAAAAAhSZWplY3RlZAAAAAAAAAAAAAAAC0JsYWNrbGlzdGVkAA==",

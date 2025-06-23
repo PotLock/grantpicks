@@ -14,7 +14,6 @@ import {
 	getProjects,
 	IGetProjectsResponse,
 } from '@/services/stellar/project-registry'
-import { Network } from '@/types/on-chain'
 import { LIMIT_SIZE } from '@/constants/query'
 import useSWRInfinite from 'swr/infinite'
 import InfiniteScroll from 'react-infinite-scroll-component'
@@ -34,7 +33,7 @@ type RoundData = CreateRoundData | UpdateRoundData
 interface AddProjectsModalProps extends BaseModalProps {
 	selectedProjects: IGetProjectsResponse[]
 	setSelectedProjects: Dispatch<SetStateAction<IGetProjectsResponse[]>>
-	append?: UseFieldArrayAppend<RoundData, 'projects'>
+	append?: UseFieldArrayAppend<any, 'projects'>
 	remove?: UseFieldArrayRemove
 }
 

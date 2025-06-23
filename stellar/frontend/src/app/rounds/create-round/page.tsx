@@ -1950,16 +1950,14 @@ const CreateRoundPage = () => {
 																	onChange={(e) => {
 																		if (e.target.checked) {
 																			setCheckedApplicationListIds([list.id])
-																			setValue('application_list_requirements', [list.id])
+																			setValue('application_wl_list_id', list.id)
 																		} else {
 																			setCheckedApplicationListIds(
 																				checkedApplicationListIds.filter(
 																					(id) => id !== list.id,
 																				),
 																			)
-																			setValue('application_list_requirements',
-																				checkedApplicationListIds.filter((id) => id !== list.id)
-																			)
+																			setValue('application_wl_list_id', undefined)
 																		}
 																	}}
 																	name="application_wl_list_id"
@@ -1979,7 +1977,7 @@ const CreateRoundPage = () => {
 																			</p>
 																			<p className="text-sm text-grantpicks-black-700">
 																				{list.total_registrations_count.toString()}{' '}
-																				Voters
+																				Eligible
 																			</p>
 																		</div>
 																	</div>

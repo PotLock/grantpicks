@@ -65,11 +65,11 @@ export const ListProjects = ({ listId, isOwner }: { listId: string, isOwner: boo
             </Menu>
           </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="flex flex-wrap gap-3">
           {
             isLoading && !filteredProjects ? (
               <div className="mt-8 mx-auto px-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {Array.from({ length: 4 }).map((_, i) => <ProjectCardSkeleton key={i} />)}
                 </div>
               </div>
@@ -154,7 +154,7 @@ const ProjectCard = ({
   if (error) return <ProjectCardError />
 
   return (
-    <div className="flex flex-col items-center bg-white rounded-xl border border-black/10 shadow p-6 min-h-[240px]">
+    <div className="flex flex-col w-full md:w-[319px] items-center bg-white rounded-xl border border-black/10 shadow p-6 min-h-[240px]">
       <Image
         src={`https://www.tapback.co/api/avatar/${project.registrant_id}`}
         alt=""

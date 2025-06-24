@@ -51,6 +51,7 @@ import useAppStorage from '@/stores/zustand/useAppStorage'
 import { IAccount } from '@/types/account'
 import { usePotlockService } from '@/services/potlock'
 import { formatNearAmount } from 'near-api-js/lib/utils/format'
+import toast from 'react-hot-toast'
 
 const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 	const [connectedWallet, setConnectedWallet] = useState<
@@ -238,11 +239,20 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 						option.id,
 					)
 					const pubKey = (await stellarKit?.getAddress()).address
+					let cmdWallet = new CMDWallet({
+						stellarPubKey: pubKey,
+					})
+					const filterXLM = (await cmdWallet.getBalances()).filter(
+						(xlm) => xlm.asset_type === 'native',
+					)
 					setConnectedWallet('stellar')
 					localStorage.setItem(localStorageConfigs.CONNECTED_WALLET, 'stellar')
 					setStellarPubKey(pubKey)
 					store.setMyAddress(pubKey)
 					localStorage.setItem(localStorageConfigs.STELLAR_PUBLIC_KEY, pubKey)
+					const balances = parseInt(filterXLM[0].balance)
+
+
 					//sign out near
 					const wallet = await nearSelector?.wallet()
 					await wallet?.signOut()
@@ -250,7 +260,12 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 					setNearAccounts([])
 					onSelected?.(option)
 				} catch (error: any) {
-					console.log('error connect stellar', error)
+					localStorage.removeItem(localStorageConfigs.CONNECTED_WALLET)
+					toast.error('Error connecting to Stellar wallet, Please make sure your wallet is Valid')
+					localStorage.removeItem(localStorageConfigs.STELLAR_PUBLIC_KEY)
+					setConnectedWallet(null)
+					setStellarPubKey('')
+					store.clear()
 				}
 			},
 		})

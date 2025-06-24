@@ -5,7 +5,7 @@ import Navbar from './Navbar'
 import DisclaimerBanner from './DisclaimerBanner'
 
 const LandingLayout = ({ children }: { children: React.ReactNode }) => {
-	const [isBannerVisible, setIsBannerVisible] = useState<boolean>(true)
+	const [isBannerVisible, setIsBannerVisible] = useState<boolean>(false)
 
 	return (
 		<BaseLayout>

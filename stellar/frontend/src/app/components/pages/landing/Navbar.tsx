@@ -122,9 +122,9 @@ const Navbar = ({ isBannerVisible }: { isBannerVisible: boolean }) => {
 			</div>
 			<Button
 				color="purple"
-				icon={<IconRocket size={18} className="fill-white hidden sm:block" />}
+				icon={<IconRocket size={16} className="fill-white sm:block" />}
 				iconPosition="right"
-				className="h-12 sm:px-7"
+				className="h-10 sm:h-12 px-4 sm:px-7 text-sm sm:text-base"
 				onClick={() => {
 					router.push('/rounds')
 				}}

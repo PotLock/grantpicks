@@ -93,7 +93,7 @@ export const AllLists = () => {
         </div>
       )}
 
-      <div className="flex flex-wrap md:items-start items-center justify-center md:justify-start gap-x-4 mt-8 gap-y-4 text-grantpicks-black-950">
+      <div className="flex flex-wrap md:items-start items-center justify-center md:min-h-[700px] md:justify-start gap-x-4 mt-8 gap-y-4 text-grantpicks-black-950">
         {
           isLoading ? (
             <div className="flex items-center w-full flex-col gap-y-4 justify-center py-12">

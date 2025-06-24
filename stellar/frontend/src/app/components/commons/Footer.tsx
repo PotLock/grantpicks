@@ -105,65 +105,10 @@ const Footer = () => {
 			<div className="z-10 grid content-start justify-items-center lg:justify-items-start gap-y-[14px]">
 				<p className="font-semibold text-xl text-[#171717]">Smart Contracts</p>
 				<div className="grid gap-y-[14px] justify-items-center lg:justify-items-start">
-					<div className="grid grid-cols-2 items-center">
-						<p className="text-grantpicks-purple-800 font-bold text-sm">
-							{chainName}
-						</p>
-						<div className="relative">
-							<div
-								onClick={() => setChainSelect(true)}
-								className="border bg-white border-grantpicks-black-200 px-1 py-0.5 h-full w-fit rounded-[4px] flex items-center justify-between cursor-pointer hover:opacity-80 transition"
-							>
-								<p className="text-xs font-normal text-grantpicks-black-950">
-									More
-								</p>
-								{chainSelect ? (
-									<IconExpandLess
-										size={20}
-										className="stroke-grantpicks-black-400"
-									/>
-								) : (
-									<IconExpandMore
-										size={20}
-										className="stroke-grantpicks-black-400"
-									/>
-								)}
-							</div>
-							<Menu
-								isOpen={chainSelect}
-								onClose={() => setChainSelect(false)}
-								position="right-0 -bottom-[105px]"
-							>
-								<div className="border border-black/10 rounded-lg py-3 px-4 grid gap-y-2 bg-white">
-									{chains.map((chain) => (
-										<button
-											key={chain.name}
-											onClick={() => {
-												setChainName(chain.name)
-												setChainSelect(false)
-											}}
-											className={clsx(
-												'rounded-md py-1 px-2 flex items-center gap-x-2',
-												chainName === chain.name
-													? 'bg-[#1E1E1E] text-white'
-													: 'bg-white text-grantpicks-black-950',
-											)}
-										>
-											<div className="border border-black/10 rounded-full p-1 flex items-center justify-center bg-white">
-												{chain.icon}
-											</div>
-											<p>{chain.name}</p>
-										</button>
-									))}
-								</div>
-							</Menu>
-						</div>
-					</div>
 					<button
 						onClick={async () => {
 							await navigator.clipboard.writeText(
-								chains.find((chain) => chain.name === chainName)
-									?.contract as string,
+								chains.find((chain) => chain.name === chainName)?.contract as string,
 							)
 							toast.success('Contract copied', {
 								style: toastOptions.success.style,
@@ -187,6 +132,17 @@ const Footer = () => {
 						</p>
 						<IconCopy size={14} className="stroke-grantpicks-black-600" />
 					</button>
+
+					<a
+						href="https://github.com/PotLock/grantpicks/blob/main/VAR_PotLock_250113_GrantPicks-V3.pdf"
+						target="_blank"
+						rel="noopener noreferrer"
+						className="mt-2 flex items-center justify-center gap-x-2 text-grantpicks-black-950 font-medium hover:underline"
+					>
+						<svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M6 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8.828A2 2 0 0 0 19.414 7.414l-4.828-4.828A2 2 0 0 0 12.172 2H6zm7 1.414L18.586 9H15a2 2 0 0 1-2-2V3.414z" stroke="#000" strokeWidth="1.5" /><text x="12" y="16" textAnchor="middle" fontSize="8" fill="#000">AUDIT</text></svg>
+						Audit Report
+					</a>
+
 				</div>
 			</div>
 		</div>

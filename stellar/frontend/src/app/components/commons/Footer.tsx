@@ -7,10 +7,6 @@ import IconGithub from '../svgs/IconGithub'
 import IconPotlock from '../svgs/IconPotlock'
 import IconDorg from '../svgs/IconDorg'
 import IconColony from '../svgs/IconColony'
-import Menu from './Menu'
-import IconExpandLess from '../svgs/IconExpandLess'
-import IconExpandMore from '../svgs/IconExpandMore'
-import clsx from 'clsx'
 import IconNear from '../svgs/IconNear'
 import IconStellar from '../svgs/IconStellar'
 import IconCopy from '../svgs/IconCopy'
@@ -37,8 +33,8 @@ const Footer = () => {
 	]
 
 	return (
-		<footer className="bg-white border-t border-gray-100">
-			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+		<footer className="bg-white border-t  border-gray-100">
+			<div className="max-w-7xl mx-auto px-4 z-10 sm:px-6 lg:px-8 py-12">
 				{/* Main Footer Content */}
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
 					{/* Brand Section */}
@@ -167,11 +163,12 @@ const Footer = () => {
 				<div className="mt-8 pt-8 border-t border-gray-100">
 					<div className="flex flex-col sm:flex-row justify-between items-center gap-4">
 						<p className="text-sm text-gray-500">
-							© 2024 GrantPicks. All rights reserved.
+							© 2025 GrantPicks. All rights reserved.
 						</p>
 						<div className="flex items-center gap-x-4 text-sm text-gray-500">
 							<span>Powered by</span>
-							<Link href="https://www.potlock.org/" target="_blank" className="hover:text-gray-700 transition-colors">
+							<Link href="https://www.potlock.org/" target="_blank" className="hover:text-gray-700 flex items-center gap-x-2 transition-colors">
+								<div className="text-lg">🫕</div>
 								Potlock
 							</Link>
 						</div>

@@ -140,4 +140,12 @@ export const updateProjectStatusInList: (
 	return tx;
 }
 
-// Check if user is registered to list
+export const deleteList: (
+	list_id: bigint,
+	contract: Contracts,
+) => Promise<any> = async (list_id: bigint, contract: Contracts) => {
+	let tx = await contract.lists_contract.delete_list({
+		list_id,
+	})
+	return tx;
+}

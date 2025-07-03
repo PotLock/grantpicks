@@ -1,9 +1,10 @@
 import { useGlobalContext } from "@/app/providers/GlobalProvider"
 import { useWallet } from "@/app/providers/WalletProvider"
-import { batchRegisterToList, getList, getListRegistrations, updateProjectStatusInList } from "@/services/stellar/list"
+import { batchRegisterToList, deleteList, getList, getListRegistrations, updateProjectStatusInList } from "@/services/stellar/list"
 import useAppStorage from "@/stores/zustand/useAppStorage"
 import { StellarWalletsKit } from "@creit.tech/stellar-wallets-kit"
 import { RegistrationInput, RegistrationStatus } from "lists-client"
+import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
 import useSWR from "swr"
 
@@ -22,7 +23,7 @@ export const useSingleList = ({ listId, requiredStatus }: UseSingleListProps) =>
   const storage = useAppStorage()
   const { stellarPubKey, stellarKit } = useWallet()
   const { openPageLoading, dismissPageLoading } = useGlobalContext()
-
+  const router = useRouter()
   const getKey = () => {
     if (!listId || !storage.getStellarContracts()) return null
     return `list-${listId}`
@@ -154,6 +155,35 @@ export const useSingleList = ({ listId, requiredStatus }: UseSingleListProps) =>
     }
   }
 
+  // DELETE LIST
+
+  const handleDeleteList = async () => {
+    const contracts = storage.getStellarContracts()
+    if (!contracts || !stellarPubKey) throw new Error('Contracts not found')
+    try {
+      openPageLoading()
+      const txDeleteList = await deleteList(BigInt(listId), contracts)
+      const txHashDeleteList = await contracts.signAndSendTx(
+        stellarKit as StellarWalletsKit,
+        txDeleteList.toXDR(),
+        stellarPubKey,
+      )
+
+      if (txHashDeleteList) {
+        toast.success('List deleted successfully')
+        router.push('/lists')
+      } else {
+        toast.error('Failed to delete list')
+      }
+    } catch (error) {
+      console.log(error)
+      toast.error('Failed to delete list')
+    } finally {
+      dismissPageLoading()
+    }
+  }
+
+
   return {
     data,
     isLoading,
@@ -164,5 +194,6 @@ export const useSingleList = ({ listId, requiredStatus }: UseSingleListProps) =>
     isLoadingRegistrations,
     errorRegistrations,
     handleUpdateProjectStatus,
+    handleDeleteList,
   }
 }

@@ -224,6 +224,7 @@ export const RoundCard = ({
     router.replace(url.toString(), { scroll: false })
   }
 
+
   return (
     <div className="p-4 md:p-5 rounded-xl border border-black/10">
       <div className="flex items-center justify-between mb-4 md:mb-6">
@@ -397,7 +398,7 @@ export const RoundCard = ({
             getSpecificTime() === 'upcoming' ||
             getSpecificTime() === 'upcoming-closed' ||
             (isUserApplied && getSpecificTime() == 'upcoming-open') ||
-            getSpecificTime() === 'upcoming-not-started' || doc.owner?.id === storage.my_address
+            getSpecificTime() === 'upcoming-not-started'
           }
         >
           {isUserApplied && getSpecificTime() === 'upcoming-open'

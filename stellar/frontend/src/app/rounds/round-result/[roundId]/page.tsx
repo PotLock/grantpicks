@@ -76,7 +76,6 @@ const RoundResultPage = () => {
 				if (!contracts) {
 					return
 				}
-
 				const admins = (
 					await contracts.round_contract.admins({
 						round_id: BigInt(roundInfo.on_chain_id),

@@ -18,6 +18,9 @@ import { formatNearAmount, parseNearAmount } from 'near-api-js/lib/utils/format'
 import { FinalExecutionOutcome } from '@near-wallet-selector/core'
 import { watch } from 'fs'
 import { useForm } from 'react-hook-form'
+import { StrKey } from '@stellar/stellar-base'
+import { toastOptions } from '@/constants/style'
+import toast from 'react-hot-toast'
 
 interface FundROundModalProps extends BaseModalProps {
 	doc: GPRound
@@ -39,7 +42,7 @@ const FundRoundModal = ({
 	const { stellarPubKey, stellarKit, currentBalance, nearWallet } = useWallet()
 	const storage = useAppStorage()
 
-	const { register, handleSubmit, formState: { errors }, setError, clearErrors } = useForm()
+	const { register, watch, handleSubmit, formState: { errors }, setError, setValue, clearErrors } = useForm()
 
 	const getFee = async () => {
 		if (storage.chainId === 'stellar') {
@@ -93,13 +96,14 @@ const FundRoundModal = ({
 					return
 				}
 
+
 				const tx = await depositFundRound(
 					{
 						round_id: BigInt(doc.on_chain_id),
 						caller: stellarPubKey,
 						amount: BigInt(parseToStroop(amount)),
 						memo: '',
-						referrer_id: undefined,
+						referrer_id: watch('referrer_id') || undefined,
 					},
 					contracts,
 				)
@@ -150,6 +154,7 @@ const FundRoundModal = ({
 			}
 		} catch (error: any) {
 			dismissPageLoading()
+			toast.error(error.message, { style: toastOptions.error.style })
 			console.log('error', error)
 		}
 	}
@@ -160,7 +165,7 @@ const FundRoundModal = ({
 	}, [storage.my_address])
 
 	// Calculate progress percentage
-	const progressPercentage = storage.chainId === 'stellar'
+	const progressPercentage = storage.chainId !== 'near'
 		? (parseFloat(formatStroopToXlm(BigInt(doc.current_vault_balance))) / parseFloat(formatStroopToXlm(BigInt(doc.expected_amount)))) * 100
 		: (parseFloat(formatNearAmount(doc.current_vault_balance)) / parseFloat(formatNearAmount(doc.expected_amount))) * 100
 
@@ -215,23 +220,23 @@ const FundRoundModal = ({
 							<div className="text-center">
 								<p className="text-gray-600 font-medium">Raised</p>
 								<p className="text-xl font-bold text-gray-800">
-									{storage.chainId === 'stellar'
+									{storage.chainId !== 'near'
 										? formatStroopToXlm(BigInt(doc.current_vault_balance))
 										: formatNearAmount(doc.current_vault_balance)}
 								</p>
 								<p className="text-xs text-gray-500">
-									{storage.chainId === 'stellar' ? 'XLM' : 'NEAR'}
+									{storage.chainId !== 'near' ? 'XLM' : 'NEAR'}
 								</p>
 							</div>
 							<div className="text-center">
 								<p className="text-gray-600 font-medium">Target</p>
 								<p className="text-xl font-bold text-gray-800">
-									{storage.chainId === 'stellar'
+									{storage.chainId !== 'near'
 										? formatStroopToXlm(BigInt(doc.expected_amount))
 										: formatNearAmount(doc.expected_amount)}
 								</p>
 								<p className="text-xs text-gray-500">
-									{storage.chainId === 'stellar' ? 'XLM' : 'NEAR'}
+									{storage.chainId !== 'near' ? 'XLM' : 'NEAR'}
 								</p>
 							</div>
 						</div>
@@ -244,10 +249,10 @@ const FundRoundModal = ({
 							<div className="flex justify-between items-center">
 								<span className="text-sm text-gray-600">Minimum Deposit:</span>
 								<span className="text-sm font-semibold text-gray-800">
-									{storage.chainId === 'stellar'
+									{storage.chainId !== 'near'
 										? formatStroopToXlm(BigInt(doc.minimum_deposit))
 										: formatNearAmount(doc.minimum_deposit)}{' '}
-									{storage.chainId === 'stellar' ? 'XLM' : 'NEAR'}
+									{storage.chainId !== 'near' ? 'XLM' : 'NEAR'}
 								</span>
 							</div>
 							<div className="flex justify-between items-center">
@@ -265,7 +270,7 @@ const FundRoundModal = ({
 							</label>
 							<div className="text-right">
 								<p className="text-sm font-medium text-gray-700">
-									{currentBalance} {storage.chainId === 'stellar' ? 'XLM' : 'NEAR'}
+									{currentBalance} {storage.chainId !== 'near' ? 'XLM' : 'NEAR'}
 								</p>
 								<p className="text-xs text-gray-500">available</p>
 							</div>
@@ -279,7 +284,7 @@ const FundRoundModal = ({
 								required: true,
 								onChange: (e) => {
 									const calculation =
-										storage.chainId === 'stellar'
+										storage.chainId !== 'near'
 											? parseFloat(e.target.value || '0') * stellarPrice
 											: parseFloat(e.target.value || '0') * nearPrice
 									setAmountUsd(`${calculation.toFixed(3)}`)
@@ -296,7 +301,7 @@ const FundRoundModal = ({
 							})}
 							hintLabel={`Protocol fee: ${fee}%`}
 							preffixIcon={
-								storage.chainId === 'stellar' ? (
+								storage.chainId !== 'near' ? (
 									<IconStellar size={24} className="fill-gray-600" />
 								) : (
 									<IconNear size={24} className="fill-gray-600" />
@@ -313,7 +318,6 @@ const FundRoundModal = ({
 								</div>
 							}
 						/>
-
 						{errors.amount && (
 							<div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
 								<p className="text-sm text-red-600 flex items-center">
@@ -322,6 +326,28 @@ const FundRoundModal = ({
 									</svg>
 									Funding amount cannot be less than minimum deposit
 								</p>
+							</div>
+						)}
+						{doc.referrer_fee_basis_points > 0 && (
+							<div className="mt-4">
+
+								<InputText
+									placeholder="Enter Referrer Account ID"
+									hintLabel={`Referrer fee: ${(doc.referrer_fee_basis_points / 100).toFixed(2)}%`}
+									{...register('referrer_id')}
+									errorMessage={errors.referrer_id?.message as string}
+									onChange={(e) => {
+										if (storage.chainId === 'stellar') {
+											if (!StrKey.isValidEd25519PublicKey(e.target.value) && e.target.value !== '') {
+												setError('referrer_id', { type: 'manual', message: 'Invalid Account ID' })
+
+											} else {
+												clearErrors('referrer_id')
+											}
+											setValue('referrer_id', e.target.value)
+										}
+									}}
+								/>
 							</div>
 						)}
 					</div>
@@ -335,7 +361,7 @@ const FundRoundModal = ({
 						onClick={handleSubmit(onDepositFundRound)}
 					>
 						<div className="flex items-center justify-center space-x-2">
-							{storage.chainId === 'stellar' ? (
+							{storage.chainId !== 'near' ? (
 								<IconStellar size={20} className="fill-white" />
 							) : (
 								<IconNear size={20} className="fill-white" />

@@ -674,6 +674,7 @@ const CreateRoundPage = () => {
 											disabled={!watch().allow_application}
 											label="Max Participants"
 											placeholder="10"
+											max={100}
 											required={watch().allow_application}
 											{...register('max_participants', {
 												required: watch().allow_application === true,
@@ -724,9 +725,9 @@ const CreateRoundPage = () => {
 											<p className="text-red-500 text-xs mt-1 ml-2">
 												Max Participants is required
 											</p>
-										) : watch().max_participants < 10 ? (
+										) : watch().max_participants < 10 || watch().max_participants > 100 ? (
 											<p className="text-red-500 text-xs mt-1 ml-2">
-												Min. 10 Participants
+												{watch().max_participants < 10 ? 'Min. 10 Participants' : 'Max. 100 Participants'}
 											</p>
 										) : undefined}
 									</div>

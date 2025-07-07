@@ -258,7 +258,8 @@ export const createRound = async (
 	params: CreateRoundParams,
 	contract: Contracts,
 ) => {
-	console.log('debug', params)
+	
+
 	let round = await contract.round_contract.create_round({
 		caller,
 		round_detail: {

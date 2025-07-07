@@ -13,89 +13,165 @@ if (typeof window !== 'undefined') {
 export const networks = {
 	testnet: {
 		networkPassphrase: 'Test SDF Network ; September 2015',
-		contractId: 'CCWIGVGCIHRVSVLOR4BUODHWY5WWUSR3HR55LB7CTMQ6YSWBPPYQEUQN',
+		contractId: 'CDKE2ROJIXNAQDUAIY27L4EQVMJAEZEI3WEGYFF42V5IYNJDHRHIRR5Z',
 	},
 }
 export const Errors = {
 	0: { message: 'VotingStartGreaterThanVotingEnd' },
+
 	1: { message: 'ApplicationStartGreaterThanApplicationEnd' },
+
 	2: { message: 'VotingStartLessThanApplicationEnd' },
+
 	3: { message: 'AmountMustBeGreaterThanZero' },
+
 	4: { message: 'ContactMustBeLessThanTen' },
-	5: { message: 'OwnerOrAdminOnly' },
-	6: { message: 'VotingPeriodNotStarted' },
-	7: { message: 'VotingPeriodEnded' },
+
 	8: { message: 'InvalidVaultBalance' },
-	9: { message: 'VotingPeriodNotEnded' },
-	10: { message: 'ApplicationPeriodNotStarted' },
-	11: { message: 'ApplicationPeriodEnded' },
-	12: { message: 'VotingAlreadyStarted' },
-	13: { message: 'ProjectNotApproved' },
-	14: { message: 'ProjectAlreadyApproved' },
-	15: { message: 'ProjectNotFoundInRegistry' },
-	16: { message: 'MaxParticipantsReached' },
-	17: { message: 'AlreadyVoted' },
-	18: { message: 'NotVoteAllPairs' },
+
 	19: { message: 'UserBlacklisted' },
+
 	20: { message: 'UserAlreadyBlacklisted' },
+
 	21: { message: 'BlacklistNotFound' },
+
 	22: { message: 'UserNotWhitelisted' },
+
 	23: { message: 'ReviewNotTooLong' },
-	24: { message: 'EmptyVote' },
-	25: { message: 'TooManyVotes' },
-	26: { message: 'ContractNotInitialized' },
+
 	27: { message: 'RoundAlreadyCompleted' },
+
 	28: { message: 'AdminNotFound' },
+
 	29: { message: 'OwnerCannotBeAdmin' },
-	30: { message: 'ApplicationNotFound' },
-	31: { message: 'InsufficientBalance' },
-	32: { message: 'IndexOutOfBound' },
-	33: { message: 'ProjectNotInPair' },
+
 	34: { message: 'AlreadyPaidOut' },
+
 	35: { message: 'NoApprovedProjects' },
+
 	36: { message: 'UserWhitelisted' },
+
 	37: { message: 'VotesAlreadyCast' },
-	38: { message: 'SameOwner' },
+
 	39: { message: 'ApplicationPeriodMustBeSet' },
+
 	40: { message: 'ZeroValutBalance' },
+
 	41: { message: 'BalanceNotEmpty' },
-	42: { message: 'VideoUrlNotValid' },
-	43: { message: 'ProjectAlreadyApplied' },
+
 	44: { message: 'InsufficientFunds' },
+
 	45: { message: 'ChallengeNotFound' },
+
 	46: { message: 'PayoutNotFound' },
+
 	47: { message: 'RedistributionNotAllowed' },
+
 	48: { message: 'RedistributionAlreadyDone' },
+
 	49: { message: 'CompliancePeriodInProcess' },
+
 	50: { message: 'CooldownPeriodNotInProcess' },
+
 	51: { message: 'NotSolveAllPayoutChallenge' },
-	52: { message: 'DataNotFound' },
+
 	53: { message: 'RoundDoesNotUseVault' },
-	54: { message: 'ApplicationNotAllowed' },
+
 	55: { message: 'ApplicationPeriodNotSet' },
+
 	56: { message: 'CoolDownPeriodNotComplete' },
-	57: { message: 'AlreadyInitialized' },
-	58: { message: 'DuplicatePick' },
-	59: { message: 'WhitelistIdNotSet' },
-	60: { message: 'TooManyVotesForAvailablePairs' },
+
 	61: { message: 'VotingPeriodTooShort' },
+
 	62: { message: 'ApplicationPeriodTooShort' },
+
 	63: { message: 'ApplicationStartInPast' },
+
 	64: { message: 'VotingStartInPast' },
-	65: { message: 'ProtocolFeeTooHigh' },
-	66: { message: 'ReferrerFeeTooHigh' },
+
 	69: { message: 'CannotUpdateVaultAfterDeposits' },
+
+	59: { message: 'WhitelistIdNotSet' },
+
 	74: { message: 'NotProjectParticipant' },
+
 	75: { message: 'NotApprovedParticipant' },
+
 	76: { message: 'DepositAmountTooLow' },
+
 	79: { message: 'PayoutsAlreadySet' },
-	81: { message: 'ApplicationStartInPast' },
-	82: { message: 'ApplicationPeriodTooShort' },
-	83: { message: 'ApplicationOverlapsVoting' },
-	84: { message: 'ApplicationPeriodMustBeSet' },
-	88: { message: 'OwnerOnly' },
-	89: { message: 'NoPendingOwnershipTransfer' },
+
 	90: { message: 'MinimumDepositMustBeLessThanExpectedAmount' },
+	5: { message: 'OwnerOrAdminOnly' },
+
+	26: { message: 'ContractNotInitialized' },
+
+	31: { message: 'InsufficientBalance' },
+
+	32: { message: 'IndexOutOfBound' },
+
+	38: { message: 'SameOwner' },
+
+	52: { message: 'DataNotFound' },
+
+	57: { message: 'AlreadyInitialized' },
+
+	88: { message: 'OwnerOnly' },
+
+	89: { message: 'NoPendingOwnershipTransfer' },
+
+	65: { message: 'ProtocolFeeTooHigh' },
+
+	66: { message: 'ReferrerFeeTooHigh' },
+	6: { message: 'VotingPeriodNotStarted' },
+
+	7: { message: 'VotingPeriodEnded' },
+
+	9: { message: 'VotingPeriodNotEnded' },
+
+	12: { message: 'VotingAlreadyStarted' },
+
+	17: { message: 'AlreadyVoted' },
+
+	18: { message: 'NotVoteAllPairs' },
+
+	24: { message: 'EmptyVote' },
+
+	25: { message: 'TooManyVotes' },
+
+	33: { message: 'ProjectNotInPair' },
+
+	58: { message: 'DuplicatePick' },
+
+	60: { message: 'TooManyVotesForAvailablePairs' },
+
+	10: { message: 'ApplicationPeriodNotStarted' },
+
+	11: { message: 'ApplicationPeriodEnded' },
+
+	13: { message: 'ProjectNotApproved' },
+
+	14: { message: 'ProjectAlreadyApproved' },
+
+	15: { message: 'ProjectNotFoundInRegistry' },
+
+	16: { message: 'MaxParticipantsReached' },
+
+	30: { message: 'ApplicationNotFound' },
+
+	42: { message: 'VideoUrlNotValid' },
+
+	43: { message: 'ProjectAlreadyApplied' },
+
+	54: { message: 'ApplicationNotAllowed' },
+
+	81: { message: 'ApplicationStartInPast' },
+
+	82: { message: 'ApplicationPeriodTooShort' },
+
+	83: { message: 'ApplicationOverlapsVoting' },
+
+	84: { message: 'ApplicationPeriodMustBeSet' },
 }
 export class Client extends ContractClient {
 	options

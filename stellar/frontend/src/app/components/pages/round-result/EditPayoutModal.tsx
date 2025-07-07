@@ -81,15 +81,13 @@ const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 					return
 				}
 
-
 				const savePayoutTx = await contract.round_contract.set_payouts({
-					round_id: BigInt(storage.current_round?.id || 0),
+					round_id: BigInt(storage.current_round?.on_chain_id || 0),
 					caller: stellarPubKey,
 					payouts: payoutInputs,
 					clear_existing: true,
 				})
 
-				console.log('savePayoutTx', savePayoutTx)
 
 				const txHash = await contract.signAndSendTx(
 					stellarKit as StellarWalletsKit,

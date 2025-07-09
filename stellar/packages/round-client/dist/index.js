@@ -10,12 +10,10 @@ if (typeof window !== 'undefined') {
 export const networks = {
 	testnet: {
 		networkPassphrase: 'Test SDF Network ; September 2015',
-		contractId: 'CCWIGVGCIHRVSVLOR4BUODHWY5WWUSR3HR55LB7CTMQ6YSWBPPYQEUQN',
+		contractId: 'CAAH3TSAEGM34FRIKT7DBCF26DQ63STVGFUEHLP4CTNDD5XKQGXSLSSO',
 	},
 }
-
 export const Errors = {
-	0: { message: 'VotingStartGreaterThanVotingEnd' },
 	5: { message: 'OwnerOrAdminOnly' },
 	26: { message: 'ContractNotInitialized' },
 	31: { message: 'InsufficientBalance' },
@@ -27,6 +25,7 @@ export const Errors = {
 	89: { message: 'NoPendingOwnershipTransfer' },
 	65: { message: 'ProtocolFeeTooHigh' },
 	66: { message: 'ReferrerFeeTooHigh' },
+	0: { message: 'VotingStartGreaterThanVotingEnd' },
 	1: { message: 'ApplicationStartGreaterThanApplicationEnd' },
 	2: { message: 'VotingStartLessThanApplicationEnd' },
 	3: { message: 'AmountMustBeGreaterThanZero' },

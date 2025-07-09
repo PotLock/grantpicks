@@ -9,6 +9,7 @@ export interface IMenuProps extends DialogProps {
 	closeOnBgClick?: boolean
 	closeOnEscape?: boolean
 	className?: string
+	buttonRef?: React.RefObject<HTMLElement>
 }
 
 export interface IDrawerProps extends DialogProps {

@@ -105,9 +105,7 @@ const AddAdminsModal = ({
 					<IconClose
 						size={24}
 						className={clsx("fill-grantpicks-black-400 absolute right-4 top-4 cursor-pointer transition hover:opacity-80",
-							{
-								'hidden': header
-							}
+
 						)}
 						onClick={() => {
 							setSearchAdmin('')

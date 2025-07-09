@@ -21,9 +21,10 @@ export const SingleListPage = () => {
   const router = useRouter()
   const listId = params.listId as string
   const { stellarPubKey } = useWallet()
-  const { data: list, isLoading, isError } = useSingleList({ listId })
+  const { data: list, isLoading, isError, handleDeleteList } = useSingleList({ listId })
   const [isOpen, setIsOpen] = useState<{ open: boolean, type: 'SINGLE' | 'BATCH' | null }>({ open: false, type: null })
   const [menuOpen, setMenuOpen] = useState(false)
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false)
 
   if (isLoading && !list) {
     return (
@@ -153,6 +154,15 @@ export const SingleListPage = () => {
                         >
                           Edit List
                         </button>
+                        {/* <button
+                          className="px-4 py-3 text-left text-sm hover:bg-gray-100 transition-colors"
+                          onClick={() => {
+                            setMenuOpen(false)
+                            setIsDeleteOpen(true)
+                          }}
+                        >
+                          Delete List
+                        </button> */}
 
                       </div>
                     </Menu>
@@ -171,6 +181,40 @@ export const SingleListPage = () => {
           type={isOpen.type || 'SINGLE'}
           listId={listId}
           onClose={() => setIsOpen({ open: false, type: null })} />
+      </Modal>
+      <Modal isOpen={isDeleteOpen} onClose={() => setIsDeleteOpen(false)} closeOnBgClick={true} closeOnEscape={true}>
+        <div className="flex bg-white rounded-xl flex-col items-center justify-center p-6 max-w-md mx-auto">
+          {/* Warning Icon */}
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+
+          {/* Title */}
+          <h2 className="text-xl font-bold text-gray-900 mb-2 text-center">Delete List</h2>
+
+          {/* Description */}
+          <p className="text-gray-600 text-sm text-center mb-6 leading-relaxed">
+            Are you sure you want to delete <span className="font-semibold text-gray-900">&ldquo;{list?.name}&rdquo;</span>? This action cannot be undone and will permanently remove the list and all associated data.
+          </p>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3 w-full">
+            <Button
+              onClick={() => setIsDeleteOpen(false)}
+              className="flex-1 bg-gray-100 !text-black hover:bg-gray-200 border border-gray-300"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDeleteList}
+              className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+            >
+              Delete List
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   )

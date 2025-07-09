@@ -64,6 +64,8 @@ const RoundResultPage = () => {
 			const roundInfo = await potlockApi.getRound(roundId)
 			const newChainId = extractChainId(roundInfo)
 
+			console.log('roundInfo', roundInfo)
+
 			storage.setRound(roundInfo)
 			storage.roundes.set(roundId.toString(), roundInfo)
 
@@ -76,7 +78,6 @@ const RoundResultPage = () => {
 				if (!contracts) {
 					return
 				}
-
 				const admins = (
 					await contracts.round_contract.admins({
 						round_id: BigInt(roundInfo.on_chain_id),
@@ -403,7 +404,7 @@ const RoundResultPage = () => {
 				if (!contract) return
 				const txRoundCompleted =
 					await contract.round_contract.set_round_complete({
-						round_id: BigInt(storage.current_round?.id || 0),
+						round_id: BigInt(storage.current_round?.on_chain_id || 0),
 						caller: storage.my_address || '',
 					})
 				txRoundCompleted.simulate()

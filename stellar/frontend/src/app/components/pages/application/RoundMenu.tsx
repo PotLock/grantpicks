@@ -135,14 +135,16 @@ const RoundMenu = ({
 
 							</div>
 						)}
-					<div
-						className="p-3 flex items-center space-x-3 cursor-pointer hover:bg-gray-50 transition-colors duration-200 rounded-lg"
-						onClick={() => handleAction(onUpdateAdmins)}
-					>
-						<p className="text-sm font-normal text-grantpicks-black-950">
-							Update Admins
-						</p>
-					</div>
+					{data.owner?.id === storage.my_address && (
+						<div
+							className="p-3 flex items-center space-x-3 cursor-pointer hover:bg-gray-50 transition-colors duration-200 rounded-lg"
+							onClick={() => handleAction(onUpdateAdmins)}
+						>
+							<p className="text-sm font-normal text-grantpicks-black-950">
+								Update Admins
+							</p>
+						</div>
+					)}
 					{selectedRoundType === 'on-going' && data.contacts.length > 0 && (
 						<Link
 							href={generateLink()}

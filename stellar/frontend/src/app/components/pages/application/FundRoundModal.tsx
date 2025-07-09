@@ -171,7 +171,7 @@ const FundRoundModal = ({
 
 	return (
 		<Modal isOpen={isOpen} onClose={onClose}>
-			<div className="w-11/12 md:w-[420px] mx-auto bg-white rounded-3xl border border-gray-200 shadow-2xl overflow-hidden">
+			<div className="w-11/12 md:w-[420px] overflow-y-auto max-h-[calc(100vh-2rem)] mx-auto bg-white rounded-3xl border border-gray-200 shadow-2xl p-2 md:p-0">
 				{/* Header */}
 				<div className="bg-gradient-to-r from-gray-800 to-gray-900 px-6 py-5">
 					<div className="flex items-center justify-between">

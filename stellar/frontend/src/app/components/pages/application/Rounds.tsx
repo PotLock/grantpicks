@@ -227,7 +227,7 @@ const ApplicationRounds = () => {
 			<div className="mb-6 md:mb-7 lg:mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8">
 				<div className="relative flex items-center gap-4 justify-end col-span-3">
 					<div
-						onClick={() => setShowSortType(true)}
+						onClick={() => setShowSortType(!showSortType)}
 						className="border border-grantpicks-black-200 rounded-full py-3 px-3 flex items-center justify-between cursor-pointer hover:opacity-80 transition"
 					>
 						<p className="text-sm font-normal text-grantpicks-black-950">
@@ -239,9 +239,9 @@ const ApplicationRounds = () => {
 						<Menu
 							isOpen={showSortType}
 							onClose={() => setShowSortType(false)}
-							position="right-0 left-0 -bottom-28"
+							position="top-14 md:right-24 right-0"
 						>
-							<div className="border border-black/10 p-3 rounded-xl space-y-3 bg-white">
+							<div className="border border-black/10 p-3 w-52 rounded-xl space-y-3 bg-white">
 								<p
 									onClick={() => {
 										setSortType('Most Recent')
@@ -315,7 +315,7 @@ const ApplicationRounds = () => {
 						) : roundsData.length === 0 ? (
 							<EmptyRoundState />
 						) : (
-							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
+							<div className="grid grid-cols-1 z-10 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
 								{roundsData?.map((doc, idx) => (
 									<RoundCard
 										key={idx}

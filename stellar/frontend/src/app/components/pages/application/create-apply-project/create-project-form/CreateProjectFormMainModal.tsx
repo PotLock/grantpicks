@@ -126,6 +126,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 				}
 
 
+
 				const txCreateProject = await contracts.project_contract.apply({
 					applicant: storage.my_address || '',
 					project_params: params,
@@ -188,6 +189,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 					video_url: dataForm.video.url,
 					team_members: dataForm.team_member,
 				}
+
 
 				const txCreateProject = await contracts.near_social.setProjectData(
 					storage.my_address || '',

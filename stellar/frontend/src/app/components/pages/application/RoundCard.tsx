@@ -28,6 +28,7 @@ import { GPRound } from '@/models/round'
 import RoundMenu from './RoundMenu'
 import { TimePeriodDrawer } from './TimePeriodDrawer'
 import { ChainId } from '@/types/context'
+import { UpdateRoundAdmins } from './UpdateRoundAdmins'
 
 
 export const RoundCard = ({
@@ -51,6 +52,7 @@ export const RoundCard = ({
   const { setShowMenu } = useGlobalContext()
   const [hasVoted, setHasVoted] = useState<boolean>(false)
   const [showTimePeriodDrawer, setShowTimePeriodDrawer] = useState<boolean>(false)
+  const [showUpdateRoundAdmins, setShowUpdateRoundAdmins] = useState<boolean>(false)
   const chainId = extractChainId(doc)
   const storage = useAppStorage()
 
@@ -448,6 +450,7 @@ export const RoundCard = ({
                 }
                 setShowFundRoundModal(true)
               }}
+              onUpdateAdmins={() => setShowUpdateRoundAdmins(true)}
             />
           </div>
         )}
@@ -488,6 +491,12 @@ export const RoundCard = ({
         isOpen={showTimePeriodDrawer}
         onClose={() => setShowTimePeriodDrawer(false)}
         doc={doc}
+      />
+      <UpdateRoundAdmins
+        isOpen={showUpdateRoundAdmins}
+        onClose={() => setShowUpdateRoundAdmins(false)}
+        doc={doc}
+        mutateRounds={mutateRounds}
       />
     </div>
   )

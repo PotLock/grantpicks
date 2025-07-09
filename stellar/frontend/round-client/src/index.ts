@@ -33,7 +33,7 @@ if (typeof window !== 'undefined') {
 export const networks = {
   testnet: {
     networkPassphrase: "Test SDF Network ; September 2015",
-    contractId: "CDKE2ROJIXNAQDUAIY27L4EQVMJAEZEI3WEGYFF42V5IYNJDHRHIRR5Z",
+    contractId: "CAAH3TSAEGM34FRIKT7DBCF26DQ63STVGFUEHLP4CTNDD5XKQGXSLSSO",
   }
 } as const
 
@@ -236,7 +236,27 @@ export interface FlagDetail {
 }
 
 export const Errors = {
-  0: {message:"VotingStartGreaterThanVotingEnd"},
+  5: {message:"OwnerOrAdminOnly"},
+
+  26: {message:"ContractNotInitialized"},
+
+  31: {message:"InsufficientBalance"},
+
+  32: {message:"IndexOutOfBound"},
+
+  38: {message:"SameOwner"},
+
+  52: {message:"DataNotFound"},
+
+  57: {message:"AlreadyInitialized"},
+
+  88: {message:"OwnerOnly"},
+
+  89: {message:"NoPendingOwnershipTransfer"},
+
+  65: {message:"ProtocolFeeTooHigh"},
+
+  66: {message:"ReferrerFeeTooHigh"},0: {message:"VotingStartGreaterThanVotingEnd"},
 
   1: {message:"ApplicationStartGreaterThanApplicationEnd"},
 
@@ -321,27 +341,7 @@ export const Errors = {
   79: {message:"PayoutsAlreadySet"},
 
   90: {message:"MinimumDepositMustBeLessThanExpectedAmount"},
-  5: {message:"OwnerOrAdminOnly"},
 
-  26: {message:"ContractNotInitialized"},
-
-  31: {message:"InsufficientBalance"},
-
-  32: {message:"IndexOutOfBound"},
-
-  38: {message:"SameOwner"},
-
-  52: {message:"DataNotFound"},
-
-  57: {message:"AlreadyInitialized"},
-
-  88: {message:"OwnerOnly"},
-
-  89: {message:"NoPendingOwnershipTransfer"},
-
-  65: {message:"ProtocolFeeTooHigh"},
-
-  66: {message:"ReferrerFeeTooHigh"},
   6: {message:"VotingPeriodNotStarted"},
 
   7: {message:"VotingPeriodEnded"},

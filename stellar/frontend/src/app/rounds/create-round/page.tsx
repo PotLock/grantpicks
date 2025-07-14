@@ -74,6 +74,7 @@ import { getLists } from '@/services/stellar/list'
 const CreateRoundPage = () => {
 	const router = useRouter()
 	const [showContactType, setShowContactType] = useState<boolean>(false)
+	const [showTips, setShowTips] = useState<boolean>(false)
 	const { nearPrice, stellarPrice, openPageLoading, dismissPageLoading } =
 		useGlobalContext()
 	const {
@@ -622,6 +623,84 @@ const CreateRoundPage = () => {
 					<p className="text-[50px] font-black text-center uppercase mb-8 md:mb-12">
 						Create new Round
 					</p>
+					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
+						<button
+							onClick={() => setShowTips(!showTips)}
+							className="flex justify-between w-full items-center py-2"
+						>
+							<div className="flex items-center space-x-2">
+								<IconInfoCircle
+									size={20}
+									className="stroke-grantpicks-black-600"
+								/>
+								<p className="font-semibold text-base text-grantpicks-black-950">
+									How Creating Rounds Work
+								</p>
+							</div>
+							{showTips ? (
+								<IconExpandLess
+									size={24}
+									className="stroke-grantpicks-black-400"
+								/>
+							) : (
+								<IconExpandMore
+									size={24}
+									className="stroke-grantpicks-black-400"
+								/>
+							)}
+						</button>
+						<div
+							className={`overflow-hidden transition-all duration-500 ease-in-out ${showTips ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'
+								}`}
+						>
+							<div className="pt-4 space-y-4 border-t border-black/10">
+								<div>
+									<h4 className="font-semibold text-sm text-grantpicks-black-950 mb-2">
+										📅 Duration & Timing
+									</h4>
+									<ul className="text-sm text-grantpicks-black-700 space-y-1 ml-4">
+										<li>• <strong>Application Period:</strong> If enabled, must be at least 24 hours long</li>
+										<li>• <strong>Voting Period:</strong> Must be at least 24 hours long</li>
+										<li>• <strong>Timeline:</strong> Application period must end before voting period begins</li>
+										<li>• <strong>Auto-adjustment:</strong> Times are automatically adjusted to ensure proper sequencing</li>
+									</ul>
+								</div>
+								<div>
+									<h4 className="font-semibold text-sm text-grantpicks-black-950 mb-2">
+										📋 Lists & Requirements
+									</h4>
+									<ul className="text-sm text-grantpicks-black-700 space-y-1 ml-4">
+										<li>• <strong>Voter Lists:</strong> Control who can vote in your round</li>
+										<li>• <strong>Application Lists:</strong> Control who can apply (only if applications are enabled)</li>
+										<li>• <strong>List Selection:</strong> You can only select one list per requirement</li>
+										<li>• <strong>Ownership:</strong> You can use lists you own or are an admin of</li>
+									</ul>
+								</div>
+								<div>
+									<h4 className="font-semibold text-sm text-grantpicks-black-950 mb-2">
+										💰 Funding & Deposits
+									</h4>
+									<ul className="text-sm text-grantpicks-black-700 space-y-1 ml-4">
+										<li>• <strong>Expected Amount:</strong> The total funding goal for your round</li>
+										<li>• <strong>Minimum Deposit:</strong> The smallest amount someone can contribute</li>
+										<li>• <strong>Initial Deposit:</strong> Your starting contribution (optional)</li>
+										<li>• <strong>Validation:</strong> Initial deposit cannot be less than minimum deposit</li>
+									</ul>
+								</div>
+								<div>
+									<h4 className="font-semibold text-sm text-grantpicks-black-950 mb-2">
+										⚙️ Advanced Features
+									</h4>
+									<ul className="text-sm text-grantpicks-black-700 space-y-1 ml-4">
+										<li>• <strong>Cooldown Period:</strong> Time between voting end and payout period</li>
+										<li>• <strong>Compliance:</strong> Requires grantees to complete KYC process</li>
+										<li>• <strong>Remaining Funds:</strong> Redistribute unclaimed funds to specified address</li>
+										<li>• <strong>Referral Fees:</strong> Set commission for referrers (0-5%)</li>
+									</ul>
+								</div>
+							</div>
+						</div>
+					</div>
 					<div className="p-5 rounded-2xl shadow-md bg-white space-y-6 mb-4 lg:mb-6">
 						<InputText
 							required

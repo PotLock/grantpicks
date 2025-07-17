@@ -112,54 +112,53 @@ const Footer = () => {
 					</div>
 
 					{/* Smart Contracts */}
-					<div>
-						<h3 className="font-semibold text-base text-gray-900 mb-4">Smart Contracts</h3>
-						<div className="space-y-3">
-							<button
-								onClick={async () => {
-									await navigator.clipboard.writeText(
-										chains.find((chain) => chain.name === chainName)?.contract as string,
-									)
-									toast.success('Contract copied', {
-										style: toastOptions.success.style,
-									})
-								}}
-								className="w-full border border-gray-200 rounded-lg bg-gray-50 py-2 px-3 flex items-center gap-x-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-100 transition-colors"
-								disabled={
-									chains.find((chain) => chain.name === chainName)?.contract ===
-									'Not Audited'
-								}
-							>
-								<div className="border border-gray-200 rounded-full p-1 flex items-center justify-center bg-white">
-									{chains.find((chain) => chain.name === chainName)?.icon}
-								</div>
-								<p className="text-sm text-gray-900 flex-1 text-left">
-									{prettyTruncate(
-										chains.find((chain) => chain.name === chainName)?.contract,
-										12,
-										'address',
-									)}
-								</p>
-								<IconCopy size={14} className="stroke-gray-500" />
-							</button>
-
-							<a
-								href="https://github.com/PotLock/grantpicks/blob/main/VAR_PotLock_250113_GrantPicks-V3.pdf"
-								target="_blank"
-								rel="noopener noreferrer"
-								className="flex items-center gap-x-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
-							>
-								<svg width="16" height="16" fill="none" viewBox="0 0 24 24">
-									<path d="M6 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8.828A2 2 0 0 0 19.414 7.414l-4.828-4.828A2 2 0 0 0 12.172 2H6zm7 1.414L18.586 9H15a2 2 0 0 1-2-2V3.414z" stroke="currentColor" strokeWidth="1.5" />
-									<text x="12" y="16" textAnchor="middle" fontSize="8" fill="currentColor">AUDIT</text>
-								</svg>
-								Audit Report
-							</a>
-						</div>
+					{envVarConfigs.NETWORK_ENV === 'testnet' && (
 						<div>
+							<h3 className="font-semibold text-base text-gray-900 mb-4">Smart Contracts</h3>
+							<div className="space-y-3">
+								<button
+									onClick={async () => {
+										await navigator.clipboard.writeText(
+											chains.find((chain) => chain.name === chainName)?.contract as string,
+										)
+										toast.success('Contract copied', {
+											style: toastOptions.success.style,
+										})
+									}}
+									className="w-full border border-gray-200 rounded-lg bg-gray-50 py-2 px-3 flex items-center gap-x-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-100 transition-colors"
+									disabled={
+										chains.find((chain) => chain.name === chainName)?.contract ===
+										'Not Audited'
+									}
+								>
+									<div className="border border-gray-200 rounded-full p-1 flex items-center justify-center bg-white">
+										{chains.find((chain) => chain.name === chainName)?.icon}
+									</div>
+									<p className="text-sm text-gray-900 flex-1 text-left">
+										{prettyTruncate(
+											chains.find((chain) => chain.name === chainName)?.contract,
+											12,
+											'address',
+										)}
+									</p>
+									<IconCopy size={14} className="stroke-gray-500" />
+								</button>
 
+								<a
+									href="https://github.com/PotLock/grantpicks/blob/main/VAR_PotLock_250113_GrantPicks-V3.pdf"
+									target="_blank"
+									rel="noopener noreferrer"
+									className="flex items-center gap-x-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+								>
+									<svg width="16" height="16" fill="none" viewBox="0 0 24 24">
+										<path d="M6 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8.828A2 2 0 0 0 19.414 7.414l-4.828-4.828A2 2 0 0 0 12.172 2H6zm7 1.414L18.586 9H15a2 2 0 0 1-2-2V3.414z" stroke="currentColor" strokeWidth="1.5" />
+										<text x="12" y="16" textAnchor="middle" fontSize="8" fill="currentColor">AUDIT</text>
+									</svg>
+									Audit Report
+								</a>
+							</div>
 						</div>
-					</div>
+					)}
 				</div>
 
 				{/* Testnet Disclaimer */}

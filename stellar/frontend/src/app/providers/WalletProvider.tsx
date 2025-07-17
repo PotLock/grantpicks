@@ -158,6 +158,69 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 		}
 	}
 
+	const checkNetworkValidation = async (walletType: 'near' | 'stellar') => {
+		const appNetwork = envVarConfigs.NETWORK_ENV
+
+		if (walletType === 'near') {
+			// For NEAR, check if the wallet is connected to the correct network
+			// NEAR wallets typically handle network switching automatically
+			// but we can check the network configuration
+			const wallet = await nearSelector?.wallet()
+			if (wallet) {
+				const accounts = await wallet.getAccounts()
+				const accountId = accounts[0]?.accountId
+
+				// Check if account is on mainnet but app is on testnet
+				if (accountId && !accountId.includes('.testnet') && appNetwork === 'testnet') {
+					toast.error(
+						'Network Mismatch: You are connected to NEAR Mainnet but this app is running on Testnet. Please switch to Testnet in your wallet.',
+						{ duration: 6000 }
+					)
+					return false
+				}
+
+				// Check if account is on testnet but app is on mainnet
+				if (accountId && accountId.includes('.testnet') && appNetwork === 'mainnet') {
+					toast.error(
+						'Network Mismatch: You are connected to NEAR Testnet but this app is running on Mainnet. Please switch to Mainnet in your wallet.',
+						{ duration: 6000 }
+					)
+					return false
+				}
+			}
+		} else if (walletType === 'stellar') {
+			// For Stellar, check the network configuration
+			if (stellarKit) {
+				try {
+					const networkInfo = await stellarKit.getNetwork()
+					const currentNetwork = networkInfo.network
+					const expectedNetwork = appNetwork === 'testnet' ? 'TESTNET' : 'MAINNET'
+
+					if (currentNetwork !== expectedNetwork) {
+						const currentNetworkName = currentNetwork === 'TESTNET' ? 'Testnet' : 'Mainnet'
+						const expectedNetworkName = expectedNetwork === 'TESTNET' ? 'Testnet' : 'Mainnet'
+
+						toast.error(
+							`Network Mismatch: You are connected to Stellar ${currentNetworkName} but this app is running on ${expectedNetworkName}. Please switch to ${expectedNetworkName} in your wallet.`,
+							{ duration: 6000 }
+						)
+						return false
+					}
+				} catch (error) {
+					console.error('Error checking Stellar network:', error)
+					// If we can't check the network, allow the connection but warn the user
+					toast.error(
+						'Unable to verify network configuration. Please ensure your wallet is connected to the correct network.',
+						{ duration: 4000 }
+					)
+					return false
+				}
+			}
+		}
+
+		return true
+	}
+
 	const onCheckConnected = async (
 		selector?: WalletSelector,
 		kit?: StellarWalletsKit,
@@ -166,6 +229,19 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 			localStorageConfigs.STELLAR_PUBLIC_KEY,
 		)
 		if (selector && selector.isSignedIn()) {
+			// Check network validation for NEAR
+			const isNetworkValid = await checkNetworkValidation('near')
+			if (!isNetworkValid) {
+				// Sign out if network is invalid
+				const wallet = await selector.wallet()
+				await wallet?.signOut()
+				setConnectedWallet(null)
+				setNearWallet(null)
+				setNearAccounts([])
+				store.clear()
+				return
+			}
+
 			setConnectedWallet('near')
 			//sign out stellar
 			localStorage.removeItem(localStorageConfigs.STELLAR_PUBLIC_KEY)
@@ -190,6 +266,18 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 
 			return
 		} else if (kit && localStellarPubKey) {
+			// Check network validation for Stellar
+			const isNetworkValid = await checkNetworkValidation('stellar')
+			if (!isNetworkValid) {
+				// Clear Stellar connection if network is invalid
+				localStorage.removeItem(localStorageConfigs.STELLAR_PUBLIC_KEY)
+				localStorage.removeItem(localStorageConfigs.CONNECTED_WALLET)
+				setConnectedWallet(null)
+				setStellarPubKey('')
+				store.clear()
+				return
+			}
+
 			const pubKey = (await kit?.getAddress()).address
 			setConnectedWallet('stellar')
 			localStorage.setItem(localStorageConfigs.CONNECTED_WALLET, 'stellar')
@@ -238,6 +326,14 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 						localStorageConfigs.LAST_STELLAR_WALLET_ID,
 						option.id,
 					)
+
+					// Check network validation before proceeding
+					const isNetworkValid = await checkNetworkValidation('stellar')
+					if (!isNetworkValid) {
+						// Don't proceed with connection if network is invalid
+						return
+					}
+
 					const pubKey = (await stellarKit?.getAddress()).address
 					let cmdWallet = new CMDWallet({
 						stellarPubKey: pubKey,

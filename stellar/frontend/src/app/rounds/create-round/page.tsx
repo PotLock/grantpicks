@@ -549,8 +549,10 @@ const CreateRoundPage = () => {
 		skip: number
 		limit: number
 	}) => {
+		console.log('whatisthe current chainId, ', storage.chainId)
 		if (storage.chainId === 'stellar') {
 			let contracts = storage.getStellarContracts()
+			console.log('is the sotrage full.. ', contracts)
 			if (!contracts) {
 				return []
 			}
@@ -561,6 +563,7 @@ const CreateRoundPage = () => {
 			return res
 		} else {
 			let contracts = storage.getNearContracts(nearWallet)
+			console.log('is this the contracts... ', contracts)
 			if (!contracts) {
 				return []
 			}
@@ -595,6 +598,8 @@ const CreateRoundPage = () => {
 		)
 		: []
 	const isEmpty = data?.[0]?.length === 0
+
+	console.log('is emptiest init,, ', isEmpty)
 	const isReachingEnd =
 		isEmpty || (data && data[data.length - 1]?.length < LIMIT_SIZE)
 

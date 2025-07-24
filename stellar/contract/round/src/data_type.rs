@@ -255,7 +255,7 @@ impl RoundDetail {
             // let fee_amount = fee.fixed_div_floor(env, &total_basis_points, &denominator).fixed_mul_floor(env, &amount, &denominator);
             // // Round up
             // Some(fee_amount)
-            let total_basis_points:u128 = 10_000;
+            let total_basis_points: u128 = 10_000;
             let fee_amount = (referrer_fee_basis_points as u128).saturating_mul(amount);
             // Round up
             Some(fee_amount.div_ceil(total_basis_points))

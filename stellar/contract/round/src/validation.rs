@@ -1,5 +1,14 @@
 use crate::{
-    admin_writer::is_admin, approval_writer::{is_project_approved, read_approved_projects}, config_writer::read_config, data_type::{CreateRoundParams, RoundDetail, UpdateRoundParams}, error::{ApplicationError, Error, RoundError, VoteError}, external::{ListsClient, ProjectRegistryClient, RegistrationStatus}, round_writer::read_round_info, utils::get_ledger_second_as_millis, voter_writer::is_blacklisted, voting_writer::get_voting_state_done
+    admin_writer::is_admin,
+    approval_writer::{is_project_approved, read_approved_projects},
+    config_writer::read_config,
+    data_type::{CreateRoundParams, RoundDetail, UpdateRoundParams},
+    error::{ApplicationError, Error, RoundError, VoteError},
+    external::{ListsClient, ProjectRegistryClient, RegistrationStatus},
+    round_writer::read_round_info,
+    utils::get_ledger_second_as_millis,
+    voter_writer::is_blacklisted,
+    voting_writer::get_voting_state_done,
 };
 use soroban_sdk::{panic_with_error, Address, Env, String, Vec};
 
@@ -20,27 +29,28 @@ pub fn validate_round_detail(env: &Env, round_detail: &CreateRoundParams) {
     }
 
     if round_detail.allow_applications {
-      if round_detail.application_start_ms.is_some() && round_detail.application_end_ms.is_some() {
-        let app_start = round_detail.application_start_ms.unwrap();
-        let app_end = round_detail.application_end_ms.unwrap();
-        if app_start < current_time {
-            panic_with_error!(env, RoundError::ApplicationStartInPast);
+        if round_detail.application_start_ms.is_some() && round_detail.application_end_ms.is_some()
+        {
+            let app_start = round_detail.application_start_ms.unwrap();
+            let app_end = round_detail.application_end_ms.unwrap();
+            if app_start < current_time {
+                panic_with_error!(env, RoundError::ApplicationStartInPast);
+            }
+            if app_end - app_start < MIN_APPLICATION_DURATION {
+                panic_with_error!(env, RoundError::ApplicationPeriodTooShort);
+            }
+            if app_start > app_end {
+                panic_with_error!(env, RoundError::ApplicationStartGreaterThanApplicationEnd);
+            }
+        } else {
+            panic_with_error!(env, RoundError::ApplicationPeriodNotSet);
         }
-        if app_end - app_start < MIN_APPLICATION_DURATION {
-            panic_with_error!(env, RoundError::ApplicationPeriodTooShort);
-        }
-        if app_start > app_end {
-          panic_with_error!(env, RoundError::ApplicationStartGreaterThanApplicationEnd);
-        }
-      }else{
-        panic_with_error!(env, RoundError::ApplicationPeriodNotSet);
-      }
     }
 
-    if round_detail.application_end_ms.is_some(){
-      if round_detail.voting_start_ms < round_detail.application_end_ms.unwrap() {
-        panic_with_error!(env, RoundError::VotingStartLessThanApplicationEnd);
-      }
+    if round_detail.application_end_ms.is_some() {
+        if round_detail.voting_start_ms < round_detail.application_end_ms.unwrap() {
+            panic_with_error!(env, RoundError::VotingStartLessThanApplicationEnd);
+        }
     }
 
     if round_detail.expected_amount == 0 {
@@ -70,7 +80,6 @@ pub fn validate_round_detail(env: &Env, round_detail: &CreateRoundParams) {
         }
     }
 }
-
 
 pub fn validate_round_detail_update(env: &Env, round_detail: &UpdateRoundParams) {
     let current_time = get_ledger_second_as_millis(env);
@@ -131,7 +140,7 @@ pub fn validate_application_period(env: &Env, round: &RoundDetail) {
         if current_time > round.application_end_ms.unwrap() {
             panic_with_error!(env, ApplicationError::ApplicationPeriodEnded);
         }
-    }else{
+    } else {
         panic_with_error!(env, ApplicationError::ApplicationNotAllowed);
     }
 }
@@ -225,7 +234,8 @@ pub fn validate_voting_whitelist(env: &Env, round_id: u128, voter: &Address) {
     let list_id = round.voting_wl_list_id.unwrap();
     let list_contract = read_config(env).list_contract;
     let list_client = ListsClient::new(env, &list_contract);
-    let is_whitelisted = list_client.is_registered(&Some(list_id), &voter, &Some(RegistrationStatus::Approved));
+    let is_whitelisted =
+        list_client.is_registered(&Some(list_id), &voter, &Some(RegistrationStatus::Approved));
     if !is_whitelisted {
         panic_with_error!(env, RoundError::UserNotWhitelisted);
     }
@@ -236,7 +246,11 @@ pub fn validate_application_whitelist(env: &Env, round_id: u128, applicant: &Add
     let list_id = round.application_wl_list_id.unwrap();
     let list_contract = read_config(env).list_contract;
     let list_client = ListsClient::new(env, &list_contract);
-    let is_whitelisted = list_client.is_registered(&Some(list_id), &applicant, &Some(RegistrationStatus::Approved));
+    let is_whitelisted = list_client.is_registered(
+        &Some(list_id),
+        &applicant,
+        &Some(RegistrationStatus::Approved),
+    );
     if !is_whitelisted {
         panic_with_error!(env, RoundError::UserNotWhitelisted);
     }

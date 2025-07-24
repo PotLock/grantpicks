@@ -51,26 +51,30 @@ export interface CreateRoundContact {
 }
 
 export interface CreateRoundParams {
-	admins: string[]
+	admins: Array<string>
 	allow_applications: boolean
 	allow_remaining_dist: boolean
-	application_end_ms?: u64
-	application_start_ms?: u64
-	compliance_period_ms?: u64
+	application_end_ms: Option<u64>
+	application_start_ms: Option<u64>
+	application_wl_list_id: Option<u128>
+	compliance_period_ms: Option<u64>
 	compliance_req_desc: string
-	contacts: Contact[]
-	cooldown_period_ms?: u64
+	contacts: Array<Contact>
+	cooldown_period_ms: Option<u64>
 	description: string
 	expected_amount: u128
 	minimum_deposit: u128
 	is_video_required: boolean
-	max_participants?: u32
+	max_participants: Option<u32>
+	minimum_deposit: u128
 	name: string
-	num_picks_per_voter?: u32
+	num_picks_per_voter: Option<u32>
 	owner: string
-	referrer_fee_basis_points?: u32
+	referrer_fee_basis_points: Option<u32>
 	remaining_dist_address: string
-	use_whitelist?: boolean
+	use_vault: Option<boolean>
+	use_whitelist_application: Option<boolean>
+	use_whitelist_voting: Option<boolean>
 	voting_end_ms: u64
 	voting_start_ms: u64
 	use_vault?: boolean
@@ -120,7 +124,7 @@ export interface UpdateRoundParams {
 	contacts: Contact[]
 	description: string
 	is_video_required: boolean
-	max_participants?: u32
+	max_participants: Option<u32>
 	name: string
 	num_picks_per_voter?: u32
 	referrer_fee_basis_points?: u32
@@ -336,6 +340,10 @@ export const editRound = async (
 		round_id,
 		round_detail: {
 			contacts: params.contacts,
+			application_wl_list_id: params.application_wl_list_id,
+			referrer_fee_basis_points: params.referrer_fee_basis_points,
+			use_whitelist_voting: params.use_whitelist_voting,
+			voting_wl_list_id: params.voting_wl_list_id,
 			description: params.description,
 			is_video_required: params.is_video_required,
 			max_participants: params.max_participants || undefined,

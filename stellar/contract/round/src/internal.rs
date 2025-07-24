@@ -64,7 +64,8 @@ use crate::{
         validate_owner_or_admin, validate_pick_per_votes, validate_project_to_approve,
         validate_review_notes, validate_round_detail, validate_round_detail_update,
         validate_specify_applicant, validate_vault_fund, validate_voting_not_started,
-        validate_voting_period, validate_voting_whitelist, MIN_APPLICATION_DURATION, MIN_VOTING_DURATION,
+        validate_voting_period, validate_voting_whitelist, MIN_APPLICATION_DURATION,
+        MIN_VOTING_DURATION,
     },
     voter_writer::{
         add_to_blacklist, add_voted_round, get_voted_rounds_for_voter, is_blacklisted,
@@ -79,8 +80,6 @@ use crate::{
 
 const MAX_PROTOCOL_FEE_BASIS_POINTS: u32 = 1_000; // 10% max protocol fee
 const MAX_REFERRER_FEE_BASIS_POINTS: u32 = 500; // 5% max referrer fee
-
-const MIN_DURATION_MS: u64 = 3600000;
 
 #[contract]
 pub struct RoundContract;
@@ -679,8 +678,21 @@ impl IsRound for RoundContract {
         let round = read_round_info(env, round_id);
         let current_ms = get_ledger_second_as_millis(env);
 
+        let projects = read_approved_projects(env, round_id);
+
         validate_voting_period(env, &round);
-        validate_number_of_votes(env, round.num_picks_per_voter, picks.len());
+        // validate_number_of_votes(env, round.num_picks_per_voter, picks.len(), projects.len());
+
+        if round.num_picks_per_voter != picks.len() {
+            let ct_p = count_total_available_pairs(projects.len());
+            if round.num_picks_per_voter > ct_p {
+                let mut round = read_round_info(env, round_id);
+                round.num_picks_per_voter = ct_p;
+                write_round_info(env, round_id, &round);
+            } else {
+                panic_with_error!(env, VoteError::NotVoteAllPairs);
+            }
+        }
 
         if round.use_whitelist_voting {
             validate_voting_whitelist(env, round_id, &voter);
@@ -691,7 +703,6 @@ impl IsRound for RoundContract {
 
         let mut picked_pairs: Vec<PickResult> = Vec::new(env);
 
-        let projects = read_approved_projects(env, round_id);
         let total_available_pairs = count_total_available_pairs(projects.len());
         let projects = read_approved_projects(env, round_id);
         let mut voting_count = read_voting_count(env, round_id);
@@ -1440,6 +1451,7 @@ impl IsRound for RoundContract {
         payouts_external
     }
 
+    //TODO: maybe change payout input to take project id
     fn set_payouts(
         env: &Env,
         round_id: u128,
@@ -1508,11 +1520,31 @@ impl IsRound for RoundContract {
             let application =
                 get_application_by_applicant(env, round_id, &payout_input.recipient_id);
 
-            if application.is_none() {
-                panic_with_error!(env, ApplicationError::ApplicationNotFound);
-            }
+            let project_id = if let Some(app) = application {
+                // Project applied through normal application process
+                app.project_id
+            } else {
+                // Project was added directly by admin, need to find it in approved projects
+                let config = read_config(env);
+                let project_client = ProjectRegistryClient::new(env, &config.project_contract);
 
-            let project_id = application.unwrap().project_id;
+                // Find the project ID where the recipient is the owner
+                let mut found_project_id: Option<u128> = None;
+                for approved_project in approved_project.iter() {
+                    if let Some(precheck) = project_client.get_precheck_by_id(&approved_project) {
+                        if precheck.applicant == payout_input.recipient_id {
+                            found_project_id = Some(approved_project);
+                            break;
+                        }
+                    }
+                }
+
+                if found_project_id.is_none() {
+                    panic_with_error!(env, ApplicationError::ApplicationNotFound);
+                }
+
+                found_project_id.unwrap()
+            };
 
             if !approved_project.contains(project_id) {
                 panic_with_error!(env, ApplicationError::ProjectNotApproved);

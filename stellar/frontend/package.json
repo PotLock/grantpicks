@@ -64,7 +64,7 @@
 		"react-switch": "^7.0.0",
 		"react-timer-hook": "^3.0.7",
 		"react-tooltip": "^5.28.0",
-		"round-client": "file:../packages/round-client",
+		"round-client": "./round-client",
 		"rxjs": "^7.8.1",
 		"swr": "^2.2.5",
 		"tus-js-client": "^4.1.0",

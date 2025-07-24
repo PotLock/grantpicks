@@ -1,4 +1,5 @@
 /// <reference types="node" resolution-mode="require"/>
+/// <reference types="node" resolution-mode="require"/>
 import { Buffer } from "buffer";
 import { AssembledTransaction, Client as ContractClient, ClientOptions as ContractClientOptions } from '@stellar/stellar-sdk/contract';
 import type { u32, u64, u128, Option } from '@stellar/stellar-sdk/contract';
@@ -8,7 +9,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CBIW2SNUZZEERJLOIWRUEJN6DJVK5DORFK22XELYPD52S3QYYPPFFMAK";
+        readonly contractId: "CDKJMKQ7J7LQCWP4GFLY6LPC4ONJK7B3QARAFCJJHJJM3W34LXSASNM5";
     };
 };
 export interface Project {
@@ -21,7 +22,6 @@ export interface Project {
     name: string;
     overview: string;
     owner: string;
-    payout_address: string;
     repositories: Array<ProjectRepository>;
     submited_ms: u64;
     team_members: Array<ProjectTeamMember>;
@@ -36,7 +36,6 @@ export interface CreateProjectParams {
     image_url: string;
     name: string;
     overview: string;
-    payout_address: string;
     repositories: Array<ProjectRepository>;
     team_members: Array<ProjectTeamMember>;
     video_url: string;
@@ -48,7 +47,6 @@ export interface UpdateProjectParams {
     image_url: string;
     name: string;
     overview: string;
-    payout_address: string;
     repositories: Array<ProjectRepository>;
     team_members: Array<ProjectTeamMember>;
     video_url: string;
@@ -130,7 +128,7 @@ export type ContractKey = {
     values: void;
 } | {
     tag: "ApplicantToProjectID";
-    values: void;
+    values: readonly [string];
 };
 export interface Client {
     /**

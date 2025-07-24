@@ -224,13 +224,13 @@ const CreateProjectStep3 = () => {
 													watch().smart_contracts[index].chain === 'bitcoin'
 														? BITCOIN_ADDRESS_REGEX(value)
 														: watch().smart_contracts[index].chain ===
-															  'ethereum'
+															'ethereum'
 															? ETHEREUM_ADDRESS_REGEX(value)
 															: watch().smart_contracts[index].chain ===
-																  'stellar'
+																'stellar'
 																? StrKey.isValidEd25519PublicKey(value)
 																: watch().smart_contracts[index].chain ===
-																	  'near'
+																	'near'
 																	? NEAR_ADDRESS_REGEX(value)
 																	: true,
 											})}
@@ -250,7 +250,7 @@ const CreateProjectStep3 = () => {
 									</div>
 								</div>
 								{errors?.smart_contracts?.[index]?.address?.type ===
-								'validate' ? (
+									'validate' ? (
 									<p className="text-red-500 text-xs ml-2">
 										Address is invalid
 									</p>
@@ -284,7 +284,7 @@ const CreateProjectStep3 = () => {
 						/>
 					</div>
 
-					<p className="text-grantpicks-black-950 mb-2">Github</p>
+					<p className="text-grantpicks-black-950 mb-2">Github Repo(s)</p>
 					{fieldGithubs.map((value, index) => {
 						return (
 							<div key={index} className="flex items-center space-x-4 mb-2">
@@ -299,9 +299,9 @@ const CreateProjectStep3 = () => {
 										})}
 										errorMessage={
 											errors?.github_urls?.[index]?.github_url?.type ===
-											'validate' ? (
+												'validate' ? (
 												<p className="text-red-500 text-xs mt-1 ml-2">
-													Please enter a valid GitHub URL
+													Please enter a valid GitHub Repository URL
 												</p>
 											) : undefined
 										}

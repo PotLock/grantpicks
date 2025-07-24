@@ -54,9 +54,13 @@ const RoundVotePage = () => {
 					voter: storage.my_address || '',
 				}
 				const isEligibleRes = await isAvailableVoteRound(txParams, contracts)
+				console.log('isEligibleRes', isEligibleRes)
 				setIsEligible(isEligibleRes)
 				if (!isEligibleRes) {
-					router.back()
+					router.push('/rounds')
+					toast.error('You are not eligible to vote in this round', {
+						style: toastOptions.error.style,
+					})
 				} else {
 					await checkVoterHasVoted()
 				}

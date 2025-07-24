@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import Drawer from '../../commons/Drawer'
 import { IDrawerProps } from '@/types/dialog'
 import clsx from 'clsx'
@@ -81,7 +81,7 @@ const RoundDetailContact = ({ contact }: { contact: Contact }) => {
 			<Link href={generateLink()} target="_blank">
 				<Button
 					color="alpha-50"
-					onClick={() => {}}
+					onClick={() => { }}
 					className="!text-sm !font-semibold"
 				>
 					Chat
@@ -107,7 +107,7 @@ const RoundDetailDrawer = ({
 
 	const fetchRoundApplication = async () => {
 		if (selectedRoundType === 'upcoming') {
-			if (chainId == 'stellar') {
+			if (chainId !== 'near') {
 				try {
 					const contracts = storage.getStellarContracts()
 
@@ -175,11 +175,11 @@ const RoundDetailDrawer = ({
 		}
 	}
 
-	const getSpecificTime = () => {
+	const getSpecificTime = useCallback(() => {
 		if (selectedRoundType === 'upcoming') {
 			if (
 				new Date().getTime() >=
-					new Date(doc.application_start || '').getTime() &&
+				new Date(doc.application_start || '').getTime() &&
 				new Date().getTime() < new Date(doc.application_end || '').getTime()
 			) {
 				return `upcoming-open`
@@ -188,6 +188,8 @@ const RoundDetailDrawer = ({
 				new Date().getTime() < new Date(doc.voting_start || '').getTime()
 			) {
 				return `upcoming-closed`
+			} else if (new Date().getTime() < new Date(doc.application_start || '').getTime()) {
+				return `upcoming-not-started`
 			} else if (doc.allow_applications) {
 				return `upcoming`
 			} else {
@@ -202,7 +204,7 @@ const RoundDetailDrawer = ({
 				return `payout-pending`
 			}
 		}
-	}
+	}, [selectedRoundType, doc])
 
 	const {
 		data: admins,
@@ -226,7 +228,7 @@ const RoundDetailDrawer = ({
 								getSpecificTime() === 'on-going'
 								? `border-grantpicks-green-400 text-grantpicks-green-700 bg-grantpicks-green-50`
 								: getSpecificTime() === 'upcoming' ||
-									  getSpecificTime() === 'upcoming-closed'
+									getSpecificTime() === 'upcoming-closed'
 									? `border-grantpicks-black-400 text-grantpicks-black-950 bg-grantpicks-black-50`
 									: `border-grantpicks-amber-400 text-grantpicks-amber-700 bg-grantpicks-amber-50`,
 						)}
@@ -236,7 +238,7 @@ const RoundDetailDrawer = ({
 						) : getSpecificTime() === 'upcoming-open' ? (
 							<IconProject size={18} className="fill-grantpicks-green-400" />
 						) : getSpecificTime() === 'upcoming' ||
-						  getSpecificTime() === 'upcoming-closed' ? (
+							getSpecificTime() === 'upcoming-closed' ? (
 							<IconProject size={18} className="fill-grantpicks-black-950" />
 						) : (
 							<IconDollar size={18} className="fill-grantpicks-amber-400" />
@@ -244,13 +246,15 @@ const RoundDetailDrawer = ({
 						<p className="uppercase">
 							{getSpecificTime() === 'on-going'
 								? `voting open`
-								: getSpecificTime() === 'upcoming'
-									? `application closed`
-									: getSpecificTime() === 'upcoming-open'
-										? `application open`
-										: getSpecificTime() === 'upcoming-closed'
-											? `application closed`
-											: `payout pending`}
+								: getSpecificTime() === 'upcoming-not-started'
+									? `application not started`
+									: getSpecificTime() === 'upcoming'
+										? `application closed`
+										: getSpecificTime() === 'upcoming-open'
+											? `application open`
+											: getSpecificTime() === 'upcoming-closed'
+												? `application closed`
+												: `payout pending`}
 						</p>
 					</div>
 				</div>
@@ -307,17 +311,17 @@ const RoundDetailDrawer = ({
 								<IconClock size={18} className="fill-grantpicks-black-400" />
 								<p className="text-sm font-normal text-grantpicks-black-950">
 									{new Date().getTime() <
-									new Date(doc.application_start || '').getTime()
+										new Date(doc.application_start || '').getTime()
 										? 'Open'
 										: 'Closed'}{' '}
 									{new Date().getTime() <
-									new Date(doc.application_start || '').getTime()
+										new Date(doc.application_start || '').getTime()
 										? moment(
-												new Date(doc.application_start || '').getTime(),
-											).fromNow()
+											new Date(doc.application_start || '').getTime(),
+										).fromNow()
 										: moment(
-												new Date(doc.application_end || '').getTime(),
-											).fromNow()}{' '}
+											new Date(doc.application_end || '').getTime(),
+										).fromNow()}{' '}
 								</p>
 							</div>
 						) : (
@@ -440,15 +444,15 @@ const RoundDetailDrawer = ({
 								(isUserApplied && getSpecificTime() === 'upcoming-open') ||
 								!doc.allow_applications ||
 								new Date().getTime() >
-									new Date(doc.application_end || '').getTime()
+								new Date(doc.application_end || '').getTime()
 							}
 							className="!py-3 flex-1"
 						>
 							{isUserApplied && getSpecificTime() === 'upcoming-open'
 								? `You're already a part of this round.`
 								: new Date().getTime() >
-											new Date(doc.application_end || '').getTime() ||
-									  !doc.allow_applications
+									new Date(doc.application_end || '').getTime() ||
+									!doc.allow_applications
 									? 'Application Closed'
 									: 'Apply'}
 						</Button>

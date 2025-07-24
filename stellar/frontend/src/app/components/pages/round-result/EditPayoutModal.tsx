@@ -82,11 +82,12 @@ const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 				}
 
 				const savePayoutTx = await contract.round_contract.set_payouts({
-					round_id: BigInt(storage.current_round?.id || 0),
+					round_id: BigInt(storage.current_round?.on_chain_id || 0),
 					caller: stellarPubKey,
 					payouts: payoutInputs,
 					clear_existing: true,
 				})
+
 
 				const txHash = await contract.signAndSendTx(
 					stellarKit as StellarWalletsKit,
@@ -247,15 +248,15 @@ const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 								{storage.current_remaining.toFixed(4)} /{' '}
 								{storage.chainId === 'stellar'
 									? Number(
-											formatStroopToXlm(
-												BigInt(
-													storage.current_round?.current_vault_balance || 0,
-												),
+										formatStroopToXlm(
+											BigInt(
+												storage.current_round?.current_vault_balance || 0,
 											),
-										)
+										),
+									)
 									: formatNearAmount(
-											storage.current_round?.current_vault_balance || '0',
-										)}
+										storage.current_round?.current_vault_balance || '0',
+									)}
 							</div>
 						</div>
 						<div className="flex flex-grow"></div>

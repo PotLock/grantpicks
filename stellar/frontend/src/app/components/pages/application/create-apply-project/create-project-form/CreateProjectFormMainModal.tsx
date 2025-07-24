@@ -33,10 +33,10 @@ import { usePotlockService } from '@/services/potlock'
 
 const CreateProjectFormContext = createContext<ICreateProjectFormContext>({
 	data: DEFAULT_CREATE_PROJECT_DATA,
-	setData: () => {},
+	setData: () => { },
 	step: 1,
-	setStep: () => {},
-	onClose: () => {},
+	setStep: () => { },
+	onClose: () => { },
 	onProceedApply: () => Promise.resolve(),
 })
 
@@ -54,12 +54,15 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 	const storage = useAppStorage()
 
 	const onProceedApply = async () => {
+		let roundData: any
 		try {
 			openPageLoading()
 
-			const roundData = await potlockApi.getRound(
-				Number(searchParams.get('apply_round')),
-			)
+			if (searchParams.get('apply_round')) {
+				roundData = await potlockApi.getRound(
+					Number(searchParams.get('apply_round')),
+				)
+			}
 
 			if (storage.chainId === 'stellar') {
 				const contracts = storage.getStellarContracts()
@@ -67,6 +70,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 				if (!contracts) {
 					return
 				}
+
 
 				const params: ICreateProjectParams = {
 					name: dataForm.title,
@@ -88,7 +92,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 						funded_ms: BigInt(f.date.getTime() as number),
 					})),
 					image_url: DEFAULT_IMAGE_URL,
-					payout_address: storage.my_address || '',
+					// payout_address: storage.my_address || '',
 					repositories: dataForm.github_urls.map((g) => ({
 						label: 'github',
 						url: g,
@@ -121,10 +125,13 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 					)
 				}
 
+
+
 				const txCreateProject = await contracts.project_contract.apply({
 					applicant: storage.my_address || '',
 					project_params: params,
 				})
+
 
 				const txHashCreateProject = await contracts.signAndSendTx(
 					stellarKit as StellarWalletsKit,
@@ -175,7 +182,6 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 						funded_ms: parseInt(f.date.getTime().toString()),
 					})),
 					image_url: DEFAULT_IMAGE_URL,
-					payout_address: storage.my_address || '',
 					repositories: dataForm.github_urls.map((g) => ({
 						label: 'github',
 						url: g,
@@ -183,6 +189,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 					video_url: dataForm.video.url,
 					team_members: dataForm.team_member,
 				}
+
 
 				const txCreateProject = await contracts.near_social.setProjectData(
 					storage.my_address || '',

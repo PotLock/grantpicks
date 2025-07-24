@@ -174,8 +174,8 @@ const CreateProjectStep2 = () => {
 										Team member is already added
 									</p>
 								) : watch('member') !== '' &&
-								  watch('member') !== undefined &&
-								  !validationError ? (
+									watch('member') !== undefined &&
+									!validationError ? (
 									<p className="text-green-500 text-xs mt-1 ml-2">
 										Address is valid
 									</p>
@@ -232,6 +232,7 @@ const CreateProjectStep2 = () => {
 					<Button
 						color="black-950"
 						isFullWidth
+						isDisabled={members.length === 0}
 						onClick={handleSubmit(onNextStep2)}
 						className="!py-3"
 					>

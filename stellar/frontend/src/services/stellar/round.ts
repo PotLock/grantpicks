@@ -4,17 +4,16 @@ import {
 	IGetRoundsResponse,
 } from '@/types/on-chain'
 import {
-	AssembledTransaction,
 	Option,
 	u128,
 	u32,
 	u64,
 } from '@stellar/stellar-sdk/contract'
+import {  RegistrationInput } from 'lists-client'
 import {
 	ApplicationStatus,
 	Contact,
 	Pair,
-	PayoutsChallenge,
 	PickedPair,
 	ProjectVotingResult,
 	RoundApplication,
@@ -64,6 +63,7 @@ export interface CreateRoundParams {
 	cooldown_period_ms: Option<u64>
 	description: string
 	expected_amount: u128
+	minimum_deposit: u128
 	is_video_required: boolean
 	max_participants: Option<u32>
 	minimum_deposit: u128
@@ -77,7 +77,11 @@ export interface CreateRoundParams {
 	use_whitelist_voting: Option<boolean>
 	voting_end_ms: u64
 	voting_start_ms: u64
-	voting_wl_list_id: Option<u128>
+	use_vault?: boolean
+	use_whitelist_application?: boolean
+	application_wl_list_id?: bigint | undefined
+	use_whitelist_voting?: boolean
+	voting_wl_list_id?: bigint | undefined
 }
 
 export interface ReviewApplicationParams {
@@ -116,17 +120,17 @@ export interface GetMyVotedRoundsParams {
 }
 
 export interface UpdateRoundParams {
-	application_wl_list_id: Option<u128>
-	contacts: Array<Contact>
+	application_wl_list_id?: u128
+	contacts: Contact[]
 	description: string
 	is_video_required: boolean
 	max_participants: Option<u32>
 	name: string
-	num_picks_per_voter: Option<u32>
-	referrer_fee_basis_points: Option<u32>
-	use_vault: Option<boolean>
-	use_whitelist_voting: Option<boolean>
-	voting_wl_list_id: Option<u128>
+	num_picks_per_voter?: u32
+	referrer_fee_basis_points?: u32
+	use_vault?: boolean
+	use_whitelist_voting?: boolean
+	voting_wl_list_id?: u128
 }
 
 export interface DepositFundRoundParams {
@@ -162,10 +166,21 @@ export interface SetAdminsRoundParams {
 	round_admin: string[]
 }
 
-interface GetListsParams {
-	skip: number
-	limit: number
+export interface SetApplicationConfigParams {
+	round_id: u128
+	caller: string
+	application_start?: u64 | null
+	application_end: u64 | null
+	allow_applications: boolean
 }
+
+export interface SetVotingConfigParams {
+	round_id: u128
+	caller: string
+	voting_start: u64
+	voting_end: u64
+}
+
 
 export const getRounds: (
 	params: GetRoundsParams,
@@ -247,11 +262,12 @@ export const createRound = async (
 	params: CreateRoundParams,
 	contract: Contracts,
 ) => {
-	console.log('lets see you... ', params)
+	
+
 	let round = await contract.round_contract.create_round({
 		caller,
 		round_detail: {
-			admins: [],
+			admins: params.admins,
 			allow_applications: params.allow_applications,
 			allow_remaining_dist: params.allow_remaining_dist,
 			application_end_ms: params.application_end_ms,
@@ -265,7 +281,7 @@ export const createRound = async (
 			expected_amount: params.expected_amount,
 			is_video_required: params.is_video_required,
 			max_participants: params.max_participants,
-			minimum_deposit: BigInt('10'),
+			minimum_deposit: params.minimum_deposit,
 			name: params.name,
 			num_picks_per_voter: params.num_picks_per_voter,
 			owner: params.owner,
@@ -278,6 +294,37 @@ export const createRound = async (
 			voting_start_ms: params.voting_start_ms,
 			voting_wl_list_id: params.voting_wl_list_id,
 		},
+	})
+	return round
+}
+
+export const updateRoundApplicationDuration = async (
+	caller: string,
+	round_id: bigint,
+	params: SetApplicationConfigParams,
+	contract: Contracts,
+) => {
+	let round = await contract.round_contract.set_applications_config({
+		caller,
+		round_id,
+			start_ms: params?.application_start ? params.application_start : undefined,
+			end_ms: params?.application_end ? params.application_end : undefined,
+			allow_applications: params.allow_applications,
+	})
+	return round
+}
+
+export const updateRoundVotingDuration = async (
+	caller: string,
+	round_id: bigint,
+	params: SetVotingConfigParams,
+	contract: Contracts,
+) => {
+	let round = await contract.round_contract.set_voting_period({
+		caller,
+		round_id,
+		start_ms: params?.voting_start,
+		end_ms: params?.voting_end,
 	})
 	return round
 }
@@ -303,10 +350,16 @@ export const editRound = async (
 			name: params.name,
 			num_picks_per_voter: params.num_picks_per_voter || undefined,
 			use_vault: params.use_vault || undefined,
+			application_wl_list_id: params.application_wl_list_id,
+			referrer_fee_basis_points: params.referrer_fee_basis_points,
+			use_whitelist_voting: params.use_whitelist_voting,
+			voting_wl_list_id: params.voting_wl_list_id
 		},
 	})
 	return round
 }
+
+// export const updateRoundDuration = async (
 
 export const setAdminRound = async (
 	round_id: bigint,
@@ -509,19 +562,7 @@ export const setAdminsRound = async (
 	return round
 }
 
-export const getLists: (
-	params: GetListsParams,
-	contract: Contracts,
-) => Promise<any[]> = async (params: GetListsParams, contract: Contracts) => {
-	let limit = params.limit ? params.limit : 10
-	let skip = params.skip ? params.skip * limit : 0
 
-	let lists = await contract.lists_contract.get_lists({
-		from_index: BigInt(skip),
-		limit: BigInt(limit),
-	})
-	return lists.result
-}
 
 // export const getChallengePayoutRound: (
 // 	params: UpdateChallengePayoutParams,

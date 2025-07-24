@@ -1,5 +1,5 @@
 import { Buffer } from "buffer";
-import { AssembledTransaction, Client as ContractClient, ClientOptions as ContractClientOptions, MethodOptions } from '@stellar/stellar-sdk/contract';
+import { AssembledTransaction, Client as ContractClient, ClientOptions as ContractClientOptions } from '@stellar/stellar-sdk/contract';
 import type { u32, u64, u128, i128, Option } from '@stellar/stellar-sdk/contract';
 export * from '@stellar/stellar-sdk';
 export * as contract from '@stellar/stellar-sdk/contract';
@@ -7,7 +7,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CA7A2776JYIOYXPAJFONDC7BVPDWWLZU524UTGIJIQH6HWWOR6LKYQQT";
+        readonly contractId: "CAAH3TSAEGM34FRIKT7DBCF26DQ63STVGFUEHLP4CTNDD5XKQGXSLSSO";
     };
 };
 export type ApplicationStatus = {
@@ -221,6 +221,8 @@ export declare const Errors: {
     66: {
         message: string;
     };
+};
+export declare const Errors: {
     0: {
         message: string;
     };
@@ -350,6 +352,8 @@ export declare const Errors: {
     90: {
         message: string;
     };
+};
+export declare const Errors: {
     6: {
         message: string;
     };
@@ -383,6 +387,8 @@ export declare const Errors: {
     60: {
         message: string;
     };
+};
+export declare const Errors: {
     10: {
         message: string;
     };
@@ -1935,16 +1941,6 @@ export interface Client {
 }
 export declare class Client extends ContractClient {
     readonly options: ContractClientOptions;
-    static deploy<T = Client>(
-    /** Options for initalizing a Client as well as for calling a method, with extras specific to deploying. */
-    options: MethodOptions & Omit<ContractClientOptions, "contractId"> & {
-        /** The hash of the Wasm blob, which must already be installed on-chain. */
-        wasmHash: Buffer | string;
-        /** Salt used to generate the contract's ID. Passed through to {@link Operation.createCustomContract}. Default: random. */
-        salt?: Buffer | Uint8Array;
-        /** The format used to decode `wasmHash`, if it's provided as a string. */
-        format?: "hex" | "base64";
-    }): Promise<AssembledTransaction<T>>;
     constructor(options: ContractClientOptions);
     readonly fromJSON: {
         initialize: (json: string) => AssembledTransaction<null>;

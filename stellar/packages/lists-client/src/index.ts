@@ -4,7 +4,6 @@ import {
   AssembledTransaction,
   Client as ContractClient,
   ClientOptions as ContractClientOptions,
-  MethodOptions,
   Result,
   Spec as ContractSpec,
 } from '@stellar/stellar-sdk/contract';
@@ -34,7 +33,7 @@ if (typeof window !== 'undefined') {
 export const networks = {
   testnet: {
     networkPassphrase: "Test SDF Network ; September 2015",
-    contractId: "CBD4OK7KMJERD2HM775IXQGY4XE5G3QBV5BFBYMQ6LB4ONFCPBZAXENP",
+    contractId: "CCWFB3WC33RKQTA7M3RDOLKWWWOVB5NOH5MWAENCZEONIRPXYKRAMEFG",
   }
 } as const
 
@@ -669,20 +668,6 @@ export interface Client {
 
 }
 export class Client extends ContractClient {
-  static async deploy<T = Client>(
-    /** Options for initalizing a Client as well as for calling a method, with extras specific to deploying. */
-    options: MethodOptions &
-      Omit<ContractClientOptions, "contractId"> & {
-        /** The hash of the Wasm blob, which must already be installed on-chain. */
-        wasmHash: Buffer | string;
-        /** Salt used to generate the contract's ID. Passed through to {@link Operation.createCustomContract}. Default: random. */
-        salt?: Buffer | Uint8Array;
-        /** The format used to decode `wasmHash`, if it's provided as a string. */
-        format?: "hex" | "base64";
-      }
-  ): Promise<AssembledTransaction<T>> {
-    return ContractClient.deploy(null, options)
-  }
   constructor(public readonly options: ContractClientOptions) {
     super(
       new ContractSpec([ "AAAAAgAAAAAAAAAAAAAAElJlZ2lzdHJhdGlvblN0YXR1cwAAAAAABQAAAAAAAAAAAAAAB1BlbmRpbmcAAAAAAAAAAAAAAAAIQXBwcm92ZWQAAAAAAAAAAAAAAAhSZWplY3RlZAAAAAAAAAAAAAAACkdyYXlsaXN0ZWQAAAAAAAAAAAAAAAAAC0JsYWNrbGlzdGVkAA==",

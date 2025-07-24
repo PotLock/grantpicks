@@ -73,7 +73,6 @@ const MyProjectTeam = () => {
 					contacts: projectData?.contacts || [],
 					contracts: projectData?.contracts || [],
 					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
-					payout_address: projectData?.payout_address || '',
 					repositories: projectData?.repositories || [],
 					team_members: members.map((mem) => ({ name: mem, value: mem })),
 					video_url: projectData?.video_url || '',
@@ -114,7 +113,6 @@ const MyProjectTeam = () => {
 					contacts: projectData?.contacts || [],
 					contracts: projectData?.contracts || [],
 					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
-					payout_address: projectData?.payout_address || '',
 					repositories: projectData?.repositories || [],
 					team_members: members,
 					video_url: projectData?.video_url || '',
@@ -274,7 +272,7 @@ const MyProjectTeam = () => {
 						className="!py-3 !border !border-grantpicks-black-400 disabled:cursor-not-allowed"
 						isDisabled={
 							projectData?.team_members.map((mem: any) => mem.value)?.length ===
-								members.length || members.length === 0
+							members.length || members.length === 0
 						}
 					>
 						Discard
@@ -288,7 +286,7 @@ const MyProjectTeam = () => {
 						className="!py-3 disabled:cursor-not-allowed"
 						isDisabled={
 							projectData?.team_members.map((mem: any) => mem.value)?.length ===
-								members.length || members.length === 0
+							members.length || members.length === 0
 						}
 					>
 						Save changes

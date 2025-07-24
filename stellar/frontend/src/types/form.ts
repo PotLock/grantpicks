@@ -19,7 +19,7 @@ export interface InputProps {
 	rows?: number
 	preffixIcon?: React.ReactNode
 	suffixIcon?: React.ReactNode
-	errorMessage?: JSX.Element
+	errorMessage?: JSX.Element | string
 	textAlign?: 'left' | 'center' | 'right'
 	isStopPropagation?: boolean
 	maxLength?: number
@@ -76,6 +76,7 @@ export type CreateRoundData = {
 	contact_address: string
 	amount: string
 	expected_amount: string
+	minimum_deposit: string
 	allow_application: boolean
 	max_participants: number
 	apply_duration_start: Date | null
@@ -96,6 +97,19 @@ export type CreateRoundData = {
 	referrer_fee_basis_points: number
 	use_vault: boolean
 	is_video_required: boolean
+	use_whitelist_application: boolean
+	application_wl_list_id?: bigint
+	use_whitelist_voting: boolean
+	voting_wl_list_id?: bigint
+}
+
+export type UpdateApplicationConfig = {
+	round_id: number
+	allow_applications: boolean
+	application_start: Date | null
+	application_end: Date | null
+	voting_start: Date
+	voting_end: Date
 }
 
 export type UpdateRoundData = {
@@ -107,6 +121,7 @@ export type UpdateRoundData = {
 	contact_address: string
 	amount: string
 	expected_amount: string
+	minimum_deposit: string
 	allow_application: boolean
 	max_participants: number
 	apply_duration_start: Date | null

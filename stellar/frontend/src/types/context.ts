@@ -38,8 +38,14 @@ export interface IModalContextProps {
 	isOpen: boolean
 }
 
+export enum ChainId {
+	NEAR = 'near',
+	STELLAR = 'stellar',
+}
+
 export interface IVoteConfirmationModalContextProps extends IModalContextProps {
 	doc?: GPRound
+	chainId?: ChainId
 }
 
 export interface IVideoPlayerModalProps extends IModalContextProps {

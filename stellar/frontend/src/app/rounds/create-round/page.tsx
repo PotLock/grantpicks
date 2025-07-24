@@ -34,7 +34,6 @@ import {
 	createRound,
 	CreateRoundParams,
 	depositFundRound,
-	getLists,
 } from '@/services/stellar/round'
 import { parseToStroop, prettyTruncate, sleep } from '@/utils/helper'
 import { useModalContext } from '@/app/providers/ModalProvider'
@@ -70,11 +69,12 @@ import useSWRInfinite from 'swr/infinite'
 import { GPRound } from '@/models/round'
 import { parseNearAmount } from 'near-api-js/lib/utils/format'
 import { FinalExecutionOutcome, Transaction } from '@near-wallet-selector/core'
-import { create } from 'domain'
+import { getLists } from '@/services/stellar/list'
 
 const CreateRoundPage = () => {
 	const router = useRouter()
 	const [showContactType, setShowContactType] = useState<boolean>(false)
+	const [showTips, setShowTips] = useState<boolean>(false)
 	const { nearPrice, stellarPrice, openPageLoading, dismissPageLoading } =
 		useGlobalContext()
 	const {
@@ -87,6 +87,7 @@ const CreateRoundPage = () => {
 	const { setSuccessCreateRoundModalProps } = useModalContext()
 	const [amountUsd, setAmountUsd] = useState<string>('0.00')
 	const [expectAmountUsd, setExpectAmountUsd] = useState<string>('0.00')
+	const [minimumDepositUsd, setMinimumDepositUsd] = useState<string>('0.00')
 	const [showAddProjectsModal, setShowAddProjectsModal] =
 		useState<boolean>(false)
 	const [showAddAdminsModal, setShowAddAdminsModal] = useState<boolean>(false)
@@ -94,6 +95,8 @@ const CreateRoundPage = () => {
 	const potlockService = usePotlockService()
 	const [showLists, setShowLists] = useState<boolean>(true)
 	const [checkedListIds, setCheckedListIds] = useState<bigint[]>([])
+	const [showApplicationLists, setShowApplicationLists] = useState<boolean>(true)
+	const [checkedApplicationListIds, setCheckedApplicationListIds] = useState<bigint[]>([])
 	const {
 		control,
 		register,
@@ -102,6 +105,7 @@ const CreateRoundPage = () => {
 		reset,
 		watch,
 		trigger,
+		setError,
 		formState: { errors },
 	} = useForm<CreateRoundData>({
 		mode: 'onChange',
@@ -120,6 +124,8 @@ const CreateRoundPage = () => {
 			is_video_required: false,
 			allow_application: false,
 			compliance_req_desc: '',
+			voting_wl_list_id: undefined,
+			application_wl_list_id: undefined,
 		},
 	})
 	const { append: appendProject, remove: removeProject } = useFieldArray({
@@ -213,12 +219,75 @@ const CreateRoundPage = () => {
 		try {
 			openPageLoading()
 
+			// Adjust application times
+
+			if (data.apply_duration_start && data.apply_duration_end) {
+				const startDate = new Date(data.apply_duration_start)
+				const endDate = new Date(data.apply_duration_end)
+
+				// If start is today, set to current time + 15 mins
+				if (startDate.toDateString() === new Date().toDateString()) {
+					startDate.setHours(new Date().getHours())
+					startDate.setMinutes(new Date().getMinutes() + 15)
+				}
+
+				// If end is tomorrow, set to current time + 3 hours
+				const tomorrow = new Date()
+				tomorrow.setDate(tomorrow.getDate() + 1)
+
+				if (endDate.toDateString() === tomorrow.toDateString()) {
+					endDate.setHours(new Date().getHours() + 1)
+					endDate.setMinutes(new Date().getMinutes())
+				}
+
+				data.apply_duration_start = startDate
+				data.apply_duration_end = endDate
+			}
+
+			// Adjust voting times
+			if (data.voting_duration_start && data.voting_duration_end) {
+				const startDate = new Date(data.voting_duration_start)
+				const endDate = new Date(data.voting_duration_end)
+				const applyEndDate = data.apply_duration_end ? new Date(data.apply_duration_end) : null
+				const currentDate = new Date()
+
+				// If voting starts same day as application ends and we have an apply end date
+				if (applyEndDate && startDate.toDateString() === applyEndDate.toDateString()) {
+					startDate.setHours(applyEndDate.getHours() + 1)
+					startDate.setMinutes(applyEndDate.getMinutes())
+				}
+				// If voting starts next day and we have an apply end date
+				else if (applyEndDate && startDate.toDateString() === new Date(new Date().setDate(applyEndDate.getDate() + 1)).toDateString()) {
+					startDate.setHours(applyEndDate.getHours())
+					startDate.setMinutes(applyEndDate.getMinutes())
+				}
+				// If no application period, ensure voting starts 15 minutes after set time
+				else if (!applyEndDate) {
+					if (startDate.toDateString() === currentDate.toDateString()) {
+						startDate.setHours(currentDate.getHours())
+						startDate.setMinutes(currentDate.getMinutes() + 15)
+					}
+					if (endDate.toDateString() === new Date(new Date().setDate(new Date().getDate() + 1)).toDateString()) {
+						endDate.setHours(currentDate.getHours() + 1)
+						endDate.setMinutes(currentDate.getMinutes())
+					}
+				}
+
+				// Set end time to start time + 24 hours
+				endDate.setHours(startDate.getHours() + 4)
+				endDate.setMinutes(startDate.getMinutes())
+
+				data.voting_duration_start = startDate
+				data.voting_duration_end = endDate
+			}
+
 			if (storage.chainId === 'stellar') {
 				let contracts = storage.getStellarContracts()
 
 				if (!contracts) {
 					return
 				}
+
 
 				const maxParticipants =
 					data.max_participants < 10 ? 10 : data.max_participants
@@ -239,6 +308,7 @@ const CreateRoundPage = () => {
 						},
 					],
 					expected_amount: parseToStroop(data.expected_amount),
+					minimum_deposit: parseToStroop(data.minimum_deposit),
 					max_participants:
 						selectedProjects.length > maxParticipants // TODO: must change "Max Participants" when adding projects
 							? selectedProjects.length
@@ -246,8 +316,10 @@ const CreateRoundPage = () => {
 					num_picks_per_voter:
 						data.vote_per_person < 1 ? 1 : data.vote_per_person,
 					use_whitelist: checkedListIds.length > 0,
-					wl_list_id: checkedListIds.length > 0 ? checkedListIds[0] : undefined,
+					voting_wl_list_id: checkedListIds.length > 0 ? checkedListIds[0] : undefined,
 					is_video_required: data.is_video_required,
+					use_whitelist_application: checkedApplicationListIds?.length > 0,
+					application_wl_list_id: checkedApplicationListIds.length > 0 ? checkedApplicationListIds[0] : undefined,
 					allow_applications: data.allow_application,
 					use_vault: data.use_vault,
 					voting_start_ms: BigInt(
@@ -263,12 +335,13 @@ const CreateRoundPage = () => {
 					compliance_period_ms: compliancePeriodData.period_ms
 						? BigInt(compliancePeriodData.period_ms)
 						: undefined,
+
 					cooldown_period_ms: cooldownPeriodData.period_ms
 						? BigInt(cooldownPeriodData.period_ms)
 						: undefined,
 					remaining_dist_address:
 						data.remaining_dist_address || storage.my_address || '',
-					referrer_fee_basis_points: 0,
+					referrer_fee_basis_points: data.referrer_fee_basis_points ? Number(data.referrer_fee_basis_points) * 100 : 0,
 				}
 
 				const txCreateRound = await createRound(
@@ -295,17 +368,22 @@ const CreateRoundPage = () => {
 						)
 					}
 
+
 					setSuccessCreateRoundModalProps((prev) => ({
 						...prev,
 						isOpen: true,
 						createRoundRes: {
 							...txCreateRound.result,
 							id: txCreateRound.result.id.toString(),
-							on_chain_id: txCreateRound.result.id.toString,
+							on_chain_id: storage.chainId,
 							voting_start: data.voting_duration_start?.toISOString(),
 							voting_end: data.voting_duration_end?.toISOString(),
-							application_start: data.apply_duration_start?.toISOString(),
-							application_end: data.apply_duration_end?.toISOString(),
+							...(data.apply_duration_start && {
+								application_start: data.apply_duration_start.toISOString()
+							}),
+							...(data.apply_duration_end && {
+								application_end: data.apply_duration_end.toISOString()
+							})
 						} as unknown as GPRound,
 						txHash: txHashCreateRound,
 					}))
@@ -418,8 +496,12 @@ const CreateRoundPage = () => {
 						on_chain_id: txNearCreateRound?.result.id.toString(),
 						voting_start: data.voting_duration_start?.toISOString(),
 						voting_end: data.voting_duration_end?.toISOString(),
-						application_start: data.apply_duration_start?.toISOString(),
-						application_end: data.apply_duration_end?.toISOString(),
+						...(data.apply_duration_start && {
+							application_start: data.apply_duration_start.toISOString()
+						}),
+						...(data.apply_duration_end && {
+							application_end: data.apply_duration_end.toISOString()
+						})
 					} as unknown as GPRound,
 					txHash: txNearCreateRound?.outcome.transaction_outcome.id,
 				}))
@@ -512,8 +594,8 @@ const CreateRoundPage = () => {
 
 	const lists = data
 		? ([] as IGetListExternalResponse[]).concat(
-				...(data as any as IGetListExternalResponse[]),
-			)
+			...(data as any as IGetListExternalResponse[]),
+		)
 		: []
 	const isEmpty = data?.[0]?.length === 0
 
@@ -546,6 +628,84 @@ const CreateRoundPage = () => {
 					<p className="text-[50px] font-black text-center uppercase mb-8 md:mb-12">
 						Create new Round
 					</p>
+					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
+						<button
+							onClick={() => setShowTips(!showTips)}
+							className="flex justify-between w-full items-center py-2"
+						>
+							<div className="flex items-center space-x-2">
+								<IconInfoCircle
+									size={20}
+									className="stroke-grantpicks-black-600"
+								/>
+								<p className="font-semibold text-base text-grantpicks-black-950">
+									How Creating Rounds Work
+								</p>
+							</div>
+							{showTips ? (
+								<IconExpandLess
+									size={24}
+									className="stroke-grantpicks-black-400"
+								/>
+							) : (
+								<IconExpandMore
+									size={24}
+									className="stroke-grantpicks-black-400"
+								/>
+							)}
+						</button>
+						<div
+							className={`overflow-hidden transition-all duration-500 ease-in-out ${showTips ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'
+								}`}
+						>
+							<div className="pt-4 space-y-4 border-t border-black/10">
+								<div>
+									<h4 className="font-semibold text-sm text-grantpicks-black-950 mb-2">
+										📅 Duration & Timing
+									</h4>
+									<ul className="text-sm text-grantpicks-black-700 space-y-1 ml-4">
+										<li>• <strong>Application Period:</strong> If enabled, must be at least 24 hours long</li>
+										<li>• <strong>Voting Period:</strong> Must be at least 24 hours long</li>
+										<li>• <strong>Timeline:</strong> Application period must end before voting period begins</li>
+										<li>• <strong>Auto-adjustment:</strong> Times are automatically adjusted to ensure proper sequencing</li>
+									</ul>
+								</div>
+								<div>
+									<h4 className="font-semibold text-sm text-grantpicks-black-950 mb-2">
+										📋 Lists & Requirements
+									</h4>
+									<ul className="text-sm text-grantpicks-black-700 space-y-1 ml-4">
+										<li>• <strong>Voter Lists:</strong> Control who can vote in your round</li>
+										<li>• <strong>Application Lists:</strong> Control who can apply (only if applications are enabled)</li>
+										<li>• <strong>List Selection:</strong> You can only select one list per requirement</li>
+										<li>• <strong>Ownership:</strong> You can use lists you own or are an admin of</li>
+									</ul>
+								</div>
+								<div>
+									<h4 className="font-semibold text-sm text-grantpicks-black-950 mb-2">
+										💰 Funding & Deposits
+									</h4>
+									<ul className="text-sm text-grantpicks-black-700 space-y-1 ml-4">
+										<li>• <strong>Expected Amount:</strong> The total funding goal for your round</li>
+										<li>• <strong>Minimum Deposit:</strong> The smallest amount someone can contribute</li>
+										<li>• <strong>Initial Deposit:</strong> Your starting contribution (optional)</li>
+										<li>• <strong>Validation:</strong> Initial deposit cannot be less than minimum deposit</li>
+									</ul>
+								</div>
+								<div>
+									<h4 className="font-semibold text-sm text-grantpicks-black-950 mb-2">
+										⚙️ Advanced Features
+									</h4>
+									<ul className="text-sm text-grantpicks-black-700 space-y-1 ml-4">
+										<li>• <strong>Cooldown Period:</strong> Time between voting end and payout period</li>
+										<li>• <strong>Compliance:</strong> Requires grantees to complete KYC process</li>
+										<li>• <strong>Remaining Funds:</strong> Redistribute unclaimed funds to specified address</li>
+										<li>• <strong>Referral Fees:</strong> Set commission for referrers (0-5%)</li>
+									</ul>
+								</div>
+							</div>
+						</div>
+					</div>
 					<div className="p-5 rounded-2xl shadow-md bg-white space-y-6 mb-4 lg:mb-6">
 						<InputText
 							required
@@ -573,6 +733,195 @@ const CreateRoundPage = () => {
 								) : undefined
 							}
 						/>
+						<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
+							<div className="flex items-center justify-between pb-4 border-b border-black/10">
+								<p className="text-base font-semibold">Allow Applications</p>
+								<Switch
+									checked={watch().allow_application}
+									onChange={async (checked: boolean) => {
+										setValue('allow_application', checked)
+									}}
+									height={22}
+									width={42}
+									checkedIcon={false}
+									uncheckedIcon={false}
+									offColor="#DCDCDC"
+									onColor="#292929"
+									handleDiameter={18}
+								/>
+							</div>
+							<div className={`pt-4 mb-6`}>
+								<div className="flex space-x-4 mb-2">
+									<div className="w-[35%] space-y-1">
+										<InputText
+											type="number"
+											disabled={!watch().allow_application}
+											label="Max Participants"
+											placeholder="10"
+											max={100}
+											required={watch().allow_application}
+											{...register('max_participants', {
+												required: watch().allow_application === true,
+												onChange: (e) => {
+													setValue(
+														'max_participants',
+														parseInt(e.target.value) || 0,
+													)
+												},
+											})}
+											preffixIcon={
+												<Button
+													color="transparent"
+													isDisabled={watch().max_participants <= 10}
+													onClick={() =>
+														setValue(
+															'max_participants',
+															watch().max_participants - 1,
+														)
+													}
+												>
+													<IconRemove
+														size={24}
+														className="stroke-grantpicks-black-600"
+													/>
+												</Button>
+											}
+											textAlign="center"
+											suffixIcon={
+												<Button
+													color="transparent"
+													onClick={() =>
+														setValue(
+															'max_participants',
+															watch().max_participants + 1,
+														)
+													}
+													isDisabled={!watch().allow_application}
+												>
+													<IconAdd
+														size={24}
+														className="fill-grantpicks-black-600"
+													/>
+												</Button>
+											}
+										/>
+										{errors.max_participants?.type === 'required' ? (
+											<p className="text-red-500 text-xs mt-1 ml-2">
+												Max Participants is required
+											</p>
+										) : watch().max_participants < 10 || watch().max_participants > 100 ? (
+											<p className="text-red-500 text-xs mt-1 ml-2">
+												{watch().max_participants < 10 ? 'Min. 10 Participants' : 'Max. 100 Participants'}
+											</p>
+										) : undefined}
+									</div>
+									<div className="w-[65%]">
+										<p
+											className={clsx(
+												`text-sm font-semibold mb-2`,
+												!watch().allow_application
+													? `text-grantpicks-black-300`
+													: `text-grantpicks-black-950`,
+											)}
+										>
+											Application Duration{' '}
+											{watch().allow_application && (
+												<span className="text-grantpicks-red-600 ml-1">*</span>
+											)}
+										</p>
+										<div
+											{...register('apply_duration_start', {
+												required: watch().allow_application,
+											})}
+										>
+											<Controller
+												name="apply_duration_start"
+												control={control}
+												rules={{ required: watch().allow_application }}
+												render={({ field }) => (
+													<DatePicker
+														disabled={!watch().allow_application}
+														showIcon
+														selectsRange={true}
+														minDate={new Date()}
+														maxDate={subDays(
+															watch().voting_duration_start as Date,
+															0,
+														)}
+														icon={
+															<div className="flex items-center mt-2 pr-2">
+																<IconCalendar
+																	size={20}
+																	className="fill-grantpicks-black-400"
+																/>
+															</div>
+														}
+														calendarIconClassName="flex items-center"
+														startDate={field.value as Date}
+														endDate={watch().apply_duration_end as Date}
+														placeholderText="Apply Duration"
+														isClearable={true}
+														onChange={(date) => {
+															const [start, end] = date
+
+															field.onChange(start)
+															setValue('apply_duration_end', end)
+
+															if (!start || !end) return
+
+															const startDate = new Date(start)
+															const endDate = new Date(end)
+															const hoursDiff = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60)
+
+															if (hoursDiff < 24) {
+																toast.error('Application duration must be at least 24 hours', {
+																	style: toastOptions.error.style,
+																})
+																setError('apply_duration_start', {
+																	type: 'manual',
+																	message: 'Application duration must be at least 24 hours apart'
+																})
+																setValue('apply_duration_end', null, {
+																	shouldValidate: true,
+																	shouldDirty: true,
+																	shouldTouch: true
+																})
+																field.onChange(null)
+																return
+															}
+														}}
+														className="border border-grantpicks-black-200 rounded-xl w-full h-12"
+														wrapperClassName="w-full mb-1"
+													/>
+												)}
+											/>
+										</div>
+										{errors.apply_duration_start?.type === 'required' ? (
+											<p className="text-red-500 text-xs mt-1 ml-2">
+												start and end of apply duration is required
+											</p>
+										) : undefined}
+									</div>
+								</div>
+								<p className="text-xs font-normal text-grantpicks-black-600">
+									You must have a minimum of 10 Participants
+								</p>
+							</div>
+							<div className="flex items-center mb-4">
+								<Checkbox
+									disabled={!watch().allow_application}
+									label="Video Required"
+									checked={watch().is_video_required}
+									onChange={(e) =>
+										setValue('is_video_required', e.target.checked)
+									}
+									className={clsx(
+										!watch().allow_application && '!cursor-not-allowed',
+									)}
+								/>
+							</div>
+						</div>
+
 						<div className="w-full">
 							<p className="text-base font-semibold text-grantpicks-black-950 mb-2">
 								Voting Duration{' '}
@@ -586,7 +935,7 @@ const CreateRoundPage = () => {
 									render={({ field }) => (
 										<DatePicker
 											showIcon
-											minDate={subDays(watch().apply_duration_end as Date, 1)}
+											minDate={subDays(watch().apply_duration_end as Date, 0) || new Date()}
 											selectsRange={true}
 											icon={
 												<div className="flex items-center mt-2">
@@ -602,10 +951,33 @@ const CreateRoundPage = () => {
 											placeholderText="Voting Duration"
 											isClearable={true}
 											onChange={(date) => {
-												field.onChange(date[0])
-												setValue('voting_duration_end', date[1], {
-													shouldValidate: true,
-												})
+												const [start, end] = date
+
+												field.onChange(start)
+												setValue('voting_duration_end', end)
+
+												if (!start || !end) return
+
+												const startDate = new Date(start)
+												const endDate = new Date(end)
+												const hoursDiff = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60)
+
+												if (hoursDiff < 24) {
+													toast.error('Voting duration must be at least 24 hours', {
+														style: toastOptions.error.style,
+													})
+													setError('voting_duration_start', {
+														type: 'manual',
+														message: 'Voting duration must be at least 24 hours apart'
+													})
+													setValue('voting_duration_end', null, {
+														shouldValidate: true,
+														shouldDirty: true,
+														shouldTouch: true
+													})
+													field.onChange(null)
+													return
+												}
 											}}
 											className="border border-grantpicks-black-200 rounded-xl w-full h-12"
 											wrapperClassName="w-full mb-1"
@@ -688,7 +1060,7 @@ const CreateRoundPage = () => {
 										className={clsx(
 											'border w-full border-grantpicks-black-200 rounded-xl py-3 px-3 flex items-center justify-between cursor-pointer hover:opacity-80 transition',
 											errors.contact_address?.type === 'required' &&
-												'border-red-500',
+											'border-red-500',
 										)}
 									>
 										<p
@@ -764,7 +1136,7 @@ const CreateRoundPage = () => {
 										className={clsx(
 											(errors.contact_address?.type === 'required' ||
 												errors.contact_address) &&
-												'border border-red-500',
+											'border border-red-500',
 										)}
 										disabled={!watch('contact_type')}
 										required
@@ -821,67 +1193,14 @@ const CreateRoundPage = () => {
 					</div>
 
 					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
-						<div className="flex items-start space-x-4 w-full mb-4">
-							<div className="flex-1">
-								<InputText
-									type="number"
-									disabled={!watch().use_vault}
-									label="Initial Deposit"
-									placeholder={isMobile ? '' : 'Enter amount...'}
-									{...register('amount', {
-										onChange: async (e) => {
-											let calculation = 0
 
-											if (storage.chainId === 'stellar') {
-												calculation =
-													parseFloat(e.target.value || '0') * stellarPrice
-											} else {
-												calculation =
-													parseFloat(e.target.value || '0') * nearPrice
-											}
-
-											setAmountUsd(`${calculation.toFixed(3)}`)
-											setValue('amount', e.target.value)
-										},
-									})}
-									preffixIcon={
-										storage.chainId === 'stellar' ? (
-											<IconStellar
-												size={24}
-												className="fill-grantpicks-black-400"
-											/>
-										) : (
-											<IconNear
-												size={24}
-												className="fill-grantpicks-black-400"
-											/>
-										)
-									}
-									textAlign="left"
-									suffixIcon={
-										<div className="flex items-center space-x-2">
-											<p className="text-sm font-normal text-grantpicks-black-500">
-												{amountUsd}
-											</p>
-											<p className="text-sm font-normal text-grantpicks-black-400">
-												USD
-											</p>
-										</div>
-									}
-									errorMessage={
-										parseFloat(watch().amount) < 0 ? (
-											<p className="text-red-500 text-xs mt-1 ml-2">
-												Initial deposit cannot be less than 0
-											</p>
-										) : undefined
-									}
-								/>
-							</div>
+						<div className="flex items-start flex-wrap md:flex-row flex-col md:space-x-4 w-full mb-4">
 							<div className="flex-1">
 								<InputText
 									type="number"
 									label="Expected Amount"
 									required
+									className='text-sm'
 									placeholder={isMobile ? '' : 'Enter amount...'}
 									{...register('expected_amount', {
 										required: true,
@@ -927,7 +1246,7 @@ const CreateRoundPage = () => {
 												Expected Amount is required
 											</p>
 										) : parseFloat(watch().expected_amount) <
-										  parseFloat(watch().amount) ? (
+											parseFloat(watch().amount) ? (
 											<p className="text-red-500 text-xs mt-1 ml-2">
 												Expected Amount should not be less than intiial deposit
 											</p>
@@ -939,6 +1258,146 @@ const CreateRoundPage = () => {
 									}
 								/>
 							</div>
+
+							<div className="flex-1">
+								<InputText
+									type="number"
+									disabled={!watch().use_vault}
+									label="Initial Deposit"
+									className='text-sm'
+									placeholder={isMobile ? '' : 'Enter amount...'}
+									{...register('amount', {
+										onChange: async (e) => {
+											let calculation = 0
+
+											if (storage.chainId === 'stellar') {
+												calculation =
+													parseFloat(e.target.value || '0') * stellarPrice
+											} else {
+												calculation =
+													parseFloat(e.target.value || '0') * nearPrice
+											}
+
+											setAmountUsd(`${calculation.toFixed(3)}`)
+											setValue('amount', e.target.value)
+										},
+										validate: (value) => {
+											const minDeposit = watch('minimum_deposit')
+											if (!minDeposit) return true // Skip validation if minimum deposit not set
+											if (parseFloat(value) < parseFloat(minDeposit)) {
+												return 'Initial deposit cannot be less than minimum deposit'
+											}
+											return true
+										}
+									})}
+									preffixIcon={
+										storage.chainId === 'stellar' ? (
+											<IconStellar
+												size={24}
+												className="fill-grantpicks-black-400"
+											/>
+										) : (
+											<IconNear
+												size={24}
+												className="fill-grantpicks-black-400"
+											/>
+										)
+									}
+									textAlign="left"
+									suffixIcon={
+										<div className="flex items-center space-x-2">
+											<p className="text-sm font-normal text-grantpicks-black-500">
+												{amountUsd}
+											</p>
+											<p className="text-sm font-normal text-grantpicks-black-400">
+												USD
+											</p>
+										</div>
+									}
+									errorMessage={
+										parseFloat(watch().amount) < 0 ? (
+											<p className="text-red-500 text-xs mt-1 ml-2">
+												Initial deposit cannot be less than 0
+											</p>
+										) : errors.amount?.message ? (
+											<p className="text-red-500 text-xs mt-1 ml-2">
+												{errors.amount.message}
+											</p>
+										) : undefined
+									}
+								/>
+							</div>
+							<div className="flex-1">
+								<InputText
+									type="number"
+									label="Minimum Deposit"
+									required
+									className='text-sm'
+									placeholder={isMobile ? '' : 'Enter amount...'}
+									{...register('minimum_deposit', {
+										required: true,
+										onChange: async (e) => {
+											if (storage.chainId === 'stellar') {
+												const calculation =
+													parseFloat(e.target.value || '0') * stellarPrice
+												setMinimumDepositUsd(`${calculation.toFixed(3)}`)
+											} else {
+												const calculation =
+													parseFloat(e.target.value || '0') * nearPrice
+												setMinimumDepositUsd(`${calculation.toFixed(3)}`)
+											}
+										},
+										validate: (value) => {
+											const expectedAmount = watch().expected_amount
+											if (!expectedAmount) return true // Skip validation if expected amount not set
+											if (parseFloat(value) > parseFloat(expectedAmount)) {
+												return 'Minimum deposit cannot be greater than expected amount'
+											}
+											return true
+										}
+									})}
+									preffixIcon={
+										storage.chainId === 'stellar' ? (
+											<IconStellar
+												size={24}
+												className="fill-grantpicks-black-400"
+											/>
+										) : (
+											<IconNear
+												size={24}
+												className="fill-grantpicks-black-400"
+											/>
+										)
+									}
+									textAlign="left"
+									suffixIcon={
+										<div className="flex items-center space-x-2">
+											<p className="text-sm font-normal text-grantpicks-black-500">
+												{minimumDepositUsd}
+											</p>
+											<p className="text-sm font-normal text-grantpicks-black-400">
+												USD
+											</p>
+										</div>
+									}
+									errorMessage={
+										errors.minimum_deposit?.type === 'required' ? (
+											<p className="text-red-500 text-xs mt-1 ml-2">
+												Minimum Deposit is required
+											</p>
+										) : errors.minimum_deposit?.message ? (
+											<p className="text-red-500 text-xs mt-1 ml-2">
+												{errors.minimum_deposit.message}
+											</p>
+										) : parseFloat(watch().minimum_deposit) <= 0 ? (
+											<p className="text-red-500 text-xs mt-1 ml-2">
+												Minimum Deposit cannot be less than or equal to 0
+											</p>
+										) : undefined
+									}
+								/>
+							</div>
+
 						</div>
 						{connectedWallet === 'stellar' ? (
 							<div className="flex items-center">
@@ -954,168 +1413,6 @@ const CreateRoundPage = () => {
 						) : (
 							<></>
 						)}
-					</div>
-
-					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
-						<div className="flex items-center justify-between pb-4 border-b border-black/10">
-							<p className="text-base font-semibold">Allow Applications</p>
-							<Switch
-								checked={watch().allow_application}
-								onChange={async (checked: boolean) => {
-									setValue('allow_application', checked)
-								}}
-								height={22}
-								width={42}
-								checkedIcon={false}
-								uncheckedIcon={false}
-								offColor="#DCDCDC"
-								onColor="#292929"
-								handleDiameter={18}
-							/>
-						</div>
-						<div className={`pt-4 mb-6`}>
-							<div className="flex space-x-4 mb-2">
-								<div className="w-[35%] space-y-1">
-									<InputText
-										type="number"
-										disabled={!watch().allow_application}
-										label="Max Participants"
-										placeholder="10"
-										required={watch().allow_application}
-										{...register('max_participants', {
-											required: watch().allow_application === true,
-											onChange: (e) => {
-												setValue(
-													'max_participants',
-													parseInt(e.target.value) || 0,
-												)
-											},
-										})}
-										preffixIcon={
-											<Button
-												color="transparent"
-												isDisabled={watch().max_participants <= 10}
-												onClick={() =>
-													setValue(
-														'max_participants',
-														watch().max_participants - 1,
-													)
-												}
-											>
-												<IconRemove
-													size={24}
-													className="stroke-grantpicks-black-600"
-												/>
-											</Button>
-										}
-										textAlign="center"
-										suffixIcon={
-											<Button
-												color="transparent"
-												onClick={() =>
-													setValue(
-														'max_participants',
-														watch().max_participants + 1,
-													)
-												}
-												isDisabled={!watch().allow_application}
-											>
-												<IconAdd
-													size={24}
-													className="fill-grantpicks-black-600"
-												/>
-											</Button>
-										}
-									/>
-									{errors.max_participants?.type === 'required' ? (
-										<p className="text-red-500 text-xs mt-1 ml-2">
-											Max Participants is required
-										</p>
-									) : watch().max_participants < 10 ? (
-										<p className="text-red-500 text-xs mt-1 ml-2">
-											Min. 10 Participants
-										</p>
-									) : undefined}
-								</div>
-								<div className="w-[65%]">
-									<p
-										className={clsx(
-											`text-sm font-semibold mb-2`,
-											!watch().allow_application
-												? `text-grantpicks-black-300`
-												: `text-grantpicks-black-950`,
-										)}
-									>
-										Application Duration{' '}
-										{watch().allow_application && (
-											<span className="text-grantpicks-red-600 ml-1">*</span>
-										)}
-									</p>
-									<div
-										{...register('apply_duration_start', {
-											required: watch().allow_application,
-										})}
-									>
-										<Controller
-											name="apply_duration_start"
-											control={control}
-											rules={{ required: watch().allow_application }}
-											render={({ field }) => (
-												<DatePicker
-													disabled={!watch().allow_application}
-													showIcon
-													selectsRange={true}
-													maxDate={subDays(
-														watch().voting_duration_start as Date,
-														0,
-													)}
-													icon={
-														<div className="flex items-center mt-2 pr-2">
-															<IconCalendar
-																size={20}
-																className="fill-grantpicks-black-400"
-															/>
-														</div>
-													}
-													calendarIconClassName="flex items-center"
-													startDate={field.value as Date}
-													endDate={watch().apply_duration_end as Date}
-													placeholderText="Apply Duration"
-													isClearable={true}
-													onChange={(date) => {
-														field.onChange(date[0])
-														setValue('apply_duration_end', date[1])
-													}}
-													className="border border-grantpicks-black-200 rounded-xl w-full h-12"
-													wrapperClassName="w-full mb-1"
-												/>
-											)}
-										/>
-									</div>
-									{errors.apply_duration_start?.type === 'required' ? (
-										<p className="text-red-500 text-xs mt-1 ml-2">
-											start and end of apply duration is required
-										</p>
-									) : undefined}
-								</div>
-							</div>
-							<p className="text-xs font-normal text-grantpicks-black-600">
-								You must have a minimum of 10 Participants
-							</p>
-						</div>
-						<div className="flex items-center mb-4">
-							<Checkbox
-								disabled={!watch().allow_application}
-								label="Video Required"
-								checked={watch().is_video_required}
-								onChange={(e) =>
-									setValue('is_video_required', e.target.checked)
-								}
-								className={clsx(
-									!watch().allow_application && '!cursor-not-allowed',
-								)}
-							/>
-						</div>
 					</div>
 
 					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
@@ -1336,7 +1633,7 @@ const CreateRoundPage = () => {
 											Compliance deadline is required
 										</p>
 									) : (watch().compliance_period_ms as unknown as number) <
-									  0 ? (
+										0 ? (
 										<p className="text-red-500 text-xs mt-1 ml-2">
 											Compliance deadline cannot be less than 0
 										</p>
@@ -1605,15 +1902,17 @@ const CreateRoundPage = () => {
 																onChange={(e) => {
 																	if (e.target.checked) {
 																		setCheckedListIds([list.id])
+																		setValue('voting_wl_list_id', list.id)
 																	} else {
 																		setCheckedListIds(
 																			checkedListIds.filter(
 																				(id) => id !== list.id,
 																			),
 																		)
+																		setValue('voting_wl_list_id', undefined)
 																	}
 																}}
-																name="wl_list_id"
+																name="voting_wl_list_id"
 																value={list.id.toString()}
 															/>
 															<div className="flex justify-between w-full items-center">
@@ -1630,7 +1929,7 @@ const CreateRoundPage = () => {
 																		</p>
 																		<p className="text-sm text-grantpicks-black-700">
 																			{list.total_registrations_count.toString()}{' '}
-																			Voters
+																			Eligible
 																		</p>
 																	</div>
 																</div>
@@ -1662,6 +1961,169 @@ const CreateRoundPage = () => {
 						</div>
 					</div>
 
+					{/* Application Requirements - Only show when allow_application is true */}
+					{watch().allow_application && (
+						<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
+							<div className="flex items-center justify-between pb-4 border-b border-black/10">
+								<p className="text-base font-semibold">Application Requirements</p>
+							</div>
+							<div>
+								<button
+									onClick={() => {
+										setShowApplicationLists(!showApplicationLists)
+									}}
+									className="flex justify-between w-full items-center py-[14px]"
+								>
+									<p className="font-semibold text-sm text-grantpicks-black-950">
+										List
+									</p>
+									{showApplicationLists ? (
+										<IconExpandLess
+											size={24}
+											className="stroke-grantpicks-black-400"
+										/>
+									) : (
+										<IconExpandMore
+											size={24}
+											className="stroke-grantpicks-black-400"
+										/>
+									)}
+								</button>
+								{showApplicationLists && (
+									<div
+										id="scrollApplicationListsContainer"
+										className="max-h-[522px] overflow-scroll"
+									>
+										<InfiniteScroll
+											scrollableTarget="scrollApplicationListsContainer"
+											dataLength={lists.length}
+											next={() => !isValidating && setSize(size + 1)}
+											hasMore={!isReachingEnd}
+											style={{ display: 'flex', flexDirection: 'column' }}
+											loader={
+												<div className="my-2 flex items-center justify-center">
+													<IconLoading
+														size={24}
+														className="fill-grantpicks-black-600"
+													/>
+												</div>
+											}
+										>
+											{isLoading ? (
+												<div className="h-20 flex items-center justify-center">
+													<IconLoading
+														size={24}
+														className="fill-grantpicks-black-600"
+													/>
+												</div>
+											) : lists.length === 0 ? (
+												<div>
+													<p className="text-sm text-grantpicks-black-950 text-center">
+														There are no Lists Contract yet.
+													</p>
+												</div>
+											) : (
+												<div>
+													{lists?.map((list) => {
+														return (
+															<div
+																key={list.id}
+																className="py-4 flex items-center gap-x-4"
+															>
+																<Checkbox
+																	checked={checkedApplicationListIds.includes(list.id)}
+																	onChange={(e) => {
+																		if (e.target.checked) {
+																			setCheckedApplicationListIds([list.id])
+																			setValue('application_wl_list_id', list.id)
+																		} else {
+																			setCheckedApplicationListIds(
+																				checkedApplicationListIds.filter(
+																					(id) => id !== list.id,
+																				),
+																			)
+																			setValue('application_wl_list_id', undefined)
+																		}
+																	}}
+																	name="application_wl_list_id"
+																	value={list.id.toString()}
+																/>
+																<div className="flex justify-between w-full items-center">
+																	<div className="flex gap-x-3 items-center">
+																		<Image
+																			src="/assets/images/default-list-image.png"
+																			alt="list"
+																			width={72}
+																			height={46}
+																		/>
+																		<div className="grid gap-y-1">
+																			<p className="font-semibold text-sm text-grantpicks-black-950">
+																				{list.name}
+																			</p>
+																			<p className="text-sm text-grantpicks-black-700">
+																				{list.total_registrations_count.toString()}{' '}
+																				Eligible
+																			</p>
+																		</div>
+																	</div>
+																	<div className="flex gap-x-1">
+																		{isOwner(list.owner) && (
+																			<div className="px-3 py-[2px] bg-grantpicks-black-950 rounded-full">
+																				<p className="font-semibold text-xs text-white">
+																					Owner
+																				</p>
+																			</div>
+																		)}
+																		{isAdmin(list.admins) && (
+																			<div className="px-3 py-[2px] bg-grantpicks-black-100 rounded-full">
+																				<p className="font-semibold text-xs text-grantpicks-black-950">
+																					Admin
+																				</p>
+																			</div>
+																		)}
+																	</div>
+																</div>
+															</div>
+														)
+													})}
+												</div>
+											)}
+										</InfiniteScroll>
+									</div>
+								)}
+							</div>
+						</div>
+					)}
+
+					<div className="flex bg-white p-5 rounded-2xl shadow-md mb-4">
+						<InputText
+							label="Referral Fee (%)"
+							placeholder="0-5"
+							type="number"
+							min={0}
+							max={5}
+							{...register('referrer_fee_basis_points', {
+								required: false,
+								validate: (value) => {
+									if (value < 0) return 'Referral fee cannot be negative'
+									if (value > 5) return 'Referral fee cannot be greater than 5%'
+									return true
+								},
+							})}
+							errorMessage={
+								errors.referrer_fee_basis_points?.message ? (
+									<p className="text-red-500 text-xs mt-1 ml-2">
+										{errors.referrer_fee_basis_points.message}
+									</p>
+								) : undefined
+							}
+							suffixIcon={
+								<p className="text-sm font-normal text-grantpicks-black-400">
+									%
+								</p>
+							}
+						/>
+					</div>
 					<Button
 						color="black-950"
 						className="!py-3"

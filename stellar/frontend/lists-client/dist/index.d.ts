@@ -1,4 +1,5 @@
 /// <reference types="node" resolution-mode="require"/>
+/// <reference types="node" resolution-mode="require"/>
 import { Buffer } from "buffer";
 import { AssembledTransaction, Client as ContractClient, ClientOptions as ContractClientOptions } from '@stellar/stellar-sdk/contract';
 import type { u64, u128, Option } from '@stellar/stellar-sdk/contract';
@@ -8,7 +9,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CAHWUQNN54A53HIWJZRTLUVQFA4UD3IR5EJSZCA3R63WCY4DPVKHNLV5";
+        readonly contractId: "CCWFB3WC33RKQTA7M3RDOLKWWWOVB5NOH5MWAENCZEONIRPXYKRAMEFG";
     };
 };
 export type RegistrationStatus = {
@@ -168,6 +169,12 @@ export declare const Errors: {
         message: string;
     };
     17: {
+        message: string;
+    };
+    18: {
+        message: string;
+    };
+    19: {
         message: string;
     };
 };
@@ -631,7 +638,7 @@ export interface Client {
      * Construct and simulate a is_registered transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
     is_registered: ({ list_id, registrant_id, required_status }: {
-        list_id: Option<u128>;
+        list_id: u128;
         registrant_id: string;
         required_status: Option<RegistrationStatus>;
     }, options?: {

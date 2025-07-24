@@ -24,7 +24,7 @@ import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Project } from 'project-registry-client'
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 
 interface ApplyProjectToRoundModalProps extends BaseModalProps {
@@ -50,7 +50,7 @@ const ApplyProjectModal = ({
 	const { setSuccessApplyProjectInitProps } = useModalContext()
 	const storage = useAppStorage()
 
-	const fetchProjectApplicant = async () => {
+	const fetchProjectApplicant = useCallback(async () => {
 		try {
 			if (storage.chainId === 'stellar') {
 				const contracts = storage.getStellarContracts()
@@ -82,25 +82,24 @@ const ApplyProjectModal = ({
 		} catch (error: any) {
 			console.log('error fetch project applicant', error)
 		}
-	}
+	}, [storage.chainId, storage.my_address, stellarPubKey])
 
-	const onApplyProjectToRound = async () => {
+	const onApplyProjectToRound = useCallback(async () => {
 		try {
 			openPageLoading()
 
 			if (storage.chainId === 'stellar') {
 				let contracts = storage.getStellarContracts()
 
-				if (!contracts) {
+				if (!contracts || !round_id) {
 					return
 				}
 
 				const applyParams: ApplyProjectToRoundParams = {
-					round_id: round_id as bigint,
+					round_id: round_id,
 					caller: stellarPubKey,
 					note: applyNote,
 				}
-
 				const txApplyProject = await applyProjectToRound(applyParams, contracts)
 
 				const txHashApplyProject = await contracts.signAndSendTx(
@@ -148,7 +147,7 @@ const ApplyProjectModal = ({
 			dismissPageLoading()
 			console.log('error apply project to round', error)
 		}
-	}
+	}, [storage.chainId, storage.my_address, stellarPubKey])
 
 	useEffect(() => {
 		if (isOpen && !projectData) {
@@ -219,7 +218,7 @@ const ApplyProjectModal = ({
 											</p>
 										</div>
 									</div>
-									<Button color="alpha-50" onClick={() => {}}>
+									<Button color="alpha-50" onClick={() => { }}>
 										Update
 									</Button>
 								</div>

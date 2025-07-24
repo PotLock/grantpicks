@@ -15,5 +15,8 @@
 		"contract:format": "cargo fmt",
 		"setup": "cargo install soroban-cli --debug --version 21.0.0-rc.1 --root node_modules/.bin",
 		"soroban:show-xlm": "soroban lab token id --asset native --network testnet"
+	},
+	"dependencies": {
+		"round-client": "file:packages/round-client"
 	}
 }

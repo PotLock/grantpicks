@@ -52,30 +52,32 @@ export interface CreateRoundContact {
 }
 
 export interface CreateRoundParams {
-	admins: string[]
+	admins: Array<string>
 	allow_applications: boolean
 	allow_remaining_dist: boolean
-	application_end_ms?: u64
-	application_start_ms?: u64
-	compliance_period_ms?: u64
+	application_end_ms: Option<u64>
+	application_start_ms: Option<u64>
+	application_wl_list_id: Option<u128>
+	compliance_period_ms: Option<u64>
 	compliance_req_desc: string
-	contacts: Contact[]
-	cooldown_period_ms?: u64
+	contacts: Array<Contact>
+	cooldown_period_ms: Option<u64>
 	description: string
 	expected_amount: u128
 	is_video_required: boolean
-	max_participants?: u32
+	max_participants: Option<u32>
+	minimum_deposit: u128
 	name: string
-	num_picks_per_voter?: u32
+	num_picks_per_voter: Option<u32>
 	owner: string
-	referrer_fee_basis_points?: u32
+	referrer_fee_basis_points: Option<u32>
 	remaining_dist_address: string
-	use_whitelist?: boolean
+	use_vault: Option<boolean>
+	use_whitelist_application: Option<boolean>
+	use_whitelist_voting: Option<boolean>
 	voting_end_ms: u64
 	voting_start_ms: u64
-	use_vault?: boolean
-	checked_list_ids?: bigint[]
-	wl_list_id?: bigint | undefined
+	voting_wl_list_id: Option<u128>
 }
 
 export interface ReviewApplicationParams {
@@ -114,21 +116,17 @@ export interface GetMyVotedRoundsParams {
 }
 
 export interface UpdateRoundParams {
-	allow_applications: boolean
-	application_end_ms?: u64
-	application_start_ms?: u64
-	contacts: Contact[]
+	application_wl_list_id: Option<u128>
+	contacts: Array<Contact>
 	description: string
-	expected_amount: u128
 	is_video_required: boolean
-	max_participants?: u32
+	max_participants: Option<u32>
 	name: string
-	num_picks_per_voter?: u32
-	use_whitelist?: boolean
-	voting_end_ms: u64
-	voting_start_ms: u64
-	use_vault?: boolean
-	wl_list_id: bigint | undefined
+	num_picks_per_voter: Option<u32>
+	referrer_fee_basis_points: Option<u32>
+	use_vault: Option<boolean>
+	use_whitelist_voting: Option<boolean>
+	voting_wl_list_id: Option<u128>
 }
 
 export interface DepositFundRoundParams {
@@ -249,32 +247,36 @@ export const createRound = async (
 	params: CreateRoundParams,
 	contract: Contracts,
 ) => {
+	console.log('lets see you... ', params)
 	let round = await contract.round_contract.create_round({
 		caller,
 		round_detail: {
-			name: params.name,
-			owner: params.owner,
-			remaining_dist_address: params.remaining_dist_address,
-			voting_end_ms: params.voting_end_ms,
-			voting_start_ms: params.voting_start_ms,
-			admins: params.admins,
+			admins: [],
 			allow_applications: params.allow_applications,
 			allow_remaining_dist: params.allow_remaining_dist,
+			application_end_ms: params.application_end_ms,
+			application_start_ms: params.application_start_ms,
+			application_wl_list_id: params.application_wl_list_id,
+			compliance_period_ms: params.compliance_period_ms,
+			compliance_req_desc: params.compliance_req_desc,
 			contacts: params.contacts,
+			cooldown_period_ms: params.cooldown_period_ms,
 			description: params.description,
 			expected_amount: params.expected_amount,
 			is_video_required: params.is_video_required,
-			application_end_ms: params.application_end_ms || undefined,
-			application_start_ms: params.application_start_ms || undefined,
-			cooldown_period_ms: params.cooldown_period_ms || undefined,
-			compliance_period_ms: params.compliance_period_ms || undefined,
-			compliance_req_desc: params.compliance_req_desc,
-			max_participants: params.max_participants || undefined,
-			num_picks_per_voter: params.num_picks_per_voter || undefined,
-			use_whitelist: params.use_whitelist || undefined,
-			wl_list_id: params.wl_list_id || undefined,
-			referrer_fee_basis_points: params.referrer_fee_basis_points as number,
-			use_vault: params.use_vault || false,
+			max_participants: params.max_participants,
+			minimum_deposit: BigInt('10'),
+			name: params.name,
+			num_picks_per_voter: params.num_picks_per_voter,
+			owner: params.owner,
+			referrer_fee_basis_points: params.referrer_fee_basis_points,
+			remaining_dist_address: params.remaining_dist_address,
+			use_vault: params.use_vault,
+			use_whitelist_application: params.use_whitelist_application,
+			use_whitelist_voting: params.use_whitelist_voting,
+			voting_end_ms: params.voting_end_ms,
+			voting_start_ms: params.voting_start_ms,
+			voting_wl_list_id: params.voting_wl_list_id,
 		},
 	})
 	return round
@@ -290,20 +292,16 @@ export const editRound = async (
 		caller,
 		round_id,
 		round_detail: {
-			allow_applications: params.allow_applications,
-			application_end_ms: params.application_end_ms || undefined,
-			application_start_ms: params.application_start_ms || undefined,
 			contacts: params.contacts,
+			application_wl_list_id: params.application_wl_list_id,
+			referrer_fee_basis_points: params.referrer_fee_basis_points,
+			use_whitelist_voting: params.use_whitelist_voting,
+			voting_wl_list_id: params.voting_wl_list_id,
 			description: params.description,
-			expected_amount: params.expected_amount,
 			is_video_required: params.is_video_required,
 			max_participants: params.max_participants || undefined,
 			name: params.name,
 			num_picks_per_voter: params.num_picks_per_voter || undefined,
-			use_whitelist: params.use_whitelist || undefined,
-			wl_list_id: undefined,
-			voting_end_ms: params.voting_end_ms,
-			voting_start_ms: params.voting_start_ms,
 			use_vault: params.use_vault || undefined,
 		},
 	})

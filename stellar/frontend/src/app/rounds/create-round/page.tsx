@@ -95,8 +95,11 @@ const CreateRoundPage = () => {
 	const potlockService = usePotlockService()
 	const [showLists, setShowLists] = useState<boolean>(true)
 	const [checkedListIds, setCheckedListIds] = useState<bigint[]>([])
-	const [showApplicationLists, setShowApplicationLists] = useState<boolean>(true)
-	const [checkedApplicationListIds, setCheckedApplicationListIds] = useState<bigint[]>([])
+	const [showApplicationLists, setShowApplicationLists] =
+		useState<boolean>(true)
+	const [checkedApplicationListIds, setCheckedApplicationListIds] = useState<
+		bigint[]
+	>([])
 	const {
 		control,
 		register,
@@ -248,16 +251,27 @@ const CreateRoundPage = () => {
 			if (data.voting_duration_start && data.voting_duration_end) {
 				const startDate = new Date(data.voting_duration_start)
 				const endDate = new Date(data.voting_duration_end)
-				const applyEndDate = data.apply_duration_end ? new Date(data.apply_duration_end) : null
+				const applyEndDate = data.apply_duration_end
+					? new Date(data.apply_duration_end)
+					: null
 				const currentDate = new Date()
 
 				// If voting starts same day as application ends and we have an apply end date
-				if (applyEndDate && startDate.toDateString() === applyEndDate.toDateString()) {
+				if (
+					applyEndDate &&
+					startDate.toDateString() === applyEndDate.toDateString()
+				) {
 					startDate.setHours(applyEndDate.getHours() + 1)
 					startDate.setMinutes(applyEndDate.getMinutes())
 				}
 				// If voting starts next day and we have an apply end date
-				else if (applyEndDate && startDate.toDateString() === new Date(new Date().setDate(applyEndDate.getDate() + 1)).toDateString()) {
+				else if (
+					applyEndDate &&
+					startDate.toDateString() ===
+						new Date(
+							new Date().setDate(applyEndDate.getDate() + 1),
+						).toDateString()
+				) {
 					startDate.setHours(applyEndDate.getHours())
 					startDate.setMinutes(applyEndDate.getMinutes())
 				}
@@ -267,7 +281,12 @@ const CreateRoundPage = () => {
 						startDate.setHours(currentDate.getHours())
 						startDate.setMinutes(currentDate.getMinutes() + 15)
 					}
-					if (endDate.toDateString() === new Date(new Date().setDate(new Date().getDate() + 1)).toDateString()) {
+					if (
+						endDate.toDateString() ===
+						new Date(
+							new Date().setDate(new Date().getDate() + 1),
+						).toDateString()
+					) {
 						endDate.setHours(currentDate.getHours() + 1)
 						endDate.setMinutes(currentDate.getMinutes())
 					}
@@ -287,7 +306,6 @@ const CreateRoundPage = () => {
 				if (!contracts) {
 					return
 				}
-
 
 				const maxParticipants =
 					data.max_participants < 10 ? 10 : data.max_participants
@@ -316,10 +334,14 @@ const CreateRoundPage = () => {
 					num_picks_per_voter:
 						data.vote_per_person < 1 ? 1 : data.vote_per_person,
 					use_whitelist: checkedListIds.length > 0,
-					voting_wl_list_id: checkedListIds.length > 0 ? checkedListIds[0] : undefined,
+					voting_wl_list_id:
+						checkedListIds.length > 0 ? checkedListIds[0] : undefined,
 					is_video_required: data.is_video_required,
 					use_whitelist_application: checkedApplicationListIds?.length > 0,
-					application_wl_list_id: checkedApplicationListIds.length > 0 ? checkedApplicationListIds[0] : undefined,
+					application_wl_list_id:
+						checkedApplicationListIds.length > 0
+							? checkedApplicationListIds[0]
+							: undefined,
 					allow_applications: data.allow_application,
 					use_vault: data.use_vault,
 					voting_start_ms: BigInt(
@@ -341,7 +363,9 @@ const CreateRoundPage = () => {
 						: undefined,
 					remaining_dist_address:
 						data.remaining_dist_address || storage.my_address || '',
-					referrer_fee_basis_points: data.referrer_fee_basis_points ? Number(data.referrer_fee_basis_points) * 100 : 0,
+					referrer_fee_basis_points: data.referrer_fee_basis_points
+						? Number(data.referrer_fee_basis_points) * 100
+						: 0,
 				}
 
 				const txCreateRound = await createRound(
@@ -368,7 +392,6 @@ const CreateRoundPage = () => {
 						)
 					}
 
-
 					setSuccessCreateRoundModalProps((prev) => ({
 						...prev,
 						isOpen: true,
@@ -379,11 +402,11 @@ const CreateRoundPage = () => {
 							voting_start: data.voting_duration_start?.toISOString(),
 							voting_end: data.voting_duration_end?.toISOString(),
 							...(data.apply_duration_start && {
-								application_start: data.apply_duration_start.toISOString()
+								application_start: data.apply_duration_start.toISOString(),
 							}),
 							...(data.apply_duration_end && {
-								application_end: data.apply_duration_end.toISOString()
-							})
+								application_end: data.apply_duration_end.toISOString(),
+							}),
 						} as unknown as GPRound,
 						txHash: txHashCreateRound,
 					}))
@@ -497,11 +520,11 @@ const CreateRoundPage = () => {
 						voting_start: data.voting_duration_start?.toISOString(),
 						voting_end: data.voting_duration_end?.toISOString(),
 						...(data.apply_duration_start && {
-							application_start: data.apply_duration_start.toISOString()
+							application_start: data.apply_duration_start.toISOString(),
 						}),
 						...(data.apply_duration_end && {
-							application_end: data.apply_duration_end.toISOString()
-						})
+							application_end: data.apply_duration_end.toISOString(),
+						}),
 					} as unknown as GPRound,
 					txHash: txNearCreateRound?.outcome.transaction_outcome.id,
 				}))
@@ -549,10 +572,8 @@ const CreateRoundPage = () => {
 		skip: number
 		limit: number
 	}) => {
-		console.log('whatisthe current chainId, ', storage.chainId)
 		if (storage.chainId === 'stellar') {
 			let contracts = storage.getStellarContracts()
-			console.log('is the sotrage full.. ', contracts)
 			if (!contracts) {
 				return []
 			}
@@ -563,7 +584,6 @@ const CreateRoundPage = () => {
 			return res
 		} else {
 			let contracts = storage.getNearContracts(nearWallet)
-			console.log('is this the contracts... ', contracts)
 			if (!contracts) {
 				return []
 			}
@@ -594,12 +614,10 @@ const CreateRoundPage = () => {
 
 	const lists = data
 		? ([] as IGetListExternalResponse[]).concat(
-			...(data as any as IGetListExternalResponse[]),
-		)
+				...(data as any as IGetListExternalResponse[]),
+			)
 		: []
 	const isEmpty = data?.[0]?.length === 0
-
-	console.log('is emptiest init,, ', isEmpty)
 	const isReachingEnd =
 		isEmpty || (data && data[data.length - 1]?.length < LIMIT_SIZE)
 
@@ -655,8 +673,9 @@ const CreateRoundPage = () => {
 							)}
 						</button>
 						<div
-							className={`overflow-hidden transition-all duration-500 ease-in-out ${showTips ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'
-								}`}
+							className={`overflow-hidden transition-all duration-500 ease-in-out ${
+								showTips ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'
+							}`}
 						>
 							<div className="pt-4 space-y-4 border-t border-black/10">
 								<div>
@@ -664,10 +683,22 @@ const CreateRoundPage = () => {
 										📅 Duration & Timing
 									</h4>
 									<ul className="text-sm text-grantpicks-black-700 space-y-1 ml-4">
-										<li>• <strong>Application Period:</strong> If enabled, must be at least 24 hours long</li>
-										<li>• <strong>Voting Period:</strong> Must be at least 24 hours long</li>
-										<li>• <strong>Timeline:</strong> Application period must end before voting period begins</li>
-										<li>• <strong>Auto-adjustment:</strong> Times are automatically adjusted to ensure proper sequencing</li>
+										<li>
+											• <strong>Application Period:</strong> If enabled, must be
+											at least 24 hours long
+										</li>
+										<li>
+											• <strong>Voting Period:</strong> Must be at least 24
+											hours long
+										</li>
+										<li>
+											• <strong>Timeline:</strong> Application period must end
+											before voting period begins
+										</li>
+										<li>
+											• <strong>Auto-adjustment:</strong> Times are
+											automatically adjusted to ensure proper sequencing
+										</li>
 									</ul>
 								</div>
 								<div>
@@ -675,10 +706,22 @@ const CreateRoundPage = () => {
 										📋 Lists & Requirements
 									</h4>
 									<ul className="text-sm text-grantpicks-black-700 space-y-1 ml-4">
-										<li>• <strong>Voter Lists:</strong> Control who can vote in your round</li>
-										<li>• <strong>Application Lists:</strong> Control who can apply (only if applications are enabled)</li>
-										<li>• <strong>List Selection:</strong> You can only select one list per requirement</li>
-										<li>• <strong>Ownership:</strong> You can use lists you own or are an admin of</li>
+										<li>
+											• <strong>Voter Lists:</strong> Control who can vote in
+											your round
+										</li>
+										<li>
+											• <strong>Application Lists:</strong> Control who can
+											apply (only if applications are enabled)
+										</li>
+										<li>
+											• <strong>List Selection:</strong> You can only select one
+											list per requirement
+										</li>
+										<li>
+											• <strong>Ownership:</strong> You can use lists you own or
+											are an admin of
+										</li>
 									</ul>
 								</div>
 								<div>
@@ -686,10 +729,22 @@ const CreateRoundPage = () => {
 										💰 Funding & Deposits
 									</h4>
 									<ul className="text-sm text-grantpicks-black-700 space-y-1 ml-4">
-										<li>• <strong>Expected Amount:</strong> The total funding goal for your round</li>
-										<li>• <strong>Minimum Deposit:</strong> The smallest amount someone can contribute</li>
-										<li>• <strong>Initial Deposit:</strong> Your starting contribution (optional)</li>
-										<li>• <strong>Validation:</strong> Initial deposit cannot be less than minimum deposit</li>
+										<li>
+											• <strong>Expected Amount:</strong> The total funding goal
+											for your round
+										</li>
+										<li>
+											• <strong>Minimum Deposit:</strong> The smallest amount
+											someone can contribute
+										</li>
+										<li>
+											• <strong>Initial Deposit:</strong> Your starting
+											contribution (optional)
+										</li>
+										<li>
+											• <strong>Validation:</strong> Initial deposit cannot be
+											less than minimum deposit
+										</li>
 									</ul>
 								</div>
 								<div>
@@ -697,10 +752,22 @@ const CreateRoundPage = () => {
 										⚙️ Advanced Features
 									</h4>
 									<ul className="text-sm text-grantpicks-black-700 space-y-1 ml-4">
-										<li>• <strong>Cooldown Period:</strong> Time between voting end and payout period</li>
-										<li>• <strong>Compliance:</strong> Requires grantees to complete KYC process</li>
-										<li>• <strong>Remaining Funds:</strong> Redistribute unclaimed funds to specified address</li>
-										<li>• <strong>Referral Fees:</strong> Set commission for referrers (0-5%)</li>
+										<li>
+											• <strong>Cooldown Period:</strong> Time between voting
+											end and payout period
+										</li>
+										<li>
+											• <strong>Compliance:</strong> Requires grantees to
+											complete KYC process
+										</li>
+										<li>
+											• <strong>Remaining Funds:</strong> Redistribute unclaimed
+											funds to specified address
+										</li>
+										<li>
+											• <strong>Referral Fees:</strong> Set commission for
+											referrers (0-5%)
+										</li>
 									</ul>
 								</div>
 							</div>
@@ -809,9 +876,12 @@ const CreateRoundPage = () => {
 											<p className="text-red-500 text-xs mt-1 ml-2">
 												Max Participants is required
 											</p>
-										) : watch().max_participants < 10 || watch().max_participants > 100 ? (
+										) : watch().max_participants < 10 ||
+										  watch().max_participants > 100 ? (
 											<p className="text-red-500 text-xs mt-1 ml-2">
-												{watch().max_participants < 10 ? 'Min. 10 Participants' : 'Max. 100 Participants'}
+												{watch().max_participants < 10
+													? 'Min. 10 Participants'
+													: 'Max. 100 Participants'}
 											</p>
 										) : undefined}
 									</div>
@@ -871,20 +941,26 @@ const CreateRoundPage = () => {
 
 															const startDate = new Date(start)
 															const endDate = new Date(end)
-															const hoursDiff = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60)
+															const hoursDiff =
+																(endDate.getTime() - startDate.getTime()) /
+																(1000 * 60 * 60)
 
 															if (hoursDiff < 24) {
-																toast.error('Application duration must be at least 24 hours', {
-																	style: toastOptions.error.style,
-																})
+																toast.error(
+																	'Application duration must be at least 24 hours',
+																	{
+																		style: toastOptions.error.style,
+																	},
+																)
 																setError('apply_duration_start', {
 																	type: 'manual',
-																	message: 'Application duration must be at least 24 hours apart'
+																	message:
+																		'Application duration must be at least 24 hours apart',
 																})
 																setValue('apply_duration_end', null, {
 																	shouldValidate: true,
 																	shouldDirty: true,
-																	shouldTouch: true
+																	shouldTouch: true,
 																})
 																field.onChange(null)
 																return
@@ -935,7 +1011,10 @@ const CreateRoundPage = () => {
 									render={({ field }) => (
 										<DatePicker
 											showIcon
-											minDate={subDays(watch().apply_duration_end as Date, 0) || new Date()}
+											minDate={
+												subDays(watch().apply_duration_end as Date, 0) ||
+												new Date()
+											}
 											selectsRange={true}
 											icon={
 												<div className="flex items-center mt-2">
@@ -960,20 +1039,26 @@ const CreateRoundPage = () => {
 
 												const startDate = new Date(start)
 												const endDate = new Date(end)
-												const hoursDiff = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60)
+												const hoursDiff =
+													(endDate.getTime() - startDate.getTime()) /
+													(1000 * 60 * 60)
 
 												if (hoursDiff < 24) {
-													toast.error('Voting duration must be at least 24 hours', {
-														style: toastOptions.error.style,
-													})
+													toast.error(
+														'Voting duration must be at least 24 hours',
+														{
+															style: toastOptions.error.style,
+														},
+													)
 													setError('voting_duration_start', {
 														type: 'manual',
-														message: 'Voting duration must be at least 24 hours apart'
+														message:
+															'Voting duration must be at least 24 hours apart',
 													})
 													setValue('voting_duration_end', null, {
 														shouldValidate: true,
 														shouldDirty: true,
-														shouldTouch: true
+														shouldTouch: true,
 													})
 													field.onChange(null)
 													return
@@ -1060,7 +1145,7 @@ const CreateRoundPage = () => {
 										className={clsx(
 											'border w-full border-grantpicks-black-200 rounded-xl py-3 px-3 flex items-center justify-between cursor-pointer hover:opacity-80 transition',
 											errors.contact_address?.type === 'required' &&
-											'border-red-500',
+												'border-red-500',
 										)}
 									>
 										<p
@@ -1136,7 +1221,7 @@ const CreateRoundPage = () => {
 										className={clsx(
 											(errors.contact_address?.type === 'required' ||
 												errors.contact_address) &&
-											'border border-red-500',
+												'border border-red-500',
 										)}
 										disabled={!watch('contact_type')}
 										required
@@ -1193,14 +1278,13 @@ const CreateRoundPage = () => {
 					</div>
 
 					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
-
 						<div className="flex items-start flex-wrap md:flex-row flex-col md:space-x-4 w-full mb-4">
 							<div className="flex-1">
 								<InputText
 									type="number"
 									label="Expected Amount"
 									required
-									className='text-sm'
+									className="text-sm"
 									placeholder={isMobile ? '' : 'Enter amount...'}
 									{...register('expected_amount', {
 										required: true,
@@ -1246,7 +1330,7 @@ const CreateRoundPage = () => {
 												Expected Amount is required
 											</p>
 										) : parseFloat(watch().expected_amount) <
-											parseFloat(watch().amount) ? (
+										  parseFloat(watch().amount) ? (
 											<p className="text-red-500 text-xs mt-1 ml-2">
 												Expected Amount should not be less than intiial deposit
 											</p>
@@ -1264,7 +1348,7 @@ const CreateRoundPage = () => {
 									type="number"
 									disabled={!watch().use_vault}
 									label="Initial Deposit"
-									className='text-sm'
+									className="text-sm"
 									placeholder={isMobile ? '' : 'Enter amount...'}
 									{...register('amount', {
 										onChange: async (e) => {
@@ -1288,7 +1372,7 @@ const CreateRoundPage = () => {
 												return 'Initial deposit cannot be less than minimum deposit'
 											}
 											return true
-										}
+										},
 									})}
 									preffixIcon={
 										storage.chainId === 'stellar' ? (
@@ -1332,7 +1416,7 @@ const CreateRoundPage = () => {
 									type="number"
 									label="Minimum Deposit"
 									required
-									className='text-sm'
+									className="text-sm"
 									placeholder={isMobile ? '' : 'Enter amount...'}
 									{...register('minimum_deposit', {
 										required: true,
@@ -1354,7 +1438,7 @@ const CreateRoundPage = () => {
 												return 'Minimum deposit cannot be greater than expected amount'
 											}
 											return true
-										}
+										},
 									})}
 									preffixIcon={
 										storage.chainId === 'stellar' ? (
@@ -1397,7 +1481,6 @@ const CreateRoundPage = () => {
 									}
 								/>
 							</div>
-
 						</div>
 						{connectedWallet === 'stellar' ? (
 							<div className="flex items-center">
@@ -1633,7 +1716,7 @@ const CreateRoundPage = () => {
 											Compliance deadline is required
 										</p>
 									) : (watch().compliance_period_ms as unknown as number) <
-										0 ? (
+									  0 ? (
 										<p className="text-red-500 text-xs mt-1 ml-2">
 											Compliance deadline cannot be less than 0
 										</p>
@@ -1965,7 +2048,9 @@ const CreateRoundPage = () => {
 					{watch().allow_application && (
 						<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
 							<div className="flex items-center justify-between pb-4 border-b border-black/10">
-								<p className="text-base font-semibold">Application Requirements</p>
+								<p className="text-base font-semibold">
+									Application Requirements
+								</p>
 							</div>
 							<div>
 								<button
@@ -2031,18 +2116,26 @@ const CreateRoundPage = () => {
 																className="py-4 flex items-center gap-x-4"
 															>
 																<Checkbox
-																	checked={checkedApplicationListIds.includes(list.id)}
+																	checked={checkedApplicationListIds.includes(
+																		list.id,
+																	)}
 																	onChange={(e) => {
 																		if (e.target.checked) {
 																			setCheckedApplicationListIds([list.id])
-																			setValue('application_wl_list_id', list.id)
+																			setValue(
+																				'application_wl_list_id',
+																				list.id,
+																			)
 																		} else {
 																			setCheckedApplicationListIds(
 																				checkedApplicationListIds.filter(
 																					(id) => id !== list.id,
 																				),
 																			)
-																			setValue('application_wl_list_id', undefined)
+																			setValue(
+																				'application_wl_list_id',
+																				undefined,
+																			)
 																		}
 																	}}
 																	name="application_wl_list_id"

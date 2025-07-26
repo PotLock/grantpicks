@@ -1,15 +1,15 @@
-import Contracts from "@/lib/contracts"
-import { IGetListExternalResponse } from "@/types/on-chain"
-import { RegistrationInput, RegistrationStatus } from "lists-client"
+import Contracts from '@/lib/contracts'
+import { IGetListExternalResponse } from '@/types/on-chain'
+import { RegistrationInput, RegistrationStatus } from 'lists-client'
 
 export interface CreateListParams {
-  name: string
-  description: string
-  cover_image_url?: string
-  admins?: string[]
-  owner: string
-  default_registration_status: RegistrationStatus
-  admin_only_registrations: boolean
+	name: string
+	description: string
+	cover_image_url?: string
+	admins?: string[]
+	owner: string
+	default_registration_status: RegistrationStatus
+	admin_only_registrations: boolean
 }
 
 interface GetListsParams {
@@ -42,38 +42,45 @@ interface UpdateProjectStatusParams {
 }
 
 interface UpdateListParams {
-  list_id: bigint
-  name: string
-  description: string
-  cover_image_url: string
+	list_id: bigint
+	name: string
+	description: string
+	cover_image_url: string
 	default_registration_status: RegistrationStatus
 	admin_only_registrations: boolean
 }
 
-export const createList = async (caller: string, params: CreateListParams, contract: Contracts) => {
-  const tx = await contract.lists_contract.create_list({
-    owner: caller,
-    name: params.name,
-    default_registration_status: params.default_registration_status,
-    description: params.description,
-    cover_image_url: params.cover_image_url,
-    admins: params.admins,
-    admin_only_registrations: params.admin_only_registrations,
-  })
+export const createList = async (
+	caller: string,
+	params: CreateListParams,
+	contract: Contracts,
+) => {
+	const tx = await contract.lists_contract.create_list({
+		owner: caller,
+		name: params.name,
+		default_registration_status: params.default_registration_status,
+		description: params.description,
+		cover_image_url: params.cover_image_url,
+		admins: params.admins,
+		admin_only_registrations: params.admin_only_registrations,
+	})
 
-  return tx
+	return tx
 }
 
-export const updateList = async (params: UpdateListParams, contract: Contracts) => {
-  const tx = await contract.lists_contract.update_list({
-    list_id: params.list_id,
-    name: params.name,
-    description: params.description,
-    cover_image_url: params.cover_image_url,
-    remove_cover_image: params.cover_image_url ? false : true,
-    default_registration_status: params.default_registration_status,
-    admin_only_registrations: params.admin_only_registrations,
-  })
+export const updateList = async (
+	params: UpdateListParams,
+	contract: Contracts,
+) => {
+	const tx = await contract.lists_contract.update_list({
+		list_id: params.list_id,
+		name: params.name,
+		description: params.description,
+		cover_image_url: params.cover_image_url,
+		remove_cover_image: params.cover_image_url ? false : true,
+		default_registration_status: params.default_registration_status,
+		admin_only_registrations: params.admin_only_registrations,
+	})
 	return tx
 }
 
@@ -93,7 +100,10 @@ export const getLists: (
 export const getList: (
 	params: GetListParams,
 	contract: Contracts,
-) => Promise<IGetListExternalResponse> = async (params: GetListParams, contract: Contracts) => {
+) => Promise<IGetListExternalResponse> = async (
+	params: GetListParams,
+	contract: Contracts,
+) => {
 	let list = await contract.lists_contract.get_list({
 		list_id: params.list_id,
 	})
@@ -103,7 +113,10 @@ export const getList: (
 export const batchRegisterToList: (
 	params: BatchRegisterToListParams,
 	contract: Contracts,
-) => Promise<any> = async (params: BatchRegisterToListParams, contract: Contracts) => {
+) => Promise<any> = async (
+	params: BatchRegisterToListParams,
+	contract: Contracts,
+) => {
 	let list = await contract.lists_contract.register_batch({
 		submitter: params.submitter,
 		list_id: params.list_id,
@@ -116,12 +129,15 @@ export const batchRegisterToList: (
 export const getListRegistrations: (
 	params: GetListRegistrationsParams,
 	contract: Contracts,
-) => Promise<any> = async (params: GetListRegistrationsParams, contract: Contracts) => {
+) => Promise<any> = async (
+	params: GetListRegistrationsParams,
+	contract: Contracts,
+) => {
 	let registrations = await contract.lists_contract.get_registrations_for_list({
 		list_id: params.list_id,
 		required_status: params.required_status,
 		from_index: BigInt(0),
-		limit: BigInt(10)
+		limit: BigInt(10),
 	})
 	return registrations.result
 }
@@ -129,7 +145,10 @@ export const getListRegistrations: (
 export const updateProjectStatusInList: (
 	params: UpdateProjectStatusParams,
 	contract: Contracts,
-) => Promise<any> = async (params: UpdateProjectStatusParams, contract: Contracts) => {
+) => Promise<any> = async (
+	params: UpdateProjectStatusParams,
+	contract: Contracts,
+) => {
 	let tx = await contract.lists_contract.update_registration({
 		submitter: params.submitter,
 		list_id: params.list_id,
@@ -137,7 +156,7 @@ export const updateProjectStatusInList: (
 		status: params.status,
 		notes: params.notes,
 	})
-	return tx;
+	return tx
 }
 
 export const deleteList: (
@@ -147,5 +166,5 @@ export const deleteList: (
 	let tx = await contract.lists_contract.delete_list({
 		list_id,
 	})
-	return tx;
+	return tx
 }

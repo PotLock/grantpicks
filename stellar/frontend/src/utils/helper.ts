@@ -7,7 +7,7 @@ import {
 import { GPRound } from '@/models/round'
 import { ENetworkEnv, Networks, SubmitTxProps } from '@/types/on-chain'
 import axios from 'axios'
-import { Horizon,  TransactionBuilder } from 'round-client'
+import { Horizon, SorobanRpc, TransactionBuilder } from 'round-client'
 
 export const capitalizeFirstLetter = (str: string) => {
 	return str.charAt(0).toUpperCase() + str.slice(1)
@@ -59,16 +59,16 @@ export const parseToStroop = (amount: string) => {
 	return res
 }
 
-// export const getSorobanServer = () => {
-// 	return new Soroban(
-// 		getSorobanConfig(envVarConfigs.NETWORK_ENV as string)?.rpc_url as string,
-// 		{
-// 			allowHttp: getSorobanConfig(
-// 				envVarConfigs.NETWORK_ENV as string,
-// 			)?.rpc_url.startsWith('http://'),
-// 		},
-// 	)
-// }
+export const getSorobanServer = () => {
+	return new SorobanRpc.Server(
+		getSorobanConfig(envVarConfigs.NETWORK_ENV as string)?.rpc_url as string,
+		{
+			allowHttp: getSorobanConfig(
+				envVarConfigs.NETWORK_ENV as string,
+			)?.rpc_url.startsWith('http://'),
+		},
+	)
+}
 
 export const getHorizonServer = () => {
 	return new Horizon.Server(
@@ -110,37 +110,35 @@ export const submitTx = async ({
 	networkPassphrase,
 	server,
 }: SubmitTxProps) => {
-	if (server instanceof Horizon.Server) {
+	if (server instanceof SorobanRpc.Server) {
+		const tx = TransactionBuilder.fromXDR(signedXDR, networkPassphrase)
+
+		let sendResponse
+		let getTx
+		sendResponse = await server.sendTransaction(tx)
+
+		if (sendResponse.status == 'ERROR' && sendResponse.errorResult) {
+			throw new Error('Transaction failed', {
+				cause: sendResponse.errorResult?.result(),
+			})
+		}
+
+		if (sendResponse.status == 'TRY_AGAIN_LATER') {
+			throw new Error('Transaction failed. Try again later')
+		}
+
+		getTx = await server.getTransaction(sendResponse.hash)
+		while (sendResponse.status == 'PENDING' && getTx.status == 'NOT_FOUND') {
+			getTx = await server.getTransaction(sendResponse.hash)
+			await sleep(200)
+		}
+
+		return sendResponse.hash
+	} else if (server instanceof Horizon.Server) {
 		const tx = TransactionBuilder.fromXDR(signedXDR, networkPassphrase)
 		const sendResponse = await server.submitTransaction(tx)
 
 		return sendResponse.hash
-	} else {
-		// const tx = TransactionBuilder.fromXDR(signedXDR, networkPassphrase)
-
-		// let sendResponse
-		// let getTx
-		// sendResponse = await server.sendTransaction(tx)
-
-		// if (sendResponse.status == 'ERROR' && sendResponse.errorResult) {
-		// 	throw new Error('Transaction failed', {
-		// 		cause: sendResponse.errorResult?.result(),
-		// 	})
-		// }
-
-		// if (sendResponse.status == 'TRY_AGAIN_LATER') {
-		// 	throw new Error('Transaction failed. Try again later')
-		// }
-
-		// getTx = await server.getTransaction(sendResponse.hash)
-
-		// while (sendResponse.status == 'PENDING' && getTx.status == 'NOT_FOUND') {
-		// 	getTx = await server.getTransaction(sendResponse.hash)
-		// 	await sleep(200)
-		// }
-		
-		// return sendResponse.hash
-		throw new Error('You are using the wrong server')
 	}
 }
 

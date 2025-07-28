@@ -191,23 +191,21 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 		} else if (walletType === 'stellar') {
 			// For Stellar, check the network configuration
 			if (stellarKit) {
-
 				try {
-					// const networkInfo = await stellarKit.getNetwork()
-					// console.log('networkInfo', networkInfo)
-					// const currentNetwork = networkInfo.network
-					// const expectedNetwork = appNetwork === 'testnet' ? 'TESTNET' : 'MAINNET'
+					const networkInfo = await stellarKit.getNetwork()
+					const currentNetwork = networkInfo.network
+					const expectedNetwork = appNetwork === 'testnet' ? 'TESTNET' : 'MAINNET'
 
-					// if (currentNetwork !== expectedNetwork) {
-					// 	const currentNetworkName = currentNetwork === 'TESTNET' ? 'Testnet' : 'Mainnet'
-					// 	const expectedNetworkName = expectedNetwork === 'TESTNET' ? 'Testnet' : 'Mainnet'
+					if (currentNetwork !== expectedNetwork) {
+						const currentNetworkName = currentNetwork === 'TESTNET' ? 'Testnet' : 'Mainnet'
+						const expectedNetworkName = expectedNetwork === 'TESTNET' ? 'Testnet' : 'Mainnet'
 
-					// 	toast.error(
-					// 		`Network Mismatch: You are connected to Stellar ${currentNetworkName} but this app is running on ${expectedNetworkName}. Please switch to ${expectedNetworkName} in your wallet.`,
-					// 		{ duration: 6000 }
-					// 	)
-					// 	return false
-					// }
+						toast.error(
+							`Network Mismatch: You are connected to Stellar ${currentNetworkName} but this app is running on ${expectedNetworkName}. Please switch to ${expectedNetworkName} in your wallet.`,
+							{ duration: 6000 }
+						)
+						return false
+					}
 				} catch (error) {
 					console.error('Error checking Stellar network:', error)
 					// If we can't check the network, allow the connection but warn the user
@@ -297,7 +295,6 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 			)
 			const balances = parseInt(filterXLM[0].balance)
 			setCurrentBalance(balances)
-
 
 			store.setMyAddress(localStellarPubKey || pubKey)
 			store.setChainId('stellar')

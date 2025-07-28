@@ -2,6 +2,7 @@ import { Client as ListClient } from 'lists-client'
 import { Client as ProjectClient } from 'project-registry-client'
 import { Client as RoundClient } from 'round-client'
 import {
+	AssembledTransaction,
 	ClientOptions,
 } from '@stellar/stellar-sdk/contract'
 import CMDWallet from './wallet'
@@ -11,7 +12,7 @@ import {
 	StellarWalletsKit,
 	WalletNetwork,
 } from '@creit.tech/stellar-wallets-kit'
-import { getHorizonConfig, getHorizonServer,  submitTx } from '@/utils/helper'
+import { getSorobanConfig, getSorobanServer, submitTx } from '@/utils/helper'
 
 class Contracts {
 	private _lists_contract: ListClient
@@ -37,17 +38,11 @@ class Contracts {
 		if (wallet) {
 			config.signAuthEntry = async () => {
 				const signedAuth = await wallet.signAuth()
-				return {
-					signedAuthEntry: signedAuth,
-					signerAddress: wallet.account.publicKey
-				}
+				return signedAuth
 			}
 			config.signTransaction = async (tx: string, opts?: any) => {
 				const signedTx = await wallet.signTransaction(tx, opts)
-				return {
-					signedTxXdr: signedTx,
-					signerAddress: wallet.account.publicKey
-				}
+				return signedTx
 			}
 		}
 
@@ -60,24 +55,18 @@ class Contracts {
 		let round_contract_id = envVarConfigs.ROUND_CONTRACT_ID || ''
 
 		this._lists_contract = new ListClient({
+			...config,
 			contractId: lists_contract_id,
-			networkPassphrase: config.networkPassphrase,
-			rpcUrl: config.rpcUrl,
-			publicKey: config.publicKey,
 		})
 
 		this._project_contract = new ProjectClient({
+			...config,
 			contractId: project_registry_contract_id,
-			networkPassphrase: config.networkPassphrase,
-			rpcUrl: config.rpcUrl,
-			publicKey: config.publicKey,
 		})
 
 		this._round_contract = new RoundClient({
+			...config,
 			contractId: round_contract_id,
-			networkPassphrase: config.networkPassphrase,
-			rpcUrl: config.rpcUrl,
-			publicKey: config.publicKey,
 		})
 	}
 
@@ -108,14 +97,13 @@ class Contracts {
 		})
 		signedXdr = signedRes ? signedRes?.signedTxXdr : undefined
 		if (signedXdr) {
-			const server = getHorizonServer()
+			const server = getSorobanServer()
 			const txHash = await submitTx({
 				signedXDR: signedXdr,
-				networkPassphrase: getHorizonConfig(envVarConfigs.NETWORK_ENV as string)
+				networkPassphrase: getSorobanConfig(envVarConfigs.NETWORK_ENV as string)
 					?.network_passphrase as string,
 				server,
 			})
-			
 			return txHash
 		} else {
 			throw new Error('Tx canceled by user')

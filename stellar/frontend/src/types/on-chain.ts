@@ -34,5 +34,5 @@ export enum Networks {
 export interface SubmitTxProps {
 	signedXDR: string
 	networkPassphrase: string
-	server: Horizon.Server | any
+	server: Horizon.Server
 }

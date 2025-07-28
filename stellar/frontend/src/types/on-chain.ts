@@ -3,7 +3,6 @@ import {
 	Horizon,
 	RoundApplication,
 	RoundDetail,
-	SorobanRpc,
 } from 'round-client'
 
 export type Network = 'testnet' | 'mainnet'
@@ -35,5 +34,5 @@ export enum Networks {
 export interface SubmitTxProps {
 	signedXDR: string
 	networkPassphrase: string
-	server: SorobanRpc.Server | Horizon.Server
+	server: Horizon.Server | any
 }

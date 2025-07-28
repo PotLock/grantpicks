@@ -1,4 +1,4 @@
-import { ListExternal } from 'lists-client'
+import { ListExternal, Soroban } from 'lists-client'
 import {
 	Horizon,
 	RoundApplication,

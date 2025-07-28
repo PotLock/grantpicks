@@ -116,31 +116,31 @@ export const submitTx = async ({
 
 		return sendResponse.hash
 	} else {
-		const tx = TransactionBuilder.fromXDR(signedXDR, networkPassphrase)
+		// const tx = TransactionBuilder.fromXDR(signedXDR, networkPassphrase)
 
-		let sendResponse
-		let getTx
-		sendResponse = await server.sendTransaction(tx)
+		// let sendResponse
+		// let getTx
+		// sendResponse = await server.sendTransaction(tx)
 
-		if (sendResponse.status == 'ERROR' && sendResponse.errorResult) {
-			throw new Error('Transaction failed', {
-				cause: sendResponse.errorResult?.result(),
-			})
-		}
+		// if (sendResponse.status == 'ERROR' && sendResponse.errorResult) {
+		// 	throw new Error('Transaction failed', {
+		// 		cause: sendResponse.errorResult?.result(),
+		// 	})
+		// }
 
-		if (sendResponse.status == 'TRY_AGAIN_LATER') {
-			throw new Error('Transaction failed. Try again later')
-		}
+		// if (sendResponse.status == 'TRY_AGAIN_LATER') {
+		// 	throw new Error('Transaction failed. Try again later')
+		// }
 
-		getTx = await server.getTransaction(sendResponse.hash)
+		// getTx = await server.getTransaction(sendResponse.hash)
 
-		while (sendResponse.status == 'PENDING' && getTx.status == 'NOT_FOUND') {
-			getTx = await server.getTransaction(sendResponse.hash)
-			await sleep(200)
-		}
+		// while (sendResponse.status == 'PENDING' && getTx.status == 'NOT_FOUND') {
+		// 	getTx = await server.getTransaction(sendResponse.hash)
+		// 	await sleep(200)
+		// }
 		
-		return sendResponse.hash
-		
+		// return sendResponse.hash
+		throw new Error('You are using the wrong server')
 	}
 }
 

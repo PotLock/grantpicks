@@ -64,7 +64,7 @@ import IconExpandLess from '@/app/components/svgs/IconExpandLess'
 import IconExpandMore from '@/app/components/svgs/IconExpandMore'
 import InfiniteScroll from 'react-infinite-scroll-component'
 import { IGetListExternalResponse } from '@/types/on-chain'
-import { LIMIT_SIZE } from '@/constants/query'
+import { convertToBasisPoints, LIMIT_SIZE } from '@/constants/query'
 import useSWRInfinite from 'swr/infinite'
 import { GPRound } from '@/models/round'
 import { parseNearAmount } from 'near-api-js/lib/utils/format'
@@ -268,9 +268,9 @@ const CreateRoundPage = () => {
 				else if (
 					applyEndDate &&
 					startDate.toDateString() ===
-						new Date(
-							new Date().setDate(applyEndDate.getDate() + 1),
-						).toDateString()
+					new Date(
+						new Date().setDate(applyEndDate.getDate() + 1),
+					).toDateString()
 				) {
 					startDate.setHours(applyEndDate.getHours())
 					startDate.setMinutes(applyEndDate.getMinutes())
@@ -363,9 +363,7 @@ const CreateRoundPage = () => {
 						: undefined,
 					remaining_dist_address:
 						data.remaining_dist_address || storage.my_address || '',
-					referrer_fee_basis_points: data.referrer_fee_basis_points
-						? Number(data.referrer_fee_basis_points) * 100
-						: 0,
+					referrer_fee_basis_points: convertToBasisPoints(data.referrer_fee_basis_points)
 				}
 
 				const txCreateRound = await createRound(
@@ -614,8 +612,8 @@ const CreateRoundPage = () => {
 
 	const lists = data
 		? ([] as IGetListExternalResponse[]).concat(
-				...(data as any as IGetListExternalResponse[]),
-			)
+			...(data as any as IGetListExternalResponse[]),
+		)
 		: []
 	const isEmpty = data?.[0]?.length === 0
 	const isReachingEnd =
@@ -673,9 +671,8 @@ const CreateRoundPage = () => {
 							)}
 						</button>
 						<div
-							className={`overflow-hidden transition-all duration-500 ease-in-out ${
-								showTips ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'
-							}`}
+							className={`overflow-hidden transition-all duration-500 ease-in-out ${showTips ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'
+								}`}
 						>
 							<div className="pt-4 space-y-4 border-t border-black/10">
 								<div>
@@ -877,7 +874,7 @@ const CreateRoundPage = () => {
 												Max Participants is required
 											</p>
 										) : watch().max_participants < 10 ||
-										  watch().max_participants > 100 ? (
+											watch().max_participants > 100 ? (
 											<p className="text-red-500 text-xs mt-1 ml-2">
 												{watch().max_participants < 10
 													? 'Min. 10 Participants'
@@ -1145,7 +1142,7 @@ const CreateRoundPage = () => {
 										className={clsx(
 											'border w-full border-grantpicks-black-200 rounded-xl py-3 px-3 flex items-center justify-between cursor-pointer hover:opacity-80 transition',
 											errors.contact_address?.type === 'required' &&
-												'border-red-500',
+											'border-red-500',
 										)}
 									>
 										<p
@@ -1221,7 +1218,7 @@ const CreateRoundPage = () => {
 										className={clsx(
 											(errors.contact_address?.type === 'required' ||
 												errors.contact_address) &&
-												'border border-red-500',
+											'border border-red-500',
 										)}
 										disabled={!watch('contact_type')}
 										required
@@ -1330,7 +1327,7 @@ const CreateRoundPage = () => {
 												Expected Amount is required
 											</p>
 										) : parseFloat(watch().expected_amount) <
-										  parseFloat(watch().amount) ? (
+											parseFloat(watch().amount) ? (
 											<p className="text-red-500 text-xs mt-1 ml-2">
 												Expected Amount should not be less than intiial deposit
 											</p>
@@ -1716,7 +1713,7 @@ const CreateRoundPage = () => {
 											Compliance deadline is required
 										</p>
 									) : (watch().compliance_period_ms as unknown as number) <
-									  0 ? (
+										0 ? (
 										<p className="text-red-500 text-xs mt-1 ml-2">
 											Compliance deadline cannot be less than 0
 										</p>

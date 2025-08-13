@@ -15,6 +15,8 @@ export class GPRound {
 	allow_applications: boolean = false
 	is_video_required: boolean = false
 	cooldown_end: null | string = null
+	application_wl_list_id: null | bigint = null
+	voting_wl_list_id: null | bigint = null
 	cooldown_period_ms: null | number = null
 	compliance_req_desc: string = ''
 	compliance_period_ms: null | number = null

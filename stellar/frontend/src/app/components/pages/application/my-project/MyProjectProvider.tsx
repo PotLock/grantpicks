@@ -2,7 +2,7 @@ import MyProjectHeader from '@/app/components/pages/application/my-project/MyPro
 import MyProjectLayout from '@/app/components/pages/application/my-project/MyProjectLayout'
 import MyProjectSection from '@/app/components/pages/application/my-project/MyProjectSection'
 import { IMyProjectContext } from '@/types/context'
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { useWallet } from '@/app/providers/WalletProvider'
 import Contracts from '@/lib/contracts'
 import CMDWallet from '@/lib/wallet'
@@ -42,7 +42,8 @@ const MyProjectProvider = () => {
 	const storage = useAppStorage()
 	const potlockService = usePotlockService()
 
-	const fetchProjectApplicant = async () => {
+
+	const fetchProjectApplicant = useCallback(async () => {
 		try {
 			if (storage.chainId === 'stellar') {
 				let contracts = storage.getStellarContracts()
@@ -105,10 +106,10 @@ const MyProjectProvider = () => {
 			storage.chainId === 'near' && setNoProject(true)
 			console.log('error fetch project applicant', error)
 		}
-	}
+	}, [stellarPubKey, nearAccounts, storage, potlockService, setProjectData, setProjectDataModel, setStats])
 
 	useEffect(() => {
-		if (!projectData && storage.my_address) {
+		if (storage.my_address) {
 			fetchProjectApplicant()
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps

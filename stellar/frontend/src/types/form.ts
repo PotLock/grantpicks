@@ -134,6 +134,8 @@ export type UpdateRoundData = {
 	allow_compliance: boolean
 	allow_cooldown: boolean
 	compliance_req_desc: string
+	application_wl_list_id?: bigint
+	voting_wl_list_id?: bigint
 	compliance_end_ms: Date | null
 	compliance_period_ms: number | null
 	cooldown_end_ms: Date | null

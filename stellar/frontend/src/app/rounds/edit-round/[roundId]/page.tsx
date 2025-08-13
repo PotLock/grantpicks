@@ -21,7 +21,6 @@ import {
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import {
 	editRound,
-	getRoundAdmins,
 	getRoundInfo,
 	UpdateRoundParams,
 } from '@/services/stellar/round'
@@ -47,6 +46,15 @@ import { GPRound } from '@/models/round'
 import { roundDetailToGPRound } from '@/services/stellar/type'
 import { formatNearAmount } from 'near-api-js/lib/utils/format'
 import clsx from 'clsx'
+import useSWRInfinite from 'swr/infinite'
+import { LIMIT_SIZE } from '@/constants/query'
+import { IGetListExternalResponse } from '@/types/on-chain'
+import IconLoading from '@/app/components/svgs/IconLoading'
+import InfiniteScroll from 'react-infinite-scroll-component'
+import Image from 'next/image'
+import IconExpandLess from '@/app/components/svgs/IconExpandLess'
+import IconExpandMore from '@/app/components/svgs/IconExpandMore'
+import { getLists } from '@/services/stellar/list'
 
 const EditRoundPage = () => {
 	const router = useRouter()
@@ -56,6 +64,11 @@ const EditRoundPage = () => {
 	const { stellarPrice, nearPrice } = useGlobalContext()
 	const { stellarPubKey, stellarKit, nearWallet, connectedWallet } = useWallet()
 	const [checkedListIds, setCheckedListIds] = useState<bigint[]>([])
+	const [checkedApplicationListIds, setCheckedApplicationListIds] = useState<bigint[]>([])
+	const [showApplicationLists, setShowApplicationLists] = useState<boolean>(true)
+	const [isVaultDeposit, setIsVaultDeposit] = useState<boolean>(false)
+	const [showLists, setShowLists] = useState<boolean>(true)
+
 	const {
 		register,
 		handleSubmit,
@@ -73,35 +86,28 @@ const EditRoundPage = () => {
 			max_participants: 10,
 			voting_duration_start: new Date(),
 			voting_duration_end: new Date(),
+			allow_application: false,
+			application_wl_list_id: undefined,
+			voting_wl_list_id: undefined,
 			use_vault: false,
 			is_video_required: false,
 		},
 	})
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
+	const { nearAccounts } = useWallet()
 
 
 	const storage = useAppStorage()
 
-	const onFetchAdmins = async () => {
-		if (storage.chainId === 'stellar') {
-			let contracts = storage.getStellarContracts()
-			if (!contracts) {
-				return
-			}
-			const res = await getRoundAdmins(
-				{ round_id: BigInt(params.roundId) },
-				contracts,
-			)
-			return res
-		} else {
-			let contracts = storage.getNearContracts(nearWallet)
-			if (!contracts) {
-				return
-			}
-			const res = await contracts.round.getRoundById(parseInt(params.roundId))
-			return res.admins
-		}
+
+	const isOwner = (listOwnerId: string): boolean => {
+		return (stellarPubKey || nearAccounts[0]?.accountId) === listOwnerId
 	}
+
+	const isAdmin = (adminIds: string[]): boolean => {
+		return adminIds.includes(stellarPubKey || nearAccounts[0]?.accountId)
+	}
+
 
 	const onFetchRoundInfo = async (): Promise<GPRound | undefined> => {
 		if (storage.chainId === 'stellar') {
@@ -153,6 +159,14 @@ const EditRoundPage = () => {
 								'',
 							),
 					)
+				}
+				if (resRoundInfo?.application_wl_list_id) {
+					setCheckedApplicationListIds([resRoundInfo?.application_wl_list_id])
+				}
+				setIsVaultDeposit(!resRoundInfo?.vault_total_deposits || false)
+				setValue('allow_application', resRoundInfo?.allow_applications || false)
+				if (resRoundInfo?.voting_wl_list_id) {
+					setCheckedListIds([resRoundInfo?.voting_wl_list_id])
 				}
 
 				setValue(
@@ -226,10 +240,10 @@ const EditRoundPage = () => {
 					max_participants:
 						data.max_participants,
 					num_picks_per_voter: data.vote_per_person,
-					application_wl_list_id: checkedListIds.length > 0 ? checkedListIds[0] : undefined,
+					application_wl_list_id: checkedApplicationListIds.length > 0 ? checkedApplicationListIds[0] : undefined,
 					voting_wl_list_id: checkedListIds.length > 0 ? checkedListIds[0] : undefined,
 					is_video_required: data.is_video_required,
-					use_vault: data.use_vault,
+					...(isVaultDeposit ? { use_vault: data.use_vault } : {}),
 				}
 				const txUpdateRound = await editRound(
 					stellarPubKey,
@@ -286,11 +300,9 @@ const EditRoundPage = () => {
 				}
 
 				const nearContracts = storage.getNearContracts(nearWallet)
-				console.log('nearContracts', nearContracts)
 				const txNearEditRound =
 					await nearContracts?.round.editRound(updateRoundParams)
 
-				console.log('txNearCreateRound', txNearEditRound)
 
 				//TODO: handle & test after BE indexed by prometheus
 
@@ -312,54 +324,55 @@ const EditRoundPage = () => {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [storage.chainId, storage.my_address])
 
-	// const onFetchLists = async (key: {
-	// 	url: string
-	// 	skip: number
-	// 	limit: number
-	// }) => {
-	// 	if (storage.chainId === 'stellar') {
-	// 		let contracts = storage.getStellarContracts()
-	// 		if (!contracts) {
-	// 			return []
-	// 		}
-	// 	} else {
-	// 		let contracts = storage.getNearContracts(nearWallet)
-	// 		if (!contracts) {
-	// 			return []
-	// 		}
-	// 		const res = await contracts.lists.getLists(key.skip, key.limit)
-	// 		return res
-	// 	}
-	// }
+	const onFetchLists = async (key: {
+		url: string
+		skip: number
+		limit: number
+	}) => {
+		if (storage.chainId === 'stellar') {
+			let contracts = storage.getStellarContracts()
+			if (!contracts) {
+				return []
+			}
+			const res = await getLists(
+				{ skip: key.skip, limit: key.limit },
+				contracts,
+			)
+			return res
+		} else {
+			let contracts = storage.getNearContracts(nearWallet)
+			if (!contracts) {
+				return []
+			}
+			const res = await contracts.lists.getLists(key.skip, key.limit)
+			return res
+		}
+	}
 
-	// const getKey = (
-	// 	pageIndex: number,
-	// 	previousPageData: IGetListExternalResponse[],
-	// ) => {
-	// 	if (previousPageData && !previousPageData.length) return null
-	// 	return {
-	// 		url: `get-lists`,
-	// 		skip: pageIndex * LIMIT_SIZE,
-	// 		limit: LIMIT_SIZE,
-	// 		chain: storage.chainId,
-	// 	}
-	// }
-	// const { data, size, setSize, isValidating, isLoading } = useSWRInfinite(
-	// 	getKey,
-	// 	async (key) => await onFetchLists(key),
-	// 	{
-	// 		revalidateFirstPage: false,
-	// 	},
-	// )
+	const getKey = (
+		pageIndex: number,
+		previousPageData: IGetListExternalResponse[],
+	) => {
+		if (previousPageData && !previousPageData.length) return null
+		return {
+			url: `get-lists`,
+			skip: pageIndex * LIMIT_SIZE,
+			limit: LIMIT_SIZE,
+			chain: storage.chainId,
+		}
+	}
+	const { data, size, setSize, isValidating, isLoading } = useSWRInfinite(
+		getKey,
+		async (key) => await onFetchLists(key),
+		{
+			revalidateFirstPage: false,
+		},
+	)
 
-	// const lists = data
-	// 	? ([] as IGetListExternalResponse[]).concat(
-	// 		...(data as any as IGetListExternalResponse[]),
-	// 	)
-	// 	: []
-	// const isEmpty = data?.[0]?.length === 0
-	// const isReachingEnd =
-	// 	isEmpty || (data && data[data.length - 1]?.length < LIMIT_SIZE)
+	const lists = data && data.length > 0 ? ([] as IGetListExternalResponse[]).concat(...(data as IGetListExternalResponse[])) : []
+	const isEmpty = data?.[0]?.length === 0
+	const isReachingEnd =
+		isEmpty || (data && data[data.length - 1]?.length < LIMIT_SIZE)
 
 
 
@@ -650,7 +663,7 @@ const EditRoundPage = () => {
 								</p>
 							</div>
 						</div>
-						{connectedWallet === 'stellar' ? (
+						{connectedWallet === 'stellar' && isVaultDeposit ? (
 							<div className="flex items-center">
 								<Checkbox
 									label="Open Funding Pool"
@@ -667,7 +680,7 @@ const EditRoundPage = () => {
 					</div>
 
 
-					{/* 
+
 					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
 						<div className="flex items-center justify-between pb-4 border-b border-black/10">
 							<p className="text-base font-semibold">Voter Requirements</p>
@@ -729,21 +742,21 @@ const EditRoundPage = () => {
 											</div>
 										) : (
 											<div>
-												{lists?.map((list) => {
+												{lists?.map((list: IGetListExternalResponse) => {
 													return (
 														<div
 															key={list.id}
 															className="py-4 flex items-center gap-x-4"
 														>
 															<Checkbox
-																checked={checkedListIds.includes(list.id)}
+																checked={checkedListIds?.includes(list.id) || false}
 																onChange={(e) => {
 																	if (e.target.checked) {
-																		setCheckedListIds([list.id])
+																		setCheckedListIds([list?.id])
 																	} else {
 																		setCheckedListIds(
-																			checkedListIds.filter(
-																				(id) => id !== list.id,
+																			checkedListIds?.filter(
+																				(id) => id !== list?.id,
 																			),
 																		)
 																	}
@@ -795,7 +808,153 @@ const EditRoundPage = () => {
 								</div>
 							)}
 						</div>
-					</div> */}
+					</div>
+
+
+					{/* Application Requirements - Only show when allow_application is true */}
+					{watch().allow_application && (
+						<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
+							<div className="flex items-center justify-between pb-4 border-b border-black/10">
+								<p className="text-base font-semibold">
+									Application Requirements
+								</p>
+							</div>
+							<div>
+								<button
+									onClick={() => {
+										setShowApplicationLists(!showApplicationLists)
+									}}
+									className="flex justify-between w-full items-center py-[14px]"
+								>
+									<p className="font-semibold text-sm text-grantpicks-black-950">
+										List
+									</p>
+									{showApplicationLists ? (
+										<IconExpandLess
+											size={24}
+											className="stroke-grantpicks-black-400"
+										/>
+									) : (
+										<IconExpandMore
+											size={24}
+											className="stroke-grantpicks-black-400"
+										/>
+									)}
+								</button>
+								{showApplicationLists && (
+									<div
+										id="scrollApplicationListsContainer"
+										className="max-h-[522px] overflow-scroll"
+									>
+										<InfiniteScroll
+											scrollableTarget="scrollApplicationListsContainer"
+											dataLength={lists.length}
+											next={() => !isValidating && setSize(size + 1)}
+											hasMore={!isReachingEnd}
+											style={{ display: 'flex', flexDirection: 'column' }}
+											loader={
+												<div className="my-2 flex items-center justify-center">
+													<IconLoading
+														size={24}
+														className="fill-grantpicks-black-600"
+													/>
+												</div>
+											}
+										>
+											{isLoading ? (
+												<div className="h-20 flex items-center justify-center">
+													<IconLoading
+														size={24}
+														className="fill-grantpicks-black-600"
+													/>
+												</div>
+											) : lists.length === 0 ? (
+												<div>
+													<p className="text-sm text-grantpicks-black-950 text-center">
+														There are no Lists Contract yet.
+													</p>
+												</div>
+											) : (
+												<div>
+													{lists?.map((list) => {
+														return (
+															<div
+																key={list.id}
+																className="py-4 flex items-center gap-x-4"
+															>
+																<Checkbox
+																	checked={checkedApplicationListIds.includes(
+																		list.id,
+																	)}
+																	onChange={(e) => {
+																		if (e.target.checked) {
+																			setCheckedApplicationListIds([list.id])
+																			setValue(
+																				'application_wl_list_id',
+																				list.id,
+																			)
+																		} else {
+																			setCheckedApplicationListIds(
+																				checkedApplicationListIds.filter(
+																					(id) => id !== list.id,
+																				),
+																			)
+																			setValue(
+																				'application_wl_list_id',
+																				undefined,
+																			)
+																		}
+																	}}
+																	name="application_wl_list_id"
+																	value={list.id.toString()}
+																/>
+																<div className="flex justify-between w-full items-center">
+																	<div className="flex gap-x-3 items-center">
+																		<Image
+																			src="/assets/images/default-list-image.png"
+																			alt="list"
+																			width={72}
+																			height={46}
+																		/>
+																		<div className="grid gap-y-1">
+																			<p className="font-semibold text-sm text-grantpicks-black-950">
+																				{list.name}
+																			</p>
+																			<p className="text-sm text-grantpicks-black-700">
+																				{list.total_registrations_count.toString()}{' '}
+																				Eligible
+																			</p>
+																		</div>
+																	</div>
+																	<div className="flex gap-x-1">
+																		{isOwner(list.owner) && (
+																			<div className="px-3 py-[2px] bg-grantpicks-black-950 rounded-full">
+																				<p className="font-semibold text-xs text-white">
+																					Owner
+																				</p>
+																			</div>
+																		)}
+																		{isAdmin(list.admins) && (
+																			<div className="px-3 py-[2px] bg-grantpicks-black-100 rounded-full">
+																				<p className="font-semibold text-xs text-grantpicks-black-950">
+																					Admin
+																				</p>
+																			</div>
+																		)}
+																	</div>
+																</div>
+															</div>
+														)
+													})}
+												</div>
+											)}
+										</InfiniteScroll>
+									</div>
+								)}
+							</div>
+						</div>
+					)}
+
 
 					<Button
 						color="black-950"

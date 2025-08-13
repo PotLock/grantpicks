@@ -43,6 +43,8 @@ export function roundDetailToGPRound(round: RoundDetail) {
 	gprRound.compliance_end = round.compliance_end_ms
 		? new Date(Number(round.compliance_end_ms)).toISOString()
 		: null
+	gprRound.application_wl_list_id = round.application_wl_list_id || null
+	gprRound.voting_wl_list_id = round.voting_wl_list_id || null
 	gprRound.allow_remaining_dist = round.allow_remaining_dist || false
 	gprRound.remaining_dist_address = {
 		id: round.remaining_dist_address,

@@ -31,6 +31,9 @@ import useAppStorage from '@/stores/zustand/useAppStorage'
 import Image from 'next/image'
 import { GPRound } from '@/models/round'
 import { formatNearAmount } from 'near-api-js/lib/utils/format'
+import useSWRInfinite from 'swr/infinite'
+import { LIMIT_SIZE } from '@/constants/query'
+import { getProjects, IGetProjectsResponse } from '@/services/stellar/project-registry'
 
 interface RoundDetailDrawerProps extends IDrawerProps {
 	doc: GPRound
@@ -174,6 +177,87 @@ const RoundDetailDrawer = ({
 			return res.admins
 		}
 	}
+
+	const onFetchProjects = async (key: { skip: number; limit: number }) => {
+		if (storage.chainId == 'stellar') {
+			const contracts = storage.getStellarContracts()
+
+			if (!contracts) {
+				return []
+			}
+
+			const resProjects = await getProjects(
+				{
+					skip: key.skip,
+					limit: key.limit,
+				},
+				contracts,
+			)
+			return resProjects
+		} else {
+			const contracts = storage.getNearContracts(null)
+			if (!contracts) {
+				return []
+			}
+
+			const listId = process.env.NEAR_PROJECTS_LIST_ID || '1'
+
+			const resProjects = await contracts.lists.getRegistrations(
+				listId,
+				key.skip,
+				key.limit,
+			)
+
+			const projectAddresses = resProjects.map(
+				(project: any) => project.registrant_id,
+			)
+
+			const getProjectsDetail = projectAddresses.map((address: string) => {
+				return contracts.near_social.getProjectData(address)
+			})
+
+			const resProjectsDetail = await Promise.all(getProjectsDetail)
+
+			const formated = resProjectsDetail.map((data: any, index: number) => {
+				const json =
+					data[`${projectAddresses[index]}`]['profile']['gp_project'] || '{}'
+				const project = JSON.parse(json)
+
+				return project
+			})
+
+			return formated
+		}
+	}
+
+	const getKey = (
+		pageIndex: number,
+		previousPageData: IGetProjectsResponse[],
+	) => {
+		if (!connectedWallet && !isOpen) return null
+		if (previousPageData && !previousPageData.length) return null
+		return {
+			url: `get-projects`,
+			skip: pageIndex,
+			limit: LIMIT_SIZE,
+			chainId: storage.chainId,
+		}
+	}
+	const {
+		data: projectData,
+		size,
+		setSize,
+
+		isLoading: isLoadingProjects,
+	} = useSWRInfinite(getKey, async (key) => await onFetchProjects(key), {
+		revalidateFirstPage: false,
+	})
+	const projects = projectData
+		? ([] as IGetProjectsResponse[]).concat(
+			...(projectData as any as IGetProjectsResponse[]),
+		)
+		: []
+	console.log(projects)
 
 	const getSpecificTime = useCallback(() => {
 		if (selectedRoundType === 'upcoming') {
@@ -357,134 +441,142 @@ const RoundDetailDrawer = ({
 					<div className="mb-4 md:mb-5">
 						<div className="border-b border-black/10 pb-2 flex items-center">
 							<p className="text-xs font-semibold text-grantpicks-black-600">
-								ADMIN{' '}
-								<span className="text-sm font-bold text-grantpicks-black-600 ml-2">
-									{admins?.length || ''}
-								</span>
+								OWNER{' '}
 							</p>
 						</div>
-						{isLoading || isValidating ? (
-							<div className="h-20 flex items-center justify-center w-full">
-								<IconLoading size={24} className="fill-grantpicks-black-600" />
-							</div>
-						) : (
-							<div className="grid grid-cols-2 gap-4 pt-3">
-								<div className="flex items-center space-x-2">
-									<Image
-										src={`https://www.tapback.co/api/avatar/${doc.owner?.id || (doc.owner as unknown as string)}`}
-										alt="admin"
-										width={40}
-										height={40}
-									/>
-									<div>
-										<p className="text-base font-bold text-grantpicks-black-950">
-											{prettyTruncate(
-												doc.owner?.id || (doc.owner as unknown as string),
-												8,
-												'address',
-											)}
-										</p>
-									</div>
-								</div>
-								{admins?.map((admin, idx) => (
-									<div key={idx} className="flex items-center space-x-2">
-										<Image
-											src={`https://www.tapback.co/api/avatar/${admin}`}
-											alt="admin"
-											width={40}
-											height={40}
-										/>
-										<div>
-											<p className="text-base font-bold text-grantpicks-black-950">
-												{prettyTruncate(admin, 8, 'address')}
-											</p>
-										</div>
-									</div>
-								))}
-							</div>
-						)}
-					</div>
-
-					<div>
-						<div className="border-b border-black/10 pb-2 flex items-center">
-							<p className="text-xs font-semibold text-grantpicks-black-600">
-								CONTACTS
-							</p>
-						</div>
-						{doc.contacts.length === 0 ? (
-							<div className="flex items-center justify-center h-20">
-								<p className="text-center text-sm text-grantpicks-black-400">
-									No contacts yet
+						<div className="flex items-center space-x-2">
+							<Image
+								src={`https://www.tapback.co/api/avatar/${doc.owner?.id || (doc.owner as unknown as string)}`}
+								alt="admin"
+								width={40}
+								height={40}
+							/>
+							<div>
+								<p className="text-base font-bold text-grantpicks-black-950">
+									{prettyTruncate(
+										doc.owner?.id || (doc.owner as unknown as string),
+										8,
+										'address',
+									)}
 								</p>
 							</div>
-						) : (
-							<div>
-								{doc?.contacts.map((contact, idx) => (
-									<div
-										key={idx}
-										className="flex items-center justify-between pt-3"
-									>
-										<RoundDetailContact contact={contact} />
-									</div>
-								))}
-							</div>
-						)}
-					</div>
-				</div>
+						</div>
+						<div>
+							{isLoading || isValidating || isLoadingProjects ? (
+								<div className="h-20 flex items-center justify-center w-full">
+									<IconLoading size={24} className="fill-grantpicks-black-600" />
+								</div>
+							) : (
+								<>
+									<p className="text-xs font-semibold text-grantpicks-black-600">
+										ADMIN{' '}
+										<span className="text-sm font-bold text-grantpicks-black-600 ml-2">
+											{admins?.length || ''}
+										</span>
+									</p>
 
-				{selectedRoundType === 'upcoming' && (
-					<div className="px-6 pt-4 pb-6 flex items-center space-x-4">
-						<Button
-							color="black-950"
-							onClick={() => {
-								onApplyRound()
-								onClose()
-							}}
-							isDisabled={
-								(isUserApplied && getSpecificTime() === 'upcoming-open') ||
-								!doc.allow_applications ||
-								new Date().getTime() >
-								new Date(doc.application_end || '').getTime()
-							}
-							className="!py-3 flex-1"
-						>
-							{isUserApplied && getSpecificTime() === 'upcoming-open'
-								? `You're already a part of this round.`
-								: new Date().getTime() >
-									new Date(doc.application_end || '').getTime() ||
-									!doc.allow_applications
-									? 'Application Closed'
-									: 'Apply'}
-						</Button>
-						{doc.use_vault && (
+									<div className="grid grid-cols-2 gap-4 pt-3">
+										{admins?.map((admin, idx) => (
+											<div key={idx} className="flex items-center space-x-2">
+												<Image
+													src={`https://www.tapback.co/api/avatar/${admin}`}
+													alt="admin"
+													width={40}
+													height={40}
+												/>
+												<div>
+													<p className="text-base font-bold text-grantpicks-black-950">
+														{prettyTruncate(admin, 8, 'address')}
+													</p>
+												</div>
+											</div>
+										))}
+									</div>
+								</>
+							)}
+						</div>
+
+						<div>
+							<div className="border-b border-black/10 pb-2 flex items-center">
+								<p className="text-xs font-semibold text-grantpicks-black-600">
+									CONTACTS
+								</p>
+							</div>
+							{doc.contacts.length === 0 ? (
+								<div className="flex items-center justify-center h-20">
+									<p className="text-center text-sm text-grantpicks-black-400">
+										No contacts yet
+									</p>
+								</div>
+							) : (
+								<div>
+									{doc?.contacts.map((contact, idx) => (
+										<div
+											key={idx}
+											className="flex items-center justify-between pt-3"
+										>
+											<RoundDetailContact contact={contact} />
+										</div>
+									))}
+								</div>
+							)}
+						</div>
+					</div>
+
+					{selectedRoundType === 'upcoming' && (
+						<div className="px-6 pt-4 pb-6 flex items-center space-x-4">
 							<Button
-								color="alpha-50"
+								color="black-950"
 								onClick={() => {
-									onOpenFundRound()
+									onApplyRound()
+									onClose()
+								}}
+								isDisabled={
+									(isUserApplied && getSpecificTime() === 'upcoming-open') ||
+									!doc.allow_applications ||
+									new Date().getTime() >
+									new Date(doc.application_end || '').getTime()
+								}
+								className="!py-3 flex-1"
+							>
+								{isUserApplied && getSpecificTime() === 'upcoming-open'
+									? `You're already a part of this round.`
+									: new Date().getTime() >
+										new Date(doc.application_end || '').getTime() ||
+										!doc.allow_applications
+										? 'Application Closed'
+										: 'Apply'}
+							</Button>
+							{doc.use_vault && (
+								<Button
+									color="alpha-50"
+									onClick={() => {
+										onOpenFundRound()
+										onClose()
+									}}
+									className="!py-3 flex-1"
+								>
+									Fund Round
+								</Button>
+							)}
+						</div>
+					)}
+					{selectedRoundType === 'on-going' && (
+						<div className="px-6 flex items-center">
+							<Button
+								color="black-950"
+								isFullWidth
+								onClick={() => {
+									onVote()
 									onClose()
 								}}
 								className="!py-3 flex-1"
 							>
-								Fund Round
+								Vote
 							</Button>
-						)}
-					</div>
-				)}
-				{selectedRoundType === 'on-going' && (
-					<div className="px-6 flex items-center">
-						<Button
-							color="black-950"
-							isFullWidth
-							onClick={() => {
-								onVote()
-								onClose()
-							}}
-							className="!py-3 flex-1"
-						>
-							Vote
-						</Button>
-					</div>
-				)}
+						</div>
+					)}
+				</div>
 			</div>
 		</Drawer>
 	)

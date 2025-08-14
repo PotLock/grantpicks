@@ -14,29 +14,40 @@ const Menu = ({
 	buttonRef,
 }: IMenuProps) => {
 	const menuRef = useRef<HTMLDivElement>(null)
+	const overlayRef = useRef<HTMLDivElement>(null)
 	const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({})
-	const [isDesktop, setIsDesktop] = useState(false)
+	const [isDesktop, setIsDesktop] = useState<boolean>(() => (typeof window !== 'undefined' ? window.innerWidth >= 768 : false))
 
-	// Detect desktop (md: 768px and up)
-	useLayoutEffect(() => {
+	// Detect desktop (md: 768px and up) - only on resize, not on initial render
+	useEffect(() => {
 		const checkDesktop = () => setIsDesktop(window.innerWidth >= 768)
-		checkDesktop()
 		window.addEventListener('resize', checkDesktop)
 		return () => window.removeEventListener('resize', checkDesktop)
 	}, [])
 
 	// Position menu for desktop portal if buttonRef is provided
-	useLayoutEffect(() => {
-		if (isOpen && isDesktop && buttonRef?.current && menuRef.current) {
+	useEffect(() => {
+		if (isOpen && buttonRef?.current) {
 			const buttonRect = buttonRef.current.getBoundingClientRect()
-			setMenuStyle({
-				position: 'absolute',
-				top: buttonRect.bottom + window.scrollY + 8, // 8px gap
-				left: buttonRect.right - menuRef.current.offsetWidth,
-				zIndex: 60,
+			// Wait a frame so the menu DOM exists and has dimensions
+			requestAnimationFrame(() => {
+				const measuredWidth = menuRef.current?.offsetWidth ?? 260
+				let leftPosition = buttonRect.right - measuredWidth
+				// Clamp within viewport with 8px margin
+				const margin = 8
+				if (leftPosition < margin) leftPosition = margin
+				if (leftPosition + measuredWidth > window.innerWidth - margin) {
+					leftPosition = Math.max(margin, window.innerWidth - measuredWidth - margin)
+				}
+				setMenuStyle({
+					position: 'fixed',
+					top: buttonRect.bottom + margin,
+					left: leftPosition,
+					zIndex: 60,
+				})
 			})
 		}
-	}, [isOpen, isDesktop, buttonRef])
+	}, [isOpen, buttonRef])
 
 	useEffect(() => {
 		const onKeydown = (e: KeyboardEvent) => {
@@ -53,13 +64,13 @@ const Menu = ({
 	}, [onClose, closeOnEscape])
 
 	const _bgClick = (e: React.MouseEvent<HTMLDivElement>) => {
-		if (e.target === menuRef.current && closeOnBgClick) {
+		if (e.target === overlayRef.current && closeOnBgClick) {
 			onClose()
 		}
 	}
 
 	// Desktop: render menu in portal if buttonRef is provided
-	const shouldUsePortal = isOpen && isDesktop && buttonRef?.current && typeof window !== 'undefined'
+	const shouldUsePortal = isOpen && buttonRef?.current && typeof window !== 'undefined'
 
 	const desktopMenu = shouldUsePortal
 		? createPortal(
@@ -95,12 +106,11 @@ const Menu = ({
 	return (
 		<>
 			{/* Overlay for closing on background click */}
-			{isOpen && (
+			{isOpen && !isDesktop && (
 				<div
-					ref={menuRef}
+					ref={overlayRef}
 					className={clsx('fixed inset-0 z-50 max-w-full mx-auto')}
 					onClick={(e) => _bgClick(e)}
-					style={{ display: isDesktop ? 'none' : undefined }}
 				/>
 			)}
 			{/* Desktop menu in portal (dropdown) */}

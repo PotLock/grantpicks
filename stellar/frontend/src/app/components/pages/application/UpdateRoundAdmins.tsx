@@ -42,8 +42,6 @@ export const UpdateRoundAdmins = ({
     name: 'admins',
   })
 
-
-
   const onSubmit = async (data: FormData) => {
     const admins = data.admins.map(admin => admin.admin_id)
     if (admins.length === 0) {

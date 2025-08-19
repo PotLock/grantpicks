@@ -26,7 +26,7 @@ const RoundMenu = ({
 	const router = useRouter()
 	const storage = useAppStorage()
 	const [isOpen, setIsOpen] = useState(false)
-	const buttonRef = useRef<HTMLDivElement>(null)
+	const buttonRef = useRef<HTMLButtonElement>(null)
 
 	const generateLink = () => {
 		if (data.contacts[0].name.toLowerCase().includes('telegram')) {
@@ -44,23 +44,30 @@ const RoundMenu = ({
 		setIsOpen(false)
 	}
 
+	const handleMenuToggle = () => {
+		setIsOpen(prev => !prev)
+	}
+
 	const handleAction = (action: () => void) => {
 		action()
 		setIsOpen(false)
 	}
 
 	return (
-		<div className="relative flex items-center justify-between space-x-2" ref={buttonRef}>
+		<div className="relative flex items-center justify-between space-x-2">
 			{/* Trigger Button */}
 			<div className="flex items-center space-x-2">
 				<p className="text-sm font-normal text-grantpicks-black-950">Round Actions</p>
 			</div>
 			<button
-				onClick={() => setIsOpen(!isOpen)}
+				ref={buttonRef}
+				onClick={handleMenuToggle}
 				className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-200"
 				aria-label="Open round menu"
 			>
-				<IconMoreVert size={20} className="fill-grantpicks-black-600" />
+				<IconMoreVert
+
+					size={20} className="fill-grantpicks-black-600" />
 			</button>
 
 			{/* Dropdown Menu */}
@@ -68,11 +75,9 @@ const RoundMenu = ({
 				isOpen={isOpen}
 				onClose={handleMenuClose}
 				buttonRef={buttonRef}
-				position=""
 			>
 				<div
-					className="bg-white rounded-xl border border-black/10 p-2 whitespace-nowrap min-w-48 shadow-lg z-50 max-h-[calc(100vh-4rem)] overflow-auto absolute right-0 mt-2"
-					style={{ right: 0, top: '100%' }}
+					className="bg-white rounded-xl border border-black/10 p-2 whitespace-nowrap min-w-48 shadow-lg z-50 max-h-[calc(100vh-4rem)] overflow-auto"
 				>
 					{(selectedRoundType === 'upcoming' ||
 						selectedRoundType === 'on-going') && (

@@ -4,10 +4,7 @@ import MyProjectSection from '@/app/components/pages/application/my-project/MyPr
 import { IMyProjectContext } from '@/types/context'
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { useWallet } from '@/app/providers/WalletProvider'
-import Contracts from '@/lib/contracts'
-import CMDWallet from '@/lib/wallet'
 import { getProjectApplicant } from '@/services/stellar/project-registry'
-import { Network } from '@/types/on-chain'
 import Button from '@/app/components/commons/Button'
 import { useRouter } from 'next/navigation'
 import { useModalContext } from '@/app/providers/ModalProvider'
@@ -43,6 +40,7 @@ const MyProjectProvider = () => {
 	const potlockService = usePotlockService()
 
 
+
 	const fetchProjectApplicant = useCallback(async () => {
 		try {
 			if (storage.chainId === 'stellar') {
@@ -51,6 +49,7 @@ const MyProjectProvider = () => {
 				if (!contracts) {
 					return
 				}
+
 
 				const res = await getProjectApplicant(stellarPubKey, contracts)
 				//@ts-ignore
@@ -113,7 +112,7 @@ const MyProjectProvider = () => {
 			fetchProjectApplicant()
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [storage.my_address])
+	}, [storage.my_address, fetchProjectApplicant])
 
 	return (
 		<MyProjectContext.Provider

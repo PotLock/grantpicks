@@ -5,7 +5,6 @@ import IconClock from '../../svgs/IconClock'
 import Button from '../../commons/Button'
 import IconEye from '../../svgs/IconEye'
 import IconCheck from '../../svgs/IconCheck'
-import { IGetRoundsResponse } from '@/types/on-chain'
 import moment from 'moment'
 import { prettyTruncate } from '@/utils/helper'
 import Link from 'next/link'
@@ -32,6 +31,7 @@ const SuccessCreateRoundModal = ({
 	const [showFundRoundModal, setShowFundRoundModal] = useState<boolean>(false)
 	const { setApplyProjectInitProps, setVoteConfirmationProps } =
 		useModalContext()
+
 
 	return (
 		<>
@@ -72,8 +72,8 @@ const SuccessCreateRoundModal = ({
 							className="!rounded-full"
 							isFullWidth
 							onClick={() => {
-								onClose()
 								setShowDetailDrawer(true)
+								onClose()
 							}}
 						>
 							<div className="flex items-center space-x-2">
@@ -106,6 +106,7 @@ const SuccessCreateRoundModal = ({
 			{createRoundRes && (
 				<>
 					<RoundDetailDrawer
+						isUserApplied={false}
 						isOpen={showDetailDrawer}
 						onClose={() => setShowDetailDrawer(false)}
 						onOpenFundRound={() => setShowFundRoundModal(true)}
@@ -132,7 +133,7 @@ const SuccessCreateRoundModal = ({
 					<FundRoundModal
 						isOpen={showFundRoundModal}
 						doc={createRoundRes}
-						mutateRounds={() => {}}
+						mutateRounds={() => { }}
 						onClose={() => setShowFundRoundModal(false)}
 					/>
 				</>

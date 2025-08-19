@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import Modal from '../../commons/Modal'
 import { BaseModalProps } from '@/types/dialog'
 import IconNear from '../../svgs/IconNear'
@@ -35,6 +35,10 @@ const VoteConfirmationModal = ({
 	const { connectedWallet, stellarPubKey, nearAccounts } = useWallet()
 	const [totalProjects, setTotalProjects] = useState<number>(0)
 	const storage = useAppStorage()
+
+	const connectedChain = useMemo(() => {
+		return storage.chainId || 'stellar'
+	}, [storage])
 
 
 	const onFetchTotalProjects = async () => {
@@ -132,10 +136,10 @@ const VoteConfirmationModal = ({
 				<div className="flex items-center mb-6 md:mb-8 lg:mb-10">
 					<div className="flex-1">
 						<p className="font-semibold text-lg md:text-xl text-grantpicks-black-950">
-							{storage.chainId === 'stellar'
+							{connectedChain === 'stellar'
 								? formatStroopToXlm(BigInt(data?.current_vault_balance || '0'))
 								: formatNearAmount(data?.current_vault_balance || '0')}{' '}
-							{storage.chainId === 'stellar' ? 'XLM' : 'NEAR'}
+							{connectedChain === 'stellar' ? 'XLM' : 'NEAR'}
 						</p>
 						<p className="font-semibold text-xs text-grantpicks-black-600">
 							AVAILABLE FUNDS
@@ -143,13 +147,13 @@ const VoteConfirmationModal = ({
 					</div>
 					<div className="flex-1">
 						<p className="font-semibold text-lg md:text-xl text-grantpicks-black-950">
-							{storage.chainId === 'stellar'
+							{connectedChain === 'stellar'
 								? formatStroopToXlm(BigInt(data?.expected_amount || '0'))
 								: data?.expected_amount || '0'}{' '}
-							{storage.chainId === 'stellar' ? 'XLM' : 'NEAR'}
+							{connectedChain === 'stellar' ? 'XLM' : 'NEAR'}
 						</p>
-						<p className="font-semibold text-xs text-grantpicks-black-600">
-							EXPECTED FUNDS
+						<p className="font-semibolEXPECTED FUNDSd text-xs text-grantpicks-black-600">
+
 						</p>
 					</div>
 				</div>

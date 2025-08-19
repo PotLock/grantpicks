@@ -150,6 +150,7 @@ const ApplicationRoundsItem = ({
 				</Button>
 			</div>
 			<RoundDetailDrawer
+				isUserApplied={false}
 				isOpen={showDetailDrawer}
 				onClose={() => setShowDetailDrawer(false)}
 				onOpenFundRound={() => setShowFundRoundModal(true)}

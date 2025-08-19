@@ -44,7 +44,7 @@ const UserMenu = ({
 							src={
 								connectedWallet === 'near'
 									? // profileData?.near_social_profile_data?.image.nft.media ||
-										`https://www.tapback.co/api/avatar/${nearAccounts[0]?.accountId}`
+									`https://www.tapback.co/api/avatar/${nearAccounts[0]?.accountId}`
 									: `https://www.tapback.co/api/avatar/${stellarPubKey}`
 							}
 							alt="image"
@@ -55,7 +55,7 @@ const UserMenu = ({
 							<p className="text-sm font-semibold text-grantpicks-black-950">
 								{connectedWallet === 'near'
 									? profileData?.near_social_profile_data?.name ||
-										formatNearAddress(nearAccounts[0]?.accountId)
+									formatNearAddress(nearAccounts[0]?.accountId)
 									: prettyTruncate(stellarPubKey, 10, 'address')}
 							</p>
 							<div className="flex items-center space-x-2">
@@ -114,15 +114,17 @@ const UserMenu = ({
 							Create Round
 						</p>
 					</div>
-					<div
-						onClick={() => router.push(`/rounds/my-project`)}
-						className="flex items-center space-x-3 cursor-pointer hover:opacity-70 transition"
-					>
-						<IconProject size={24} className="fill-grantpicks-black-400" />
-						<p className="text-sm font-normal text-grantpicks-black-950">
-							My Project
-						</p>
-					</div>
+					{stellarPubKey && (
+						<div
+							onClick={() => router.push(`/rounds/my-project`)}
+							className="flex items-center space-x-3 cursor-pointer hover:opacity-70 transition"
+						>
+							<IconProject size={24} className="fill-grantpicks-black-400" />
+							<p className="text-sm font-normal text-grantpicks-black-950">
+								My Project
+							</p>
+						</div>
+					)}
 					<div
 						onClick={() => router.push(`/rounds/my-votes`)}
 						className="flex items-center space-x-3 cursor-pointer hover:opacity-70 transition"

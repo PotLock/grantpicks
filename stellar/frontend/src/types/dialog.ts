@@ -5,7 +5,7 @@ export interface DialogProps {
 
 export interface IMenuProps extends DialogProps {
 	children: React.ReactNode
-	position: string
+	position?: string
 	closeOnBgClick?: boolean
 	closeOnEscape?: boolean
 	className?: string

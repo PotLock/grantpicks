@@ -33,6 +33,7 @@ const SuccessCreateRoundModal = ({
 	const { setApplyProjectInitProps, setVoteConfirmationProps } =
 		useModalContext()
 
+
 	return (
 		<>
 			<Modal isOpen={isOpen} onClose={onClose} closeOnBgClick>
@@ -72,8 +73,8 @@ const SuccessCreateRoundModal = ({
 							className="!rounded-full"
 							isFullWidth
 							onClick={() => {
-								onClose()
 								setShowDetailDrawer(true)
+								onClose()
 							}}
 						>
 							<div className="flex items-center space-x-2">
@@ -106,6 +107,7 @@ const SuccessCreateRoundModal = ({
 			{createRoundRes && (
 				<>
 					<RoundDetailDrawer
+						isUserApplied={false}
 						isOpen={showDetailDrawer}
 						onClose={() => setShowDetailDrawer(false)}
 						onOpenFundRound={() => setShowFundRoundModal(true)}
@@ -132,7 +134,7 @@ const SuccessCreateRoundModal = ({
 					<FundRoundModal
 						isOpen={showFundRoundModal}
 						doc={createRoundRes}
-						mutateRounds={() => {}}
+						mutateRounds={() => { }}
 						onClose={() => setShowFundRoundModal(false)}
 					/>
 				</>

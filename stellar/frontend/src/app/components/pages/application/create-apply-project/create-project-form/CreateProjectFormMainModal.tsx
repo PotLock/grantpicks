@@ -110,6 +110,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 					required_status: undefined,
 				})
 
+
 				if (!isRegistered) {
 					const txRegisterList = await contracts.lists_contract.register_batch({
 						submitter: storage.my_address || '',

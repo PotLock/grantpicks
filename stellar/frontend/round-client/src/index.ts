@@ -256,96 +256,94 @@ export const Errors = {
 
   65: {message:"ProtocolFeeTooHigh"},
 
-  66: {message:"ReferrerFeeTooHigh"}
-}
-export const Errors = {
+  66: {message:"ReferrerFeeTooHigh"},
+
   0: {message:"VotingStartGreaterThanVotingEnd"},
-
+  
   1: {message:"ApplicationStartGreaterThanApplicationEnd"},
-
+  
   2: {message:"VotingStartLessThanApplicationEnd"},
-
+  
   3: {message:"AmountMustBeGreaterThanZero"},
-
+  
   4: {message:"ContactMustBeLessThanTen"},
-
+  
   8: {message:"InvalidVaultBalance"},
-
+  
   19: {message:"UserBlacklisted"},
-
+  
   20: {message:"UserAlreadyBlacklisted"},
-
+  
   21: {message:"BlacklistNotFound"},
-
+  
   22: {message:"UserNotWhitelisted"},
-
+  
   23: {message:"ReviewNotTooLong"},
-
+  
   27: {message:"RoundAlreadyCompleted"},
-
+  
   28: {message:"AdminNotFound"},
-
+  
   29: {message:"OwnerCannotBeAdmin"},
-
+  
   34: {message:"AlreadyPaidOut"},
-
+  
   35: {message:"NoApprovedProjects"},
-
+  
   36: {message:"UserWhitelisted"},
-
+  
   37: {message:"VotesAlreadyCast"},
-
+  
   39: {message:"ApplicationPeriodMustBeSet"},
-
+  
   40: {message:"ZeroValutBalance"},
-
+  
   41: {message:"BalanceNotEmpty"},
-
+  
   44: {message:"InsufficientFunds"},
-
+  
   45: {message:"ChallengeNotFound"},
-
+  
   46: {message:"PayoutNotFound"},
-
+  
   47: {message:"RedistributionNotAllowed"},
-
+  
   48: {message:"RedistributionAlreadyDone"},
-
+  
   49: {message:"CompliancePeriodInProcess"},
-
+  
   50: {message:"CooldownPeriodNotInProcess"},
-
+  
   51: {message:"NotSolveAllPayoutChallenge"},
-
+  
   53: {message:"RoundDoesNotUseVault"},
-
+  
   55: {message:"ApplicationPeriodNotSet"},
-
+  
   56: {message:"CoolDownPeriodNotComplete"},
-
+  
   61: {message:"VotingPeriodTooShort"},
-
+  
   62: {message:"ApplicationPeriodTooShort"},
-
+  
   63: {message:"ApplicationStartInPast"},
-
+  
   64: {message:"VotingStartInPast"},
-
+  
   69: {message:"CannotUpdateVaultAfterDeposits"},
-
+  
   59: {message:"WhitelistIdNotSet"},
-
+  
   74: {message:"NotProjectParticipant"},
-
+  
   75: {message:"NotApprovedParticipant"},
-
+  
   76: {message:"DepositAmountTooLow"},
-
+  
   79: {message:"PayoutsAlreadySet"},
+  
+  90: {message:"MinimumDepositMustBeLessThanExpectedAmount"},
 
-  90: {message:"MinimumDepositMustBeLessThanExpectedAmount"}
-}
-export const Errors = {
   6: {message:"VotingPeriodNotStarted"},
 
   7: {message:"VotingPeriodEnded"},
@@ -366,9 +364,8 @@ export const Errors = {
 
   58: {message:"DuplicatePick"},
 
-  60: {message:"TooManyVotesForAvailablePairs"}
-}
-export const Errors = {
+  60: {message:"TooManyVotesForAvailablePairs"},
+
   10: {message:"ApplicationPeriodNotStarted"},
 
   11: {message:"ApplicationPeriodEnded"},
@@ -395,7 +392,7 @@ export const Errors = {
 
   83: {message:"ApplicationOverlapsVoting"},
 
-  84: {message:"ApplicationPeriodMustBeSet"}
+  84: {message:"ApplicationPeriodMustBeSet"},
 }
 
 export interface RoundPreCheck {

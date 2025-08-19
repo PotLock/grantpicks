@@ -33,7 +33,7 @@ if (typeof window !== 'undefined') {
 export const networks = {
   testnet: {
     networkPassphrase: "Test SDF Network ; September 2015",
-    contractId: "CAG7ZLJNXZGFGIR2VB3JVHFA6XF4U3TAIEZLLZQWI6XFX7DC3EG6NU4G",
+    contractId: "CCT5MBDD4QGHNHG3VWSJ5AC6FL7DIZHVFQRPXW2OATBWZZRHTQMHSW4O",
   }
 } as const
 
@@ -256,7 +256,9 @@ export const Errors = {
 
   65: {message:"ProtocolFeeTooHigh"},
 
-  66: {message:"ReferrerFeeTooHigh"},
+  66: {message:"ReferrerFeeTooHigh"}
+}
+export const Errors = {
   0: {message:"VotingStartGreaterThanVotingEnd"},
 
   1: {message:"ApplicationStartGreaterThanApplicationEnd"},
@@ -341,7 +343,9 @@ export const Errors = {
 
   79: {message:"PayoutsAlreadySet"},
 
-  90: {message:"MinimumDepositMustBeLessThanExpectedAmount"},
+  90: {message:"MinimumDepositMustBeLessThanExpectedAmount"}
+}
+export const Errors = {
   6: {message:"VotingPeriodNotStarted"},
 
   7: {message:"VotingPeriodEnded"},
@@ -362,8 +366,9 @@ export const Errors = {
 
   58: {message:"DuplicatePick"},
 
-  60: {message:"TooManyVotesForAvailablePairs"},
-
+  60: {message:"TooManyVotesForAvailablePairs"}
+}
+export const Errors = {
   10: {message:"ApplicationPeriodNotStarted"},
 
   11: {message:"ApplicationPeriodEnded"},

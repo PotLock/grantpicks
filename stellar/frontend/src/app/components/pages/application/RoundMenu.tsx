@@ -75,7 +75,6 @@ const RoundMenu = ({
 				isOpen={isOpen}
 				onClose={handleMenuClose}
 				buttonRef={buttonRef}
-				position=""
 			>
 				<div
 					className="bg-white rounded-xl border border-black/10 p-2 whitespace-nowrap min-w-48 shadow-lg z-50 max-h-[calc(100vh-4rem)] overflow-auto"

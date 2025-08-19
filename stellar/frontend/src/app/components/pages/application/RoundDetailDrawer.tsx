@@ -1,12 +1,10 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useMemo } from 'react'
 import Drawer from '../../commons/Drawer'
 import { IDrawerProps } from '@/types/dialog'
 import useRoundStore from '@/stores/zustand/useRoundStore'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { useWallet } from '@/app/providers/WalletProvider'
-import { getRoundAdmins, getRoundApplication } from '@/services/stellar/round'
 import { getProjects, IGetProjectsResponse } from '@/services/stellar/project-registry'
-import useSWR from 'swr'
 import useSWRInfinite from 'swr/infinite'
 import { LIMIT_SIZE } from '@/constants/query'
 import { GPRound } from '@/models/round'
@@ -25,12 +23,14 @@ interface RoundDetailDrawerProps extends IDrawerProps {
 	onOpenFundRound: () => void
 	onApplyRound: () => void
 	onVote: () => void
+	isUserApplied: boolean
 }
 
 const RoundDetailDrawer = ({
 	isOpen,
 	onClose,
 	doc,
+	isUserApplied,
 	onOpenFundRound,
 	onApplyRound,
 	onVote,
@@ -38,66 +38,7 @@ const RoundDetailDrawer = ({
 	const { selectedRoundType } = useRoundStore()
 	const storage = useAppStorage()
 	const chainId = extractChainId(doc)
-	const [isUserApplied, setIsUserApplied] = useState<boolean>(false)
-	const { connectedWallet, stellarPubKey } = useWallet()
-
-	const fetchRoundApplication = async () => {
-		if (selectedRoundType !== 'upcoming') return
-
-		if (chainId !== 'near') {
-			try {
-				const contracts = storage.getStellarContracts()
-				if (!contracts) return
-
-				const res = await getRoundApplication(
-					{
-						round_id: BigInt(doc.on_chain_id),
-						applicant: storage.my_address || '',
-					},
-					contracts,
-				)
-
-				if (res) {
-					setIsUserApplied(true)
-				}
-			} catch (error: any) {
-				console.log('error fetch project applicant')
-				setIsUserApplied(false)
-			}
-		} else {
-			try {
-				const contracts = storage.getNearContracts(null)
-				if (!contracts) return
-
-				const application = await contracts.round.getApplicationForRound(
-					Number(doc.on_chain_id),
-					storage.my_address || '',
-				)
-
-				if (application) {
-					setIsUserApplied(true)
-				}
-			} catch (error: any) {
-				console.log('error fetch project applicant')
-				setIsUserApplied(false)
-			}
-		}
-	}
-
-	const onFetchRoundAdmins = async () => {
-		if (chainId === 'stellar') {
-			const contracts = storage.getStellarContracts()
-			if (!contracts) return
-
-			return await getRoundAdmins({ round_id: BigInt(doc.id) }, contracts)
-		} else {
-			const contracts = storage.getNearContracts(null)
-			if (!contracts) return
-
-			const res = await contracts.round.getRoundById(doc.on_chain_id)
-			return res.admins
-		}
-	}
+	const { connectedWallet } = useWallet()
 
 	const onFetchProjects = async (key: { skip: number; limit: number }) => {
 		if (storage.chainId === 'stellar') {
@@ -167,7 +108,7 @@ const RoundDetailDrawer = ({
 		)
 		: []
 
-	const getSpecificTime = useCallback(() => {
+	const currentTime = useMemo(() => {
 		if (selectedRoundType === 'upcoming') {
 			const now = new Date().getTime()
 			const appStart = new Date(doc.application_start || '').getTime()
@@ -192,20 +133,9 @@ const RoundDetailDrawer = ({
 		}
 	}, [selectedRoundType, doc])
 
-	const {
-		data: admins,
-		isValidating,
-		isLoading,
-	} = useSWR(
-		isOpen ? `get-round-admins-${doc.id}` : null,
-		onFetchRoundAdmins
-	)
 
-	useEffect(() => {
-		fetchRoundApplication()
-	}, [doc.on_chain_id, connectedWallet, stellarPubKey])
 
-	const currentTime = getSpecificTime()
+
 
 	return (
 		<Drawer onClose={onClose} isOpen={isOpen}>
@@ -229,10 +159,10 @@ const RoundDetailDrawer = ({
 
 				<OwnerAdminSection
 					doc={doc}
-					admins={admins}
+					admins={doc.admins || []}
 					projects={projects}
-					isLoading={isLoading}
-					isValidating={isValidating}
+					isLoading={false}
+					isValidating={false}
 					isLoadingProjects={isLoadingProjects}
 				/>
 

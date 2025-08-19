@@ -25,26 +25,14 @@ const Menu = ({
 		return () => window.removeEventListener('resize', checkDesktop)
 	}, [])
 
-	// Position menu for desktop portal if buttonRef is provided
 	useEffect(() => {
 		if (isOpen && buttonRef?.current) {
 			const buttonRect = buttonRef.current.getBoundingClientRect()
-			// Wait a frame so the menu DOM exists and has dimensions
-			requestAnimationFrame(() => {
-				const measuredWidth = menuRef.current?.offsetWidth ?? 260
-				let leftPosition = buttonRect.right - measuredWidth
-				// Clamp within viewport with 8px margin
-				const margin = 8
-				if (leftPosition < margin) leftPosition = margin
-				if (leftPosition + measuredWidth > window.innerWidth - margin) {
-					leftPosition = Math.max(margin, window.innerWidth - measuredWidth - margin)
-				}
-				setMenuStyle({
-					position: 'fixed',
-					top: buttonRect.bottom + margin,
-					left: leftPosition,
-					zIndex: 60,
-				})
+			setMenuStyle({
+				position: 'fixed',
+				top: buttonRect.bottom + 8,
+				right: window.innerWidth - buttonRect.right,
+				zIndex: 60,
 			})
 		}
 	}, [isOpen, buttonRef])
@@ -94,7 +82,7 @@ const Menu = ({
 			<div
 				className={clsx(
 					'absolute hidden md:block z-[60]',
-					position,
+					position || '',
 					className,
 				)}
 			>

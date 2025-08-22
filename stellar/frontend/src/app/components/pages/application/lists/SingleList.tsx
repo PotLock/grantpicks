@@ -10,7 +10,7 @@ import { prettyTruncate } from "@/utils/helper"
 import Image from "next/image"
 import { useParams, useRouter } from "next/navigation"
 import { FaUsers, FaCheckCircle, FaUserFriends, FaCalendar } from "react-icons/fa"
-import { useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { RegisterUsersModal } from "./RegisterUsersModal"
 import { ListProjects } from "./ListProjects"
 import IconMoreVert from "@/app/components/svgs/IconMoreVert"
@@ -25,6 +25,26 @@ export const SingleListPage = () => {
   const [isOpen, setIsOpen] = useState<{ open: boolean, type: 'SINGLE' | 'BATCH' | null }>({ open: false, type: null })
   const [menuOpen, setMenuOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+  const [isRegistered, setIsRegistered] = useState(false)
+
+  const fetchIsRegistered = useCallback(async () => {
+    if (list) {
+      const contracts = storage.getStellarContracts()
+      if (!contracts) {
+        return
+      }
+      const isRegistered = await contracts.lists_contract.is_registered({
+        list_id: BigInt(listId),
+        registrant_id: stellarPubKey,
+        required_status: undefined,
+      })
+      setIsRegistered(isRegistered.result)
+    }
+  }, [listId, stellarPubKey])
+
+  useEffect(() => {
+    fetchIsRegistered()
+  }, [fetchIsRegistered])
 
   if (isLoading && !list) {
     return (
@@ -43,6 +63,7 @@ export const SingleListPage = () => {
   }
 
   const isOwner = list?.owner === stellarPubKey
+
 
   const adminsCount = list?.admins.length || 0
   const membersCount = Number(list?.total_registrations_count) || 0
@@ -97,11 +118,11 @@ export const SingleListPage = () => {
               </div>
               <div className="flex-shrink-0">
                 <Button
-                  isDisabled={list?.admin_only_registrations && list?.owner !== stellarPubKey}
+                  isDisabled={(list?.admin_only_registrations && list?.owner !== stellarPubKey) || isRegistered}
                   onClick={() => setIsOpen({ open: true, type: list?.owner === stellarPubKey ? 'BATCH' : 'SINGLE' })}
                   className="w-full sm:w-auto"
                 >
-                  {list?.owner === stellarPubKey ? 'Register Project(s)' : 'Apply to List'}
+                  {isRegistered ? 'Already Registered' : list?.owner === stellarPubKey ? 'Register Project(s)' : 'Apply to List'}
                 </Button>
               </div>
             </div>

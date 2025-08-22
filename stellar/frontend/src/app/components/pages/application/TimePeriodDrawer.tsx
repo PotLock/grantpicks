@@ -16,9 +16,10 @@ interface TimePeriodDrawerProps extends IDrawerProps {
   onClose: () => void
   isOpen: boolean
   doc: GPRound
+  mutateRounds: any
 }
 
-export const TimePeriodDrawer = ({ isOpen, doc, onClose }: TimePeriodDrawerProps) => {
+export const TimePeriodDrawer = ({ isOpen, doc, onClose, mutateRounds }: TimePeriodDrawerProps) => {
   const {
     control,
     register,
@@ -43,8 +44,25 @@ export const TimePeriodDrawer = ({ isOpen, doc, onClose }: TimePeriodDrawerProps
     stellarPubKey,
     stellarKit: stellarKit as StellarWalletsKit,
     onClose,
-    doc
+    doc,
+    mutateRounds
   })
+
+  // Compute duration validation flags
+  const minDurationMs = 24 * 60 * 60 * 1000
+  const applicationStart = watch().application_start
+  const applicationEnd = watch().application_end
+  const votingStart = watch().voting_start
+  const votingEnd = watch().voting_end
+  const isApplicationDurationTooShort =
+    !!watch().allow_applications &&
+    applicationStart instanceof Date &&
+    applicationEnd instanceof Date &&
+    Math.abs(applicationEnd.getTime() - applicationStart.getTime()) < minDurationMs
+  const isVotingDurationTooShort =
+    votingStart instanceof Date &&
+    votingEnd instanceof Date &&
+    Math.abs(votingEnd.getTime() - votingStart.getTime()) < minDurationMs
 
 
   return <Drawer isOpen={isOpen} onClose={onClose}>
@@ -109,6 +127,7 @@ export const TimePeriodDrawer = ({ isOpen, doc, onClose }: TimePeriodDrawerProps
         isDisabled={!watch().allow_applications || !watch().application_end ||
           (watch().application_end instanceof Date && (watch().application_end as Date).getTime() < new Date().getTime())
           || (doc.application_start ? new Date(doc.application_start) < new Date() : false)
+          || isApplicationDurationTooShort
         }
         onClick={handleSubmit(handleUpdateApplicationDuration)}
       >
@@ -150,7 +169,10 @@ export const TimePeriodDrawer = ({ isOpen, doc, onClose }: TimePeriodDrawerProps
           className="!py-3 mt-4"
           isFullWidth
           isDisabled={
-            (watch().voting_start instanceof Date && watch().voting_start.getTime() < new Date().getTime())}
+            (watch().voting_start instanceof Date && watch().voting_start.getTime() < new Date().getTime()) ||
+            (watch().voting_end instanceof Date && watch().voting_end.getTime() < new Date().getTime()) ||
+            isVotingDurationTooShort
+          }
           onClick={handleSubmit(handleUpdateVotingDuration)}
         >
           Update Voting Duration

@@ -227,6 +227,7 @@ const EditRoundPage = () => {
 					return
 				}
 
+
 				const updateRoundParams: UpdateRoundParams = {
 					name: data.title,
 					description: data.description,

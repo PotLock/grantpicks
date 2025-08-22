@@ -48,7 +48,25 @@ const ApplyProjectModal = ({
 	const [applyNote, setApplyNote] = useState<string>('')
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const { setSuccessApplyProjectInitProps } = useModalContext()
+	const [loading, setLoading] = useState<boolean>(true)
+	const [isRegistered, setIsRegistered] = useState<boolean>(true)
 	const storage = useAppStorage()
+
+	const fetchIsRegistered = useCallback(async () => {
+		if (roundData?.application_wl_list_id) {
+			const contracts = storage.getStellarContracts()
+			if (!contracts) {
+				return
+			}
+			const isRegistered = await contracts.lists_contract.is_registered({
+				list_id: BigInt(roundData?.application_wl_list_id),
+				registrant_id: stellarPubKey,
+				required_status: undefined,
+			})
+			setIsRegistered(isRegistered.result)
+		}
+	}, [stellarPubKey, roundData])
+
 
 	const fetchProjectApplicant = useCallback(async () => {
 		try {
@@ -58,12 +76,11 @@ const ApplyProjectModal = ({
 				if (!contracts) {
 					return
 				}
+				setLoading(true)
 
 				const res = await getProjectApplicant(stellarPubKey, contracts)
 				//@ts-ignore
 				if (!res?.error) setProjectData(res)
-				//@ts-ignore
-				console.log('res project applicant', res, res?.error)
 			} else {
 				const contracts = storage.getNearContracts(null)
 				if (!contracts) {
@@ -81,6 +98,8 @@ const ApplyProjectModal = ({
 			}
 		} catch (error: any) {
 			console.log('error fetch project applicant', error)
+		} finally {
+			setLoading(false)
 		}
 	}, [storage.chainId, storage.my_address, stellarPubKey])
 
@@ -152,6 +171,7 @@ const ApplyProjectModal = ({
 	useEffect(() => {
 		if (isOpen && !projectData) {
 			fetchProjectApplicant()
+			fetchIsRegistered()
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isOpen, storage.my_address, storage.chainId])
@@ -183,7 +203,11 @@ const ApplyProjectModal = ({
 				<p className="text-base md:text-lg lg:text-xl font-semibold text-grantpicks-black-950 text-center">
 					Apply to {roundData?.name}
 				</p>
-				{projectData ? (
+				{loading ? (
+					<div className="flex items-center justify-center h-52">
+						<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-grantpicks-black-950" />
+					</div>
+				) : projectData ? (
 					isProjectMissingInfo ? (
 						<>
 							<div className="mt-6 border border-grantpicks-red-100 rounded-xl p-4 bg-grantpicks-red-50 flex space-x-2">
@@ -276,9 +300,10 @@ const ApplyProjectModal = ({
 						<Button
 							color="black-950"
 							onClick={onApplyProjectToRound}
+							isDisabled={!isRegistered}
 							isFullWidth
 						>
-							<p className="text-sm font-semibold text-white">Apply</p>
+							<p className="text-sm font-semibold text-white">{isRegistered ? 'Apply' : 'Not Eligible to Apply'}</p>
 						</Button>
 						<Button
 							color="transparent"

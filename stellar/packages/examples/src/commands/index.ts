@@ -1,5 +1,6 @@
 import App from '../app.js'
 import createRandomRounds from './round-factory/create-random.js'
+import createMultiRounds from './round-factory/create-multi.js'
 import getRound from './round-factory/get-round.js'
 import { addAdmin } from './round/add-admin.js'
 import { roundInfo } from './round/info.js'
@@ -16,6 +17,9 @@ async function commands(params: string[], app: App) {
 		case 'rf_create':
 			result = await createRandomRounds(params.slice(1), app)
 			break
+		case 'rf_create_multi':
+			result = await createMultiRounds(params.slice(1), app)
+			break
 		case 'rf_gen_applicator':
 			result = await generateApplicator(params.slice(1), app)
 			break
@@ -30,7 +34,6 @@ async function commands(params: string[], app: App) {
 			break
 		case 'rf_rounds':
 			result = await getRound(params.slice(1), app)
-			break
 			break
 		case 'round_info':
 			result = await roundInfo(params.slice(1), app)

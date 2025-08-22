@@ -372,6 +372,7 @@ export const RoundCard = ({
         <TimePeriodDrawer
           isOpen={showTimePeriodDrawer}
           onClose={() => setShowTimePeriodDrawer(false)}
+          mutateRounds={mutateRounds}
           doc={doc}
         />
       )}

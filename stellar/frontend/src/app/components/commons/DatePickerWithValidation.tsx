@@ -77,7 +77,6 @@ export const DatePickerWithValidation = <T extends FieldValues>({
                   toast.error(`Duration must be at least ${validateDuration.minHoursDiff} hours`, {
                     style: toastOptions.error.style,
                   })
-                  field.onChange(null)
                   return
                 }
               }

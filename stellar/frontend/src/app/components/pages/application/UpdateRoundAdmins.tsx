@@ -72,9 +72,9 @@ export const UpdateRoundAdmins = ({
       )
       if (txHash) {
         toast.success('Round admins updated successfully')
-        onClose()
-        mutateRounds()
         dismissPageLoading()
+        mutateRounds()
+        onClose()
       } else {
         toast.error('Failed to update round admins')
         dismissPageLoading()

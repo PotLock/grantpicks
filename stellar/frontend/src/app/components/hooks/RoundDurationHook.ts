@@ -6,6 +6,7 @@ import { SubmitHandler } from "react-hook-form"
 import { GPRound } from "@/models/round"
 import toast from "react-hot-toast"
 import Contracts from "@/lib/contracts"
+import { useGlobalContext } from "@/app/providers/GlobalProvider"
 
 interface AppRepo {
   chainId: string | null
@@ -18,9 +19,13 @@ interface UseRoundDurationProps {
   stellarKit: StellarWalletsKit
   onClose: () => void
   doc: GPRound
+  mutateRounds: any
 }
 
-export const useRoundDuration = ({ storage, stellarPubKey, stellarKit, onClose, doc }: UseRoundDurationProps) => {
+export const useRoundDuration = ({ storage, stellarPubKey, stellarKit, onClose, doc, mutateRounds }: UseRoundDurationProps) => {
+  const { openPageLoading, dismissPageLoading } = useGlobalContext()
+
+
   const handleUpdateApplicationDuration: SubmitHandler<UpdateApplicationConfig> = async (data) => {
     if (storage.chainId === 'stellar') {
       try {
@@ -29,6 +34,7 @@ export const useRoundDuration = ({ storage, stellarPubKey, stellarKit, onClose, 
         if (!contracts) {
           return
         }
+        openPageLoading()   
 
         const txUpdateApplicationDuration = await updateRoundApplicationDuration(
           stellarPubKey,
@@ -51,6 +57,7 @@ export const useRoundDuration = ({ storage, stellarPubKey, stellarKit, onClose, 
           toast.success('Application duration updated successfully', {
             style: toastOptions.success.style,
           })
+          await mutateRounds()
           onClose()
         }
       } catch (error) {
@@ -58,6 +65,8 @@ export const useRoundDuration = ({ storage, stellarPubKey, stellarKit, onClose, 
         toast.error('Failed to update application duration', {
           style: toastOptions.error.style,
         })
+      } finally {
+        dismissPageLoading()
       }
     }
   }
@@ -70,7 +79,7 @@ export const useRoundDuration = ({ storage, stellarPubKey, stellarKit, onClose, 
         if (!contracts) {
           return
         }
-
+        openPageLoading()
         const txUpdateVotingDuration = await updateRoundVotingDuration(
           stellarPubKey,
           BigInt(doc.on_chain_id),  
@@ -91,6 +100,7 @@ export const useRoundDuration = ({ storage, stellarPubKey, stellarKit, onClose, 
           toast.success('Voting duration updated successfully', {
             style: toastOptions.success.style,
           })
+          await mutateRounds()
           onClose()
         }
       } catch (error) {
@@ -98,6 +108,8 @@ export const useRoundDuration = ({ storage, stellarPubKey, stellarKit, onClose, 
         toast.error('Failed to update voting duration', {
           style: toastOptions.error.style,
         })
+      } finally {
+        dismissPageLoading()
       }
     }
   }

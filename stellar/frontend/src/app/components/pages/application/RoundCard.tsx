@@ -327,13 +327,13 @@ export const RoundCard = ({
         />
       )}
 
-      {/* Modals - Only render when needed */}
       {showDetailDrawer && (
         <RoundDetailDrawer
           isUserApplied={isUserApplied}
           isOpen={showDetailDrawer}
           onClose={handleCloseDetailDrawer}
           onOpenFundRound={handleFundRound}
+          showClose={true}
           onApplyRound={() => {
             setApplyProjectInitProps((prev) => ({
               ...prev,

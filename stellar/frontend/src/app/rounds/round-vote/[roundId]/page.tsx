@@ -54,7 +54,6 @@ const RoundVotePage = () => {
 					voter: storage.my_address || '',
 				}
 				const isEligibleRes = await isAvailableVoteRound(txParams, contracts)
-				console.log('isEligibleRes', isEligibleRes)
 				setIsEligible(isEligibleRes)
 				if (!isEligibleRes) {
 					router.push('/rounds')

@@ -27,6 +27,7 @@ export const SingleListPage = () => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [isRegistered, setIsRegistered] = useState(false)
 
+
   const fetchIsRegistered = useCallback(async () => {
     if (list) {
       const contracts = storage.getStellarContracts()

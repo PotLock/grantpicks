@@ -49,6 +49,7 @@ const IsNotVotedSection = ({
 		}
 	}
 
+
 	const onVotePair = async () => {
 		try {
 			openPageLoading()
@@ -136,7 +137,23 @@ const IsNotVotedSection = ({
 			>
 				See Evaluation guide
 			</span>
-			<div className="hidden md:flex items-center snap-x snap-mandatory overflow-x-auto mb-10 md:mb-12 lg:mb-16 no-scrollbar overflow-hidden max-w-full space-x-4 md:space-x-6">
+			{/* Mobile vertical stack with snap */}
+			<div className="flex md:hidden flex-col w-full space-y-6 px-4 mb-8 snap-y snap-mandatory overflow-y-auto h-[70vh]">
+				{pairsData.map((doc, idx) => (
+					<div key={`m-${idx}`} id={`boxing-${idx}`} className="w-full snap-start">
+						<RoundVotePairItem
+							index={idx}
+							data={doc}
+							setShowProjectDetailDrawer={setShowProjectDetailDrawer}
+							selectedPairs={selectedVotes}
+							setSelectedPairs={setSeletedVotes}
+						/>
+					</div>
+				))}
+			</div>
+
+			{/* Desktop horizontal scroller */}
+			<div className="hidden md:flex items-center snap-x snap-mandatory overflow-x-auto mb-10 md:mb-12 lg:mb-16 no-scrollbar max-w-full space-x-4 md:space-x-6">
 				{pairsData.map((doc, idx) => (
 					<RoundVotePairItem
 						key={idx}

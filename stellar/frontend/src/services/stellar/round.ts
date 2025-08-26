@@ -432,7 +432,6 @@ export const getPairsRound: (
 	round_id: u128,
 	contract: Contracts,
 ) => Promise<Array<Pair>> = async (round_id: u128, contract: Contracts) => {
-	console.log('debug', round_id)
 	let round = await contract.round_contract.get_all_pairs_for_round({
 		round_id,
 	})

@@ -17,6 +17,7 @@ import FundingInfo from './components/FundingInfo'
 import OwnerAdminSection from './components/OwnerAdminSection'
 import ContactsSection from './components/ContactsSection'
 import ActionButtons from './components/ActionButtons'
+import Button from '../../commons/Button'
 
 interface RoundDetailDrawerProps extends IDrawerProps {
 	doc: GPRound
@@ -24,6 +25,7 @@ interface RoundDetailDrawerProps extends IDrawerProps {
 	onApplyRound: () => void
 	onVote: () => void
 	isUserApplied: boolean
+	showClose?: boolean
 }
 
 const RoundDetailDrawer = ({
@@ -34,6 +36,7 @@ const RoundDetailDrawer = ({
 	onOpenFundRound,
 	onApplyRound,
 	onVote,
+	showClose,
 }: RoundDetailDrawerProps) => {
 	const { selectedRoundType } = useRoundStore()
 	const storage = useAppStorage()
@@ -138,8 +141,11 @@ const RoundDetailDrawer = ({
 
 
 	return (
-		<Drawer onClose={onClose} isOpen={isOpen}>
+		<Drawer onClose={onClose} showClose={showClose} isOpen={isOpen}>
 			<div className="bg-white p-4 flex flex-col w-full h-full overflow-y-auto">
+				<div className="flex justify-end">
+					<Button className='md:hidden bg-grantpicks-black-600 text-white' onClick={onClose}>X</Button>
+				</div>
 				<RoundStatusBadge
 					selectedRoundType={selectedRoundType}
 					currentTime={currentTime}

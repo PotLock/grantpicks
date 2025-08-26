@@ -234,7 +234,7 @@ const RoundVotePairItem = ({
 		<div
 			key={index}
 			id={`boxing-${index}`}
-			className="min-w-full flex items-center justify-between snap-center space-x-4"
+			className="min-w-full flex flex-col md:flex-row items-stretch md:items-center justify-between snap-start md:snap-center space-y-4 md:space-y-0 md:space-x-4"
 		>
 			{/* the first */}
 			<div
@@ -245,10 +245,10 @@ const RoundVotePairItem = ({
 				}}
 				ref={wrapper1Ref}
 				className={clsx(
-					`rounded-3xl transition-all duration-200 w-[280px] md:w-[360px] lg:w-[448px] cursor-pointer`,
+					`rounded-3xl transition-all duration-200 w-full md:w-[360px] lg:w-[448px] cursor-pointer`,
 					selectedPairs[index] === data.projects[0].toString()
 						? // true
-							`border-4 border-grantpicks-purple-500`
+						`border-4 border-grantpicks-purple-500`
 						: `border-4 border-black/10`,
 				)}
 			>
@@ -288,8 +288,8 @@ const RoundVotePairItem = ({
 					</Button>
 				</div>
 			</div>
-			<div className="rounded-full w-16 h-16 bg-gradient-to-t from-grantpicks-purple-500 to-grantpicks-purple-100 flex items-center justify-center">
-				<p className="text-[32px] font-black text-white">VS</p>
+			<div className="rounded-full w-12 h-12 md:w-16 md:h-16 bg-gradient-to-t from-grantpicks-purple-500 to-grantpicks-purple-100 flex items-center justify-center mx-auto md:mx-0">
+				<p className="text-2xl md:text-[32px] font-black text-white">VS</p>
 			</div>
 			{/* The second */}
 			<div
@@ -300,7 +300,7 @@ const RoundVotePairItem = ({
 					setSelectedPairs(temp)
 				}}
 				className={clsx(
-					`rounded-3xl transition-all duration-200 w-[280px] md:w-[360px] lg:w-[448px] cursor-pointer`,
+					`rounded-3xl transition-all duration-200 w-full md:w-[360px] lg:w-[448px] cursor-pointer`,
 					selectedPairs[index] === data.projects[1].toString()
 						? `border-4 border-grantpicks-purple-500`
 						: `border-4 border-black/10`,

@@ -219,6 +219,12 @@ const CreateRoundPage = () => {
 	}
 
 	const onCreateRound: SubmitHandler<CreateRoundData> = async (data) => {
+
+		if (!data.allow_application && selectedProjects.length < 2) {
+			return toast.error('Please add at least 2 projects to create a round for voting', {
+				style: toastOptions.error.style,
+			})
+		}
 		try {
 			openPageLoading()
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import Modal from '../../commons/Modal'
 import { BaseModalProps } from '@/types/dialog'
 import IconNear from '../../svgs/IconNear'
@@ -35,13 +35,32 @@ const VoteConfirmationModal = ({
 	const { connectedWallet, stellarPubKey, nearAccounts } = useWallet()
 	const [totalProjects, setTotalProjects] = useState<number>(0)
 	const storage = useAppStorage()
+	const [isRegistered, setIsRegistered] = useState<boolean>(true)
 
 	const connectedChain = useMemo(() => {
 		return storage.chainId || 'stellar'
 	}, [storage])
 
 
-	const onFetchTotalProjects = async () => {
+	const fetchIsRegistered = useCallback(async () => {
+		if (data?.voting_wl_list_id) {
+			const contracts = storage.getStellarContracts()
+			if (!contracts) {
+				return
+			}
+			const isRegistered = await contracts.lists_contract.is_registered({
+				list_id: BigInt(data?.voting_wl_list_id),
+				registrant_id: stellarPubKey,
+				required_status: undefined,
+			})
+			setIsRegistered(isRegistered.result)
+		}
+	}, [stellarPubKey, data])
+
+
+
+
+	const onFetchTotalProjects = useCallback(async () => {
 		try {
 			if (chainId === ChainId.STELLAR) {
 				let contracts = storage.getStellarContracts()
@@ -85,13 +104,14 @@ const VoteConfirmationModal = ({
 			console.log('error', error)
 			setTotalProjects(0)
 		}
-	}
+	}, [chainId, data, storage])
 
 	useEffect(() => {
 		if (isOpen) {
 			onFetchTotalProjects()
+			fetchIsRegistered()
 		}
-	}, [isOpen])
+	}, [isOpen, fetchIsRegistered, onFetchTotalProjects])
 
 	return (
 		<Modal isOpen={isOpen} onClose={onClose}>
@@ -158,7 +178,14 @@ const VoteConfirmationModal = ({
 					</div>
 				</div>
 
-				<div className="pt-4 pb-6 flex flex-col md:flex-row md:items-center space-x-4 w-full">
+				{!isRegistered && (
+					<div className="flex items-center justify-center">
+						<p className="text-sm font-normal text-red-500">
+							You are not eligible to vote in this round
+						</p>
+					</div>
+				)}
+				<div className="pt-4 pb-6 flex flex-col md:flex-row md:items-center gap-2 md:gap-2 w-full">
 					<div className="flex-1">
 						<Button
 							color="alpha-50"
@@ -173,19 +200,21 @@ const VoteConfirmationModal = ({
 					</div>
 					<div className="flex-1">
 						<Button
-							color="black-950"
 							isFullWidth
+							isDisabled={!isRegistered}
 							onClick={() => {
 								if (!stellarPubKey && !nearAccounts[0]?.accountId) {
 									toast.error('Please connect your wallet to vote', {
+										style: toastOptions.error.style,
+									})
+								} else if (!isRegistered) {
+									toast.error('You are not eligible to vote in this round', {
 										style: toastOptions.error.style,
 									})
 								} else {
 									router.push(`/rounds/round-vote/${data?.on_chain_id}`)
 								}
 								onClose()
-								// onApplyRound()
-								// onClose()
 							}}
 							className="!py-3 flex-1"
 						>

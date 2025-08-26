@@ -80,7 +80,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
 
   if (selectedRoundType === 'on-going') {
     return (
-      <div className="px-6 flex items-center">
+      <div className="px-6 mt-4 flex items-center">
         <Button
           color="black-950"
           isFullWidth

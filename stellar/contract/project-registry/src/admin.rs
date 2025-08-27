@@ -8,7 +8,7 @@ pub fn write_contract_owner(env: &Env, owner: &Address) {
     env.storage().persistent().set(&key, owner);
 }
 
-pub fn read_contract_owner(env: &Env) -> Address {
+pub fn read_contract_owner(env: &Env) -> Option<Address> {
     let key: ContractKey = ContractKey::RegistryAdmin;
-    env.storage().persistent().get(&key).unwrap()
+    env.storage().persistent().get(&key)
 }

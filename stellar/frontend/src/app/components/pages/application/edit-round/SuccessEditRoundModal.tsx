@@ -9,6 +9,8 @@ import IconCheck from '@/app/components/svgs/IconCheck'
 import IconClock from '@/app/components/svgs/IconClock'
 import Button from '@/app/components/commons/Button'
 import IconEye from '@/app/components/svgs/IconEye'
+import Link from 'next/link'
+import IconExternalLink from '@/app/components/svgs/IconExternalLink'
 
 interface SuccessEditRoundModalProps extends BaseModalProps {
 	updateRoundRes?: IGetRoundsResponse
@@ -23,7 +25,7 @@ const SuccessEditRoundModal = ({
 }: SuccessEditRoundModalProps) => {
 	const router = useRouter()
 	return (
-		<Modal isOpen={isOpen} onClose={onClose}>
+		<Modal isOpen={isOpen} onClose={onClose} closeOnBgClick>
 			<div className="w-11/12 md:w-[60vw] lg:w-[45vw] mx-auto bg-white rounded-xl shadow-md p-4 md:p-6">
 				<div className="flex flex-col items-center">
 					<div
@@ -37,7 +39,7 @@ const SuccessEditRoundModal = ({
 						<IconCheck size={24} className="stroke-white" />
 					</div>
 					<p className="text-base font-bold text-grantpicks-black-950">
-						You’ve Successfully created a Round.
+						You’ve Successfully updated a Round.
 					</p>
 				</div>
 				<div className="p-6 border border-black/10 flex flex-col items-center my-8">
@@ -63,7 +65,7 @@ const SuccessEditRoundModal = ({
 						isFullWidth
 						onClick={() => {
 							onClose()
-							router.push(`/application`)
+							router.push(`/rounds`)
 						}}
 					>
 						<div className="flex items-center space-x-2">
@@ -80,6 +82,15 @@ const SuccessEditRoundModal = ({
 						<p className="text-sm font-semibold text-grantpicks-black-950">
 							{prettyTruncate(txHash, 25)}
 						</p>
+						<Link
+							href={`https://stellar.expert/explorer/testnet/tx/${txHash}`}
+							target="_blank"
+						>
+							<IconExternalLink
+								size={16}
+								className="stroke-grantpicks-black-950"
+							/>
+						</Link>
 					</div>
 				</div>
 			</div>

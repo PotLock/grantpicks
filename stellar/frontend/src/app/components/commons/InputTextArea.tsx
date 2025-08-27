@@ -13,10 +13,12 @@ const InputTextArea = forwardRef<HTMLTextAreaElement, InputTextAreaProps>(
 			disabled,
 			required,
 			label,
+			labelIcon,
 			rows = 4,
 			hintLabel,
 			errorMessage,
 			textAlign = 'left',
+			maxLength,
 		},
 		ref,
 	) => {
@@ -24,21 +26,24 @@ const InputTextArea = forwardRef<HTMLTextAreaElement, InputTextAreaProps>(
 		return (
 			<div className={label ? `gap-y-[10px]` : `gap-y-0`}>
 				{label && (
-					<p
-						className={clsx(
-							`font-semibold text-sm mb-2 cursor-default`,
-							disabled
-								? `text-grantpicks-black-300`
-								: `text-grantpicks-black-950`,
-						)}
-					>
-						{label}
-						{required && <span className="text-red-500">*</span>}
-					</p>
+					<div className="flex gap-x-1">
+						<p
+							className={clsx(
+								`font-semibold text-sm mb-2 cursor-default`,
+								disabled
+									? `text-grantpicks-black-300`
+									: `text-grantpicks-black-950`,
+							)}
+						>
+							{label}
+							{required && <span className="text-red-500 ml-1">*</span>}
+						</p>
+						{labelIcon && <div className="z-50">{labelIcon}</div>}
+					</div>
 				)}
 				<div className="relative mb-1">
 					{disabled && (
-						<div className="absolute inset-0 z-20 bg-grantpicks-black-50/50 cursor-not-allowed rounded-xl" />
+						<div className="absolute inset-0 bg-grantpicks-black-50/50 cursor-not-allowed rounded-xl" />
 					)}
 					<textarea
 						ref={ref}
@@ -64,6 +69,7 @@ const InputTextArea = forwardRef<HTMLTextAreaElement, InputTextAreaProps>(
 						onBlur={() => setFocus(false)}
 						placeholder={placeholder}
 						onChange={onChange}
+						maxLength={maxLength}
 					/>
 				</div>
 				{hintLabel && (

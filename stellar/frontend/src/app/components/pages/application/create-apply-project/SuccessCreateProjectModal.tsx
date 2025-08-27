@@ -11,7 +11,8 @@ import IconClock from '@/app/components/svgs/IconClock'
 import Button from '@/app/components/commons/Button'
 import IconEye from '@/app/components/svgs/IconEye'
 import IconExternalLink from '@/app/components/svgs/IconExternalLink'
-import { Project } from 'round-client'
+import { Project } from 'project-registry-client'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 
 interface SuccessCreateProjectModalProps extends BaseModalProps {
 	createProjectRes?: Project
@@ -25,8 +26,9 @@ const SuccessCreateProjectModal = ({
 	txHash,
 }: SuccessCreateProjectModalProps) => {
 	const router = useRouter()
+	const storage = useAppStorage()
 	return (
-		<Modal isOpen={isOpen} onClose={onClose}>
+		<Modal isOpen={isOpen} onClose={onClose} closeOnBgClick>
 			<div className="w-11/12 md:w-[60vw] lg:w-[45vw] mx-auto bg-white rounded-xl shadow-md p-4 md:p-6">
 				<div className="flex flex-col items-center">
 					<div
@@ -66,7 +68,7 @@ const SuccessCreateProjectModal = ({
 						isFullWidth
 						onClick={() => {
 							onClose()
-							router.push(`/application`)
+							router.push(`/rounds/my-project`)
 						}}
 					>
 						<div className="flex items-center space-x-2">
@@ -75,25 +77,33 @@ const SuccessCreateProjectModal = ({
 						</div>
 					</Button>
 				</div>
-				<div className="flex flex-col items-center">
-					<p className="text-xs font-normal text-grantpicks-black-600 mb-2">
-						Transaction ID
-					</p>
-					<div className="py-2 px-3 bg-grantpicks-black-50 flex items-center justify-center space-x-2 rouxl">
-						<p className="text-sm font-semibold text-grantpicks-black-950">
-							{prettyTruncate(txHash, 25)}
+				{txHash && (
+					<div className="flex flex-col items-center">
+						<p className="text-xs font-normal text-grantpicks-black-600 mb-2">
+							Transaction ID
 						</p>
-						<Link
-							href={`https://stellar.expert/explorer/testnet/tx/${txHash}`}
-							target="_blank"
-						>
-							<IconExternalLink
-								size={24}
-								className="stroke-grantpicks-black-950"
-							/>
-						</Link>
+						<div className="py-2 px-3 bg-grantpicks-black-50 flex items-center justify-center space-x-2 rouxl">
+							<p className="text-sm font-semibold text-grantpicks-black-950">
+								{prettyTruncate(txHash, 25)}
+							</p>
+							<Link
+								href={
+									storage.chainId === 'stellar'
+										? `https://stellar.expert/explorer/${storage.network}/tx/${txHash}`
+										: storage.network === 'mainnet'
+											? `https://nearblocks.io/txns/${txHash}`
+											: `https://testnet.nearblocks.io/txns/${txHash}`
+								}
+								target="_blank"
+							>
+								<IconExternalLink
+									size={24}
+									className="stroke-grantpicks-black-950"
+								/>
+							</Link>
+						</div>
 					</div>
-				</div>
+				)}
 			</div>
 		</Modal>
 	)

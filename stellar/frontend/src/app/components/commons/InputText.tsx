@@ -16,35 +16,41 @@ const InputText = forwardRef<HTMLInputElement, InputProps>(
 			disabled,
 			customLabel,
 			label,
+			labelIcon,
 			hintLabel,
 			preffixIcon,
 			suffixIcon,
 			errorMessage,
 			textAlign = 'left',
 			isStopPropagation,
+			maxLength,
 		},
 		ref,
 	) => {
 		const [focus, setFocus] = useState<boolean>(false)
+
 		return (
 			<div className={label ? `gap-y-[10px]` : `gap-y-0`}>
 				{customLabel ||
 					(label && (
-						<p
-							className={clsx(
-								`font-semibold text-sm mb-2 cursor-default`,
-								disabled
-									? `text-grantpicks-black-300`
-									: `text-grantpicks-black-950`,
-							)}
-						>
-							{label}
-							{required && <span className="text-red-500 ml-1">*</span>}
-						</p>
+						<div className="flex gap-x-1">
+							<p
+								className={clsx(
+									`font-semibold text-sm mb-2 cursor-default`,
+									disabled
+										? `text-grantpicks-black-300`
+										: `text-grantpicks-black-950`,
+								)}
+							>
+								{label}
+								{required && <span className="text-red-500 ml-1">*</span>}
+							</p>
+							{labelIcon && <div className="z-50">{labelIcon}</div>}
+						</div>
 					))}
 				<div className="relative mb-1">
 					{disabled && (
-						<div className="absolute inset-0 z-20 bg-grantpicks-black-50/50 cursor-not-allowed rounded-xl" />
+						<div className="absolute inset-0 bg-grantpicks-black-50/50 cursor-not-allowed rounded-xl" />
 					)}
 					{preffixIcon && (
 						<div className="absolute left-0 pl-3 inset-y-0 flex items-center justify-center">
@@ -76,12 +82,24 @@ const InputText = forwardRef<HTMLInputElement, InputProps>(
 									? `text-center`
 									: `text-right`,
 						)}
-						onFocus={() => setFocus(true)}
+						onFocus={(e) => {
+							setFocus(true)
+							if (type === 'number') {
+								e.target.addEventListener(
+									'wheel',
+									function (e) {
+										e.preventDefault()
+									},
+									{ passive: false },
+								)
+							}
+						}}
 						onBlur={() => setFocus(false)}
 						placeholder={placeholder}
 						onChange={onChange}
 						onKeyDown={onKeyDown}
 						onClick={(e) => isStopPropagation && e.stopPropagation()}
+						maxLength={maxLength}
 					/>
 					{suffixIcon && (
 						<div className="absolute right-0 pr-3 inset-y-0 flex items-center justify-center">

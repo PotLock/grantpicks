@@ -9,7 +9,7 @@ const config: Config = {
 	theme: {
 		extend: {
 			fontFamily: {
-				titilumWeb: ['var(--font-titilium-web)'],
+				'titillium-web': ['var(--font-titillium-web)'],
 			},
 			colors: {
 				grantpicks: {
@@ -21,14 +21,19 @@ const config: Config = {
 						400: '#989898',
 						500: '#7C7C7C',
 						600: '#656565',
+						700: '#525252',
 						900: '#3D3D3D',
 						950: '#292929',
 					},
 					white: '#FFFFFF',
 					purple: {
+						50: '#F5F3FF',
 						100: '#ede9fe',
+						200: '#DDD6FE',
 						400: '#A78BFA',
+						600: '#7B3AED',
 						500: '#895AF6',
+						800: '#5A21B6',
 						950: '#2E1065',
 					},
 					alpha: {
@@ -52,8 +57,10 @@ const config: Config = {
 					},
 					amber: {
 						50: '#FFFBEB',
+						200: '#FAE48D',
 						400: '#F6BD29',
 						700: '#B0540D',
+						800: '#8F4111',
 					},
 				},
 			},

@@ -18,184 +18,94 @@ pub fn increment_lists_number(env: &Env) -> u128 {
     next_id
 }
 
-pub fn read_lists(env: &Env) -> Map<u128, ListInternal> {
-    let key = ContractKey::Lists;
-    match env.storage().persistent().get(&key) {
-        Some(value) => value,
-        None => Map::new(env),
-    }
-}
-
-pub fn write_lists(env: &Env, value: &Map<u128, ListInternal>) {
-    let key = ContractKey::Lists;
-    env.storage().persistent().set(&key, value);
-}
-
 pub fn add_list(env: &Env, list_id: u128, list: ListInternal) {
-    let mut lists = read_lists(env);
-    lists.set(list_id, list);
-    write_lists(env, &lists);
+    let key = ContractKey::Lists(list_id);
+    env.storage().persistent().set(&key, &list);
 }
 
 pub fn get_list_by_id(env: &Env, list_id: u128) -> Option<ListInternal> {
-    let lists = read_lists(env);
-    lists.get(list_id)
+    let key = ContractKey::Lists(list_id);
+    env.storage().persistent().get(&key)
 }
 
 pub fn remove_list(env: &Env, list_id: u128) {
-    let mut lists = read_lists(env);
-    lists.remove(list_id);
-    write_lists(env, &lists);
+    let key = ContractKey::Lists(list_id);
+    env.storage().persistent().remove(&key);
 }
 
-pub fn read_owned_list(env: &Env) -> Map<Address, Vec<u128>> {
-    let key = ContractKey::OwnedList;
+pub fn read_lists_owned_by(env: &Env, owner: &Address) -> Vec<u128> {
+    let key = ContractKey::OwnedList(owner.clone());
     match env.storage().persistent().get(&key) {
-        Some(value) => value,
-        None => Map::new(env),
-    }
-}
-
-pub fn write_owned_list(env: &Env, value: &Map<Address, Vec<u128>>) {
-    let key = ContractKey::OwnedList;
-    env.storage().persistent().set(&key, value);
-}
-
-pub fn read_lists_owned_by(env: &Env, owner: Address) -> Vec<u128> {
-    let owned_list = read_owned_list(env);
-    match owned_list.get(owner) {
         Some(value) => value,
         None => Vec::new(env),
     }
 }
 
-pub fn add_list_to_owned_list(env: &Env, owner: Address, list_id: u128) {
-    let mut owned_list = read_owned_list(env);
-    let list_owned_by_user = owned_list.get(owner.clone());
-    if let Some(mut value) = list_owned_by_user {
-        value.push_back(list_id);
-        owned_list.set(owner, value);
-    } else {
-        let mut new_list = Vec::new(env);
-        new_list.push_back(list_id);
-        owned_list.set(owner, new_list);
-    }
-    write_owned_list(env, &owned_list);
+pub fn add_list_to_owned_list(env: &Env, owner: &Address, list_id: u128) {
+    let key = ContractKey::OwnedList(owner.clone());
+    let mut owned_list = read_lists_owned_by(env, &owner);
+    owned_list.push_back(list_id);
+    env.storage().persistent().set(&key, &owned_list);
 }
 
-pub fn remove_list_from_owned_list(env: &Env, owner: Address, list_id: u128) {
-    let mut owned_list = read_owned_list(env);
-    let list_owned_by_user = owned_list.get(owner.clone());
-    if let Some(value) = list_owned_by_user {
-        let mut new_list = Vec::new(env);
-        for id in value.iter() {
-            if id != list_id {
-                new_list.push_back(id);
-            }
-        }
-        owned_list.set(owner, new_list);
-    }
-    write_owned_list(env, &owned_list);
+pub fn remove_list_from_owned_list(env: &Env, owner: &Address, list_id: u128) {
+    let key = ContractKey::OwnedList(owner.clone());
+    let mut owned_list = read_lists_owned_by(env, owner);
+    let index = owned_list.first_index_of(list_id).unwrap();
+    owned_list.remove(index as u32);
+    env.storage().persistent().set(&key, &owned_list);
 }
 
-pub fn read_list_admins(env: &Env) -> Map<u128, Vec<Address>> {
-    let key = ContractKey::ListAdmins;
+pub fn read_list_admins(env: &Env, list_id: u128) -> Vec<Address>{
+    let key = ContractKey::ListAdmins(list_id);
     match env.storage().persistent().get(&key) {
-        Some(value) => value,
-        None => Map::new(env),
-    }
-}
-
-pub fn write_list_admins(env: &Env, value: &Map<u128, Vec<Address>>) {
-    let key = ContractKey::ListAdmins;
-    env.storage().persistent().set(&key, value);
-}
-
-pub fn read_admins_of_list(env: &Env, list_id: u128) -> Vec<Address> {
-    let list_admins = read_list_admins(env);
-    match list_admins.get(list_id) {
         Some(value) => value,
         None => Vec::new(env),
     }
 }
 
-pub fn add_admin_to_list(env: &Env, list_id: u128, admin: Address) {
-    let mut list_admins = read_list_admins(env);
-    let admins_of_list = list_admins.get(list_id);
-    if let Some(mut value) = admins_of_list {
-        value.push_back(admin);
-        list_admins.set(list_id, value);
-    } else {
-        let mut new_list = Vec::new(env);
-        new_list.push_back(admin);
-        list_admins.set(list_id, new_list);
+pub fn add_admin_to_list(env: &Env, list_id: u128, admin: &Address) {
+    let key = ContractKey::ListAdmins(list_id);
+    let mut list_admins = read_list_admins(env, list_id);
+    let index = list_admins.first_index_of(admin);
+    if index.is_none() {
+        list_admins.push_back(admin.clone());
+        env.storage().persistent().set(&key, &list_admins);
     }
-    write_list_admins(env, &list_admins);
 }
 
 pub fn remove_admin_from_list(env: &Env, list_id: u128, admin: Address) {
-    let mut list_admins = read_list_admins(env);
-    let admins_of_list = list_admins.get(list_id);
-    if let Some(mut value) = admins_of_list {
-        let index = value.first_index_of(admin);
-        assert!(index.is_some(), "Admin not found in list admins");
-        value.remove(index.unwrap());
-        list_admins.set(list_id, value);
-    }
-    write_list_admins(env, &list_admins);
+    let key = ContractKey::ListAdmins(list_id);
+    let mut list_admins = read_list_admins(env, list_id);
+    let index = list_admins.first_index_of(&admin).unwrap();
+    list_admins.remove(index as u32);
+    env.storage().persistent().set(&key, &list_admins);
 }
 
 pub fn clear_admins(env: &Env, list_id: u128) {
-    let mut list_admins = read_list_admins(env);
-    list_admins.remove(list_id);
-    write_list_admins(env, &list_admins);
+    let key = ContractKey::ListAdmins(list_id);
+    env.storage().persistent().remove(&key);
 }
 
-pub fn read_registrant_lists(env: &Env) -> Map<Address, Vec<u128>> {
-    let key = ContractKey::RegistrantList;
+pub fn get_lists_registered_by(env: &Env, registrant: &Address) -> Vec<u128> {
+    let key = ContractKey::RegistrantList(registrant.clone());
     match env.storage().persistent().get(&key) {
-        Some(value) => value,
-        None => Map::new(env),
-    }
-}
-
-pub fn write_registrant_lists(env: &Env, value: &Map<Address, Vec<u128>>) {
-    let key = ContractKey::RegistrantList;
-    env.storage().persistent().set(&key, value);
-}
-
-pub fn get_lists_registered_by(env: &Env, registrant: Address) -> Vec<u128> {
-    let registrant_lists = read_registrant_lists(env);
-    match registrant_lists.get(registrant) {
         Some(value) => value,
         None => Vec::new(env),
     }
 }
 
 pub fn add_list_to_registrant_lists(env: &Env, registrant: Address, list_id: u128) {
-    let mut registrant_lists = read_registrant_lists(env);
-    let lists_registered_by_user = registrant_lists.get(registrant.clone());
-    if let Some(mut value) = lists_registered_by_user {
-        value.push_back(list_id);
-        registrant_lists.set(registrant, value);
-    } else {
-        let mut new_list = Vec::new(env);
-        new_list.push_back(list_id);
-        registrant_lists.set(registrant, new_list);
-    }
-    write_registrant_lists(env, &registrant_lists);
+    let key = ContractKey::RegistrantList(registrant.clone());
+    let mut registrant_lists = get_lists_registered_by(env, &registrant);
+    registrant_lists.push_back(list_id);
+    env.storage().persistent().set(&key, &registrant_lists);
 }
 
 pub fn remove_list_to_registrant_lists(env: &Env, registrant: Address, list_id: u128) {
-    let mut registrant_lists = read_registrant_lists(env);
-    let lists_registered_by_user = registrant_lists.get(registrant.clone());
-    if let Some(mut value) = lists_registered_by_user {
-        let index = value.first_index_of(list_id);
-        assert!(index.is_some(), "List not found in registrant lists");
-
-        let index_unwrap = index.unwrap();
-        value.remove(index_unwrap);
-        registrant_lists.set(registrant, value);
-    }
-    write_registrant_lists(env, &registrant_lists);
+    let key = ContractKey::RegistrantList(registrant.clone());
+    let mut registrant_lists = get_lists_registered_by(env, &registrant);
+    let index = registrant_lists.first_index_of(list_id).unwrap();
+    registrant_lists.remove(index as u32);
+    env.storage().persistent().set(&key, &registrant_lists);
 }

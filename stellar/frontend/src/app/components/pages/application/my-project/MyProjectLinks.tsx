@@ -9,27 +9,59 @@ import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { DEFAULT_IMAGE_URL } from '@/constants/project'
 import { toastOptions } from '@/constants/style'
-import Contracts from '@/lib/contracts'
-import CMDWallet from '@/lib/wallet'
 import {
 	IUpdateProjectParams,
 	updateProject,
-} from '@/services/on-chain/project-registry'
+} from '@/services/stellar/project-registry'
 import { CreateProjectStep3Data } from '@/types/form'
-import { Network } from '@/types/on-chain'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import React, { useEffect, useState } from 'react'
 import { SubmitHandler, useFieldArray, useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { useMyProject } from './MyProjectProvider'
 import { StrKey } from 'round-client'
+import {
+	BITCOIN_ADDRESS_REGEX,
+	EMAIL_VALIDATION_REGEX,
+	ETHEREUM_ADDRESS_REGEX,
+	GITHUB_URL_REGEX,
+	INSTAGRAM_USERNAME_REGEX,
+	NEAR_ADDRESS_REGEX,
+	TELEGRAM_USERNAME_REGEX,
+	TWITTER_USERNAME_REGEX,
+} from '@/constants/regex'
+import useAppStorage from '@/stores/zustand/useAppStorage'
+import {
+	NearProjectFundingHistory,
+	NearSocialGPProject,
+} from '@/services/near/type'
+
+interface IContract {
+	id: string
+	chain: string
+	address: string
+}
+
+interface IRepo {
+	id: string
+	github_url: string
+}
+
+interface IContact {
+	id: string
+	platform: string
+	link_url: string
+}
 
 const MyProjectLinks = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()
-	const { stellarPubKey, stellarKit } = useWallet()
+	const { stellarPubKey, stellarKit, nearWallet } = useWallet()
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const [showContractMenu, setShowContractMenu] = useState<boolean[]>([])
 	const [showContactMenu, setShowContactMenu] = useState<boolean[]>([])
+	const [currentContract, setCurrentContract] = useState<IContract[]>([])
+	const [currentRepo, setCurrentRepo] = useState<IRepo[]>([])
+	const [currentContact, setCurrentContact] = useState<IContact[]>([])
 	const {
 		control,
 		register,
@@ -67,12 +99,20 @@ const MyProjectLinks = () => {
 		control,
 		name: 'contacts',
 	})
+	const storage = useAppStorage()
 
 	const setDefaultData = () => {
 		if (projectData) {
 			setValue(
 				'smart_contracts',
-				projectData?.contracts.map((contract) => ({
+				projectData?.contracts.map((contract: any) => ({
+					id: '',
+					chain: contract.name,
+					address: contract.contract_address,
+				})),
+			)
+			setCurrentContract(
+				projectData?.contracts.map((contract: any) => ({
 					id: '',
 					chain: contract.name,
 					address: contract.contract_address,
@@ -80,7 +120,14 @@ const MyProjectLinks = () => {
 			)
 			setValue(
 				'contacts',
-				projectData?.contacts.map((contact) => ({
+				projectData?.contacts.map((contact: any) => ({
+					id: '',
+					platform: contact.name,
+					link_url: contact.value,
+				})),
+			)
+			setCurrentContact(
+				projectData?.contacts.map((contact: any) => ({
 					id: '',
 					platform: contact.name,
 					link_url: contact.value,
@@ -88,7 +135,13 @@ const MyProjectLinks = () => {
 			)
 			setValue(
 				'github_urls',
-				projectData?.repositories.map((repo) => ({
+				projectData?.repositories.map((repo: any) => ({
+					id: '',
+					github_url: repo.url,
+				})),
+			)
+			setCurrentRepo(
+				projectData?.repositories.map((repo: any) => ({
 					id: '',
 					github_url: repo.url,
 				})),
@@ -99,62 +152,108 @@ const MyProjectLinks = () => {
 	const onSaveChanges: SubmitHandler<CreateProjectStep3Data> = async (data) => {
 		try {
 			openPageLoading()
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
-			const params: IUpdateProjectParams = {
-				...projectData,
-				name: projectData?.name || '',
-				overview: projectData?.overview || '',
-				fundings: [],
-				contacts: data.contacts.map((c) => ({
-					name: c.platform,
-					value: c.link_url,
-				})),
-				contracts: data.smart_contracts.map((contract) => ({
-					name: contract.chain,
-					contract_address: contract.address,
-				})),
-				image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
-				payout_address: projectData?.payout_address || '',
-				repositories:
-					data.github_urls.map((repo) => ({
+
+			if (storage.chainId === 'stellar') {
+				let contracts = storage.getStellarContracts()
+
+				if (!contracts) {
+					return
+				}
+
+				const params: IUpdateProjectParams = {
+					...projectData,
+					name: projectData?.name || '',
+					overview: projectData?.overview || '',
+					fundings: projectData?.funding_histories || [],
+					contacts: data.contacts.map((c) => ({
+						name: c.platform,
+						value: c.link_url,
+					})),
+					contracts: data.smart_contracts.map((contract) => ({
+						name: contract.chain,
+						contract_address: contract.address,
+					})),
+					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
+					repositories:
+						data.github_urls.map((repo) => ({
+							label: repo.id,
+							url: repo.github_url,
+						})) || [],
+					team_members: projectData?.team_members || [],
+					video_url: projectData?.video_url || '',
+				}
+				const txUpdateProject = await updateProject(
+					stellarPubKey,
+					projectData?.id as bigint,
+					params,
+					contracts,
+				)
+				const txHashUpdateProject = await contracts.signAndSendTx(
+					stellarKit as StellarWalletsKit,
+					txUpdateProject.toXDR(),
+					stellarPubKey,
+				)
+				if (txHashUpdateProject) {
+					dismissPageLoading()
+					setTimeout(async () => {
+						await fetchProjectApplicant()
+					}, 2000)
+					toast.success(`Update project links is succeed`, {
+						style: toastOptions.success.style,
+					})
+				}
+			} else {
+				const contracts = storage.getNearContracts(nearWallet)
+
+				if (!contracts) {
+					return
+				}
+
+				const params: NearSocialGPProject = {
+					name: projectData?.name || '',
+					overview: projectData?.overview || '',
+					fundings:
+						projectData?.funding_histories as unknown as NearProjectFundingHistory[],
+					contacts: data.contacts.map((c) => ({
+						name: c.platform,
+						value: c.link_url,
+					})),
+					owner: projectData?.owner || '',
+					contracts: data.smart_contracts.map((contract) => ({
+						name: contract.chain,
+						contract_address: contract.address,
+					})),
+					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
+					repositories: data.github_urls.map((repo) => ({
 						label: repo.id,
 						url: repo.github_url,
-					})) || [],
-				team_members: projectData?.team_members || [],
-				video_url: projectData?.video_url || 'https://video.com/asdfgh',
-			}
-			const txUpdateProject = await updateProject(
-				stellarPubKey,
-				projectData?.id as bigint,
-				params,
-				contracts,
-			)
-			const txHashUpdateProject = await contracts.signAndSendTx(
-				stellarKit as StellarWalletsKit,
-				txUpdateProject,
-				stellarPubKey,
-			)
-			if (txHashUpdateProject) {
-				dismissPageLoading()
-				setTimeout(async () => {
-					await fetchProjectApplicant()
-				}, 2000)
-				toast.success(`Update project overview is succeed`, {
-					style: toastOptions.success.style,
-				})
+					})),
+					team_members:
+						(projectData?.team_members as unknown as string[]) || [],
+					video_url: projectData?.video_url || '',
+				}
+
+				const txUpdateProject = await contracts.near_social.setProjectData(
+					storage.my_address || '',
+					params,
+				)
+
+				if (txUpdateProject) {
+					dismissPageLoading()
+					setTimeout(async () => {
+						await fetchProjectApplicant()
+					}, 2000)
+					toast.success(`Update project links is succeed`, {
+						style: toastOptions.success.style,
+					})
+				}
 			}
 		} catch (error: any) {
 			dismissPageLoading()
-			toast.error(`Update project overview is failed`, {
+			toast.error(`Update project links is failed`, {
 				style: toastOptions.error.style,
 			})
-			console.log('error to update overview project', error)
+			console.log('error to update links project', error)
 		}
 	}
 
@@ -171,13 +270,11 @@ const MyProjectLinks = () => {
 					Links
 				</p>
 				<div className="py-4 md:py-6">
-					<p className="text-grantpicks-black-950 mb-2">
-						Smart Contracts <span className="text-grantpicks-red-600">*</span>
-					</p>
+					<p className="text-grantpicks-black-950 mb-2">Smart Contracts</p>
 					{fieldContracts.map((value, index) => {
 						return (
-							<div key={index} className="flex flex-col space-y-2">
-								<div className="flex items-center space-x-4 mb-2">
+							<div key={index} className="flex flex-col mb-2">
+								<div className="flex items-center space-x-4 mb-1">
 									<div className="relative w-[30%]">
 										<div
 											onClick={() => {
@@ -265,9 +362,20 @@ const MyProjectLinks = () => {
 									</div>
 									<div className="w-[60%]">
 										<InputText
-											required
 											{...register(`smart_contracts.${index}.address`, {
-												required: true,
+												validate: (value) =>
+													watch().smart_contracts[index].chain === 'bitcoin'
+														? BITCOIN_ADDRESS_REGEX(value)
+														: watch().smart_contracts[index].chain ===
+															'ethereum'
+															? ETHEREUM_ADDRESS_REGEX(value)
+															: watch().smart_contracts[index].chain ===
+																'stellar'
+																? StrKey.isValidEd25519PublicKey(value)
+																: watch().smart_contracts[index].chain ===
+																	'near'
+																	? NEAR_ADDRESS_REGEX(value)
+																	: true,
 											})}
 										/>
 									</div>
@@ -285,14 +393,9 @@ const MyProjectLinks = () => {
 									</div>
 								</div>
 								{errors?.smart_contracts?.[index]?.address?.type ===
-								'validate' ? (
-									<p className="text-red-500 text-xs mt-1 ml-2">
+									'validate' ? (
+									<p className="text-red-500 text-xs ml-2">
 										Address is invalid
-									</p>
-								) : errors.smart_contracts?.[index]?.address?.type ===
-								  'required' ? (
-									<p className="text-red-500 text-xs mt-1 ml-2">
-										Address is required
 									</p>
 								) : undefined}
 							</div>
@@ -324,23 +427,24 @@ const MyProjectLinks = () => {
 						/>
 					</div>
 
-					<p className="text-grantpicks-black-950 mb-2">
-						Github <span className="text-grantpicks-red-600">*</span>
-					</p>
+					<p className="text-grantpicks-black-950 mb-2">Github</p>
 					{fieldGithubs.map((value, index) => {
 						return (
 							<div key={index} className="flex items-center space-x-4 mb-2">
 								<div className="w-[90%]">
 									<InputText
-										required
 										{...register(`github_urls.${index}.github_url`, {
-											required: true,
+											validate: (value) => {
+												return watch().github_urls[index].github_url !== ''
+													? GITHUB_URL_REGEX.test(value)
+													: true
+											},
 										})}
 										errorMessage={
 											errors?.github_urls?.[index]?.github_url?.type ===
-											'required' ? (
+												'validate' ? (
 												<p className="text-red-500 text-xs mt-1 ml-2">
-													Github is required
+													Please enter a valid GitHub URL
 												</p>
 											) : undefined
 										}
@@ -375,9 +479,7 @@ const MyProjectLinks = () => {
 						</Button>
 					</div>
 
-					<p className="text-grantpicks-black-950 mb-2">
-						Contacts <span className="text-grantpicks-red-600">*</span>
-					</p>
+					<p className="text-grantpicks-black-950 mb-2">Contacts</p>
 					{fieldContacts.map((value, index) => {
 						return (
 							<div key={index} className="flex flex-col space-y-2">
@@ -463,10 +565,31 @@ const MyProjectLinks = () => {
 									</div>
 									<div className="w-[60%]">
 										<InputText
-											placeholder="t.me/Jameson"
-											required
+											disabled={watch().contacts[index].platform === ''}
+											placeholder={
+												watch().contacts[index].platform === 'email'
+													? 'jameson@gmail.com'
+													: 'jameson'
+											}
 											{...register(`contacts.${index}.link_url`, {
-												required: true,
+												pattern: {
+													value:
+														watch().contacts[index].platform === 'telegram'
+															? TELEGRAM_USERNAME_REGEX
+															: watch().contacts[index].platform === 'instagram'
+																? INSTAGRAM_USERNAME_REGEX
+																: watch().contacts[index].platform === 'twitter'
+																	? TWITTER_USERNAME_REGEX
+																	: EMAIL_VALIDATION_REGEX,
+													message:
+														watch().contacts[index].platform === 'telegram'
+															? 'Telegram address is not valid'
+															: watch().contacts[index].platform === 'instagram'
+																? 'Instagram address is not valid'
+																: watch().contacts[index].platform === 'twitter'
+																	? 'Twitter address is not valid'
+																	: 'Email address is not valid',
+												},
 											})}
 										/>
 									</div>
@@ -483,11 +606,11 @@ const MyProjectLinks = () => {
 										/>
 									</div>
 								</div>
-								{errors?.contacts?.[index]?.link_url?.type === 'required' ? (
-									<p className="text-red-500 text-xs ml-2">
-										Contact is required
+								{errors?.contacts?.[index]?.link_url && (
+									<p className="text-red-500 text-xs mt-1 ml-2">
+										{errors?.contacts?.[index]?.link_url.message}
 									</p>
-								) : undefined}
+								)}
 							</div>
 						)
 					})}
@@ -517,6 +640,14 @@ const MyProjectLinks = () => {
 						isFullWidth
 						onClick={() => setDefaultData()}
 						className="!py-3 !border !border-grantpicks-black-400"
+						isDisabled={
+							JSON.stringify(watch().smart_contracts) ===
+							JSON.stringify(currentContract) &&
+							JSON.stringify(watch().github_urls) ===
+							JSON.stringify(currentRepo) &&
+							JSON.stringify(watch().contacts) ===
+							JSON.stringify(currentContact)
+						}
 					>
 						Discard
 					</Button>
@@ -526,7 +657,15 @@ const MyProjectLinks = () => {
 						color="black-950"
 						isFullWidth
 						onClick={handleSubmit(onSaveChanges)}
-						className="!py-3"
+						className="!py-3 disabled:cursor-not-allowed"
+						isDisabled={
+							JSON.stringify(watch().smart_contracts) ===
+							JSON.stringify(currentContract) &&
+							JSON.stringify(watch().github_urls) ===
+							JSON.stringify(currentRepo) &&
+							JSON.stringify(watch().contacts) ===
+							JSON.stringify(currentContact)
+						}
 					>
 						Save changes
 					</Button>

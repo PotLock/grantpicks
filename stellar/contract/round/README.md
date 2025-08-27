@@ -277,7 +277,7 @@ pub struct VotingResult {
 pub struct ProjectVotingResult {
     pub project_id: u128,
     pub voting_count: u128,
-    pub allocation: u128,
+    pub is_flagged: bool,
 }
 
 // Round Contact
@@ -318,6 +318,7 @@ pub struct PayoutsChallenge {
     pub created_at: u64,
     pub reason: String,
     pub admin_notes: String,
+    pub resolved_by: String,
     pub resolved: bool,
 }
 
@@ -336,6 +337,15 @@ pub struct Deposit {
     pub memo: String,
 }
 
+#[contracttype]
+#[derive(Clone, Eq, PartialEq)]
+pub struct FlagDetail {
+    pub project_id: u128,
+    pub applicant_id: Address,
+    pub reason: String,
+    pub flagged_by: Address,
+    pub flagged_ms: u64,
+}
 ```
 
 ## Factory Methods
@@ -349,10 +359,12 @@ fn initialize(
     caller: Address,
     token_address: Address,
     registry_address: Address,
+    list_address: Address,
+    kyc_list_id: u128,
     protocol_fee_basis_points: Option<u32>,
     protocol_fee_recipient: Option<Address>,
-    default_page_size: Option<u64>
-);
+    default_page_size: Option<u64>,
+)
 // create a round
 fn create_round(env: &Env, caller: Address, params: CreateRoundParams) -> RoundDetail;
 
@@ -389,20 +401,16 @@ fn get_config(env: &Env) -> Config;
 //manipulate/update round
 fn set_cooldown_config(env: &Env, round_id: u128, caller: Address, cooldown_period_ms: Option<u64>) -> RoundDetail;
 fn set_compliance_config(env: &Env, round_id: u128, caller: Address, compliance_req_desc: Option<String>, compliance_period_ms: Option<u64>) -> RoundDetail;
-fn set_redistribution_config(env: &Env, round_id: u128, caller: Address, allow_remaining_funds_redistribution: bool, remaining_funds_redistribution_recipient: Option<Address>) -> RoundDetail; 
-fn change_voting_period(env: &Env, round_id: u128, caller: Address, start_ms: u64, end_ms: u64);
-fn change_application_period(env: &Env, round_id: u128, caller: Address, start_ms: u64, end_ms: u64);
-fn change_number_of_votes(env: &Env, round_id: u128, caller: Address, num_picks_per_voter: u32);
-fn change_expected_amount(env: &Env, round_id: u128, caller: Address, amount: u128);
-fn close_voting_period(env: &Env, round_id: u128, caller: Address) -> RoundDetail;
-fn start_voting_period(env: &Env, round_id: u128, caller: Address) -> RoundDetail;
-fn add_admins(env: &Env, round_id: u128, round_admin: Vec<Address>);
-fn remove_admins(env: &Env, round_id: u128, round_admin: Vec<Address>);
+fn set_redistribution_config(env: &Env, round_id: u128, caller: Address, allow_remaining_dist: bool, remaining_dist_address: Option<Address>) -> RoundDetail;
+fn set_applications_config(env: &Env, round_id: u128, caller: Address, allow_applications: bool, start_ms: Option<u64>, end_ms: Option<u64>) -> RoundDetail;
+fn set_voting_period(env: &Env, round_id: u128, caller: Address, start_ms: u64, end_ms: u64);
+fn set_number_of_votes(env: &Env, round_id: u128, caller: Address, num_picks_per_voter: u32);
+fn set_expected_amount(env: &Env, round_id: u128, caller: Address, amount: u128);
 fn set_admins(env: &Env, round_id: u128, round_admin: Vec<Address>);
-fn clear_admins(env: &Env, round_id: u128);
+fn set_admins(env: &Env, round_id: u128, round_admin: Vec<Address>);
+fn add_approved_project(env: &Env, round_id: u128, caller: Address, project_ids: Vec<u128>);
 fn transfer_round_ownership(env: &Env, round_id: u128, new_owner: Address);
 fn set_round_complete(env: &Env, round_id: u128, caller: Address) -> RoundDetail;
-fn change_allow_applications(env: &Env, round_id: u128, caller: Address, allow_applications: bool, start_ms: Option<u64>, end_ms: Option<u64>) -> RoundDetail;
 fn update_round(env: &Env, caller: Address, round_id: u128, round_detail: UpdateRoundParams) -> RoundDetail;
 fn delete_round(env: &Env, round_id: u128) -> RoundDetail;
 
@@ -414,7 +422,8 @@ fn add_approved_project(env: &Env, round_id: u128, caller: Address, project_ids:
 fn remove_approved_project(env: &Env, around_id: u128, caller: Address, project_ids: Vec<u128>);
 fn update_applicant_note(env: &Env, round_id: u128, caller: Address, note: String) -> RoundApplication;
 fn apply_to_round_batch(env: &Env, caller: Address, round_id: u128, review_notes: Vec<Option<String>>, applicants: Vec<Address>) -> Vec<RoundApplication>;
-
+fn unflag_project(env: &Env, round_id: u128, caller: Address, project_id: u128);
+fn flag_project(env: &Env, round_id: u128, caller: Address, project_id: u128, reason: String)->FlagDetail;
 // deposit XLM to round
 fn deposit_to_round(env: &Env, round_id: u128, caller: Address, amount: u128, memo: Option<String>, referrer_id: Option<Address>);
 
@@ -450,7 +459,6 @@ fn get_applications_for_round(env: &Env, round_id: u128, from_index: Option<u64>
 fn get_application(env: &Env, round_id: u128, applicant: Address) -> Option<RoundApplication>;
 fn is_payout_done(env: &Env, round_id: u128) -> bool;
 fn user_has_vote(env: &Env, round_id: u128, voter: Address) -> bool;
-fn total_funding(env: &Env, round_id: u128) -> u128;
 fn get_pairs_to_vote(env: &Env, round_id: u128) -> Vec<Pair>;
 fn whitelist_status(env: &Env, round_id: u128, address: Address) -> bool;
 fn blacklist_status(env: &Env, round_id: u128, address: Address) -> bool;
@@ -464,6 +472,7 @@ fn get_voting_results_for_round(env: &Env, round_id: u128) -> Vec<ProjectVotingR
 fn blacklisted_voters(env: &Env, round_id: u128) -> Vec<Address>;
 fn whitelisted_voters(env: &Env, round_id: u128) -> Vec<Address>;
 fn get_my_vote_for_round(env: &Env, round_id: u128, voter: Address) -> VotingResult;
+fn get_approved_projects(env: &Env, round_id: u128) -> Vec<u128>;
 ```
 
 ## Events For Indexer
@@ -489,34 +498,36 @@ pub fn log_update_round(env: &Env, round_detail: RoundDetail) {
 2. Application Events
 
 ```rs
-pub fn log_create_app(env: &Env, application: RoundApplication) {
+pub fn log_create_app(env: &Env, round_id: u128, application: RoundApplication) {
     env.events().publish(
         (symbol_short!("c_app"), env.current_contract_address()),
-        application,
+        (round_id, application),
     );
 }
 
-pub fn log_update_app(env: &Env, application: RoundApplication) {
+pub fn log_update_app(env: &Env, round_id: u128, application: RoundApplication, updated_by: Address) {
     env.events().publish(
         (symbol_short!("u_app"), env.current_contract_address()),
-        application,
+        (round_id, application, updated_by),
     );
 }
 
-pub fn log_delete_app(env: &Env, application: RoundApplication) {
+pub fn log_delete_app(env: &Env, round_id: u128, application: RoundApplication) {
     env.events().publish(
         (symbol_short!("d_app"), env.current_contract_address()),
-        application,
+        (round_id, application),
     );
+}
+
 ```
 
 3. Deposit Events
 
 ```rs
-pub fn log_create_deposit(env: &Env, round_id: u128, actor: Address, amount: u128) {
+pub fn log_create_deposit(env: &Env, round_id: u128, data: &Deposit) {
     env.events().publish(
         (symbol_short!("c_depo"), env.current_contract_address()),
-        (round_id, actor, amount),
+        (round_id, data.clone()),
     );
 }
 ```

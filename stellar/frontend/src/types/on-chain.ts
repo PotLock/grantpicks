@@ -1,8 +1,8 @@
+import { ListExternal, Soroban } from 'lists-client'
 import {
 	Horizon,
 	RoundApplication,
 	RoundDetail,
-	SorobanRpc,
 } from 'round-client'
 
 export type Network = 'testnet' | 'mainnet'
@@ -13,6 +13,8 @@ export type ApplicationStatus =
 	| { tag: 'Rejected'; values: void }
 
 export interface IGetRoundsResponse extends RoundDetail {}
+
+export interface IGetListExternalResponse extends ListExternal {}
 
 export interface IGetRoundApplicationsResponse extends RoundApplication {}
 
@@ -32,5 +34,5 @@ export enum Networks {
 export interface SubmitTxProps {
 	signedXDR: string
 	networkPassphrase: string
-	server: SorobanRpc.Server | Horizon.Server
+	server: Horizon.Server
 }

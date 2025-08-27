@@ -7,24 +7,29 @@ import IconProject from '@/app/components/svgs/IconProject'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import { useModalContext } from '@/app/providers/ModalProvider'
 import { useWallet } from '@/app/providers/WalletProvider'
+import { toastOptions } from '@/constants/style'
 import Contracts from '@/lib/contracts'
 import CMDWallet from '@/lib/wallet'
-import { getProjectApplicant } from '@/services/on-chain/project-registry'
+import { GPRound } from '@/models/round'
+import { getProjectApplicant } from '@/services/stellar/project-registry'
 import {
 	applyProjectToRound,
 	ApplyProjectToRoundParams,
-} from '@/services/on-chain/round'
+} from '@/services/stellar/round'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 import { BaseModalProps } from '@/types/dialog'
 import { IGetRoundsResponse, Network } from '@/types/on-chain'
 import { prettyTruncate } from '@/utils/helper'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import Image from 'next/image'
-import React, { useEffect, useState } from 'react'
-import { Project } from 'round-client'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Project } from 'project-registry-client'
+import React, { useCallback, useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
 
 interface ApplyProjectToRoundModalProps extends BaseModalProps {
 	round_id?: bigint
-	roundData?: IGetRoundsResponse
+	roundData?: GPRound
 }
 
 const ApplyProjectModal = ({
@@ -33,83 +38,151 @@ const ApplyProjectModal = ({
 	round_id,
 	roundData,
 }: ApplyProjectToRoundModalProps) => {
+	const router = useRouter()
+	const searchParams = useSearchParams()
 	const { setCreateProjectFormMainProps } = useModalContext()
-	const { stellarPubKey, stellarKit } = useWallet()
+	const { stellarPubKey, stellarKit, nearWallet, nearAccounts } = useWallet()
 	const [isProjectMissingInfo, setIsProjectMissingInfo] =
 		useState<boolean>(false)
 	const [projectData, setProjectData] = useState<Project | undefined>(undefined)
 	const [applyNote, setApplyNote] = useState<string>('')
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const { setSuccessApplyProjectInitProps } = useModalContext()
+	const [loading, setLoading] = useState<boolean>(true)
+	const [isRegistered, setIsRegistered] = useState<boolean>(true)
+	const storage = useAppStorage()
 
-	const fetchProjectApplicant = async () => {
-		try {
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
+	const fetchIsRegistered = useCallback(async () => {
+		if (roundData?.application_wl_list_id) {
+			const contracts = storage.getStellarContracts()
+			if (!contracts) {
+				return
+			}
+			const isRegistered = await contracts.lists_contract.is_registered({
+				list_id: BigInt(roundData?.application_wl_list_id),
+				registrant_id: stellarPubKey,
+				required_status: undefined,
 			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
-			const res = await getProjectApplicant(stellarPubKey, contracts)
-			//@ts-ignore
-			if (!res?.error) setProjectData(res)
-			//@ts-ignore
-			console.log('res project applicant', res, res?.error)
+			setIsRegistered(isRegistered.result)
+		}
+	}, [stellarPubKey, roundData])
+
+
+	const fetchProjectApplicant = useCallback(async () => {
+		try {
+			if (storage.chainId === 'stellar') {
+				const contracts = storage.getStellarContracts()
+
+				if (!contracts) {
+					return
+				}
+				setLoading(true)
+
+				const res = await getProjectApplicant(stellarPubKey, contracts)
+				//@ts-ignore
+				if (!res?.error) setProjectData(res)
+			} else {
+				const contracts = storage.getNearContracts(null)
+				if (!contracts) {
+					return
+				}
+				const data = await contracts.near_social.getProjectData(
+					storage.my_address || '',
+				)
+				if (data) {
+					const json =
+						data[`${storage.my_address || ''}`]['profile']['gp_project'] || '{}'
+					const project = JSON.parse(json)
+					setProjectData(project)
+				}
+			}
 		} catch (error: any) {
 			console.log('error fetch project applicant', error)
+		} finally {
+			setLoading(false)
 		}
-	}
+	}, [storage.chainId, storage.my_address, stellarPubKey])
 
-	const onApplyProjectToRound = async () => {
+	const onApplyProjectToRound = useCallback(async () => {
 		try {
 			openPageLoading()
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
-			const applyParams: ApplyProjectToRoundParams = {
-				round_id: round_id as bigint,
-				caller: stellarPubKey,
-				applicant: stellarPubKey,
-				note: applyNote,
-				review_note: '',
-			}
-			const txApplyProject = await applyProjectToRound(
-				applyParams,
-				true,
-				contracts,
-			)
-			const txHashApplyProject = await contracts.signAndSendTx(
-				stellarKit as StellarWalletsKit,
-				txApplyProject,
-				stellarPubKey,
-			)
-			if (txHashApplyProject) {
-				dismissPageLoading()
-				setSuccessApplyProjectInitProps((prev) => ({
-					...prev,
-					isOpen: true,
-					applyProjectRes: txApplyProject.result,
-					txHash: txHashApplyProject,
-					roundData,
-				}))
-				onClose()
+
+			if (storage.chainId === 'stellar') {
+				let contracts = storage.getStellarContracts()
+
+				if (!contracts || !round_id) {
+					return
+				}
+
+				const applyParams: ApplyProjectToRoundParams = {
+					round_id: round_id,
+					caller: stellarPubKey,
+					note: applyNote,
+				}
+				const txApplyProject = await applyProjectToRound(applyParams, contracts)
+
+				const txHashApplyProject = await contracts.signAndSendTx(
+					stellarKit as StellarWalletsKit,
+					txApplyProject.toXDR(),
+					stellarPubKey,
+				)
+				if (txHashApplyProject) {
+					dismissPageLoading()
+					setSuccessApplyProjectInitProps((prev) => ({
+						...prev,
+						isOpen: true,
+						applyProjectRes: txApplyProject.result,
+						txHash: txHashApplyProject,
+						roundData,
+					}))
+					onClose()
+				}
+			} else {
+				const contracts = storage.getNearContracts(nearWallet)
+
+				if (!contracts) {
+					return
+				}
+
+				const txApplyProject = await contracts.round.applyProjectToRound(
+					roundData?.on_chain_id as number,
+					applyNote,
+					projectData?.video_url || '',
+				)
+
+				if (txApplyProject) {
+					dismissPageLoading()
+					setSuccessApplyProjectInitProps((prev) => ({
+						...prev,
+						isOpen: true,
+						applyProjectRes: txApplyProject.result,
+						txHash: txApplyProject.outcome.transaction_outcome.id,
+						roundData,
+					}))
+					onClose()
+				}
 			}
 		} catch (error: any) {
 			dismissPageLoading()
 			console.log('error apply project to round', error)
 		}
-	}
+	}, [storage.chainId, storage.my_address, stellarPubKey])
 
 	useEffect(() => {
 		if (isOpen && !projectData) {
 			fetchProjectApplicant()
+			fetchIsRegistered()
 		}
-	}, [isOpen])
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isOpen, storage.my_address, storage.chainId])
+
+	const addApplyQuery = () => {
+		const currentParams = new URLSearchParams(searchParams.toString())
+		currentParams.set('apply_round', roundData?.id.toString() as string)
+		router.push(`?${currentParams.toString()}`, {
+			scroll: false,
+		})
+	}
 
 	return (
 		<Modal
@@ -128,9 +201,13 @@ const ApplyProjectModal = ({
 					}}
 				/>
 				<p className="text-base md:text-lg lg:text-xl font-semibold text-grantpicks-black-950 text-center">
-					Apply to Web3 Education & Skill Development
+					Apply to {roundData?.name}
 				</p>
-				{projectData ? (
+				{loading ? (
+					<div className="flex items-center justify-center h-52">
+						<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-grantpicks-black-950" />
+					</div>
+				) : projectData ? (
 					isProjectMissingInfo ? (
 						<>
 							<div className="mt-6 border border-grantpicks-red-100 rounded-xl p-4 bg-grantpicks-red-50 flex space-x-2">
@@ -165,7 +242,7 @@ const ApplyProjectModal = ({
 											</p>
 										</div>
 									</div>
-									<Button color="alpha-50" onClick={() => {}}>
+									<Button color="alpha-50" onClick={() => { }}>
 										Update
 									</Button>
 								</div>
@@ -174,7 +251,12 @@ const ApplyProjectModal = ({
 					) : (
 						<>
 							<div className="flex items-center space-x-2 mt-6">
-								<div className="bg-grantpicks-black-400 rounded-full w-10 h-10" />
+								<Image
+									src={`https://www.tapback.co/api/avatar/${projectData.owner}`}
+									alt="owner"
+									width={40}
+									height={40}
+								/>
 								<div>
 									<p className="text-sm font-bold text-grantpicks-black-950">
 										{prettyTruncate(projectData.owner, 18, 'address')}
@@ -218,9 +300,10 @@ const ApplyProjectModal = ({
 						<Button
 							color="black-950"
 							onClick={onApplyProjectToRound}
+							isDisabled={!isRegistered}
 							isFullWidth
 						>
-							<p className="text-sm font-semibold text-white">Apply</p>
+							<p className="text-sm font-semibold text-white">{isRegistered ? 'Apply' : 'Not Eligible to Apply'}</p>
 						</Button>
 						<Button
 							color="transparent"
@@ -239,10 +322,20 @@ const ApplyProjectModal = ({
 						<Button
 							color="black-950"
 							onClick={() => {
-								setCreateProjectFormMainProps((prev) => ({
-									...prev,
-									isOpen: true,
-								}))
+								if (!stellarPubKey && !nearAccounts[0]?.accountId) {
+									toast.error(
+										'Please connect your wallet to create new project',
+										{
+											style: toastOptions.error.style,
+										},
+									)
+								} else {
+									addApplyQuery()
+									setCreateProjectFormMainProps((prev) => ({
+										...prev,
+										isOpen: true,
+									}))
+								}
 								onClose()
 							}}
 							isFullWidth

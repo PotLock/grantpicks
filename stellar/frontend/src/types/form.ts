@@ -1,4 +1,4 @@
-import { IGetProjectsResponse } from '@/services/on-chain/project-registry'
+import { IGetProjectsResponse } from '@/services/stellar/project-registry'
 import { ChangeEvent, HTMLAttributes } from 'react'
 
 export interface InputProps {
@@ -14,13 +14,15 @@ export interface InputProps {
 	disabled?: boolean
 	customLabel?: React.ReactNode
 	label?: string
+	labelIcon?: React.ReactNode
 	hintLabel?: string
 	rows?: number
 	preffixIcon?: React.ReactNode
 	suffixIcon?: React.ReactNode
-	errorMessage?: JSX.Element
+	errorMessage?: JSX.Element | string
 	textAlign?: 'left' | 'center' | 'right'
 	isStopPropagation?: boolean
+	maxLength?: number
 }
 
 export interface InputTextAreaProps {
@@ -35,21 +37,26 @@ export interface InputTextAreaProps {
 	disabled?: boolean
 	customLabel?: React.ReactNode
 	label?: string
+	labelIcon?: React.ReactNode
 	hintLabel?: string
 	rows?: number
 	preffixIcon?: React.ReactNode
 	suffixIcon?: React.ReactNode
 	errorMessage?: JSX.Element
 	textAlign?: 'left' | 'center' | 'right'
+	maxLength?: number
 }
 
 export interface CheckboxProps {
 	checked: boolean
 	onChange: (e: ChangeEvent<HTMLInputElement>) => void
+	onChecked?: (value: string, checked: boolean) => void
 	parentClassName?: HTMLAttributes<HTMLDivElement>['className']
 	className?: HTMLAttributes<HTMLDivElement>['className']
 	label?: string
 	disabled?: boolean
+	name?: string
+	value?: string
 }
 
 export type IProjectCreateRound = {
@@ -61,6 +68,7 @@ export type IAdminCreateRound = {
 }
 
 export type CreateRoundData = {
+	id: number
 	title: string
 	description: string
 	vote_per_person: number
@@ -68,6 +76,7 @@ export type CreateRoundData = {
 	contact_address: string
 	amount: string
 	expected_amount: string
+	minimum_deposit: string
 	allow_application: boolean
 	max_participants: number
 	apply_duration_start: Date | null
@@ -88,9 +97,23 @@ export type CreateRoundData = {
 	referrer_fee_basis_points: number
 	use_vault: boolean
 	is_video_required: boolean
+	use_whitelist_application: boolean
+	application_wl_list_id?: bigint
+	use_whitelist_voting: boolean
+	voting_wl_list_id?: bigint
+}
+
+export type UpdateApplicationConfig = {
+	round_id: number
+	allow_applications: boolean
+	application_start: Date | null
+	application_end: Date | null
+	voting_start: Date
+	voting_end: Date
 }
 
 export type UpdateRoundData = {
+	id: number
 	title: string
 	description: string
 	vote_per_person: number
@@ -98,6 +121,7 @@ export type UpdateRoundData = {
 	contact_address: string
 	amount: string
 	expected_amount: string
+	minimum_deposit: string
 	allow_application: boolean
 	max_participants: number
 	apply_duration_start: Date | null
@@ -110,6 +134,8 @@ export type UpdateRoundData = {
 	allow_compliance: boolean
 	allow_cooldown: boolean
 	compliance_req_desc: string
+	application_wl_list_id?: bigint
+	voting_wl_list_id?: bigint
 	compliance_end_ms: Date | null
 	compliance_period_ms: number | null
 	cooldown_end_ms: Date | null

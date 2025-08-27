@@ -1,3 +1,4 @@
+// use soroban_fixed_point_math::SorobanFixedPoint;
 use soroban_sdk::{panic_with_error, Env};
 
 use crate::{
@@ -21,9 +22,14 @@ pub enum ApplicationStatus {
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct Config {
     pub owner: Address,
+    pub pending_owner: Option<Address>,
     pub protocol_fee_recipient: Address,
     pub protocol_fee_basis_points: u32,
     pub default_page_size: u64,
+    pub token_contract: Address,
+    pub project_contract: Address,
+    pub list_contract: Address,
+    pub kyc_wl_list_id: Option<u128>,
 }
 
 //Note: Whitelist And Blacklist In Different Storage
@@ -40,9 +46,13 @@ pub struct RoundDetail {
     pub application_start_ms: Option<u64>,
     pub application_end_ms: Option<u64>,
     pub expected_amount: u128,
+    pub minimum_deposit: u128,
     pub current_vault_balance: u128,
     pub vault_total_deposits: u128,
-    pub use_whitelist: bool,
+    pub use_whitelist_voting: bool,
+    pub use_whitelist_application: bool,
+    pub voting_wl_list_id: Option<u128>,
+    pub application_wl_list_id: Option<u128>,
     pub use_vault: Option<bool>,
     pub num_picks_per_voter: u32,
     pub max_participants: u32,
@@ -74,18 +84,20 @@ pub struct CreateRoundParams {
     pub application_start_ms: Option<u64>,
     pub application_end_ms: Option<u64>,
     pub expected_amount: u128,
+    pub minimum_deposit: u128,
     pub admins: Vec<Address>,
-    pub use_whitelist: Option<bool>,
+    pub use_whitelist_voting: Option<bool>,
+    pub use_whitelist_application: Option<bool>,
+    pub voting_wl_list_id: Option<u128>,
+    pub application_wl_list_id: Option<u128>,
     pub use_vault: Option<bool>,
     pub num_picks_per_voter: Option<u32>,
     pub max_participants: Option<u32>,
     pub allow_applications: bool,
     pub is_video_required: bool,
     pub cooldown_period_ms: Option<u64>,
-    pub cooldown_end_ms: Option<u64>,
     pub compliance_req_desc: String, // too long on stellar
     pub compliance_period_ms: Option<u64>,
-    pub compliance_end_ms: Option<u64>,
     pub allow_remaining_dist: bool,
     pub remaining_dist_address: Address,
     pub referrer_fee_basis_points: Option<u32>,
@@ -97,17 +109,14 @@ pub struct UpdateRoundParams {
     pub name: String,
     pub description: String,
     pub contacts: Vec<Contact>,
-    pub voting_start_ms: u64,
-    pub voting_end_ms: u64,
-    pub application_start_ms: Option<u64>,
-    pub application_end_ms: Option<u64>,
-    pub expected_amount: u128,
-    pub use_whitelist: Option<bool>,
+    pub use_whitelist_voting: Option<bool>,
+    pub application_wl_list_id: Option<u128>,
+    pub voting_wl_list_id: Option<u128>,
     pub use_vault: Option<bool>,
     pub num_picks_per_voter: Option<u32>,
     pub max_participants: Option<u32>,
-    pub allow_applications: bool,
     pub is_video_required: bool,
+    pub referrer_fee_basis_points: Option<u32>,
 }
 
 //Note: use String for Option<String>. soroban SDK not allow Option<soroban_sdk::String>
@@ -157,7 +166,7 @@ pub struct VotingResult {
 pub struct ProjectVotingResult {
     pub project_id: u128,
     pub voting_count: u128,
-    // pub is_flagged: bool,
+    pub is_flagged: bool,
 }
 
 #[contracttype]
@@ -174,6 +183,7 @@ pub struct Payout {
     pub round_id: u128,
     pub recipient_id: Address,
     pub amount: i128,
+    pub paid_amount: i128,
     pub paid_at_ms: Option<u64>,
     pub memo: String,
 }
@@ -194,6 +204,7 @@ pub struct PayoutsChallenge {
     pub created_at: u64,
     pub reason: String,
     pub admin_notes: String,
+    pub resolved_by: String,
     pub resolved: bool,
 }
 
@@ -212,15 +223,15 @@ pub struct Deposit {
     pub memo: String,
 }
 
-// #[contracttype]
-// #[derive(Clone, Eq, PartialEq)]
-// pub struct FlagDetail {
-//     pub project_id: u128,
-//     pub applicant_id: Address,
-//     pub reason: String,
-//     pub flagged_by: Address,
-//     pub flagged_ms: u64,
-// }
+#[contracttype]
+#[derive(Clone, Eq, PartialEq)]
+pub struct FlagDetail {
+    pub project_id: u128,
+    pub applicant_id: Address,
+    pub reason: String,
+    pub flagged_by: Address,
+    pub flagged_ms: u64,
+}
 
 impl RoundDetail {
     pub fn is_caller_owner_or_admin(&self, env: &Env, caller: &Address) -> bool {
@@ -229,13 +240,22 @@ impl RoundDetail {
 
     pub fn assert_cooldown_period_complete(&self, env: &Env) {
         if self.cooldown_end_ms.is_some() {
-            assert!(self.cooldown_end_ms.unwrap() > get_ledger_second_as_millis(env));
+            if self.cooldown_end_ms.unwrap() > get_ledger_second_as_millis(env) {
+                panic_with_error!(env, RoundError::CoolDownPeriodNotComplete);
+            }
         }
     }
 
-    pub fn calculate_referrer_fee(&self, amount: u128) -> Option<u128> {
+    pub fn calculate_referrer_fee(&self, env: &Env, amount: u128) -> Option<u128> {
         if let Some(referrer_fee_basis_points) = self.referrer_fee_basis_points {
-            let total_basis_points = 10_000u128;
+            // COMMENTED CODE FIXED POINT MATH DUE BIGGER SIZE
+            // let total_basis_points:u128 = 10_000;
+            // let denominator:u128 = 1_0000000;
+            // let fee: u128 = referrer_fee_basis_points as u128;
+            // let fee_amount = fee.fixed_div_floor(env, &total_basis_points, &denominator).fixed_mul_floor(env, &amount, &denominator);
+            // // Round up
+            // Some(fee_amount)
+            let total_basis_points: u128 = 10_000;
             let fee_amount = (referrer_fee_basis_points as u128).saturating_mul(amount);
             // Round up
             Some(fee_amount.div_ceil(total_basis_points))
@@ -267,7 +287,7 @@ impl RoundDetail {
 
     pub fn assert_compliance_period_complete(&self, env: &Env) {
         if self.compliance_end_ms.unwrap_or(0) > get_ledger_second_as_millis(env) {
-            panic_with_error!(env, RoundError::CompliancePeriodNotStarted);
+            panic_with_error!(env, RoundError::CompliancePeriodInProcess);
         }
     }
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { Dispatch, SetStateAction, useEffect, useState } from 'react'
 import IconCheckCircle from '../../svgs/IconCheckCircle'
 import IconCube from '../../svgs/IconCube'
 import IconClock from '../../svgs/IconClock'
@@ -6,104 +6,174 @@ import { useWallet } from '@/app/providers/WalletProvider'
 import IconNear from '../../svgs/IconNear'
 import IconStellar from '../../svgs/IconStellar'
 import clsx from 'clsx'
-import CMDWallet from '@/lib/wallet'
-import Contracts from '@/lib/contracts'
-import { IGetRoundsResponse, Network } from '@/types/on-chain'
-import { getResultVoteRound, getRoundInfo } from '@/services/on-chain/round'
+import { IGetRoundsResponse } from '@/types/on-chain'
 import { useParams } from 'next/navigation'
-import { Pair, Project, VotingResult } from 'round-client'
+import { Pair, PickResult } from 'round-client'
 import moment from 'moment'
 import {
 	getProject,
 	GetProjectParams,
-} from '@/services/on-chain/project-registry'
+} from '@/services/stellar/project-registry'
 import { prettyTruncate } from '@/utils/helper'
+import { Project } from 'project-registry-client'
+import useAppStorage from '@/stores/zustand/useAppStorage'
+import {
+	NearPair,
+	NearPick,
+	NearRound,
+	nearVotingResultToGPVoting,
+} from '@/services/near/type'
+import Image from 'next/image'
+import { GPPicks, GPVoting } from '@/models/voting'
+import { votingResultToGPVoting } from '@/services/stellar/type'
+import { IProjectDetailOwner } from '@/app/rounds/round-vote/[roundId]/page'
 
 const IsVotedPairItem = ({
 	index,
 	pair,
 	votingResult,
+	setShowProjectDetailDrawer,
 }: {
 	index: number
-	pair: Pair
-	votingResult?: VotingResult
+	pair: Pair | NearPair
+	votingResult?: GPVoting
+	setShowProjectDetailDrawer: Dispatch<SetStateAction<IProjectDetailOwner>>
 }) => {
-	const { connectedWallet, stellarPubKey, stellarKit } = useWallet()
 	const [firstProjectData, setFirstProjectData] = useState<Project | undefined>(
 		undefined,
 	)
 	const [secondProjectData, setSecondProjectData] = useState<
 		Project | undefined
 	>(undefined)
+	const storage = useAppStorage()
 
 	const fetchProjectById = async () => {
 		try {
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
-			const get1stProjectParams: GetProjectParams = {
-				project_id: pair.projects[0],
+			if (storage.chainId === 'stellar') {
+				let contracts = storage.getStellarContracts()
+
+				if (!contracts) {
+					return
+				}
+
+				const get1stProjectParams: GetProjectParams = {
+					project_id: pair.projects[0] as bigint,
+				}
+				const get2ndProjectParams: GetProjectParams = {
+					project_id: pair.projects[1] as bigint,
+				}
+				const [firstRes, secondRes] = await Promise.all([
+					getProject(get1stProjectParams, contracts),
+					getProject(get2ndProjectParams, contracts),
+				])
+
+				setFirstProjectData(firstRes)
+				setSecondProjectData(secondRes)
+			} else {
+				const contracts = storage.getNearContracts(null)
+
+				if (!contracts) {
+					return
+				}
+
+				const [firstRes, secondRes] = await Promise.all([
+					contracts.near_social.getProjectData(pair.projects[0] as string),
+					contracts.near_social.getProjectData(pair.projects[1] as string),
+				])
+
+				const project1JSON =
+					firstRes[`${pair.projects[0] as string}`]['profile']['gp_project'] ||
+					'{}'
+				const project2JSON =
+					secondRes[`${pair.projects[1] as string}`]['profile']['gp_project'] ||
+					'{}'
+				const firstProject = JSON.parse(project1JSON)
+				const secondProject = JSON.parse(project2JSON)
+
+				setFirstProjectData(firstProject)
+				setSecondProjectData(secondProject)
 			}
-			const get2ndProjectParams: GetProjectParams = {
-				project_id: pair.projects[1],
-			}
-			const firstRes = await getProject(get1stProjectParams, contracts)
-			const secondRes = await getProject(get2ndProjectParams, contracts)
-			setFirstProjectData(firstRes)
-			setSecondProjectData(secondRes)
 		} catch (error: any) {
 			console.log('error project by id', error)
 		}
 	}
 
-	const selectedPair = votingResult?.picks.filter(
-		(pick) => pick.pair_id === pair.pair_id,
-	)[0]
+	let selectedPair: GPPicks | undefined = undefined
+
+	if (storage.chainId === 'stellar') {
+		selectedPair = votingResult?.picks?.filter(
+			(pick: GPPicks) => pick.pair_id === (pair as Pair).pair_id,
+		)[0]
+	} else {
+		selectedPair = votingResult?.picks?.filter(
+			(pick: GPPicks) => pick.pair_id === (pair as NearPair).id,
+		)[0]
+	}
 
 	useEffect(() => {
 		fetchProjectById()
-	}, [])
+	}, [pair])
 
 	return (
 		<div key={index} className="p-4 md:p-6 rounded-2xl bg-grantpicks-black-50">
-			<div className="relative justify-center flex items-center space-x-4 md:space-x-6 mb-4 md:mb-6">
-				<div>
-					<div
-						className={clsx(
-							`w-20 md:w-24 lg:w-28 h-20 md:h-24 lg:h-28 rounded-full bg-grantpicks-black-300 mb-4`,
-							pair.projects.map((p) => p.toString())[0] ===
-								(selectedPair?.project_id.toString() as string)
-								? `border-2 border-grantpicks-purple-500`
-								: `border-2 border-grantpicks-black-300`,
-						)}
-					></div>
-					<p className="text-grantpicks-black-950 font-semibold text-base">
-						{prettyTruncate(firstProjectData?.name, 20)}
-					</p>
-				</div>
-				<div>
-					<div
-						className={clsx(
-							`w-20 md:w-24 lg:w-28 h-20 md:h-24 lg:h-28 rounded-full bg-grantpicks-black-300 mb-4`,
-							pair.projects.map((p) => p.toString())[1] ===
-								(selectedPair?.project_id.toString() as string)
-								? `border-2 border-grantpicks-purple-500`
-								: `border-2 border-grantpicks-black-300`,
-						)}
-					></div>
-					<p className="text-grantpicks-black-950 font-semibold text-base">
-						{prettyTruncate(secondProjectData?.name, 20)}
-					</p>
-				</div>
+			<div className="relative justify-center flex items-center gap-x-4 md:gap-x-6 mb-4 md:mb-6">
+				<Image
+					className={clsx(
+						`w-20 md:w-24 lg:w-28 h-20 md:h-24 lg:h-28 rounded-full bg-grantpicks-black-300 mb-4`,
+						pair.projects.map((p) => p.toString())[0] ===
+							(selectedPair && selectedPair?.voted_project)
+							? `border-4 border-grantpicks-purple-500`
+							: `border-4 border-grantpicks-black-300`,
+					)}
+					src={`https://www.tapback.co/api/avatar/${firstProjectData?.owner}`}
+					alt="Project 1"
+					width={112}
+					height={112}
+				/>
+				<Image
+					className={clsx(
+						`w-20 md:w-24 lg:w-28 h-20 md:h-24 lg:h-28 rounded-full bg-grantpicks-black-300 mb-4`,
+						pair.projects.map((p) => p.toString())[1] ===
+							(selectedPair && selectedPair?.voted_project)
+							? `border-4 border-grantpicks-purple-500`
+							: `border-4 border-grantpicks-black-300`,
+					)}
+					src={`https://www.tapback.co/api/avatar/${secondProjectData?.owner}`}
+					alt="Project 2"
+					width={112}
+					height={112}
+				/>
 				<div className="absolute inset-0 flex items-center justify-center">
 					<div className="rounded-full w-16 h-16 bg-gradient-to-t from-grantpicks-purple-500 to-grantpicks-purple-100 flex items-center justify-center">
 						<p className="text-[32px] font-black text-white">VS</p>
 					</div>
 				</div>
+			</div>
+			<div className="relative justify-center flex items-center gap-x-4 md:gap-x-6 mb-4 md:mb-6">
+				<p
+					onClick={() =>
+						setShowProjectDetailDrawer((prev: any) => ({
+							...prev,
+							isOpen: true,
+							project: firstProjectData as Project,
+						}))
+					}
+					className="text-grantpicks-black-950 font-semibold text-base cursor-pointer"
+				>
+					{prettyTruncate(firstProjectData?.name, 20)}
+				</p>
+				<p
+					onClick={() =>
+						setShowProjectDetailDrawer((prev: any) => ({
+							...prev,
+							isOpen: true,
+							project: secondProjectData as Project,
+						}))
+					}
+					className="text-grantpicks-black-950 font-semibold text-base cursor-pointer"
+				>
+					{prettyTruncate(secondProjectData?.name, 20)}
+				</p>
 			</div>
 			<div className="flex items-center justify-center space-x-2">
 				<IconCheckCircle size={18} className="fill-grantpicks-purple-500" />
@@ -114,36 +184,50 @@ const IsVotedPairItem = ({
 }
 
 const IsVotedSection = ({
-	hasVoted,
-	pairsData,
+	setShowProjectDetailDrawer,
 }: {
-	hasVoted: boolean
-	pairsData: Pair[]
+	setShowProjectDetailDrawer: Dispatch<SetStateAction<IProjectDetailOwner>>
 }) => {
 	const params = useParams<{ roundId: string }>()
-	const { connectedWallet, stellarPubKey, stellarKit } = useWallet()
-	const [votingResult, setVotingResult] = useState<VotingResult | undefined>(
+	const { connectedWallet } = useWallet()
+	const [pairsData, setPairsData] = useState<Pair[] | NearPair[]>([])
+	const [votingResult, setVotingResult] = useState<GPVoting | undefined>(
 		undefined,
 	)
-	const [roundData, setRoundData] = useState<IGetRoundsResponse | undefined>(
-		undefined,
-	)
+	const [roundData, setRoundData] = useState<
+		IGetRoundsResponse | NearRound | undefined
+	>(undefined)
+	const storage = useAppStorage()
 
 	const fetchRoundData = async () => {
 		try {
-			if (!stellarPubKey) return
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
-			const roundRes = await getRoundInfo(
-				{ round_id: BigInt(params.roundId) },
-				contracts,
-			)
-			if (roundRes) {
+			if (storage.chainId === 'stellar') {
+				let contracts = storage.getStellarContracts()
+
+				if (!contracts) {
+					return
+				}
+
+				const roundRes = (
+					await contracts.round_contract.get_round({
+						round_id: BigInt(params.roundId),
+					})
+				).result
+
+				if (roundRes) {
+					setRoundData(roundRes)
+				}
+			} else {
+				const contracts = storage.getNearContracts(null)
+
+				if (!contracts) {
+					return
+				}
+
+				const roundRes = await contracts.round.getRoundById(
+					Number(params.roundId),
+				)
+
 				setRoundData(roundRes)
 			}
 		} catch (error: any) {
@@ -153,32 +237,78 @@ const IsVotedSection = ({
 
 	const fetchResultRound = async () => {
 		try {
-			if (!stellarPubKey) return
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
-			const votingResultRes = await getResultVoteRound(
-				{ round_id: BigInt(params.roundId), voter: stellarPubKey },
-				contracts,
-			)
-			if (votingResultRes) {
-				setVotingResult(votingResultRes)
+			if (storage.chainId === 'stellar') {
+				let contracts = storage.getStellarContracts()
+
+				if (!contracts) {
+					return
+				}
+
+				const votingResultRes = (
+					await contracts.round_contract.get_my_vote_for_round({
+						round_id: BigInt(params.roundId),
+						voter: storage.my_address || '',
+					})
+				).result
+
+				if (votingResultRes) {
+					setVotingResult(votingResultToGPVoting(votingResultRes))
+				}
+
+				const pairRes = votingResultRes.picks.map(async (pick: PickResult) => {
+					const pair: Pair = (
+						await contracts.round_contract.get_pair_by_index({
+							round_id: BigInt(params.roundId),
+							index: pick.pair_id,
+						})
+					).result
+
+					return pair
+				})
+
+				const newPairs = await Promise.all(pairRes)
+				setPairsData(newPairs)
+			} else {
+				const contracts = storage.getNearContracts(null)
+
+				if (!contracts) {
+					return
+				}
+
+				const votingResultRes = await contracts.round.getVotingResult(
+					Number(params.roundId),
+					storage.my_address || '',
+				)
+
+				if (votingResultRes) {
+					setVotingResult(nearVotingResultToGPVoting(votingResultRes))
+				}
+
+				const pairRes = votingResultRes.picks.map(async (pick: NearPick) => {
+					const pair: NearPair = await contracts.round.getPairByIndex(
+						Number(params.roundId),
+						pick.pair_id,
+					)
+
+					return pair
+				})
+
+				const newPairs = await Promise.all(pairRes)
+				setPairsData(newPairs)
 			}
 		} catch (error: any) {
 			console.log('error fetch pairs', error)
 		}
 	}
 
+	const init = async () => {
+		await Promise.all([fetchResultRound(), fetchRoundData()])
+	}
+
 	useEffect(() => {
-		if (hasVoted) {
-			fetchResultRound()
-			fetchRoundData()
-		}
-	}, [hasVoted])
+		init()
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [params.roundId, storage.my_address])
 
 	return (
 		<div>
@@ -191,7 +321,8 @@ const IsVotedSection = ({
 					<div className="flex items-center space-x-2">
 						<IconCube size={18} className="fill-grantpicks-black-600" />
 						<p className="text-xs md:text-sm">
-							{votingResult?.picks.length} Matches
+							{votingResult?.picks?.length} Match
+							{(votingResult?.picks?.length as number) > 1 && 'es'}
 						</p>
 					</div>
 					<div className="flex items-center space-x-2">
@@ -224,6 +355,7 @@ const IsVotedSection = ({
 						pair={pair}
 						index={idx}
 						votingResult={votingResult}
+						setShowProjectDetailDrawer={setShowProjectDetailDrawer}
 					/>
 				))}
 			</div>

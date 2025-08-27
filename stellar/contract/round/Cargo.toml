@@ -9,6 +9,7 @@ crate-type = ["cdylib"]
 [dependencies]
 soroban-sdk = { workspace = true }
 soroban-token-sdk = { workspace = true }
+# soroban-fixed-point-math = "1.1.1"
 
 [dev-dependencies]
 soroban-sdk = { workspace = true, features = ["testutils"] }

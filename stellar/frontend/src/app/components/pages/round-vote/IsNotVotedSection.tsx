@@ -1,25 +1,19 @@
-import clsx from 'clsx'
 import React, { Dispatch, SetStateAction, useRef, useState } from 'react'
-import IconPlay from '../../svgs/IconPlay'
-import IconPause from '../../svgs/IconPause'
-import { useModalContext } from '@/app/providers/ModalProvider'
 import Button from '../../commons/Button'
-import IconEye from '../../svgs/IconEye'
 import IconArrowLeft from '../../svgs/IconArrowLeft'
 import IconArrowRight from '../../svgs/IconArrowRight'
 import { Pair } from 'round-client'
 import RoundVotePairItem from './RoundVotePairItem'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
-import CMDWallet from '@/lib/wallet'
 import { useWallet } from '@/app/providers/WalletProvider'
-import Contracts from '@/lib/contracts'
-import { Network } from '@/types/on-chain'
-import { voteRound, VoteRoundParams } from '@/services/on-chain/round'
+import { voteRound, VoteRoundParams } from '@/services/stellar/round'
 import { useParams } from 'next/navigation'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
-import { IProjectDetailOwner } from '@/app/round-vote/[roundId]/page'
+import { IProjectDetailOwner } from '@/app/rounds/round-vote/[roundId]/page'
+import useAppStorage from '@/stores/zustand/useAppStorage'
+import { NearPair, NearPick } from '@/services/near/type'
 
 const IsNotVotedSection = ({
 	setShowEvalGuide,
@@ -30,18 +24,14 @@ const IsNotVotedSection = ({
 	setShowEvalGuide: Dispatch<SetStateAction<boolean>>
 	setShowProjectDetailDrawer: Dispatch<SetStateAction<IProjectDetailOwner>>
 	setHasVoted: Dispatch<SetStateAction<boolean>>
-	pairsData: Pair[]
+	pairsData: Pair[] | NearPair[]
 }) => {
 	const params = useParams<{ roundId: string }>()
 	const [currBoxing, setCurrBoxing] = useState<number>(0)
 	const [selectedVotes, setSeletedVotes] = useState<string[]>([])
-	const video1Ref = useRef<HTMLVideoElement>(null)
-	const [video1Played, setVideo1Played] = useState<boolean>(false)
-	const video2Ref = useRef<HTMLVideoElement>(null)
-	const [video2Played, setVideo2Played] = useState<boolean>(false)
-	const { setVideoPlayerProps } = useModalContext()
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
-	const { stellarPubKey, stellarKit } = useWallet()
+	const { stellarKit, nearWallet } = useWallet()
+	const storage = useAppStorage()
 
 	const onPreviousBoxing = (currIdx: number) => {
 		if (currIdx > 0) {
@@ -59,45 +49,69 @@ const IsNotVotedSection = ({
 		}
 	}
 
+
 	const onVotePair = async () => {
 		try {
 			openPageLoading()
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
-			const voteParams: VoteRoundParams = {
-				round_id: BigInt(params.roundId),
-				voter: stellarPubKey,
-				picks: selectedVotes.map((selected, index) => ({
-					pair_id: pairsData[index].pair_id,
-					voted_project_id: BigInt(selected),
-				})),
+
+			if (storage.chainId === 'stellar') {
+				let contracts = storage.getStellarContracts()
+
+				if (!contracts) {
+					return
+				}
+
+				const stellarPair = pairsData as Pair[]
+				const voteParams: VoteRoundParams = {
+					round_id: BigInt(params.roundId),
+					voter: storage.my_address || '',
+					picks: selectedVotes.map((selected, index) => ({
+						pair_id: stellarPair[index].pair_id as number,
+						voted_project_id: BigInt(selected),
+					})),
+				}
+
+				const txVoteProject = await voteRound(voteParams, contracts)
+
+				await contracts.signAndSendTx(
+					stellarKit as StellarWalletsKit,
+					txVoteProject.toXDR(),
+					storage.my_address || '',
+				)
+				if (txVoteProject) {
+					toast.success('Round is voted successfully', {
+						style: toastOptions.success.style,
+					})
+					setHasVoted(true)
+				}
+			} else {
+				const contracts = storage.getNearContracts(nearWallet)
+
+				if (!contracts) {
+					return
+				}
+
+				const nearPairs = pairsData as NearPair[]
+
+				const picks: NearPick[] = selectedVotes.map((selected, index) => ({
+					pair_id: nearPairs[index].id,
+					voted_project: selected,
+				}))
+
+				const txVote = await contracts.round.castVote(
+					Number(params.roundId),
+					picks,
+				)
+
+				if (txVote) {
+					toast.success('Round is voted successfully', {
+						style: toastOptions.success.style,
+					})
+					setHasVoted(true)
+				}
 			}
-			console.log('vote params', voteParams)
-			const txVoteProject = await voteRound(voteParams, contracts)
-			const txHashApplyProject = await contracts.signAndSendTx(
-				stellarKit as StellarWalletsKit,
-				txVoteProject,
-				stellarPubKey,
-			)
-			if (txVoteProject) {
-				dismissPageLoading()
-				toast.success('Round is voted successfully', {
-					style: toastOptions.success.style,
-				})
-				setHasVoted(true)
-				// setSuccessApplyProjectInitProps((prev) => ({
-				// 	...prev,
-				// 	isOpen: true,
-				// 	applyProjectRes: txApplyProject.result,
-				// 	txHash: txHashApplyProject,
-				// 	roundData,
-				// }))
-			}
+
+			dismissPageLoading()
 		} catch (error: any) {
 			dismissPageLoading()
 			setHasVoted(false)
@@ -109,7 +123,7 @@ const IsNotVotedSection = ({
 	return (
 		<div className="flex flex-col items-center text-grantpicks-black-950">
 			<p className="text-xl md:text-[26px] lg:text-[32px] font-black text-grantpicks-black-300 mb-5 md:mb-8">
-				PAIR {currBoxing + 1} OF 5
+				PAIR {currBoxing + 1} OF {pairsData.length}
 			</p>
 			<p className="text-3xl md:text-4xl lg:text-[50px] font-black text-center mb-5 w-96 leading-[50px]">
 				WHICH ONE DO YOU CHOOSE?
@@ -123,7 +137,23 @@ const IsNotVotedSection = ({
 			>
 				See Evaluation guide
 			</span>
-			<div className="hidden md:flex items-center snap-x snap-mandatory overflow-x-auto mb-10 md:mb-12 lg:mb-16 no-scrollbar overflow-hidden max-w-full space-x-4 md:space-x-6">
+			{/* Mobile vertical stack with snap */}
+			<div className="flex md:hidden flex-col w-full space-y-6 px-4 mb-8 snap-y snap-mandatory overflow-y-auto h-[70vh]">
+				{pairsData.map((doc, idx) => (
+					<div key={`m-${idx}`} id={`boxing-${idx}`} className="w-full snap-start">
+						<RoundVotePairItem
+							index={idx}
+							data={doc}
+							setShowProjectDetailDrawer={setShowProjectDetailDrawer}
+							selectedPairs={selectedVotes}
+							setSelectedPairs={setSeletedVotes}
+						/>
+					</div>
+				))}
+			</div>
+
+			{/* Desktop horizontal scroller */}
+			<div className="hidden md:flex items-center snap-x snap-mandatory overflow-x-auto mb-10 md:mb-12 lg:mb-16 no-scrollbar max-w-full space-x-4 md:space-x-6">
 				{pairsData.map((doc, idx) => (
 					<RoundVotePairItem
 						key={idx}

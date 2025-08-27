@@ -1,13 +1,13 @@
 import { IconProps } from '@/types/icon'
 import React from 'react'
 
-const IconSearch = ({ size, className, onClick }: IconProps) => {
+const IconSearch = ({ size, className, onClick, color }: IconProps) => {
 	return (
 		<svg
 			width={size}
 			height={size}
 			viewBox="0 0 24 24"
-			fill="none"
+			fill={color}
 			xmlns="http://www.w3.org/2000/svg"
 			className={className}
 			onClick={onClick}

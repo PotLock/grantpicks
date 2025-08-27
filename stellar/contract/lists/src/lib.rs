@@ -10,9 +10,10 @@ mod owner_writer;
 mod registration_writer;
 mod storage;
 mod storage_key;
-mod test;
 mod upvotes_writer;
 mod utils;
 mod validation;
+mod error;
+mod test;
 
 pub use crate::internal::ListsContract;

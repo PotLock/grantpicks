@@ -58,7 +58,7 @@ export async function generateApplicator(params: string[], adminApp: App) {
 			fundings: [
 				{
 					amount: BigInt('1000'),
-					denomiation: 'XLM',
+					denomination: 'XLM',
 					description: 'Initial funding',
 					funded_ms: BigInt(Date.now()),
 					source: 'Stellar Development Foundation',

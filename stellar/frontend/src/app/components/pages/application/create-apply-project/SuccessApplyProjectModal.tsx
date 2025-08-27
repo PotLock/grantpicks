@@ -1,7 +1,5 @@
 import React from 'react'
 import { BaseModalProps } from '@/types/dialog'
-import { IGetRoundsResponse } from '@/types/on-chain'
-import moment from 'moment'
 import { useRouter } from 'next/navigation'
 import { prettyTruncate } from '@/utils/helper'
 import Link from 'next/link'
@@ -10,11 +8,13 @@ import IconCheck from '@/app/components/svgs/IconCheck'
 import Button from '@/app/components/commons/Button'
 import IconEye from '@/app/components/svgs/IconEye'
 import IconExternalLink from '@/app/components/svgs/IconExternalLink'
-import { Project, RoundApplication } from 'round-client'
+import { RoundApplication } from 'round-client'
+import { GPRound } from '@/models/round'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 
 interface SuccessApplyProjectModalProps extends BaseModalProps {
 	applyProjectRes?: RoundApplication
-	roundData?: IGetRoundsResponse
+	roundData?: GPRound
 	txHash?: string
 }
 
@@ -26,8 +26,10 @@ const SuccessApplyProjectModal = ({
 	txHash,
 }: SuccessApplyProjectModalProps) => {
 	const router = useRouter()
+	const storage = useAppStorage()
+
 	return (
-		<Modal isOpen={isOpen} onClose={onClose}>
+		<Modal isOpen={isOpen} onClose={onClose} closeOnBgClick>
 			<div className="w-11/12 md:w-[60vw] lg:w-[45vw] mx-auto bg-white rounded-xl shadow-md p-4 md:p-6">
 				<div className="flex flex-col items-center">
 					<div
@@ -49,7 +51,7 @@ const SuccessApplyProjectModal = ({
 						{roundData?.name}
 					</p>
 					<p className="text-xs font-normal text-grantpicks-black-600 text-center mb-4">
-						{roundData?.owner}
+						{roundData?.owner?.id}
 					</p>
 					<p className="text-sm font-normal text-grantpicks-black-600 text-center mb-4">
 						{roundData?.description}
@@ -60,7 +62,7 @@ const SuccessApplyProjectModal = ({
 						isFullWidth
 						onClick={() => {
 							onClose()
-							router.push(`/application`)
+							router.push(`/rounds`)
 						}}
 					>
 						<div className="flex items-center space-x-2">
@@ -78,7 +80,13 @@ const SuccessApplyProjectModal = ({
 							{prettyTruncate(txHash, 25)}
 						</p>
 						<Link
-							href={`https://stellar.expert/explorer/testnet/tx/${txHash}`}
+							href={
+								storage.chainId === 'stellar'
+									? `https://stellar.expert/explorer/${storage.network}/tx/${txHash}`
+									: storage.network === 'mainnet'
+										? `https://nearblocks.io/txns/${txHash}`
+										: `https://testnet.nearblocks.io/txns/${txHash}`
+							}
 							target="_blank"
 						>
 							<IconExternalLink

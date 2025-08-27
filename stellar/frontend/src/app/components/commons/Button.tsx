@@ -27,6 +27,7 @@ const Button = ({
 		else if (color === 'alpha-50')
 			return 'bg-grantpicks-alpha-50/5 text-grantpicks-black-950'
 		else if (color === 'red') return 'bg-grantpicks-red-600 text-white'
+		else if (color === 'purple') return 'purple-button text-white'
 	}
 
 	return (

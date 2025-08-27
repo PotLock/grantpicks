@@ -1,15 +1,6 @@
 use crate::soroban_sdk::{self, contracttype, Address, String, Vec};
 
 #[contracttype]
-#[derive(Debug, Clone, PartialEq, Eq, Copy)]
-pub enum ProjectStatus {
-    New = 0,
-    Approved = 1,
-    Rejected = 2,
-    Completed = 3,
-}
-
-#[contracttype]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Project {
     pub id: u128,
@@ -18,12 +9,11 @@ pub struct Project {
     pub name: String,
     pub overview: String,
     pub owner: Address,
-    pub payout_address: Address,
     pub contacts: Vec<ProjectContact>,
     pub contracts: Vec<ProjectContract>,
     pub team_members: Vec<ProjectTeamMember>,
     pub repositories: Vec<ProjectRepository>,
-    pub status: ProjectStatus,
+    pub funding_histories: Vec<ProjectFundingHistory>,
     pub submited_ms: u64,
     pub updated_ms: Option<u64>,
     pub admins: Vec<Address>,
@@ -36,7 +26,6 @@ pub struct CreateProjectParams {
     pub video_url: String,
     pub name: String,
     pub overview: String,
-    pub payout_address: Address,
     pub contacts: Vec<ProjectContact>,
     pub contracts: Vec<ProjectContract>,
     pub team_members: Vec<ProjectTeamMember>,
@@ -52,7 +41,6 @@ pub struct UpdateProjectParams {
     pub video_url: String,
     pub name: String,
     pub overview: String,
-    pub payout_address: Address,
     pub contacts: Vec<ProjectContact>,
     pub contracts: Vec<ProjectContract>,
     pub team_members: Vec<ProjectTeamMember>,
@@ -93,7 +81,15 @@ pub struct ProjectRepository {
 pub struct ProjectFundingHistory {
     pub source: String,
     pub amount: u128,
-    pub denomiation: String,
+    pub denomination: String,
     pub description: String,
     pub funded_ms: u64,
+}
+
+#[contracttype]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RoundPreCheck {
+    pub project_id: u128,
+    pub has_video: bool,
+    pub applicant: Address,
 }

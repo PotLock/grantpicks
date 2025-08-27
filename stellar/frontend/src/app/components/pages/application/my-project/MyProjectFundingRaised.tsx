@@ -2,23 +2,18 @@ import Button from '@/app/components/commons/Button'
 import Checkbox from '@/app/components/commons/CheckBox'
 import InputText from '@/app/components/commons/InputText'
 import InputTextArea from '@/app/components/commons/InputTextArea'
-import Menu from '@/app/components/commons/Menu'
 import IconAdd from '@/app/components/svgs/IconAdd'
 import IconCalendar from '@/app/components/svgs/IconCalendar'
 import IconTrash from '@/app/components/svgs/IconTrash'
-import IconUnfoldMore from '@/app/components/svgs/IconUnfoldMore'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { DEFAULT_IMAGE_URL } from '@/constants/project'
 import { toastOptions } from '@/constants/style'
-import Contracts from '@/lib/contracts'
-import CMDWallet from '@/lib/wallet'
 import {
 	IUpdateProjectParams,
 	updateProject,
-} from '@/services/on-chain/project-registry'
+} from '@/services/stellar/project-registry'
 import { CreateProjectStep4Data } from '@/types/form'
-import { Network } from '@/types/on-chain'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import React, { useEffect, useState } from 'react'
 import DatePicker from 'react-datepicker'
@@ -30,13 +25,24 @@ import {
 } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { useMyProject } from './MyProjectProvider'
+import useAppStorage from '@/stores/zustand/useAppStorage'
+import { NearSocialGPProject } from '@/services/near/type'
+
+interface IFunding {
+	id: string
+	source: string
+	date: Date
+	denomination: string
+	amount: string
+	description: string
+}
 
 const MyProjectFundingRaised = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()
-	const { stellarPubKey, stellarKit } = useWallet()
+	const { stellarPubKey, stellarKit, nearWallet } = useWallet()
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
-	const [showContractMenu, setShowContractMenu] = useState<boolean[]>([])
-	const [showContactMenu, setShowContactMenu] = useState<boolean[]>([])
+	const [currentFunding, setCurrentFunding] = useState<IFunding[]>([])
+	const [currentHaventRaised, setCurrentHaventRaised] = useState<boolean>(false)
 	const {
 		control,
 		register,
@@ -46,17 +52,7 @@ const MyProjectFundingRaised = () => {
 		reset,
 		formState: { errors },
 	} = useForm<CreateProjectStep4Data>({
-		defaultValues: {
-			funding_histories: [
-				{
-					source: '',
-					date: new Date(),
-					denomination: '',
-					amount: '',
-					description: '',
-				},
-			],
-		},
+		defaultValues: {},
 	})
 	const {
 		fields: fieldHistories,
@@ -67,61 +63,138 @@ const MyProjectFundingRaised = () => {
 		name: 'funding_histories',
 	})
 
+	const storage = useAppStorage()
+
 	const setDefaultData = () => {
 		if (projectData) {
-			setValue('funding_histories', [])
+			setValue(
+				'funding_histories',
+				projectData.funding_histories.map((histories: any) => ({
+					id: '',
+					source: histories.source,
+					date: new Date(Number(histories.funded_ms)),
+					denomination: histories.denomiation,
+					amount: histories.amount.toString(),
+					description: histories.description,
+				})),
+			)
+			setValue(
+				'is_havent_raised',
+				projectData.funding_histories.length === 0 ? true : false,
+			)
+			setCurrentFunding(
+				projectData.funding_histories.map((histories: any) => ({
+					id: '',
+					source: histories.source,
+					date: new Date(Number(histories.funded_ms)),
+					denomination: histories.denomiation,
+					amount: histories.amount.toString(),
+					description: histories.description,
+				})),
+			)
+			setCurrentHaventRaised(
+				projectData.funding_histories.length === 0 ? true : false,
+			)
 		}
 	}
 
 	const onSaveChanges: SubmitHandler<CreateProjectStep4Data> = async (data) => {
 		try {
 			openPageLoading()
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
-			const params: IUpdateProjectParams = {
-				...projectData,
-				name: projectData?.name || '',
-				overview: projectData?.overview || '',
-				fundings: [],
-				contacts: projectData?.contacts || [],
-				contracts: projectData?.contracts || [],
-				image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
-				payout_address: projectData?.payout_address || '',
-				repositories: projectData?.repositories || [],
-				team_members: projectData?.team_members || [],
-				video_url: projectData?.video_url || 'https://video.com/asdfgh',
-			}
-			const txUpdateProject = await updateProject(
-				stellarPubKey,
-				projectData?.id as bigint,
-				params,
-				contracts,
-			)
-			const txHashUpdateProject = await contracts.signAndSendTx(
-				stellarKit as StellarWalletsKit,
-				txUpdateProject,
-				stellarPubKey,
-			)
-			if (txHashUpdateProject) {
-				dismissPageLoading()
-				setTimeout(async () => {
-					await fetchProjectApplicant()
-				}, 2000)
-				toast.success(`Update project overview is succeed`, {
-					style: toastOptions.success.style,
-				})
+
+			if (storage.chainId === 'stellar') {
+				let contracts = storage.getStellarContracts()
+
+				if (!contracts) {
+					return
+				}
+
+				const params: IUpdateProjectParams = {
+					...projectData,
+					name: projectData?.name || '',
+					overview: projectData?.overview || '',
+					fundings: data.funding_histories.map((f) => ({
+						source: f.source,
+						denomination: f.denomination,
+						description: f.description,
+						amount: BigInt(f.amount),
+						funded_ms: BigInt(f.date.getTime() as number),
+					})),
+					contacts: projectData?.contacts || [],
+					contracts: projectData?.contracts || [],
+					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
+					repositories: projectData?.repositories || [],
+					team_members: projectData?.team_members || [],
+					video_url: projectData?.video_url || '',
+				}
+				const txUpdateProject = await updateProject(
+					stellarPubKey,
+					projectData?.id as bigint,
+					params,
+					contracts,
+				)
+				const txHashUpdateProject = await contracts.signAndSendTx(
+					stellarKit as StellarWalletsKit,
+					txUpdateProject.toXDR(),
+					stellarPubKey,
+				)
+				if (txHashUpdateProject) {
+					dismissPageLoading()
+					setTimeout(async () => {
+						await fetchProjectApplicant()
+					}, 2000)
+					toast.success(`Update project funding raised is succeed`, {
+						style: toastOptions.success.style,
+					})
+				}
+			} else {
+				const contracts = storage.getNearContracts(nearWallet)
+
+				if (!contracts) {
+					return
+				}
+
+				const params: NearSocialGPProject = {
+					name: projectData?.name || '',
+					overview: projectData?.overview || '',
+					fundings: data.funding_histories.map((f) => ({
+						source: f.source,
+						denomination: f.denomination,
+						description: f.description,
+						amount: f.amount.toString(),
+						funded_ms: parseInt(f.date.getTime().toString()),
+					})),
+					contacts: projectData?.contacts || [],
+					contracts: projectData?.contracts || [],
+					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
+					repositories: projectData?.repositories || [],
+					team_members:
+						(projectData?.team_members as unknown as string[]) || [],
+					video_url: projectData?.video_url || '',
+					owner: projectData?.owner || '',
+				}
+
+				const txUpdateProject = await contracts.near_social.setProjectData(
+					storage.my_address || '',
+					params,
+				)
+
+				if (txUpdateProject) {
+					dismissPageLoading()
+					setTimeout(async () => {
+						await fetchProjectApplicant()
+					}, 2000)
+					toast.success(`Update project media is succeed`, {
+						style: toastOptions.success.style,
+					})
+				}
 			}
 		} catch (error: any) {
 			dismissPageLoading()
-			toast.error(`Update project overview is failed`, {
+			toast.error(`Update project funding raised is failed`, {
 				style: toastOptions.error.style,
 			})
-			console.log('error to update overview project', error)
+			console.log('error to update funding raised project', error)
 		}
 	}
 
@@ -135,12 +208,9 @@ const MyProjectFundingRaised = () => {
 		<div className="w-full lg:w-[70%] border border-black/10 bg-white rounded-xl text-grantpicks-black-950">
 			<div className="p-3 md:p-5">
 				<p className="text-lg md:text-xl lg:text-2xl font-semibold text-grantpicks-black-950 mb-6">
-					Links
+					Funding Raised
 				</p>
 				<div className="py-4 md:py-6">
-					<p className="text-grantpicks-black-950 mb-2">
-						Smart Contracts <span className="text-grantpicks-red-600">*</span>
-					</p>
 					<div className="flex flex-col space-y-4 mb-6">
 						{fieldHistories.map((history, index) => (
 							<div
@@ -151,6 +221,9 @@ const MyProjectFundingRaised = () => {
 									size={24}
 									className="fill-grantpicks-red-400 cursor-pointer hover:opacity-70 transition absolute top-3 right-3"
 									onClick={() => {
+										if (fieldHistories.length <= 1) {
+											setValue('is_havent_raised', true)
+										}
 										removeHistory(index)
 									}}
 								/>
@@ -162,7 +235,7 @@ const MyProjectFundingRaised = () => {
 									})}
 									errorMessage={
 										errors?.funding_histories?.[index]?.source?.type ===
-										'required' ? (
+											'required' ? (
 											<p className="text-red-500 text-xs mt-1 ml-2">
 												Source is required
 											</p>
@@ -207,7 +280,7 @@ const MyProjectFundingRaised = () => {
 									})}
 									errorMessage={
 										errors?.funding_histories?.[index]?.denomination?.type ===
-										'required' ? (
+											'required' ? (
 											<p className="text-red-500 text-xs mt-1 ml-2">
 												Denomination is required
 											</p>
@@ -222,7 +295,7 @@ const MyProjectFundingRaised = () => {
 									})}
 									errorMessage={
 										errors?.funding_histories?.[index]?.amount?.type ===
-										'required' ? (
+											'required' ? (
 											<p className="text-red-500 text-xs mt-1 ml-2">
 												Amount is required
 											</p>
@@ -239,7 +312,7 @@ const MyProjectFundingRaised = () => {
 										})}
 										errorMessage={
 											errors.funding_histories?.[index]?.description?.type ===
-											'required' ? (
+												'required' ? (
 												<p className="text-red-500 text-xs mt-1 ml-2">
 													Description is required
 												</p>
@@ -254,29 +327,45 @@ const MyProjectFundingRaised = () => {
 						<Checkbox
 							label="We haven't raised any funds"
 							checked={watch().is_havent_raised}
-							onChange={(e) => setValue('is_havent_raised', e.target.checked)}
-						/>
-						<Button
-							color="transparent"
-							className="!bg-transparent !border !border-black/10"
-							onClick={() => {
-								appendHistory({
-									id: '',
-									source: '',
-									date: new Date(),
-									denomination: '',
-									amount: '',
-									description: '',
-								})
+							onChange={(e) => {
+								setValue('is_havent_raised', e.target.checked)
+								if (watch().is_havent_raised) {
+									removeHistory()
+								} else {
+									appendHistory({
+										id: '',
+										source: '',
+										date: new Date(),
+										denomination: '',
+										amount: '',
+										description: '',
+									})
+								}
 							}}
-						>
-							<div className="flex items-center space-x-2">
-								<IconAdd size={18} className="fill-grantpicks-black-400" />
-								<p className="text-sm font-semibold text-grantpicks-black-950">
-									Add more
-								</p>
-							</div>
-						</Button>
+						/>
+						{!watch().is_havent_raised && (
+							<Button
+								color="transparent"
+								className="!bg-transparent !border !border-black/10"
+								onClick={() => {
+									appendHistory({
+										id: '',
+										source: '',
+										date: new Date(),
+										denomination: '',
+										amount: '',
+										description: '',
+									})
+								}}
+							>
+								<div className="flex items-center space-x-2">
+									<IconAdd size={18} className="fill-grantpicks-black-400" />
+									<p className="text-sm font-semibold text-grantpicks-black-950">
+										Add more
+									</p>
+								</div>
+							</Button>
+						)}
 					</div>
 				</div>
 			</div>
@@ -285,8 +374,13 @@ const MyProjectFundingRaised = () => {
 					<Button
 						color="white"
 						isFullWidth
-						onClick={() => {}}
-						className="!py-3 !border !border-grantpicks-black-400"
+						onClick={() => setDefaultData()}
+						className="!py-3 !border !border-grantpicks-black-400 disabled:cursor-not-allowed"
+						isDisabled={
+							JSON.stringify(watch().funding_histories) ===
+							JSON.stringify(currentFunding) &&
+							watch().is_havent_raised === currentHaventRaised
+						}
 					>
 						Discard
 					</Button>
@@ -296,7 +390,12 @@ const MyProjectFundingRaised = () => {
 						color="black-950"
 						isFullWidth
 						onClick={handleSubmit(onSaveChanges)}
-						className="!py-3"
+						className="!py-3 disabled:cursor-not-allowed"
+						isDisabled={
+							JSON.stringify(watch().funding_histories) ===
+							JSON.stringify(currentFunding) &&
+							watch().is_havent_raised === currentHaventRaised
+						}
 					>
 						Save changes
 					</Button>

@@ -13,21 +13,28 @@ import Contracts from '@/lib/contracts'
 import {
 	getProjects,
 	IGetProjectsResponse,
-} from '@/services/on-chain/project-registry'
-import { Network } from '@/types/on-chain'
+} from '@/services/stellar/project-registry'
 import { LIMIT_SIZE } from '@/constants/query'
 import useSWRInfinite from 'swr/infinite'
 import InfiniteScroll from 'react-infinite-scroll-component'
 import IconLoading from '../../svgs/IconLoading'
 import { UseFieldArrayAppend, UseFieldArrayRemove } from 'react-hook-form'
-import { CreateRoundData } from '@/types/form'
+import { CreateRoundData, UpdateRoundData } from '@/types/form'
 import { prettyTruncate } from '@/utils/helper'
+import ProjectDetailDrawer from '../round-vote/ProjectDetailDrawer'
+import { IProjectDetailOwner } from '@/app/rounds/round-vote/[roundId]/page'
+import { Project } from 'project-registry-client'
+import toast from 'react-hot-toast'
+import { toastOptions } from '@/constants/style'
+import useAppStorage from '@/stores/zustand/useAppStorage'
+
+type RoundData = CreateRoundData | UpdateRoundData
 
 interface AddProjectsModalProps extends BaseModalProps {
 	selectedProjects: IGetProjectsResponse[]
 	setSelectedProjects: Dispatch<SetStateAction<IGetProjectsResponse[]>>
-	append: UseFieldArrayAppend<CreateRoundData, 'projects'>
-	remove: UseFieldArrayRemove
+	append?: UseFieldArrayAppend<any, 'projects'>
+	remove?: UseFieldArrayRemove
 }
 
 const AddProjectsModal = ({
@@ -43,19 +50,63 @@ const AddProjectsModal = ({
 		IGetProjectsResponse[]
 	>([])
 	const [searchProject, setSearchProject] = useState<string>('')
+	const [showProjectDetailDrawer, setShowProjectDetailDrawer] =
+		useState<IProjectDetailOwner>({ isOpen: false, project: null })
+	const storage = useAppStorage()
+
+	useEffect(() => {
+	}, [showProjectDetailDrawer])
+
 	const onFetchProjects = async (key: { skip: number; limit: number }) => {
-		const contracts = new Contracts(
-			process.env.NETWORK_ENV as Network,
-			undefined,
-		)
-		const resProjects = await getProjects(
-			{
-				skip: key.skip,
-				limit: key.limit,
-			},
-			contracts,
-		)
-		return resProjects
+		if (storage.chainId == 'stellar') {
+			const contracts = storage.getStellarContracts()
+
+			if (!contracts) {
+				return []
+			}
+
+			const resProjects = await getProjects(
+				{
+					skip: key.skip,
+					limit: key.limit,
+				},
+				contracts,
+			)
+			return resProjects
+		} else {
+			const contracts = storage.getNearContracts(null)
+			if (!contracts) {
+				return []
+			}
+
+			const listId = process.env.NEAR_PROJECTS_LIST_ID || '1'
+
+			const resProjects = await contracts.lists.getRegistrations(
+				listId,
+				key.skip,
+				key.limit,
+			)
+
+			const projectAddresses = resProjects.map(
+				(project: any) => project.registrant_id,
+			)
+
+			const getProjectsDetail = projectAddresses.map((address: string) => {
+				return contracts.near_social.getProjectData(address)
+			})
+
+			const resProjectsDetail = await Promise.all(getProjectsDetail)
+
+			const formated = resProjectsDetail.map((data: any, index: number) => {
+				const json =
+					data[`${projectAddresses[index]}`]['profile']['gp_project'] || '{}'
+				const project = JSON.parse(json)
+
+				return project
+			})
+
+			return formated
+		}
 	}
 	const getKey = (
 		pageIndex: number,
@@ -67,6 +118,7 @@ const AddProjectsModal = ({
 			url: `get-projects`,
 			skip: pageIndex,
 			limit: LIMIT_SIZE,
+			chainId: storage.chainId,
 		}
 	}
 	const {
@@ -79,11 +131,11 @@ const AddProjectsModal = ({
 		revalidateFirstPage: false,
 	})
 	const projects = projectData
-		? ([] as IGetProjectsResponse[]).concat(...projectData)
+		? ([] as IGetProjectsResponse[]).concat(
+			...(projectData as any as IGetProjectsResponse[]),
+		)
 		: []
-	const hasMore = projectData
-		? projectData[projectData.length - 1].length >= LIMIT_SIZE
-		: false
+	const hasMore = projectData ? projectData.length >= LIMIT_SIZE : false
 
 	useEffect(() => {
 		if (isOpen) {
@@ -93,7 +145,7 @@ const AddProjectsModal = ({
 
 	return (
 		<Modal isOpen={isOpen} onClose={onClose}>
-			<div className="bg-white w-11/12 md:w-[60vw] lg:w-[45vw] mx-auto rounded-xl border border-black/10 shadow">
+			<div className="bg-white w-11/12 md:w-[35vw] lg:w-[35vw] mx-auto rounded-xl border border-black/10 shadow">
 				<div className="p-4 bg-grantpicks-black-50 flex items-center justify-between rounded-t-xl">
 					<div>
 						<p className="text-base font-bold text-grantpicks-black-950">
@@ -117,20 +169,29 @@ const AddProjectsModal = ({
 						<div className="overflow-y-auto max-h-[20vh]">
 							{tempSelectedProjects.map((selected, index) => (
 								<div
-									className="flex items-center justify-between p-2 cursor-pointer hover:bg-grantpicks-black-200 transition"
+									className="flex items-center justify-between p-2 hover:bg-grantpicks-black-200 transition"
 									key={index}
 								>
 									<div className="flex items-center space-x-2">
 										<Image
-											src="/assets/images/ava-1.png"
+											src={`https://www.tapback.co/api/avatar/${selected.owner}`}
 											alt=""
 											className="rounded-full object-fill"
 											width={24}
 											height={24}
 										/>
-										<p className="text-base font-normal">
+										<button
+											onClick={() => {
+												setShowProjectDetailDrawer((prev) => ({
+													...prev,
+													isOpen: true,
+													project: selected as Project,
+												}))
+											}}
+											className="text-base font-normal"
+										>
 											{prettyTruncate(selected.name, 20, 'address')}
-										</p>
+										</button>
 									</div>
 									<IconTrash
 										size={24}
@@ -190,26 +251,40 @@ const AddProjectsModal = ({
 									</div>
 								}
 							>
-								{projects?.map((project, index) => (
-									<div
-										className="flex items-center space-x-2 p-2 cursor-pointer hover:bg-grantpicks-black-200 transition"
-										key={index}
-										onClick={() =>
-											setTempSelectedProjects((prev) => [...prev, project])
-										}
-									>
-										<Image
-											src={project.image_url || `/assets/images/ava-1.png`}
-											alt=""
-											className="rounded-full object-fill"
-											width={24}
-											height={24}
-										/>
-										<p className="text-base font-normal">
-											{prettyTruncate(project.name, 20, 'address')}
-										</p>
-									</div>
-								))}
+								{projects
+									.filter(
+										(project) =>
+											!tempSelectedProjects
+												.map((tsp) => tsp.owner)
+												.includes(project.owner),
+									)
+									?.map((project, index) => (
+										<div
+											className="flex items-center space-x-2 p-2 cursor-pointer hover:bg-grantpicks-black-200 transition"
+											key={index}
+											onClick={() =>
+												tempSelectedProjects.length < 10
+													? setTempSelectedProjects((prev) => [
+														project,
+														...prev,
+													])
+													: toast.error('Max. 10 projects', {
+														style: toastOptions.error.style,
+													})
+											}
+										>
+											<Image
+												src={`https://www.tapback.co/api/avatar/${project.owner}`}
+												alt=""
+												className="rounded-full object-fill"
+												width={24}
+												height={24}
+											/>
+											<p className="text-base font-normal">
+												{prettyTruncate(project.name, 20, 'address')}
+											</p>
+										</div>
+									))}
 							</InfiniteScroll>
 						</div>
 					)}
@@ -231,6 +306,18 @@ const AddProjectsModal = ({
 					</Button>
 				</div>
 			</div>
+			{
+				<ProjectDetailDrawer
+					isOpen={showProjectDetailDrawer?.isOpen || false}
+					onClose={() =>
+						setShowProjectDetailDrawer((prev) => ({
+							...prev,
+							isOpen: false,
+						}))
+					}
+					projectData={showProjectDetailDrawer.project || undefined}
+				/>
+			}
 		</Modal>
 	)
 }

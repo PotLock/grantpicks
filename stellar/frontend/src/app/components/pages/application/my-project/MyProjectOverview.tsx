@@ -10,7 +10,7 @@ import CMDWallet from '@/lib/wallet'
 import {
 	IUpdateProjectParams,
 	updateProject,
-} from '@/services/on-chain/project-registry'
+} from '@/services/stellar/project-registry'
 import { CreateProjectStep1Data } from '@/types/form'
 import { Network } from '@/types/on-chain'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
@@ -18,29 +18,40 @@ import React, { useEffect } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { useMyProject } from './MyProjectProvider'
+import useAppStorage from '@/stores/zustand/useAppStorage'
+import {
+	NearProjectFundingHistory,
+	NearSocialGPProject,
+} from '@/services/near/type'
 
 const MyProjectOverview = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()
-	const { stellarPubKey, stellarKit } = useWallet()
+	const { stellarPubKey, stellarKit, nearWallet } = useWallet()
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const {
 		register,
 		handleSubmit,
 		setValue,
+		watch,
 		formState: { errors },
 	} = useForm<CreateProjectStep1Data>({
 		defaultValues: {
 			title: projectData?.name,
-			project_id: projectData?.id.toString(),
+			project_id: projectData?.id ? projectData.id.toString() : '',
 			description: projectData?.overview,
 			considering_desc: projectData?.overview,
 		},
 	})
+	const storage = useAppStorage()
 
 	const setDefaultData = () => {
 		if (projectData) {
 			setValue('title', projectData.name)
-			setValue('project_id', projectData.id.toString())
+
+			if (projectData.id) {
+				setValue('project_id', projectData.id.toString())
+			}
+
 			setValue('description', projectData.overview)
 			setValue('considering_desc', projectData.overview)
 		}
@@ -55,45 +66,83 @@ const MyProjectOverview = () => {
 	const onSaveChanges: SubmitHandler<CreateProjectStep1Data> = async (data) => {
 		try {
 			openPageLoading()
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
-			const params: IUpdateProjectParams = {
-				...projectData,
-				name: data.title,
-				overview: data.description,
-				fundings: [],
-				contacts: projectData?.contacts || [],
-				contracts: projectData?.contracts || [],
-				image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
-				payout_address: projectData?.payout_address || '',
-				repositories: projectData?.repositories || [],
-				team_members: projectData?.team_members || [],
-				video_url: projectData?.video_url || 'https://video.com/asdfgh',
-			}
-			const txUpdateProject = await updateProject(
-				stellarPubKey,
-				projectData?.id as bigint,
-				params,
-				contracts,
-			)
-			const txHashUpdateProject = await contracts.signAndSendTx(
-				stellarKit as StellarWalletsKit,
-				txUpdateProject,
-				stellarPubKey,
-			)
-			if (txHashUpdateProject) {
-				dismissPageLoading()
-				setTimeout(async () => {
-					await fetchProjectApplicant()
-				}, 2000)
-				toast.success(`Update project overview is succeed`, {
-					style: toastOptions.success.style,
-				})
+
+			if (storage.chainId === 'stellar') {
+				let contracts = storage.getStellarContracts()
+
+				if (!contracts) {
+					return
+				}
+
+				const params: IUpdateProjectParams = {
+					...projectData,
+					name: data.title,
+					overview: data.description,
+					fundings: [],
+					contacts: projectData?.contacts || [],
+					contracts: projectData?.contracts || [],
+					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
+					repositories: projectData?.repositories || [],
+					team_members: projectData?.team_members || [],
+					video_url: projectData?.video_url || 'https://video.com/asdfgh',
+				}
+				const txUpdateProject = await updateProject(
+					stellarPubKey,
+					projectData?.id as bigint,
+					params,
+					contracts,
+				)
+				const txHashUpdateProject = await contracts.signAndSendTx(
+					stellarKit as StellarWalletsKit,
+					txUpdateProject.toXDR(),
+					stellarPubKey,
+				)
+				if (txHashUpdateProject) {
+					dismissPageLoading()
+					setTimeout(async () => {
+						await fetchProjectApplicant()
+					}, 2000)
+					toast.success(`Update project overview is succeed`, {
+						style: toastOptions.success.style,
+					})
+				}
+			} else {
+				const contracts = storage.getNearContracts(nearWallet)
+
+				if (!contracts) {
+					return
+				}
+
+				const params: NearSocialGPProject = {
+					name: data.title || '',
+					overview: data.description || '',
+					fundings:
+						(projectData?.funding_histories as unknown as NearProjectFundingHistory[]) ||
+						[],
+					contacts: projectData?.contacts || [],
+					contracts: projectData?.contracts || [],
+					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
+					repositories: projectData?.repositories || [],
+					team_members:
+						(projectData?.team_members as unknown as string[]) || [],
+					video_url: projectData?.video_url || '',
+					owner: projectData?.owner || '',
+				}
+
+				const txUpdateProject = await contracts.near_social.setProjectData(
+					storage.my_address || '',
+					params,
+				)
+
+				if (txUpdateProject) {
+					dismissPageLoading()
+					setTimeout(async () => {
+						await fetchProjectApplicant()
+					}, 2000)
+					toast.success(`Update project overview is succeed`, {
+						style: toastOptions.success.style,
+					})
+				}
 			}
 		} catch (error: any) {
 			dismissPageLoading()
@@ -114,6 +163,7 @@ const MyProjectOverview = () => {
 					<InputText
 						required
 						label="Project Title"
+						maxLength={80}
 						{...register('title', { required: true })}
 						errorMessage={
 							errors.title?.type === 'required' ? (
@@ -123,23 +173,12 @@ const MyProjectOverview = () => {
 							) : undefined
 						}
 					/>
-					<InputText
-						required
-						disabled
-						customLabel={
-							<p className="text-sm font-semibold text-grantpicks-black-950 mb-2">
-								Project ID{' '}
-								<span className="text-sm font-normal text-grantpicks-black-600">
-									(For DAO Only)
-								</span>
-							</p>
-						}
-						{...register('project_id')}
-					/>
 					<InputTextArea
 						label="A brief Description"
 						required
 						rows={2}
+						maxLength={300}
+						hintLabel="Max. 300 characters"
 						{...register('description', { required: true })}
 						errorMessage={
 							errors.description?.type === 'required' ? (
@@ -153,6 +192,8 @@ const MyProjectOverview = () => {
 						label="Why do you consider yourself a public good?"
 						required
 						rows={2}
+						maxLength={300}
+						hintLabel="Max. 300 characters"
 						{...register('considering_desc', { required: true })}
 						errorMessage={
 							errors.considering_desc?.type === 'required' ? (
@@ -170,7 +211,12 @@ const MyProjectOverview = () => {
 						color="white"
 						isFullWidth
 						onClick={() => setDefaultData()}
-						className="!py-3 !border !border-grantpicks-black-400"
+						className="!py-3 !border !border-grantpicks-black-400 disabled:cursor-not-allowed"
+						isDisabled={
+							projectData?.name === watch().title &&
+							projectData?.overview === watch().description &&
+							projectData?.overview === watch().considering_desc
+						}
 					>
 						Discard
 					</Button>
@@ -180,7 +226,12 @@ const MyProjectOverview = () => {
 						color="black-950"
 						isFullWidth
 						onClick={handleSubmit(onSaveChanges)}
-						className="!py-3"
+						className="!py-3 disabled:cursor-not-allowed"
+						isDisabled={
+							projectData?.name === watch().title &&
+							projectData?.overview === watch().description &&
+							projectData?.overview === watch().considering_desc
+						}
 					>
 						Save changes
 					</Button>

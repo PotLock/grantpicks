@@ -8,9 +8,10 @@ export type TColor =
 	| 'white'
 	| 'transparent'
 	| 'red'
+	| 'purple'
 
 export interface ButtonProps {
-	color: TColor
+	color?: TColor
 	children: React.ReactNode
 	onClick: MouseEventHandler<HTMLButtonElement>
 	isDisabled?: boolean

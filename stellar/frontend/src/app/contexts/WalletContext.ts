@@ -20,4 +20,5 @@ export const WalletContext = createContext<IWalletContext>({
 	stellarKit: null,
 	stellarPubKey: '',
 	onOpenStellarWallet: (onSelected?: (option: ISupportedWallet) => void) => {},
+	profileData: undefined,
 })

@@ -4,9 +4,10 @@ import {
 	RPC_EXPLORER,
 	SOROBAN_RPC_URL,
 } from '@/constants/on-chain'
+import { GPRound } from '@/models/round'
 import { ENetworkEnv, Networks, SubmitTxProps } from '@/types/on-chain'
 import axios from 'axios'
-import { Horizon, SorobanRpc, TransactionBuilder } from 'round-client'
+import { Horizon,  TransactionBuilder } from 'round-client'
 
 export const capitalizeFirstLetter = (str: string) => {
 	return str.charAt(0).toUpperCase() + str.slice(1)
@@ -25,6 +26,18 @@ export const prettyTruncate = (str = '', len = 8, type?: string) => {
 		return `${str.slice(0, len)}...`
 	}
 	return str
+}
+
+export const formatNearAddress = (address: string | undefined) => {
+	if (address) {
+		if (address.includes('near') || address.includes('testnet')) {
+			return address
+		} else {
+			return prettyTruncate(address, 10, 'address')
+		}
+	}
+
+	return ''
 }
 
 export const formatStroopToXlm = (amount: bigint) => {
@@ -46,16 +59,16 @@ export const parseToStroop = (amount: string) => {
 	return res
 }
 
-export const getSorobanServer = () => {
-	return new SorobanRpc.Server(
-		getSorobanConfig(envVarConfigs.NETWORK_ENV as string)?.rpc_url as string,
-		{
-			allowHttp: getSorobanConfig(
-				envVarConfigs.NETWORK_ENV as string,
-			)?.rpc_url.startsWith('http://'),
-		},
-	)
-}
+// export const getSorobanServer = () => {
+// 	return new Soroban(
+// 		getSorobanConfig(envVarConfigs.NETWORK_ENV as string)?.rpc_url as string,
+// 		{
+// 			allowHttp: getSorobanConfig(
+// 				envVarConfigs.NETWORK_ENV as string,
+// 			)?.rpc_url.startsWith('http://'),
+// 		},
+// 	)
+// }
 
 export const getHorizonServer = () => {
 	return new Horizon.Server(
@@ -97,14 +110,37 @@ export const submitTx = async ({
 	networkPassphrase,
 	server,
 }: SubmitTxProps) => {
-	if (server instanceof SorobanRpc.Server) {
-		const tx = TransactionBuilder.fromXDR(signedXDR, networkPassphrase)
-		const sendResponse = await server.sendTransaction(tx)
-		return sendResponse.hash
-	} else if (server instanceof Horizon.Server) {
+	if (server instanceof Horizon.Server) {
 		const tx = TransactionBuilder.fromXDR(signedXDR, networkPassphrase)
 		const sendResponse = await server.submitTransaction(tx)
+
 		return sendResponse.hash
+	} else {
+		// const tx = TransactionBuilder.fromXDR(signedXDR, networkPassphrase)
+
+		// let sendResponse
+		// let getTx
+		// sendResponse = await server.sendTransaction(tx)
+
+		// if (sendResponse.status == 'ERROR' && sendResponse.errorResult) {
+		// 	throw new Error('Transaction failed', {
+		// 		cause: sendResponse.errorResult?.result(),
+		// 	})
+		// }
+
+		// if (sendResponse.status == 'TRY_AGAIN_LATER') {
+		// 	throw new Error('Transaction failed. Try again later')
+		// }
+
+		// getTx = await server.getTransaction(sendResponse.hash)
+
+		// while (sendResponse.status == 'PENDING' && getTx.status == 'NOT_FOUND') {
+		// 	getTx = await server.getTransaction(sendResponse.hash)
+		// 	await sleep(200)
+		// }
+		
+		// return sendResponse.hash
+		throw new Error('You are using the wrong server')
 	}
 }
 
@@ -122,7 +158,17 @@ export const fetchYoutubeIframe = async (
 	height?: number,
 ) => {
 	const ytRes = await axios.get(
-		`https://www.youtube.com/oembed?url=${linkUrl}&format=json&maxwidth=${width - 50}&maxheight=${height || (9 / 6) * width}`,
+		`https://www.youtube.com/oembed?url=${linkUrl}&format=json&maxwidth=${width}&maxheight=${Math.floor(height || (9 / 6) * width)}`,
 	)
 	return ytRes?.data
+}
+
+export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+export const extractChainId = (round: GPRound) => {
+	if (round.chain === 'stellar') {
+		return 'stellar'
+	} else {
+		return 'near'
+	}
 }

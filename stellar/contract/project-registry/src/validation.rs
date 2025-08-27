@@ -1,5 +1,5 @@
 use crate::{
-    admin::{self, read_contract_owner},
+    admin::read_contract_owner,
     data_type::{CreateProjectParams, Project, UpdateProjectParams},
     error::Error,
     project_writer::is_applied,
@@ -11,9 +11,9 @@ pub fn validate_application(env: &Env, project_params: &CreateProjectParams) {
         panic_with_error!(env, Error::EmptyAdmins);
     }
 
-    if project_params.contacts.is_empty() {
-        panic_with_error!(env, Error::EmptyContacts);
-    }
+    // if project_params.contacts.is_empty() {
+    //     panic_with_error!(env, Error::EmptyContacts);
+    // }
 
     if project_params.image_url.is_empty() {
         panic_with_error!(env, Error::EmptyImageUrl);
@@ -29,9 +29,9 @@ pub fn validate_application(env: &Env, project_params: &CreateProjectParams) {
 }
 
 pub fn validate_update_project(env: &Env, update_params: &UpdateProjectParams) {
-    if update_params.contacts.is_empty() {
-        panic_with_error!(env, Error::EmptyContacts);
-    }
+    // if update_params.contacts.is_empty() {
+    //     panic_with_error!(env, Error::EmptyContacts);
+    // }
 
     if update_params.image_url.is_empty() {
         panic_with_error!(env, Error::EmptyImageUrl);
@@ -56,14 +56,8 @@ pub fn validate_owner_or_admin(env: &Env, admin: &Address, project: &Project) {
     }
 }
 
-pub fn validate_owner(env: &Env, caller: &Address, project: &Project) {
-    if &project.owner != caller {
-        panic_with_error!(env, Error::OwnerOnly);
-    }
-}
-
 pub fn validate_contract_owner(env: &Env, caller: &Address) {
-    let contract_admin = read_contract_owner(env);
+    let contract_admin = read_contract_owner(env).unwrap();
 
     if contract_admin != caller.clone() {
         panic_with_error!(env, Error::ContractOwnerOnly);

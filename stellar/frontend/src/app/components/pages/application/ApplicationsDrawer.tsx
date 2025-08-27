@@ -9,19 +9,11 @@ import IconCalendar from '../../svgs/IconCalendar'
 import IconCheckCircle from '../../svgs/IconCheckCircle'
 import { useWallet } from '@/app/providers/WalletProvider'
 import useSWRInfinite from 'swr/infinite'
-import { LIMIT_SIZE } from '@/constants/query'
-import CMDWallet from '@/lib/wallet'
-import Contracts from '@/lib/contracts'
+import { LIMIT_SIZE, LIMIT_SIZE_CONTRACT } from '@/constants/query'
 import {
-	IGetRoundApplicationsResponse,
-	IGetRoundsResponse,
-	Network,
-} from '@/types/on-chain'
-import {
-	getRoundApplications,
 	ReviewApplicationParams,
 	reviewApplicationRound,
-} from '@/services/on-chain/round'
+} from '@/services/stellar/round'
 import InfiniteScroll from 'react-infinite-scroll-component'
 import IconLoading from '../../svgs/IconLoading'
 import moment from 'moment'
@@ -29,12 +21,19 @@ import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
-import { prettyTruncate } from '@/utils/helper'
+import { extractChainId, prettyTruncate } from '@/utils/helper'
 import ApplicationAcceptModal from './ApplicationAcceptModal'
 import ApplicationRejectModal from './ApplicationRejectModal'
+import useAppStorage from '@/stores/zustand/useAppStorage'
+import Image from 'next/image'
+import { GPRound } from '@/models/round'
+import { usePotlockService } from '@/services/potlock'
+import { GPApplication } from '@/models/application'
+import { NearProjectApplication } from '@/services/near/type'
+import { RoundApplication } from 'round-client'
 
 interface ApplicationsDrawerProps extends IDrawerProps {
-	doc: IGetRoundsResponse
+	doc: GPRound
 }
 
 const ApplicationItem = ({
@@ -44,52 +43,80 @@ const ApplicationItem = ({
 	roundData,
 	mutate,
 }: {
-	type: 'Pending' | 'Approved' | 'Rejected' | 'Blacklisted'
+	type: string
 	index: number
-	item: IGetRoundApplicationsResponse
-	roundData: IGetRoundsResponse
+	item: GPApplication
+	roundData: GPRound
 	mutate: any
 }) => {
-	const { stellarPubKey, stellarKit } = useWallet()
+	const { stellarPubKey, stellarKit, nearWallet } = useWallet()
 	const { dismissPageLoading, openPageLoading } = useGlobalContext()
 	const [openAcceptModal, setOpenAcceptModal] = useState<boolean>(false)
 	const [openRejectModal, setOpenRejectModal] = useState<boolean>(false)
+	const storage = useAppStorage()
 
 	const onAcceptReject = async (type: 'accept' | 'reject', note: string) => {
 		try {
 			openPageLoading()
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
-			const params: ReviewApplicationParams = {
-				round_id: roundData.id,
-				caller: stellarPubKey,
-				applicant: item.applicant_id,
-				status: {
-					tag: type === 'accept' ? 'Approved' : 'Rejected',
-					values: void 0,
-				},
-				note,
-			}
-			const txChangeProjectStatus = await reviewApplicationRound(
-				params,
-				contracts,
-			)
-			const txHash = await contracts.signAndSendTx(
-				stellarKit as StellarWalletsKit,
-				txChangeProjectStatus,
-				stellarPubKey,
-			)
-			if (txHash) {
-				dismissPageLoading()
-				toast.success(`Change status to ${type} is succeed`, {
-					style: toastOptions.success.style,
-				})
-				await mutate()
+
+			if (storage.chainId === 'stellar') {
+				let contracts = storage.getStellarContracts()
+
+				if (!contracts) {
+					return
+				}
+
+				const params: ReviewApplicationParams = {
+					round_id: BigInt(roundData.on_chain_id),
+					caller: stellarPubKey,
+					applicant: item.applicant.id,
+					status: {
+						tag: type === 'accept' ? 'Approved' : 'Rejected',
+						values: void 0,
+					},
+					note,
+				}
+				const txChangeProjectStatus = await reviewApplicationRound(
+					params,
+					contracts,
+				)
+				const txHash = await contracts.signAndSendTx(
+					stellarKit as StellarWalletsKit,
+					txChangeProjectStatus.toXDR(),
+					stellarPubKey,
+				)
+				if (txHash) {
+					dismissPageLoading()
+					toast.success(`Change status to ${type} is succeed`, {
+						style: toastOptions.success.style,
+					})
+					if (type === 'accept') setOpenAcceptModal(false)
+					else setOpenRejectModal(false)
+					await mutate()
+				}
+			} else {
+				const contracts = storage.getNearContracts(nearWallet)
+
+				if (!contracts) {
+					return
+				}
+
+				const txReviewApplication = await contracts.round.reviewApplication(
+					roundData.on_chain_id,
+					item.applicant.id,
+					note,
+					type === 'accept' ? 'Approved' : 'Rejected',
+				)
+
+				if (txReviewApplication) {
+					dismissPageLoading()
+					toast.success(`Change status to ${type} is succeed`, {
+						style: toastOptions.success.style,
+					})
+					if (type === 'accept') setOpenAcceptModal(false)
+					else setOpenRejectModal(false)
+					await mutate()
+				}
 			}
 		} catch (error: any) {
 			dismissPageLoading()
@@ -108,10 +135,10 @@ const ApplicationItem = ({
 					<div className="flex items-center space-x-1 py-1">
 						<IconCalendar size={18} className="fill-grantpicks-black-400" />
 						<p className="text-sm font-normal text-grantpicks-black-950">
-							Applied {moment(new Date(Number(item.submited_ms))).fromNow()}
+							Applied {moment(new Date(item.submitted_at)).fromNow()}
 						</p>
 					</div>
-					{roundData.owner === stellarPubKey && (
+					{roundData.owner?.id === storage.my_address && (
 						<div className="flex items-center space-x-2">
 							<button
 								onClick={() => setOpenAcceptModal(true)}
@@ -158,32 +185,37 @@ const ApplicationItem = ({
 						</p>
 					</div>
 					<p className="text-sm font-normal text-grantpicks-black-950">
-						{moment(new Date(Number(item.submited_ms))).fromNow()}
+						{moment(new Date(item.submitted_at)).fromNow()}
 					</p>
 				</div>
 			)}
 			<div className="flex items-center space-x-3 px-3 md:px-4 py-2">
-				<div className="bg-grantpicks-black-200 rounded-full w-6 h-6" />
+				<Image
+					src={`https://www.tapback.co/api/avatar/${item.applicant.id}`}
+					alt="applicant"
+					width={24}
+					height={24}
+				/>
 				<p>
 					<span className="text-base font-bold text-grantpicks-black-950 mr-1">
-						{prettyTruncate(item.applicant_id, 20, 'address')}
+						{prettyTruncate(item.applicant.id, 20, 'address')}
 					</span>
 				</p>
 			</div>
 			<div className=" px-3 md:px-4 py-2">
 				<p className="text-base font-normal text-grantpicks-black-600">
-					{item.applicant_note}
+					{item.message}
 				</p>
 			</div>
-			{item.review_note && (
+			{storage.applications.has(item.applicant.id) && (
 				<div className="px-3 md:px-4 pt-2 pb-4">
 					<div className="border border-grantpicks-black-200 rounded-xl p-3 bg-white">
 						<p className="text-sm font-semibold text-grantpicks-black-950">
 							admin@
-							{prettyTruncate(roundData.owner, 10, 'address') || 'Reviewer'}
+							{prettyTruncate(roundData.owner?.id, 10, 'address') || 'Reviewer'}
 						</p>
 						<p className="text-sm font-normal text-grantpicks-black-600">
-							{item.review_note || ''}
+							{storage.applications.get(item.applicant.id)?.review_note || ''}
 						</p>
 					</div>
 				</div>
@@ -212,46 +244,100 @@ const ApplicationsDrawer = ({
 	doc,
 }: ApplicationsDrawerProps) => {
 	const [tab, setTab] = useState<TApplicationDrawerTab>('all')
-	const [roundAppsData, setRoundAppsData] = useState<
-		IGetRoundApplicationsResponse[]
-	>([])
+	const [roundAppsData, setRoundAppsData] = useState<GPApplication[]>([])
 	const containerScrollRef = useRef<HTMLDivElement>(null)
+	const potlockService = usePotlockService()
+	const chainId = extractChainId(doc)
+	const storage = useAppStorage()
 
 	const onFetchRoundApplications = async (key: {
 		url: string
-		skip: number
-		limit: number
-	}) => {
-		const contracts = new Contracts(
-			process.env.NETWORK_ENV as Network,
-			undefined,
-		)
-		const res = await getRoundApplications(
-			{ round_id: BigInt(doc.id), skip: key.skip, limit: key.limit },
-			contracts,
-		)
-		return res
+		page: number
+	}): Promise<GPApplication[]> => {
+		if (chainId === 'stellar') {
+      //TODO: implement getApplications From BE
+			// const res = await potlockService.getApplications(doc.id, key.page + 1)
+			// return res.map((item: GPApplication) => {
+			// 	item.status = item.status.replaceAll("['", '').replaceAll("']", '')
+			// 	return item
+			// })
+
+			const contracts = storage.getStellarContracts()
+
+			if (!contracts) {
+				return []
+			}
+
+			const result = (
+				await contracts.round_contract.get_applications_for_round({
+					round_id: BigInt(doc.on_chain_id),
+					limit: BigInt(LIMIT_SIZE),
+					from_index: BigInt(key.page * LIMIT_SIZE),
+				})
+			).result
+
+			return await Promise.all(
+				result.map((item: RoundApplication, index) => {
+					return {
+						id: key.page * LIMIT_SIZE + index,
+						message: item.applicant_note || '',
+						status: item.status.tag,
+						submitted_at: new Date(Number(item.submited_ms)).toISOString(),
+						round: doc,
+						applicant: {
+							id: item.applicant_id,
+						},
+					} as GPApplication
+				}),
+			)
+		} else {
+			const contracts = storage.getNearContracts(null)
+
+			if (!contracts) {
+				return []
+			}
+
+			const result = await contracts.round.getApplicationsForRound(
+				doc.on_chain_id,
+				key.page * LIMIT_SIZE,
+				LIMIT_SIZE,
+			)
+
+			return await Promise.all(
+				result.map((item: NearProjectApplication, index) => {
+					return {
+						id: key.page * LIMIT_SIZE + index,
+						message: item.applicant_note || '',
+						status: item.status,
+						submitted_at: new Date(item.submited_ms).toISOString(),
+						round: doc,
+						applicant: {
+							id: item.applicant_id,
+						},
+					} as GPApplication
+				}),
+			)
+		}
 	}
 
-	const getKey = (
-		pageIndex: number,
-		previousPageData: IGetRoundApplicationsResponse[],
-	) => {
+	const getKey = (pageIndex: number, previousPageData: GPApplication[]) => {
 		if (previousPageData && !previousPageData.length) return null
 		return {
-			url: `get-round-applications`,
-			skip: pageIndex,
-			limit: LIMIT_SIZE,
+			url: `get-round-applications-${doc.on_chain_id}`,
+			page: pageIndex,
+			chainId,
+			my_address: storage.my_address,
 		}
 	}
 	const { data, size, setSize, isValidating, isLoading, mutate } =
 		useSWRInfinite(getKey, async (key) => await onFetchRoundApplications(key), {
 			revalidateFirstPage: false,
 		})
+
 	const applications = data
-		? ([] as IGetRoundApplicationsResponse[]).concat(...data)
+		? ([] as GPApplication[]).concat(...(data as any as GPApplication[]))
 		: []
-	const hasMore = data ? data[data.length - 1].length >= LIMIT_SIZE : false
+	const hasMore = data ? data.length >= LIMIT_SIZE : false
 
 	useEffect(() => {
 		if (data) {
@@ -259,11 +345,11 @@ const ApplicationsDrawer = ({
 			if (tab === 'all') {
 				temp = temp
 			} else if (tab === 'approved') {
-				temp = temp.filter((t) => t.status.tag === 'Approved')
+				temp = temp.filter((t) => t.status === 'Approved')
 			} else if (tab === 'pending') {
-				temp = temp.filter((t) => t.status.tag === 'Pending')
+				temp = temp.filter((t) => t.status === 'Pending')
 			} else if (tab === 'rejected') {
-				temp = temp.filter((t) => t.status.tag === 'Rejected')
+				temp = temp.filter((t) => t.status === 'Rejected')
 			}
 			setRoundAppsData(temp)
 		}
@@ -334,7 +420,7 @@ const ApplicationsDrawer = ({
 							<span className="text-sm font-bold text-grantpicks-black-950 mr-1">
 								{roundAppsData.length}
 							</span>
-							{tab === 'all' ? 'applications' : 'pending'}
+							{tab === 'all' ? 'applications' : tab}
 						</p>
 					</div>
 					<InfiniteScroll
@@ -354,7 +440,7 @@ const ApplicationsDrawer = ({
 								roundAppsData?.map((item, idx) => (
 									<ApplicationItem
 										key={idx}
-										type={item.status.tag}
+										type={item.status}
 										index={idx}
 										item={item}
 										roundData={doc}
@@ -363,7 +449,7 @@ const ApplicationsDrawer = ({
 								))}
 							{tab === 'pending' &&
 								roundAppsData
-									?.filter((app) => app.status.tag === 'Pending')
+									?.filter((app) => app.status == 'Pending')
 									.map((item, idx) => (
 										<ApplicationItem
 											key={idx}
@@ -376,7 +462,7 @@ const ApplicationsDrawer = ({
 									))}
 							{tab === 'approved' &&
 								roundAppsData
-									?.filter((app) => app.status.tag === 'Approved')
+									?.filter((app) => app.status == 'Approved')
 									.map((item, idx) => (
 										<ApplicationItem
 											key={idx}
@@ -389,7 +475,7 @@ const ApplicationsDrawer = ({
 									))}
 							{tab === 'rejected' &&
 								roundAppsData
-									?.filter((app) => app.status.tag === 'Rejected')
+									?.filter((app) => app.status == 'Rejected')
 									.map((item, idx) => (
 										<ApplicationItem
 											key={idx}

@@ -1,7 +1,5 @@
 import Button from '@/app/components/commons/Button'
 import InputText from '@/app/components/commons/InputText'
-import InputTextArea from '@/app/components/commons/InputTextArea'
-import IconCloseFilled from '@/app/components/svgs/IconCloseFilled'
 import IconPause from '@/app/components/svgs/IconPause'
 import IconPlay from '@/app/components/svgs/IconPlay'
 import IconTrash from '@/app/components/svgs/IconTrash'
@@ -12,8 +10,6 @@ import { YOUTUBE_URL_REGEX } from '@/constants/regex'
 import { toastOptions } from '@/constants/style'
 import { requestUpload, retrieveAsset, uploadFile } from '@/services/upload'
 import {
-	CreateProjectStep1Data,
-	CreateProjectStep2Data,
 	CreateProjectStep5Data,
 } from '@/types/form'
 import { fetchYoutubeIframe, onFetchingBlobToFile } from '@/utils/helper'
@@ -31,15 +27,20 @@ import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import {
 	IUpdateProjectParams,
 	updateProject,
-} from '@/services/on-chain/project-registry'
+} from '@/services/stellar/project-registry'
 import { DEFAULT_IMAGE_URL } from '@/constants/project'
 import Contracts from '@/lib/contracts'
 import { Network } from '@/types/on-chain'
 import { useMyProject } from './MyProjectProvider'
+import useAppStorage from '@/stores/zustand/useAppStorage'
+import {
+	NearProjectFundingHistory,
+	NearSocialGPProject,
+} from '@/services/near/type'
 
 const MyProjectMedia = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()
-	const { stellarKit, stellarPubKey } = useWallet()
+	const { stellarKit, stellarPubKey, nearWallet } = useWallet()
 	const { openPageLoading, dismissPageLoading, livepeer } = useGlobalContext()
 	const {
 		control,
@@ -64,7 +65,9 @@ const MyProjectMedia = () => {
 	>(undefined)
 	const [playbackSrc, setPlaybackSrc] = useState<Src[] | null>(null)
 	const [ytIframe, setYtIframe] = useState<string>('')
+	const [embededYtTitle, setEmbededYtTitle] = useState<string>('')
 	const embededYtHtmlRef = useRef<HTMLDivElement>(null)
+	const storage = useAppStorage()
 
 	const onDrop = useCallback(async (acceptedFiles: File[]) => {
 		if (acceptedFiles[0].size / 10 ** 6 > 25) {
@@ -137,62 +140,102 @@ const MyProjectMedia = () => {
 	const onSaveChanges: SubmitHandler<CreateProjectStep5Data> = async (data) => {
 		try {
 			openPageLoading()
-			let cmdWallet = new CMDWallet({
-				stellarPubKey: stellarPubKey,
-			})
-			const contracts = new Contracts(
-				process.env.NETWORK_ENV as Network,
-				cmdWallet,
-			)
-			const params: IUpdateProjectParams = {
-				...projectData,
-				name: projectData?.name || '',
-				overview: projectData?.overview || '',
-				fundings: [],
-				contacts: projectData?.contacts || [],
-				contracts: projectData?.contracts || [],
-				image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
-				payout_address: projectData?.payout_address || '',
-				repositories: projectData?.repositories || [],
-				team_members: projectData?.team_members || [],
-				video_url: watch().video.url || 'https://video.com/asdfgh',
-			}
-			const txUpdateProject = await updateProject(
-				stellarPubKey,
-				projectData?.id as bigint,
-				params,
-				contracts,
-			)
-			const txHashUpdateProject = await contracts.signAndSendTx(
-				stellarKit as StellarWalletsKit,
-				txUpdateProject,
-				stellarPubKey,
-			)
-			if (txHashUpdateProject) {
-				dismissPageLoading()
-				setTimeout(async () => {
-					await fetchProjectApplicant()
-				}, 2000)
-				toast.success(`Update project overview is succeed`, {
-					style: toastOptions.success.style,
-				})
+
+			if (storage.chainId === 'stellar') {
+				let contracts = storage.getStellarContracts()
+
+				if (!contracts) {
+					return
+				}
+
+				const params: IUpdateProjectParams = {
+					...projectData,
+					name: projectData?.name || '',
+					overview: projectData?.overview || '',
+					fundings: [],
+					contacts: projectData?.contacts || [],
+					contracts: projectData?.contracts || [],
+					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
+					repositories: projectData?.repositories || [],
+					team_members: projectData?.team_members || [],
+					video_url: watch().video.url || '',
+				}
+				const txUpdateProject = await updateProject(
+					stellarPubKey,
+					projectData?.id as bigint,
+					params,
+					contracts,
+				)
+				const txHashUpdateProject = await contracts.signAndSendTx(
+					stellarKit as StellarWalletsKit,
+					txUpdateProject.toXDR(),
+					stellarPubKey,
+				)
+				if (txHashUpdateProject) {
+					dismissPageLoading()
+					setTimeout(async () => {
+						await fetchProjectApplicant()
+					}, 2000)
+					toast.success(`Update project media is succeed`, {
+						style: toastOptions.success.style,
+					})
+				}
+			} else {
+				const contracts = storage.getNearContracts(nearWallet)
+
+				if (!contracts) {
+					return
+				}
+
+				const params: NearSocialGPProject = {
+					name: projectData?.name || '',
+					overview: projectData?.overview || '',
+					fundings:
+						(projectData?.funding_histories as unknown as NearProjectFundingHistory[]) ||
+						[],
+					contacts: projectData?.contacts || [],
+					contracts: projectData?.contracts || [],
+					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
+					repositories: projectData?.repositories || [],
+					team_members:
+						(projectData?.team_members as unknown as string[]) || [],
+					video_url: watch().video.url || '',
+					owner: projectData?.owner || '',
+				}
+
+				const txUpdateProject = await contracts.near_social.setProjectData(
+					storage.my_address || '',
+					params,
+				)
+
+				if (txUpdateProject) {
+					dismissPageLoading()
+					setTimeout(async () => {
+						await fetchProjectApplicant()
+					}, 2000)
+					toast.success(`Update project media is succeed`, {
+						style: toastOptions.success.style,
+					})
+				}
 			}
 		} catch (error: any) {
 			dismissPageLoading()
-			toast.error(`Update project overview is failed`, {
+			toast.error(`Update project media is failed`, {
 				style: toastOptions.error.style,
 			})
-			console.log('error to update overview project', error)
+			console.log('error to update media project', error)
 		}
 	}
 	const setDefaultData = async () => {
-		if (projectData) {
+		if (projectData && projectData.video_url && projectData.video_url !== '') {
 			if (projectData.video_url.includes('youtube')) {
 				const res = await fetchYoutubeIframe(
 					projectData.video_url || '',
 					embededYtHtmlRef.current?.clientWidth || 0,
 				)
+				setLinkInput(projectData.video_url)
 				setYtIframe(res?.html)
+				setEmbededYtTitle(res?.title)
 			} else {
 				const blobRes = await onFetchingBlobToFile(
 					projectData.video_url,
@@ -204,6 +247,25 @@ const MyProjectMedia = () => {
 				setValue('video.url', projectData.video_url)
 			}
 		}
+	}
+
+	const onProcessYoutubeInput = async () => {
+		setIsDirtyInput(true)
+		if (!YOUTUBE_URL_REGEX.test(linkInput)) {
+			setYtIframe('')
+			setEmbededYtTitle('')
+			return
+		}
+		const ytRes = await fetchYoutubeIframe(
+			linkInput,
+			embededYtHtmlRef.current?.clientWidth || 0,
+		)
+		setYtIframe(ytRes?.html)
+		setEmbededYtTitle(ytRes?.title)
+		setValue('video', {
+			url: linkInput || '',
+			file: undefined,
+		})
 	}
 
 	useEffect(() => {
@@ -232,7 +294,7 @@ const MyProjectMedia = () => {
 							</p>
 						</div>
 					</div>
-				) : accFiles.length === 0 && !ytIframe ? (
+				) : accFiles.length === 0 && (!ytIframe || ytIframe === '') ? (
 					<div className="bg-white rounded-xl p-4 md:p-6 border border-black/10 w-full">
 						<div
 							{...getRootProps()}
@@ -262,21 +324,32 @@ const MyProjectMedia = () => {
 								<InputText
 									value={linkInput}
 									onChange={(e) => setLinkInput(e.target.value)}
-									onKeyDown={(e) => {
+									onKeyDown={async (e) => {
 										if (e.key === 'Enter') {
-											setIsDirtyInput(true)
+											await onProcessYoutubeInput()
 										}
 									}}
 									placeholder="Paste video link here"
 									className="!py-2"
 									isStopPropagation={true}
 									errorMessage={
-										isDirtyInput &&
-										(linkInput === '' || !YOUTUBE_URL_REGEX.test(linkInput)) ? (
+										isDirtyInput && !YOUTUBE_URL_REGEX.test(linkInput) ? (
 											<p className="text-xs text-grantpicks-red-600">
 												Invalid link
 											</p>
 										) : undefined
+									}
+									suffixIcon={
+										<Button
+											color="transparent"
+											className="!text-sm !font-semibold !bg-white"
+											onClick={async (e) => {
+												e.stopPropagation()
+												await onProcessYoutubeInput()
+											}}
+										>
+											Add
+										</Button>
 									}
 								/>
 							</div>
@@ -285,9 +358,16 @@ const MyProjectMedia = () => {
 				) : (
 					<div className="rounded-xl relative bg-white w-full border border-black/10">
 						<div className="flex items-center justify-between px-4 py-3">
-							<p className="text-sm font-semibold text-grantpicks-black-950">
-								{accFiles[0] ? accFiles[0].name : ''}
-							</p>
+							{accFiles[0] && (
+								<p className="text-sm font-semibold text-grantpicks-black-950">
+									{accFiles[0] ? accFiles[0].name : ''}
+								</p>
+							)}
+							{ytIframe && (
+								<p className="text-sm font-semibold text-grantpicks-black-950">
+									{embededYtTitle}
+								</p>
+							)}
 							<IconTrash
 								size={24}
 								className="fill-grantpicks-black-400 cursor-pointer hover:opacity-70 transition"
@@ -305,6 +385,8 @@ const MyProjectMedia = () => {
 											file: undefined,
 										})
 										setYtIframe('')
+										setLinkInput('')
+										setEmbededYtTitle('')
 									}
 								}}
 							/>
@@ -346,7 +428,12 @@ const MyProjectMedia = () => {
 								</div>
 							</div>
 						)}
-						{ytIframe && <div dangerouslySetInnerHTML={{ __html: ytIframe }} />}
+						{ytIframe && (
+							<div
+								className="overflow-hidden rounded-b-xl"
+								dangerouslySetInnerHTML={{ __html: ytIframe }}
+							/>
+						)}
 					</div>
 				)}
 			</div>
@@ -355,8 +442,14 @@ const MyProjectMedia = () => {
 					<Button
 						color="white"
 						isFullWidth
-						onClick={async () => await setDefaultData()}
+						onClick={async () => {
+							await setDefaultData()
+							setLinkInput('')
+						}}
 						className="!py-3 !border !border-grantpicks-black-400"
+						isDisabled={
+							accFiles.length > 0 || Boolean(ytIframe) || linkInput === ''
+						}
 					>
 						Discard
 					</Button>
@@ -366,7 +459,8 @@ const MyProjectMedia = () => {
 						isFullWidth
 						color="black-950"
 						onClick={handleSubmit(onSaveChanges)}
-						className="!py-3"
+						className="!py-3 disabled:cursor-not-allowed"
+						isDisabled={linkInput === projectData?.video_url || !ytIframe}
 					>
 						Save changes
 					</Button>

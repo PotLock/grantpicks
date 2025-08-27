@@ -5,10 +5,11 @@ export interface DialogProps {
 
 export interface IMenuProps extends DialogProps {
 	children: React.ReactNode
-	position: string
+	position?: string
 	closeOnBgClick?: boolean
 	closeOnEscape?: boolean
 	className?: string
+	buttonRef?: React.RefObject<HTMLElement>
 }
 
 export interface IDrawerProps extends DialogProps {
@@ -16,6 +17,7 @@ export interface IDrawerProps extends DialogProps {
 	closeOnBgClick?: boolean
 	closeOnEscape?: boolean
 	className?: string
+	showClose?: boolean
 }
 
 export interface BaseModalProps {

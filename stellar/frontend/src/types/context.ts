@@ -11,10 +11,14 @@ import { WalletSelectorModal } from '@near-wallet-selector/modal-ui'
 import { Dispatch, SetStateAction } from 'react'
 import { IGetRoundsResponse } from './on-chain'
 import { Livepeer } from 'livepeer'
-import { Project, RoundApplication } from 'round-client'
+import { RoundApplication } from 'round-client'
+import { Project } from 'project-registry-client'
+import { GPRound } from '@/models/round'
+import { IAccount } from './account'
 
 export interface IWalletContext {
 	connectedWallet: 'near' | 'stellar' | null
+	profileData: IAccount | undefined
 	//near
 	nearSelector: WalletSelector | null
 	nearModal: WalletSelectorModal | null
@@ -34,8 +38,14 @@ export interface IModalContextProps {
 	isOpen: boolean
 }
 
+export enum ChainId {
+	NEAR = 'near',
+	STELLAR = 'stellar',
+}
+
 export interface IVoteConfirmationModalContextProps extends IModalContextProps {
-	doc?: IGetRoundsResponse
+	doc?: GPRound
+	chainId?: ChainId
 }
 
 export interface IVideoPlayerModalProps extends IModalContextProps {
@@ -43,7 +53,7 @@ export interface IVideoPlayerModalProps extends IModalContextProps {
 }
 
 export interface ISuccessCreateRoundModalProps extends IModalContextProps {
-	createRoundRes: IGetRoundsResponse | undefined
+	createRoundRes: GPRound | undefined
 	txHash?: string
 }
 
@@ -58,20 +68,20 @@ export interface ISuccessUpdateRoundModalProps extends IModalContextProps {
 }
 
 export interface ISuccessFundRoundModalProps extends IModalContextProps {
-	doc: IGetRoundsResponse | undefined
+	doc: GPRound | undefined
 	txHash?: string
 	amount: string
 }
 
 export interface IApplyProjectToRoundModalProps extends IModalContextProps {
 	round_id: bigint | undefined
-	roundData: IGetRoundsResponse | undefined
+	roundData: GPRound | undefined
 }
 
 export interface ISuccessAppplyProjectToRoundModalProps
 	extends IModalContextProps {
 	applyProjectRes: RoundApplication | undefined
-	roundData?: IGetRoundsResponse
+	roundData?: GPRound
 	txHash?: string
 }
 
@@ -147,6 +157,8 @@ export interface IGlobalContext {
 	dismissPageLoading: () => void
 	openPageLoading: () => void
 	livepeer: Livepeer | null
+	showMenu: 'choose-wallet' | 'user' | null
+	setShowMenu: Dispatch<SetStateAction<'choose-wallet' | 'user' | null>>
 }
 
 export interface IMyProjectContext {

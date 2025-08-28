@@ -1,5 +1,6 @@
 'use client'
 
+import { envVarConfigs } from '@/configs/env-var'
 import { GPRound } from '@/models/round'
 import axios, { AxiosInstance } from 'axios'
 import React from 'react'
@@ -8,7 +9,7 @@ export class PotlockService {
 	private _axios: AxiosInstance | null = null
 	constructor() {
 		this._axios = axios.create({
-			baseURL: process.env.NEXT_PUBLIC_POTLOCK_API_URL || '',
+			baseURL: envVarConfigs.API_BASE_URL || '',
 		})
 	}
 

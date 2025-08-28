@@ -130,7 +130,7 @@ const Navbar = ({ isBannerVisible }: { isBannerVisible: boolean }) => {
 				}}
 				isDisabled={envVarConfigs.NETWORK_ENV !== 'testnet'}
 			>
-				{envVarConfigs.NETWORK_ENV === 'testnet' ? 'Launch App' : 'Coming Soon'}
+				{envVarConfigs.NETWORK_ENV !== 'mainnet' ? 'Launch App' : 'Coming Soon'}
 			</Button>
 		</div>
 	)

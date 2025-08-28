@@ -256,7 +256,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 
 			store.setMyAddress(accounts[0]?.accountId || '')
 			store.setChainId('near')
-			store.setNetwork('testnet')
+			store.setNetwork(envVarConfigs.NETWORK_ENV)
 
 			const account = await store
 				.getNearContracts(null)
@@ -301,7 +301,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 
 			store.setMyAddress(localStellarPubKey || pubKey)
 			store.setChainId('stellar')
-			store.setNetwork('testnet')
+			store.setNetwork(envVarConfigs.NETWORK_ENV === 'testnet' ? 'testnet' : 'mainnet')
 
 			return
 		} else {

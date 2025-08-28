@@ -22,6 +22,7 @@ export const useLists = () => {
     }
   }
 
+
   const { data, size, setSize, isValidating, isLoading } = useSWRInfinite(
     getKey,
     async (key) => await onFetchLists(key),

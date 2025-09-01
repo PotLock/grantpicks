@@ -51,9 +51,9 @@ const HomeSection = () => {
 						onClick={() => {
 							router.push('/rounds')
 						}}
-						isDisabled={envVarConfigs.NETWORK_ENV !== 'testnet'}
+						isDisabled={envVarConfigs.NETWORK_ENV === 'mainnet'}
 					>
-						{envVarConfigs.NETWORK_ENV === 'testnet'
+						{envVarConfigs.NETWORK_ENV !== 'mainnet'
 							? 'Launch App'
 							: 'Coming Soon'}
 					</Button>
@@ -67,7 +67,7 @@ const HomeSection = () => {
 							icon={<IconExternalLink size={18} className="stroke-black" />}
 							iconPosition="right"
 							className="px-7 h-full w-full md:w-auto"
-							onClick={() => {}}
+							onClick={() => { }}
 						>
 							Learn More
 						</Button>

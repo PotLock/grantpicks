@@ -112,7 +112,7 @@ const Footer = () => {
 					</div>
 
 					{/* Smart Contracts */}
-					{envVarConfigs.NETWORK_ENV === 'testnet' && (
+					{envVarConfigs.NETWORK_ENV !== 'mainnet' && (
 						<div>
 							<h3 className="font-semibold text-base text-gray-900 mb-4">Smart Contracts</h3>
 							<div className="space-y-3">

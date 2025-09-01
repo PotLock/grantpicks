@@ -128,9 +128,9 @@ const Navbar = ({ isBannerVisible }: { isBannerVisible: boolean }) => {
 				onClick={() => {
 					router.push('/rounds')
 				}}
-				isDisabled={envVarConfigs.NETWORK_ENV !== 'testnet'}
+				isDisabled={envVarConfigs.NETWORK_ENV === 'mainnet'}
 			>
-				{envVarConfigs.NETWORK_ENV === 'testnet' ? 'Launch App' : 'Coming Soon'}
+				{envVarConfigs.NETWORK_ENV !== 'mainnet' ? 'Launch App' : 'Coming Soon'}
 			</Button>
 		</div>
 	)

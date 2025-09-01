@@ -34,6 +34,10 @@ export const networks = {
   testnet: {
     networkPassphrase: "Test SDF Network ; September 2015",
     contractId: "CCIF26RAXONJHR42UKOJGTCPA3GVL37QCHS42PFWGM53A5WOLEFBMTYB",
+  },
+  public: {
+    networkPassphrase: "Public Global Stellar Network ; September 2015",
+    contractId: "CAFRPR2FE2ASZGZDGLCGGUGPUJMBHCPWXVAGZ3GZR5ITZIFPPSAG53B6",
   }
 } as const
 

@@ -90,7 +90,22 @@ export const getHorizonConfig = (env: string) => {
 				network_passphrase: Networks.TESTNET,
 				explorer: RPC_EXPLORER.TESTNET,
 			}
+		case ENetworkEnv.MAINNET:
+			return {
+				network: ENetworkEnv.MAINNET,
+				rpc_url: HORIZON_RPC_URL.MAINNET,
+				network_passphrase: Networks.PUBLIC,
+				explorer: RPC_EXPLORER.MAINNET,
+			}
+		case ENetworkEnv.STAGING:
+			return {
+				network: ENetworkEnv.MAINNET,
+				rpc_url: HORIZON_RPC_URL.MAINNET,
+				network_passphrase: Networks.PUBLIC,
+				explorer: RPC_EXPLORER.MAINNET,
+			}
 	}
+
 }
 
 export const getSorobanConfig = (env: string) => {

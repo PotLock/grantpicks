@@ -9,7 +9,8 @@
 		"lint": "next lint",
 		"prepare": "husky install",
 		"format": "prettier --write .",
-		"prettier-check": "prettier --check ."
+		"prettier-check": "prettier --check .",
+		"gen:contracts": "node ./scripts/update-contract-networks.js && yarn --cwd ./lists-client build && yarn --cwd ./project-registry-client build && yarn --cwd ./round-client build"
 	},
 	"dependencies": {
 		"@creit.tech/stellar-wallets-kit": "^1.7.6",

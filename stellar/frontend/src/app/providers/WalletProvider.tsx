@@ -42,6 +42,7 @@ import {
 	HanaModule,
 	ISupportedWallet,
 	// HotWalletModule,
+	XBULL_ID,
 	StellarWalletsKit,
 	WalletNetwork,
 } from '@creit.tech/stellar-wallets-kit'
@@ -137,10 +138,10 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 				network:
 					envVarConfigs.NETWORK_ENV === 'testnet'
 						? WalletNetwork.TESTNET
-						: WalletNetwork.FUTURENET,
+						: WalletNetwork.PUBLIC,
 				selectedWalletId:
 					localStorage.getItem(localStorageConfigs.LAST_STELLAR_WALLET_ID) ||
-					'freighter',
+					XBULL_ID,
 				modules: [
 					new FreighterModule(),
 					new xBullModule(),
@@ -189,33 +190,26 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 				}
 			}
 		} else if (walletType === 'stellar') {
-			// For Stellar, check the network configuration
+			// For Stellar, validate against the app's configured network.
 			if (stellarKit) {
-
+				const currentAppNetwork = appNetwork === 'testnet' ? 'TESTNET' : 'PUBLIC'
+				// 1) Try wallets that expose getNetwork (e.g. Freighter)
 				try {
-					// const networkInfo = await stellarKit.getNetwork()
-					// console.log('networkInfo', networkInfo)
-					// const currentNetwork = networkInfo.network
-					// const expectedNetwork = appNetwork === 'testnet' ? 'TESTNET' : 'MAINNET'
-
-					// if (currentNetwork !== expectedNetwork) {
-					// 	const currentNetworkName = currentNetwork === 'TESTNET' ? 'Testnet' : 'Mainnet'
-					// 	const expectedNetworkName = expectedNetwork === 'TESTNET' ? 'Testnet' : 'Mainnet'
-
-					// 	toast.error(
-					// 		`Network Mismatch: You are connected to Stellar ${currentNetworkName} but this app is running on ${expectedNetworkName}. Please switch to ${expectedNetworkName} in your wallet.`,
-					// 		{ duration: 6000 }
-					// 	)
-					// 	return false
-					// }
-				} catch (error) {
-					console.error('Error checking Stellar network:', error)
-					// If we can't check the network, allow the connection but warn the user
-					toast.error(
-						'Unable to verify network configuration. Please ensure your wallet is connected to the correct network.',
-						{ duration: 4000 }
-					)
-					return false
+					const info = await stellarKit.getNetwork()
+					console.log('info', info)
+					if (info.network !== currentAppNetwork) {
+						toast.error(
+							`Network Mismatch: Your Stellar wallet is set to ${info.network} but this app is running on ${currentAppNetwork}. Please switch networks in your wallet.`,
+							{ duration: 6000 },
+						)
+						return false
+					}
+					return true
+				} catch {
+					// 2) Fallback for wallets without getNetwork (e.g., xBull):
+					// We can't read the wallet's internal network, but the kit signs with
+					// the app-configured passphrase. Treat the app's network as source of truth.
+					return true
 				}
 			}
 		}
@@ -256,7 +250,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 
 			store.setMyAddress(accounts[0]?.accountId || '')
 			store.setChainId('near')
-			store.setNetwork('testnet')
+			store.setNetwork(envVarConfigs.NETWORK_ENV)
 
 			const account = await store
 				.getNearContracts(null)
@@ -301,7 +295,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 
 			store.setMyAddress(localStellarPubKey || pubKey)
 			store.setChainId('stellar')
-			store.setNetwork('testnet')
+			store.setNetwork(envVarConfigs.NETWORK_ENV === 'testnet' ? 'testnet' : 'mainnet')
 
 			return
 		} else {

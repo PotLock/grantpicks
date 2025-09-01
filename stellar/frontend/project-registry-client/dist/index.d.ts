@@ -11,6 +11,10 @@ export declare const networks: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
         readonly contractId: "CAUX3WSEWUR2Z7N3XKJBQXS5LBVRW62D2C7EYDOAUJXXI3T3YWCBTVMW";
     };
+    readonly public: {
+        readonly networkPassphrase: "Public Global Stellar Network ; September 2015";
+        readonly contractId: "CCSQPTVDGEGZFKJ7D53WTCHQF5CYE55YEL7NB256Y7UJUK2ZWJGS6NM3";
+    };
 };
 export interface Project {
     admins: Array<string>;

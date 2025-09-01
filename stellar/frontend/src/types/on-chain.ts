@@ -21,6 +21,7 @@ export interface IGetRoundApplicationsResponse extends RoundApplication {}
 export enum ENetworkEnv {
 	'TESTNET' = 'testnet',
 	'MAINNET' = 'mainnet',
+	'STAGING' = 'staging',
 }
 
 export enum Networks {

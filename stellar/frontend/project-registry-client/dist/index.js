@@ -11,6 +11,10 @@ export const networks = {
     testnet: {
         networkPassphrase: "Test SDF Network ; September 2015",
         contractId: "CAUX3WSEWUR2Z7N3XKJBQXS5LBVRW62D2C7EYDOAUJXXI3T3YWCBTVMW",
+    },
+    public: {
+        networkPassphrase: "Public Global Stellar Network ; September 2015",
+        contractId: "CCSQPTVDGEGZFKJ7D53WTCHQF5CYE55YEL7NB256Y7UJUK2ZWJGS6NM3",
     }
 };
 export const Errors = {

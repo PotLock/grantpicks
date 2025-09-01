@@ -11,6 +11,10 @@ export declare const networks: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
         readonly contractId: "CCIF26RAXONJHR42UKOJGTCPA3GVL37QCHS42PFWGM53A5WOLEFBMTYB";
     };
+    readonly public: {
+        readonly networkPassphrase: "Public Global Stellar Network ; September 2015";
+        readonly contractId: "CAFRPR2FE2ASZGZDGLCGGUGPUJMBHCPWXVAGZ3GZR5ITZIFPPSAG53B6";
+    };
 };
 export type RegistrationStatus = {
     tag: "Pending";

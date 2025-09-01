@@ -100,7 +100,7 @@ export const AllLists = () => {
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-grantpicks-black-950"></div>
               <h2 className="text-grantpicks-black-950 text-xl font-semibold">Loading Lists...</h2>
             </div>
-          ) : filteredLists?.length === 0 ? (
+          ) : !isValidating && filteredLists?.length === 0 ? (
             <div className="flex items-center w-full flex-col gap-y-4 justify-center py-12">
               <h2 className="text-grantpicks-black-950 text-xl font-semibold">
                 {debouncedSearchQuery ? `No lists found for "${debouncedSearchQuery}"` : "No lists available"}

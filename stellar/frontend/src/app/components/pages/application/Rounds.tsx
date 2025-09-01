@@ -68,7 +68,6 @@ const ApplicationRounds = () => {
 				beChainId = '3'
 				break
 		}
-
 		const res = await potlockApi.getRounds(
 			key.page + 1,
 			sortType === 'Vault Total Deposits'
@@ -85,21 +84,25 @@ const ApplicationRounds = () => {
 			url: `get-rounds`,
 			page: pageIndex,
 			sortType,
-			chainId: storage.chainId,
 		}
 	}
 	const { data, size, setSize, isValidating, isLoading, mutate } =
 		useSWRInfinite(getKey, async (key) => await onFetchRounds(key), {
 			revalidateFirstPage: false,
+			revalidateOnFocus: false,
+			revalidateOnReconnect: false,
+			persistSize: true,
+			keepPreviousData: true,
+			dedupingInterval: 3000,
 		})
-	const rounds = data
-		? ([] as GPRound[]).concat(...(data as any as GPRound[]))
-		: []
 	const hasMore = data ? data.length >= LIMIT_SIZE : false
 
 
 	useEffect(() => {
 		if (data) {
+			const rounds = data
+				? ([] as GPRound[]).concat(...(data as any as GPRound[]))
+				: []
 			const temp = filterRoundsByType([...rounds], selectedRoundType)
 			setRoundsData(temp)
 		}
@@ -115,10 +118,17 @@ const ApplicationRounds = () => {
 		data: dataMyRounds,
 		isLoading: isLoadingMyRounds,
 		mutate: mutateMyRounds,
-	} = useSWR(`get-my-rounds`, () =>
-		onFetchMyRounds(
-			connectedWallet === 'near' ? nearAccounts[0]?.accountId : stellarPubKey,
-		),
+	} = useSWR(
+		() => {
+			if (!connectedWallet) return null
+			const accountId =
+				connectedWallet === 'near' ? nearAccounts[0]?.accountId : stellarPubKey
+			return accountId ? `get-my-rounds:${accountId}` : null
+		},
+		() =>
+			onFetchMyRounds(
+				connectedWallet === 'near' ? nearAccounts[0]?.accountId : stellarPubKey,
+			),
 	)
 
 	useEffect(() => {
@@ -147,9 +157,8 @@ const ApplicationRounds = () => {
 			validRoundTypes.includes(roundTypeFromQuery as TSelectedRoundType)
 		) {
 			setSelectedRoundType(roundTypeFromQuery as TSelectedRoundType)
-		} else {
-			setSelectedRoundType('on-going')
 		}
+		// If no query param, keep current selection to avoid flicker
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [searchParams])
 
@@ -300,7 +309,7 @@ const ApplicationRounds = () => {
 					)
 				) : (
 					<InfiniteScroll
-						dataLength={rounds.length}
+						dataLength={roundsData.length}
 						next={() => !isValidating && setSize(size + 1)}
 						hasMore={hasMore}
 						style={{ display: 'flex', flexDirection: 'column' }}

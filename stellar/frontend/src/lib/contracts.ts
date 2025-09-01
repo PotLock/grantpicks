@@ -31,7 +31,7 @@ class Contracts {
 				: {
 						contractId: '',
 						networkPassphrase: 'Public Global Stellar Network ; September 2015',
-						rpcUrl: 'https://soroban.stellar.org',
+						rpcUrl: 'https://mainnet.sorobanrpc.com',
 						publicKey: wallet ? wallet.account.publicKey : undefined,
 					}
 		if (wallet) {
@@ -58,6 +58,8 @@ class Contracts {
 		let project_registry_contract_id =
 			envVarConfigs.PROJECT_REGISTRY_CONTRACT_ID || ''
 		let round_contract_id = envVarConfigs.ROUND_CONTRACT_ID || ''
+
+		
 
 		this._lists_contract = new ListClient({
 			contractId: lists_contract_id,

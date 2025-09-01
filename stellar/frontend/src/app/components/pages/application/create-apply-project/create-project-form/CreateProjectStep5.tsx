@@ -272,7 +272,7 @@ const CreateProjectStep5 = () => {
 									isStopPropagation={true}
 									errorMessage={
 										isDirtyInput &&
-										(linkInput === '' || !YOUTUBE_URL_REGEX.test(linkInput)) ? (
+											(linkInput === '' || !YOUTUBE_URL_REGEX.test(linkInput)) ? (
 											<p className="text-xs text-grantpicks-red-600">
 												Invalid link
 											</p>
@@ -401,7 +401,7 @@ const CreateProjectStep5 = () => {
 						onClick={handleSubmit(onProceed)}
 						className="!py-3"
 					>
-						Proceed to apply
+						Create Project
 					</Button>
 				</div>
 			</div>

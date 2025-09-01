@@ -27,7 +27,7 @@ const perNetworkConfig: Record<NetworkEnv, {
   },
 }
 
-const NETWORK_ENV = (process.env.NETWORK_ENV as NetworkEnv) || 'testnet'
+const NETWORK_ENV = (process.env.NETWORK_ENV as NetworkEnv)
 const selectedNetworkConfig = perNetworkConfig[NETWORK_ENV]
 
 export const envVarConfigs = {

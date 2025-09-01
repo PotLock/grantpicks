@@ -9,10 +9,13 @@ import { getLists } from "@/services/stellar/list"
 
 export const useLists = () => {
   const storage = useAppStorage()
+  const isReady = storage.chainId === 'stellar' && !!storage.getStellarContracts()
   const getKey = (
     pageIndex: number,
     previousPageData: IGetListExternalResponse[],
   ) => {
+    // Do not fetch until prerequisites are ready
+    if (!isReady) return null
     if (previousPageData && !previousPageData.length) return null
     return {
       url: `get-lists`,
@@ -27,7 +30,7 @@ export const useLists = () => {
     getKey,
     async (key) => await onFetchLists(key),
     {
-      revalidateFirstPage: false,
+      revalidateFirstPage: true,
     },
   )
 
@@ -55,6 +58,6 @@ export const useLists = () => {
     size,
     setSize,
     isValidating,
-    isLoading,
+    isLoading: isLoading || !isReady,
   }
 } 

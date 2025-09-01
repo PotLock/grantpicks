@@ -11,6 +11,10 @@ export declare const networks: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
         readonly contractId: "CCT5MBDD4QGHNHG3VWSJ5AC6FL7DIZHVFQRPXW2OATBWZZRHTQMHSW4O";
     };
+    readonly public: {
+        readonly networkPassphrase: "Public Global Stellar Network ; September 2015";
+        readonly contractId: "CAF5DB2QTOH7XBG3PRG4CCYBSSWV245PC33DASEF454DZ3HJTJCM2LWU";
+    };
 };
 export type ApplicationStatus = {
     tag: "Pending";
@@ -223,8 +227,6 @@ export declare const Errors: {
     66: {
         message: string;
     };
-};
-export declare const Errors: {
     0: {
         message: string;
     };
@@ -354,8 +356,6 @@ export declare const Errors: {
     90: {
         message: string;
     };
-};
-export declare const Errors: {
     6: {
         message: string;
     };
@@ -389,8 +389,6 @@ export declare const Errors: {
     60: {
         message: string;
     };
-};
-export declare const Errors: {
     10: {
         message: string;
     };

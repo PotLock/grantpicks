@@ -56,7 +56,7 @@ function main() {
 	const cfg = loadPerNetworkConfig()
 	const testnet = cfg.testnet || {}
 	// Mainnet can be configured under 'mainnet' or 'staging' in this project
-	const mainLike = cfg.mainnet || cfg.staging || {}
+	const mainLike = cfg.staging || {}
 
 	const listsPath = path.join(root, 'lists-client', 'src', 'index.ts')
 	const projectPath = path.join(

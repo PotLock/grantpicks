@@ -7,7 +7,7 @@ import {
 import { GPRound } from '@/models/round'
 import { ENetworkEnv, Networks, SubmitTxProps } from '@/types/on-chain'
 import axios from 'axios'
-import { Horizon,  TransactionBuilder } from 'round-client'
+import { Horizon, Soroban, TransactionBuilder } from 'round-client'
 
 export const capitalizeFirstLetter = (str: string) => {
 	return str.charAt(0).toUpperCase() + str.slice(1)
@@ -116,6 +116,20 @@ export const getSorobanConfig = (env: string) => {
 				rpc_url: SOROBAN_RPC_URL.TESTNET,
 				network_passphrase: Networks.TESTNET,
 				explorer: RPC_EXPLORER.TESTNET,
+			}
+		case ENetworkEnv.MAINNET:
+			return {
+				network: ENetworkEnv.MAINNET,
+				rpc_url: SOROBAN_RPC_URL.MAINNET,
+				network_passphrase: Networks.PUBLIC,
+				explorer: RPC_EXPLORER.MAINNET,
+			}
+		case ENetworkEnv.STAGING:
+			return {
+				network: ENetworkEnv.MAINNET,
+				rpc_url: SOROBAN_RPC_URL.MAINNET,
+				network_passphrase: Networks.PUBLIC,
+				explorer: RPC_EXPLORER.MAINNET,
 			}
 	}
 }

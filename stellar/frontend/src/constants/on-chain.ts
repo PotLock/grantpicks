@@ -9,6 +9,6 @@ export const HORIZON_RPC_URL = {
 }
 
 export const SOROBAN_RPC_URL = {
-	MAINNET: 'https://soroba.stellar.org',
+	MAINNET: 'https://stellar-soroban-public.nodies.app',
 	TESTNET: 'https://soroban-testnet.stellar.org',
 }

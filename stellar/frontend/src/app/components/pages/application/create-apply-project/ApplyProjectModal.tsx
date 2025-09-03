@@ -26,6 +26,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Project } from 'project-registry-client'
 import React, { useCallback, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+import { ListExternal } from '../../../../../../lists-client/src'
+import Link from 'next/link'
 
 interface ApplyProjectToRoundModalProps extends BaseModalProps {
 	round_id?: bigint
@@ -49,6 +51,7 @@ const ApplyProjectModal = ({
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const { setSuccessApplyProjectInitProps } = useModalContext()
 	const [loading, setLoading] = useState<boolean>(true)
+	const [listDetails, setListDetails] = useState<ListExternal | undefined>(undefined)
 	const [isRegistered, setIsRegistered] = useState<boolean>(true)
 	const storage = useAppStorage()
 
@@ -58,12 +61,23 @@ const ApplyProjectModal = ({
 			if (!contracts) {
 				return
 			}
-			const isRegistered = await contracts.lists_contract.is_registered({
-				list_id: BigInt(roundData?.application_wl_list_id),
-				registrant_id: stellarPubKey,
-				required_status: undefined,
-			})
-			setIsRegistered(isRegistered.result)
+			try {
+				const isRegistered = await contracts.lists_contract.is_registered({
+					list_id: BigInt(roundData?.application_wl_list_id),
+					registrant_id: stellarPubKey,
+					required_status: undefined,
+				})
+				setIsRegistered(isRegistered.result)
+
+				const listDetails = await contracts.lists_contract.get_list({
+					list_id: BigInt(roundData?.application_wl_list_id),
+				})
+				setListDetails(listDetails.result || {})
+				setLoading(false)
+			} catch (error) {
+				console.log('error fetch list details', error)
+				setLoading(false)
+			}
 		}
 	}, [stellarPubKey, roundData])
 
@@ -294,6 +308,13 @@ const ApplyProjectModal = ({
 							No Project found
 						</p>
 					</>
+				)}
+				{listDetails?.name && (
+					<div className="flex flex-col w-full mt-6">
+						<p className="text-sm font-semibold text-grantpicks-black-950">
+							This is a private round. You must be an approved registrant to the list <Link className='text-blue-500' href={`/list/${listDetails.id}`} target="_blank">{listDetails.name}</Link> to apply.
+						</p>
+					</div>
 				)}
 				{projectData && !isProjectMissingInfo && (
 					<div className="flex flex-col w-full space-y-4 mt-6">

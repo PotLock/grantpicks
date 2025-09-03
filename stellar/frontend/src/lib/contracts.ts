@@ -31,7 +31,7 @@ class Contracts {
 				: {
 						contractId: '',
 						networkPassphrase: 'Public Global Stellar Network ; September 2015',
-						rpcUrl: 'https://mainnet.sorobanrpc.com',
+						rpcUrl: 'https://stellar-soroban-public.nodies.app',
 						publicKey: wallet ? wallet.account.publicKey : undefined,
 					}
 		if (wallet) {

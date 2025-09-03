@@ -397,7 +397,9 @@ const CreateProjectStep5 = () => {
 					<Button
 						color={loadingFlow !== null ? `disabled` : `black-950`}
 						isFullWidth
-						isDisabled={loadingFlow !== null}
+						isDisabled={
+							loadingFlow !== null || (!embededYtHtml && (!playbackSrc || playbackSrc?.length === 0))
+						}
 						onClick={handleSubmit(onProceed)}
 						className="!py-3"
 					>

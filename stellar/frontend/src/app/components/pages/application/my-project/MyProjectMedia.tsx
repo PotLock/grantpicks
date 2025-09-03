@@ -69,6 +69,8 @@ const MyProjectMedia = () => {
 	const embededYtHtmlRef = useRef<HTMLDivElement>(null)
 	const storage = useAppStorage()
 
+	console.log('projectData?.video_url', projectData)
+
 	const onDrop = useCallback(async (acceptedFiles: File[]) => {
 		if (acceptedFiles[0].size / 10 ** 6 > 25) {
 			toast.error('Max. file size is 25 MB', {

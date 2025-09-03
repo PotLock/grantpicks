@@ -62,12 +62,11 @@ const SuccessApplyProjectModal = ({
 						isFullWidth
 						onClick={() => {
 							onClose()
-							router.push(`/rounds`)
 						}}
 					>
 						<div className="flex items-center space-x-2">
 							<IconEye size={18} className="fill-grantpicks-black-400" />
-							<p className="text-sm font-semibold">Explore Round</p>
+							<p className="text-sm font-semibold">Explore Rounds</p>
 						</div>
 					</Button>
 				</div>

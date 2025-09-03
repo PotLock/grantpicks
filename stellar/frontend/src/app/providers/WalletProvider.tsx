@@ -41,7 +41,7 @@ import {
 	LobstrModule,
 	HanaModule,
 	ISupportedWallet,
-	// HotWalletModule,
+	HotWalletModule,
 	XBULL_ID,
 	StellarWalletsKit,
 	WalletNetwork,
@@ -145,7 +145,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 				modules: [
 					new FreighterModule(),
 					new xBullModule(),
-					// new HotWalletModule(),
+					...(envVarConfigs.NETWORK_ENV !== 'testnet' ? [new HotWalletModule()] : []),
 					new LobstrModule(),
 					new HanaModule(),
 				],
@@ -196,15 +196,16 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 				// 1) Try wallets that expose getNetwork (e.g. Freighter)
 				try {
 					const info = await stellarKit.getNetwork()
-					console.log('info', info)
-					if (info.network !== currentAppNetwork) {
+					if (![currentAppNetwork, 'mainnet'].includes(info.network)) {
+						console.log('info', info)
 						toast.error(
 							`Network Mismatch: Your Stellar wallet is set to ${info.network} but this app is running on ${currentAppNetwork}. Please switch networks in your wallet.`,
 							{ duration: 6000 },
 						)
 						return false
+					} else {
+						return true
 					}
-					return true
 				} catch {
 					// 2) Fallback for wallets without getNetwork (e.g., xBull):
 					// We can't read the wallet's internal network, but the kit signs with

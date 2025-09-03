@@ -19,6 +19,8 @@ import useAppStorage from '@/stores/zustand/useAppStorage'
 import { GPRound } from '@/models/round'
 import { formatNearAmount } from 'near-api-js/lib/utils/format'
 import { ChainId } from '@/types/context'
+import { ListExternal } from '../../../../../lists-client/src'
+import Link from 'next/link'
 
 interface VoteConfirmationModalProps extends BaseModalProps {
 	data?: GPRound
@@ -36,6 +38,8 @@ const VoteConfirmationModal = ({
 	const [totalProjects, setTotalProjects] = useState<number>(0)
 	const storage = useAppStorage()
 	const [isRegistered, setIsRegistered] = useState<boolean>(true)
+	const [listDetails, setListDetails] = useState<ListExternal | undefined>(undefined)
+	const [loading, setLoading] = useState<boolean>(true)
 
 	const connectedChain = useMemo(() => {
 		return storage.chainId || 'stellar'
@@ -43,20 +47,30 @@ const VoteConfirmationModal = ({
 
 
 	const fetchIsRegistered = useCallback(async () => {
-		if (data?.voting_wl_list_id) {
+		if (data?.application_wl_list_id) {
 			const contracts = storage.getStellarContracts()
 			if (!contracts) {
 				return
 			}
-			const isRegistered = await contracts.lists_contract.is_registered({
-				list_id: BigInt(data?.voting_wl_list_id),
-				registrant_id: stellarPubKey,
-				required_status: undefined,
-			})
-			setIsRegistered(isRegistered.result)
+			try {
+				const isRegistered = await contracts.lists_contract.is_registered({
+					list_id: BigInt(data?.application_wl_list_id),
+					registrant_id: stellarPubKey,
+					required_status: undefined,
+				})
+				setIsRegistered(isRegistered.result)
+
+				const listDetails = await contracts.lists_contract.get_list({
+					list_id: BigInt(data?.application_wl_list_id),
+				})
+				setListDetails(listDetails.result || {})
+				setLoading(false)
+			} catch (error) {
+				console.log('error fetch list details', error)
+				setLoading(false)
+			}
 		}
 	}, [stellarPubKey, data])
-
 
 
 
@@ -178,10 +192,11 @@ const VoteConfirmationModal = ({
 					</div>
 				</div>
 
-				{!isRegistered && (
-					<div className="flex items-center justify-center">
-						<p className="text-sm font-normal text-red-500">
-							You are not eligible to vote in this round
+				{listDetails?.name && (
+					<div className="flex flex-col w-full mt-6">
+						<p className="text-sm font-semibold text-grantpicks-black-950">
+							This is a private round. You must be an approved registrant to{` `}
+							<Link className='text-blue-500' href={`/list/${listDetails.id}`} target="_blank">{listDetails.name}</Link> list to vote.
 						</p>
 					</div>
 				)}
@@ -218,7 +233,7 @@ const VoteConfirmationModal = ({
 							}}
 							className="!py-3 flex-1"
 						>
-							Proceed
+							{isRegistered ? 'Proceed' : 'Not Eligible to Vote'}
 						</Button>
 					</div>
 				</div>

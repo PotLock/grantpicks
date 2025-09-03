@@ -7,7 +7,7 @@ interface IRoundState {
 }
 
 const useRoundStore = create<IRoundState>((set) => ({
-	selectedRoundType: 'on-going',
+	selectedRoundType: 'upcoming',
 	setSelectedRoundType: (selectedRoundType: TSelectedRoundType) =>
 		set(() => ({ selectedRoundType })),
 }))

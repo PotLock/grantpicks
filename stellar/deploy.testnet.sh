@@ -2,9 +2,9 @@ bash build.sh
 
 my_address=($(stellar keys address potlock-testnet))
 native_token=CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC
-lists_contract_id=($(stellar contract deploy --wasm  target/wasm32-unknown-unknown/release/lists_opt.wasm --source potlock-testnet --network testnet))
-registry_contract_id=($(stellar contract deploy --wasm  target/wasm32-unknown-unknown/release/project_registry_opt.wasm --source potlock-testnet --network testnet))
-round_contract_id=($(stellar contract deploy --wasm  target/wasm32-unknown-unknown/release/round_opt.wasm --source potlock-testnet --network testnet))
+lists_contract_id=($(stellar contract deploy --wasm  target/wasm32-unknown-unknown/release/lists_opt.optimized.wasm --source potlock-testnet --network testnet))
+registry_contract_id=($(stellar contract deploy --wasm  target/wasm32-unknown-unknown/release/project_registry_opt.optimized.wasm --source potlock-testnet --network testnet))
+round_contract_id=($(stellar contract deploy --wasm  target/wasm32-unknown-unknown/release/round_opt.optimized.wasm --source potlock-testnet --network testnet))
 
 echo "lists contract id: $lists_contract_id"
 echo "registry contract id: $registry_contract_id"

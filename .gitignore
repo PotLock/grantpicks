@@ -2,6 +2,7 @@ stellar/contract/target
 stellar/contract/*/target
 stellar/contract/*/test_snapshots
 stellar/node_modules
+stellar/.stellar/
 node_modules
 target
 .env
@@ -11,4 +12,3 @@ target
 **/target/
 **/neardev/
 /node_modules/
-

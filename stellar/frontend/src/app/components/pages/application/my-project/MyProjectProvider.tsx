@@ -22,7 +22,7 @@ const MyProjectContext = createContext<IMyProjectContext>({
 })
 
 const MyProjectProvider = () => {
-	const { stellarPubKey, nearAccounts } = useWallet()
+	const { stellarPubKey } = useWallet()
 	const router = useRouter()
 	const [projectData, setProjectData] = useState<Project | undefined>(undefined)
 	const [projectDataModel, setProjectDataModel] = useState<Project | undefined>(
@@ -88,10 +88,10 @@ const MyProjectProvider = () => {
 					if (project.name) {
 						setProjectDataModel(project)
 						setProjectData(project)
-						const projectStats = await potlockService.getProjectStats(
-							nearAccounts[0].accountId,
-						)
-						setStats(projectStats)
+						// // const projectStats = await potlockService.getProjectStats(
+						// // 	nearAccounts[0].accountId,
+						// // )
+						// setStats(projectStats)
 					} else {
 						setNoProject(true)
 					}
@@ -105,7 +105,7 @@ const MyProjectProvider = () => {
 			storage.chainId === 'near' && setNoProject(true)
 			console.log('error fetch project applicant', error)
 		}
-	}, [stellarPubKey, nearAccounts, storage, potlockService, setProjectData, setProjectDataModel, setStats])
+	}, [stellarPubKey, storage, potlockService, setProjectData, setProjectDataModel, setStats])
 
 	useEffect(() => {
 		if (storage.my_address) {

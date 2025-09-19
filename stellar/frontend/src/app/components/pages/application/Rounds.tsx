@@ -17,6 +17,8 @@ import { TSelectedRoundType } from '@/types/round'
 import useSWR from 'swr'
 import { RoundCard } from './RoundCard'
 import Button from '../../commons/Button'
+import IconSearch from '../../svgs/IconSearch'
+import IconClose from '../../svgs/IconClose'
 
 const ApplicationRounds = () => {
 	const { selectedRoundType, setSelectedRoundType } = useRoundStore()
@@ -28,8 +30,9 @@ const ApplicationRounds = () => {
 	const storage = useAppStorage()
 	const router = useRouter()
 	const searchParams = useSearchParams()
-	const { nearAccounts, stellarPubKey } = useWallet()
+	const { stellarPubKey } = useWallet()
 	const [myRoundsData, setMyRoundsData] = useState<GPRound[]>([])
+	const [searchQuery, setSearchQuery] = useState("")
 
 	const filterRoundsByType = (rounds: GPRound[], type: string) => {
 		switch (type) {
@@ -121,13 +124,12 @@ const ApplicationRounds = () => {
 	} = useSWR(
 		() => {
 			if (!connectedWallet) return null
-			const accountId =
-				connectedWallet === 'near' ? nearAccounts[0]?.accountId : stellarPubKey
-			return accountId ? `get-my-rounds:${accountId}` : null
+
+			return stellarPubKey ? `get-my-rounds:${stellarPubKey}` : null
 		},
 		() =>
 			onFetchMyRounds(
-				connectedWallet === 'near' ? nearAccounts[0]?.accountId : stellarPubKey,
+				stellarPubKey,
 			),
 	)
 
@@ -161,6 +163,27 @@ const ApplicationRounds = () => {
 		// If no query param, keep current selection to avoid flicker
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [searchParams])
+
+	// Client-side search filters
+	const filteredRounds = useMemo(() => {
+		const q = (searchQuery || '').trim().toLowerCase()
+		if (!q) return roundsData
+		return roundsData.filter((r) => {
+			const name = (r.name || '').toLowerCase()
+			const desc = (r.description || '').toLowerCase()
+			return name.includes(q) || desc.includes(q)
+		})
+	}, [roundsData, searchQuery])
+
+	const filteredMyRounds = useMemo(() => {
+		const q = (searchQuery || '').trim().toLowerCase()
+		if (!q) return myRoundsData
+		return myRoundsData.filter((r) => {
+			const name = (r.name || '').toLowerCase()
+			const desc = (r.description || '').toLowerCase()
+			return name.includes(q) || desc.includes(q)
+		})
+	}, [myRoundsData, searchQuery])
 
 	const LoadingRoundState = () => (
 		<div className="h-52 flex items-center justify-center w-full">
@@ -233,72 +256,106 @@ const ApplicationRounds = () => {
 					Round results
 				</button>
 			</div>
-			<div className="mb-6 md:mb-7 lg:mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8">
-				<div className="relative flex items-center gap-4 justify-end col-span-3">
-					<div
-						onClick={() => setShowSortType(!showSortType)}
-						className="border border-grantpicks-black-200 rounded-full py-3 px-3 flex items-center justify-between cursor-pointer hover:opacity-80 transition"
-					>
-						<p className="text-sm font-normal text-grantpicks-black-950">
-							{sortType}
-						</p>
-						<IconUnfoldMore size={24} className="fill-grantpicks-black-400" />
+
+			<div className="mb-6 md:mb-7 lg:mb-8">
+				<div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+					<div className="md:col-span-7">
+						<div className="flex h-[49px] items-center gap-x-2 rounded-full p-2 border border-grantpicks-black-200 w-full">
+							<IconSearch size={24} color="#292929" />
+							<input
+								type="text"
+								placeholder="Search Rounds"
+								className="w-full text-grantpicks-black-950 outline-none"
+								value={searchQuery}
+								onChange={(e) => setSearchQuery(e.target.value)}
+								onKeyDown={(e) => {
+									if (e.key === 'Escape') {
+										setSearchQuery("")
+									}
+								}}
+							/>
+							{searchQuery && (
+								<button
+									onClick={() => setSearchQuery("")}
+									className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+									title="Clear search"
+								>
+									<IconClose size={16} color="#292929" />
+								</button>
+							)}
+						</div>
 					</div>
-					{showSortType && (
-						<Menu
-							isOpen={showSortType}
-							onClose={() => setShowSortType(false)}
-							position="top-14 md:right-24 right-0"
+					<div className="md:col-span-3">
+						<div
+							onClick={() => setShowSortType(!showSortType)}
+							className="border border-black/10 rounded-full py-3 px-3 flex items-center justify-between cursor-pointer hover:opacity-80 transition w-full"
 						>
-							<div className="border border-black/10 p-3 w-52 rounded-xl space-y-3 bg-white">
-								<p
-									onClick={() => {
-										setSortType('Most Recent')
-										setShowSortType(false)
-									}}
-									className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
-								>
-									Most Recent
-								</p>
-								<p
-									onClick={() => {
-										setSortType('Vault Total Deposits')
-										setShowSortType(false)
-									}}
-									className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
-								>
-									Vault Total Deposits
-								</p>
-								<p
-									onClick={() => {
-										setSortType('My Rounds')
-										setShowSortType(false)
-									}}
-									className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
-								>
-									My Rounds
-								</p>
-							</div>
-						</Menu>
-					)}
-					<Button
-						onClick={() => {
-							router.push('/rounds/create-round')
-						}}
-					>
-						Create Round
-					</Button>
+							<p className="text-sm font-normal text-grantpicks-black-950">
+								{sortType}
+							</p>
+							<IconUnfoldMore size={24} className="fill-grantpicks-black-400" />
+						</div>
+						{showSortType && (
+							<Menu
+								isOpen={showSortType}
+								onClose={() => setShowSortType(false)}
+								position="top-14 right-0"
+							>
+								<div className="border border-black/10 p-3 w-52 rounded-xl space-y-3 bg-white">
+									<p
+										onClick={() => {
+											setSortType('Most Recent')
+											setShowSortType(false)
+										}}
+										className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
+									>
+										Most Recent
+									</p>
+									<p
+										onClick={() => {
+											setSortType('Vault Total Deposits')
+											setShowSortType(false)
+										}}
+										className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
+									>
+										Vault Total Deposits
+									</p>
+									<p
+										onClick={() => {
+											setSortType('My Rounds')
+											setShowSortType(false)
+										}}
+										className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
+									>
+										My Rounds
+									</p>
+								</div>
+							</Menu>
+						)}
+					</div>
+					<div className="md:col-span-2 flex md:justify-end">
+						{stellarPubKey && (
+							<Button
+								onClick={() => {
+									router.push('/rounds/create-round')
+								}}
+								className="w-full md:w-auto"
+							>
+								Create Round
+							</Button>
+						)}
+					</div>
 				</div>
 			</div>
 			<div className="min-h-96">
 				{sortType === 'My Rounds' ? (
 					isLoadingMyRounds ? (
 						<LoadingRoundState />
-					) : myRoundsData.length === 0 ? (
+					) : filteredMyRounds.length === 0 ? (
 						<EmptyRoundState />
 					) : (
 						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
-							{myRoundsData.map((doc, idx) => (
+							{filteredMyRounds.map((doc, idx) => (
 								<RoundCard
 									key={idx}
 									doc={doc}
@@ -309,7 +366,7 @@ const ApplicationRounds = () => {
 					)
 				) : (
 					<InfiniteScroll
-						dataLength={roundsData.length}
+						dataLength={filteredRounds.length}
 						next={() => !isValidating && setSize(size + 1)}
 						hasMore={hasMore}
 						style={{ display: 'flex', flexDirection: 'column' }}
@@ -321,11 +378,11 @@ const ApplicationRounds = () => {
 					>
 						{isLoading ? (
 							<LoadingRoundState />
-						) : roundsData.length === 0 ? (
+						) : filteredRounds.length === 0 ? (
 							<EmptyRoundState />
 						) : (
 							<div className="grid grid-cols-1 z-10 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
-								{roundsData?.map((doc, idx) => (
+								{filteredRounds?.map((doc, idx) => (
 									<RoundCard
 										key={idx}
 										doc={doc}

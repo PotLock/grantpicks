@@ -15,8 +15,6 @@ import useAppStorage from '@/stores/zustand/useAppStorage'
 import { GPRound } from '@/models/round'
 import IconNear from '../../svgs/IconNear'
 import { formatNearAmount, parseNearAmount } from 'near-api-js/lib/utils/format'
-import { FinalExecutionOutcome } from '@near-wallet-selector/core'
-import { watch } from 'fs'
 import { useForm } from 'react-hook-form'
 import { StrKey } from '@stellar/stellar-base'
 import { toastOptions } from '@/constants/style'
@@ -39,7 +37,7 @@ const FundRoundModal = ({
 	const { setSuccessFundRoundModalProps } = useModalContext()
 	const { stellarPrice, openPageLoading, dismissPageLoading, nearPrice } =
 		useGlobalContext()
-	const { stellarPubKey, stellarKit, currentBalance, nearWallet } = useWallet()
+	const { stellarPubKey, stellarKit, currentBalance, onOpenStellarWallet } = useWallet()
 	const storage = useAppStorage()
 
 	const { register, watch, handleSubmit, formState: { errors }, setError, setValue, clearErrors } = useForm()
@@ -124,33 +122,6 @@ const FundRoundModal = ({
 					await mutateRounds()
 					onClose()
 				}
-			} else {
-				const contracts = storage.getNearContracts(nearWallet)
-
-				if (!contracts) {
-					return
-				}
-
-				const depositAmount = parseNearAmount(amount)
-
-				const tx: {
-					result: any
-					outcome: FinalExecutionOutcome
-				} = (await contracts.round.deposit(doc.on_chain_id, depositAmount)) as {
-					result: any
-					outcome: FinalExecutionOutcome
-				}
-
-				dismissPageLoading()
-				setSuccessFundRoundModalProps((prev) => ({
-					...prev,
-					isOpen: true,
-					amount,
-					doc,
-					txHash: tx.outcome.transaction_outcome.id,
-				}))
-				await mutateRounds()
-				onClose()
 			}
 		} catch (error: any) {
 			dismissPageLoading()
@@ -170,8 +141,15 @@ const FundRoundModal = ({
 		: (parseFloat(formatNearAmount(doc.current_vault_balance)) / parseFloat(formatNearAmount(doc.expected_amount))) * 100
 
 	return (
-		<Modal isOpen={isOpen} onClose={onClose}>
-			<div className="w-11/12 md:w-[420px] overflow-y-auto max-h-[calc(100vh-2rem)] mx-auto bg-white rounded-3xl border border-gray-200 shadow-2xl p-2 md:p-0">
+		<Modal isOpen={isOpen} onClose={(e: any) => {
+			e.stopPropagation()
+			onClose()
+		}}>
+			<div
+				onClick={(e) => {
+					e.stopPropagation()
+				}}
+				className="w-11/12 md:w-[420px] overflow-y-auto max-h-[calc(100vh-2rem)] mx-auto bg-white rounded-3xl border border-gray-200 shadow-2xl p-2 md:p-0">
 				{/* Header */}
 				<div className="bg-gradient-to-r from-gray-800 to-gray-900 px-6 py-5">
 					<div className="flex items-center justify-between">
@@ -353,22 +331,37 @@ const FundRoundModal = ({
 					</div>
 
 					{/* Action Button */}
-					<Button
-						color="black-950"
-						className="!py-4 !text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
-						isFullWidth
-						isDisabled={!!errors.amount}
-						onClick={handleSubmit(onDepositFundRound)}
-					>
-						<div className="flex items-center justify-center space-x-2">
-							{storage.chainId !== 'near' ? (
-								<IconStellar size={20} className="fill-white" />
-							) : (
-								<IconNear size={20} className="fill-white" />
-							)}
-							<span>Fund Round</span>
-						</div>
-					</Button>
+					{stellarPubKey ? (
+						<Button
+							color="black-950"
+							className="!py-4 !text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+							isFullWidth
+							isDisabled={!!errors.amount}
+							onClick={(e) => {
+								e.stopPropagation()
+								handleSubmit(onDepositFundRound)
+							}}
+						>
+							<div className="flex items-center justify-center space-x-2">
+								{storage.chainId !== 'near' ? (
+									<IconStellar size={20} className="fill-white" />
+								) : (
+									<IconNear size={20} className="fill-white" />
+								)}
+								<span>Fund Round</span>
+							</div>
+						</Button>
+					) : (
+						<Button
+							color="black-950"
+							className="!py-4 !text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+							isFullWidth
+							onClick={() => onOpenStellarWallet()}
+							type='button'
+						>
+							Connect Wallet
+						</Button>
+					)}
 				</div>
 			</div>
 		</Modal>

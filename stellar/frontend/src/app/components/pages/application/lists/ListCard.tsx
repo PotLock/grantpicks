@@ -15,7 +15,7 @@ export const ListCard = ({ list, chainId, stellarPubKey }: ListCardProps) => {
   return (
     <div
       onClick={() => router.push(`/list/${list.id}`)}
-      className="group h-[400px] relative bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden border border-gray-100 hover:border-gray-200 w-[350px] flex flex-col">
+      className="group h-[400px] relative bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden border border-gray-100 hover:border-gray-200 w-full flex flex-col">
 
       {/* Image Container */}
       <div className="relative h-[180px] overflow-hidden">

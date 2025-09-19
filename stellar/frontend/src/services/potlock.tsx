@@ -1,6 +1,7 @@
 'use client'
 
 import { envVarConfigs } from '@/configs/env-var'
+import { GPApplication } from '@/models/application'
 import { GPRound } from '@/models/round'
 import axios, { AxiosInstance } from 'axios'
 import React from 'react'
@@ -31,9 +32,9 @@ export class PotlockService {
 		return result?.data
 	}
 
-	async getApplications(roundId: number, page: number = 1) {
+	async getApplications(roundId: number): Promise<GPApplication[]> {
 		const result = await this._axios?.get(
-			`/rounds/${roundId}/applications?page=${page}`,
+			`/rounds/${roundId}/applications`,
 		)
 		return result?.data.results
 	}

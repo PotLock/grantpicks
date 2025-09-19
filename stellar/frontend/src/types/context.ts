@@ -2,12 +2,6 @@ import {
 	ISupportedWallet,
 	StellarWalletsKit,
 } from '@creit.tech/stellar-wallets-kit'
-import { Wallet, WalletSelector } from '@near-wallet-selector/core'
-import {
-	Account,
-	SignMessageMethod,
-} from '@near-wallet-selector/core/src/lib/wallet'
-import { WalletSelectorModal } from '@near-wallet-selector/modal-ui'
 import { Dispatch, SetStateAction } from 'react'
 import { IGetRoundsResponse } from './on-chain'
 import { Livepeer } from 'livepeer'
@@ -19,15 +13,14 @@ import { IAccount } from './account'
 export interface IWalletContext {
 	connectedWallet: 'near' | 'stellar' | null
 	profileData: IAccount | undefined
-	//near
-	nearSelector: WalletSelector | null
-	nearModal: WalletSelectorModal | null
-	nearWallet: (Wallet & SignMessageMethod) | null
-	nearAccounts: Account[]
-	onOpenNearWallet: () => void
+	// near
+	// nearSelector: WalletSelector | null
+	// nearModal: WalletSelectorModal | null
+	// nearWallet: (Wallet & SignMessageMethod) | null
+	// nearAccounts: Account[]
+	// onOpenNearWallet?: () => void
 	onSignOut: () => Promise<void>
-	onCheckConnected: (selector: WalletSelector) => Promise<void>
-	//stellar
+	// stellar
 	currentBalance: number | undefined | null
 	stellarKit: StellarWalletsKit | null
 	stellarPubKey: string
@@ -116,7 +109,6 @@ export interface ICreateProjectForm {
 	title: string
 	project_id: string
 	description: string
-	considering_desc: string
 	team_member: string[]
 	smart_contracts: {
 		chain: string

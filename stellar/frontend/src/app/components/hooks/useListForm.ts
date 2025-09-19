@@ -24,8 +24,8 @@ type FormState = {
 const schema = z.object({
   name: z.string().min(1, { message: 'Name is required' }),
   description: z.string().min(1, { message: 'Description is required' }),
-  allow_applications: z.boolean(),
-  approve_applications: z.boolean(),
+  allow_applications: z.boolean().optional(),
+  approve_applications: z.boolean().optional(),
   admins: z.array(z.object({ admin_id: z.string() })).optional(),
   cover_img_url: z.string().optional()
 })
@@ -44,7 +44,7 @@ export const useListForm = ({ listId }: UseListFormProps) => {
     coverImageUrl: ""
   })
   const storage = useAppStorage()
-  const { stellarPubKey, stellarKit } = useWallet()
+  const { stellarPubKey, stellarKit, onOpenStellarWallet } = useWallet()
   const router = useRouter()
   const { control, handleSubmit, setValue, watch, register, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema)
@@ -133,7 +133,13 @@ export const useListForm = ({ listId }: UseListFormProps) => {
   }, [removeAdmin])
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
-    if(storage.chainId === 'stellar') {
+    if(!stellarPubKey) {
+      toast.error('Please connect your wallet', {
+        style: toastOptions.error.style,
+      })
+      onOpenStellarWallet()
+      return
+    }
       try {
         openPageLoading()
         let contracts = storage.getStellarContracts()
@@ -193,7 +199,6 @@ export const useListForm = ({ listId }: UseListFormProps) => {
       } finally {
         dismissPageLoading()
       }
-    }
   }
 
   return {

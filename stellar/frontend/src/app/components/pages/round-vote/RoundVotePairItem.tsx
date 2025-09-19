@@ -30,6 +30,7 @@ interface RoundVotePairItemProps {
 	setSelectedPairs: Dispatch<SetStateAction<string[]>>
 	data: Pair | NearPair
 	setShowProjectDetailDrawer: Dispatch<SetStateAction<IProjectDetailOwner>>
+	onSelect?: (index: number) => void
 }
 
 const RoundVotePairItem = ({
@@ -38,6 +39,7 @@ const RoundVotePairItem = ({
 	setSelectedPairs,
 	data,
 	setShowProjectDetailDrawer,
+	onSelect,
 }: RoundVotePairItemProps) => {
 	const wrapper1Ref = useRef<HTMLDivElement>(null)
 	const wrapper2Ref = useRef<HTMLDivElement>(null)
@@ -233,8 +235,7 @@ const RoundVotePairItem = ({
 	return (
 		<div
 			key={index}
-			id={`boxing-${index}`}
-			className="min-w-full flex flex-col md:flex-row items-stretch md:items-center justify-between snap-start md:snap-center space-y-4 md:space-y-0 md:space-x-4"
+			className="min-w-full flex flex-col md:flex-row items-stretch md:items-center justify-between snap-start space-y-4 md:space-y-0 md:space-x-4"
 		>
 			{/* the first */}
 			<div
@@ -242,6 +243,7 @@ const RoundVotePairItem = ({
 					let temp = [...selectedPairs]
 					temp[index] = data.projects[0].toString()
 					setSelectedPairs(temp)
+					onSelect?.(index)
 				}}
 				ref={wrapper1Ref}
 				className={clsx(
@@ -298,6 +300,7 @@ const RoundVotePairItem = ({
 					let temp = [...selectedPairs]
 					temp[index] = data.projects[1].toString()
 					setSelectedPairs(temp)
+					onSelect?.(index)
 				}}
 				className={clsx(
 					`rounded-3xl transition-all duration-200 w-full md:w-[360px] lg:w-[448px] cursor-pointer`,

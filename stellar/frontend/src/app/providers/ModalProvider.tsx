@@ -181,7 +181,6 @@ const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 				<VoteConfirmationModal
 					isOpen={voteConfirmationProps.isOpen}
 					data={voteConfirmationProps.doc}
-					chainId={voteConfirmationProps.chainId}
 					onClose={() =>
 						setVoteConfirmationProps((prev) => ({
 							...prev,

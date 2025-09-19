@@ -39,7 +39,6 @@ const MyProjectOverview = () => {
 			title: projectData?.name,
 			project_id: projectData?.id ? projectData.id.toString() : '',
 			description: projectData?.overview,
-			considering_desc: projectData?.overview,
 		},
 	})
 	const storage = useAppStorage()
@@ -53,7 +52,6 @@ const MyProjectOverview = () => {
 			}
 
 			setValue('description', projectData.overview)
-			setValue('considering_desc', projectData.overview)
 		}
 	}
 
@@ -174,7 +172,7 @@ const MyProjectOverview = () => {
 						}
 					/>
 					<InputTextArea
-						label="A brief Description"
+						label="Project Description"
 						required
 						rows={2}
 						maxLength={300}
@@ -188,21 +186,7 @@ const MyProjectOverview = () => {
 							) : undefined
 						}
 					/>
-					<InputTextArea
-						label="Why do you consider yourself a public good?"
-						required
-						rows={2}
-						maxLength={300}
-						hintLabel="Max. 300 characters"
-						{...register('considering_desc', { required: true })}
-						errorMessage={
-							errors.considering_desc?.type === 'required' ? (
-								<p className="text-red-500 text-xs mt-1 ml-2">
-									Considering description is required
-								</p>
-							) : undefined
-						}
-					/>
+
 				</div>
 			</div>
 			<div className="p-3 md:p-5 flex flex-col md:flex-row items-center md:justify-end space-x-0 md:space-x-4 space-y-4 md:space-y-0">
@@ -214,8 +198,7 @@ const MyProjectOverview = () => {
 						className="!py-3 !border !border-grantpicks-black-400 disabled:cursor-not-allowed"
 						isDisabled={
 							projectData?.name === watch().title &&
-							projectData?.overview === watch().description &&
-							projectData?.overview === watch().considering_desc
+							projectData?.overview === watch().description
 						}
 					>
 						Discard
@@ -229,8 +212,7 @@ const MyProjectOverview = () => {
 						className="!py-3 disabled:cursor-not-allowed"
 						isDisabled={
 							projectData?.name === watch().title &&
-							projectData?.overview === watch().description &&
-							projectData?.overview === watch().considering_desc
+							projectData?.overview === watch().description
 						}
 					>
 						Save changes

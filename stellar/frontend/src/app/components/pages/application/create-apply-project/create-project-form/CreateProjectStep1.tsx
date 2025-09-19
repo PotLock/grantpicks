@@ -27,7 +27,6 @@ const CreateProjectStep1 = () => {
 			title: submitData.title,
 			project_id: submitData.project_id,
 			description: submitData.description,
-			considering_desc: submitData.considering_desc,
 		})
 		setStep(2)
 	}
@@ -40,7 +39,6 @@ const CreateProjectStep1 = () => {
 			const draft = JSON.parse(draftData)
 			setValue('title', draft.title)
 			setValue('description', draft.description)
-			setValue('considering_desc', draft.considering_desc)
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])
@@ -83,7 +81,7 @@ const CreateProjectStep1 = () => {
 						}
 					/>
 					<InputTextArea
-						label="A brief Description"
+						label="Project Description"
 						required
 						rows={2}
 						maxLength={300}
@@ -97,21 +95,7 @@ const CreateProjectStep1 = () => {
 							) : undefined
 						}
 					/>
-					<InputTextArea
-						label="Why do you consider yourself a public good?"
-						required
-						rows={2}
-						maxLength={300}
-						hintLabel="Max. 300 characters"
-						{...register('considering_desc', { required: true })}
-						errorMessage={
-							errors.considering_desc?.type === 'required' ? (
-								<p className="text-red-500 text-xs mt-1 ml-2">
-									Considering description is required
-								</p>
-							) : undefined
-						}
-					/>
+
 				</div>
 			</div>
 			<div className="p-5 md:p-6 flex flex-col items-center space-y-4  border-t border-black/10">

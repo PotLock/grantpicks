@@ -9,11 +9,8 @@ import moment from 'moment'
 import { prettyTruncate } from '@/utils/helper'
 import Link from 'next/link'
 import IconExternalLink from '../../svgs/IconExternalLink'
-import RoundDetailDrawer from '../application/RoundDetailDrawer'
-import { useModalContext } from '@/app/providers/ModalProvider'
-import FundRoundModal from '../application/FundRoundModal'
-import ApplicationsDrawer from '../application/ApplicationsDrawer'
 import { GPRound } from '@/models/round'
+import { useRouter } from 'next/navigation'
 
 interface SuccessCreateRoundModalProps extends BaseModalProps {
 	createRoundRes?: GPRound
@@ -26,12 +23,7 @@ const SuccessCreateRoundModal = ({
 	createRoundRes,
 	txHash,
 }: SuccessCreateRoundModalProps) => {
-	const [showDetailDrawer, setShowDetailDrawer] = useState<boolean>(false)
-	const [showAppsDrawer, setShowAppsDrawer] = useState<boolean>(false)
-	const [showFundRoundModal, setShowFundRoundModal] = useState<boolean>(false)
-	const { setApplyProjectInitProps, setVoteConfirmationProps } =
-		useModalContext()
-
+	const router = useRouter()
 
 	return (
 		<>
@@ -72,7 +64,7 @@ const SuccessCreateRoundModal = ({
 							className="!rounded-full"
 							isFullWidth
 							onClick={() => {
-								setShowDetailDrawer(true)
+								router.push(`/round/${createRoundRes?.id}`)
 								onClose()
 							}}
 						>
@@ -103,41 +95,7 @@ const SuccessCreateRoundModal = ({
 					</div>
 				</div>
 			</Modal>
-			{createRoundRes && (
-				<>
-					<RoundDetailDrawer
-						isUserApplied={false}
-						isOpen={showDetailDrawer}
-						onClose={() => setShowDetailDrawer(false)}
-						onOpenFundRound={() => setShowFundRoundModal(true)}
-						onApplyRound={() => {
-							setApplyProjectInitProps((prev) => ({
-								...prev,
-								isOpen: true,
-							}))
-						}}
-						onVote={() => {
-							setVoteConfirmationProps((prev) => ({
-								...prev,
-								isOpen: true,
-								doc: createRoundRes,
-							}))
-						}}
-						doc={createRoundRes}
-					/>
-					<ApplicationsDrawer
-						isOpen={showAppsDrawer}
-						onClose={() => setShowAppsDrawer(false)}
-						doc={createRoundRes}
-					/>
-					<FundRoundModal
-						isOpen={showFundRoundModal}
-						doc={createRoundRes}
-						mutateRounds={() => { }}
-						onClose={() => setShowFundRoundModal(false)}
-					/>
-				</>
-			)}
+
 		</>
 	)
 }

@@ -64,8 +64,8 @@ const SuccessEditRoundModal = ({
 						className="!rounded-full"
 						isFullWidth
 						onClick={() => {
+							router.push(`/round/${updateRoundRes?.id}`)
 							onClose()
-							router.push(`/rounds`)
 						}}
 					>
 						<div className="flex items-center space-x-2">

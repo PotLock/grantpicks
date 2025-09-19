@@ -5,24 +5,47 @@ interface RoundCardActionsProps {
   actionText: string
   isDisabled: boolean
   onClick: () => void
+  disableFundButton: boolean
+  onFundRound: () => void
+  showFundButton: boolean
 }
 
 const RoundCardActions: React.FC<RoundCardActionsProps> = ({
   actionText,
   isDisabled,
   onClick,
+  showFundButton,
+  disableFundButton,
+  onFundRound,
 }) => {
   return (
-    <div className="w-full">
+    <div className="w-full flex flex-row gap-2">
       <Button
-        onClick={onClick}
+        onClick={(e) => {
+          e.stopPropagation()
+          onClick()
+        }}
         isFullWidth
         className="!border !border-grantpicks-black-200 !py-2"
-        color="white"
         isDisabled={isDisabled}
       >
         {actionText}
       </Button>
+      {showFundButton && (
+        <Button
+          onClick={(e) => {
+            e.stopPropagation()
+            onFundRound()
+          }}
+          color="white"
+
+          isDisabled={disableFundButton}
+          isFullWidth
+          className="!border !border-grantpicks-black-200 !py-2"
+        >
+          Fund Round
+        </Button>
+      )}
     </div>
   )
 }

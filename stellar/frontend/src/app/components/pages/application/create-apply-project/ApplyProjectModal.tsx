@@ -43,7 +43,7 @@ const ApplyProjectModal = ({
 	const router = useRouter()
 	const searchParams = useSearchParams()
 	const { setCreateProjectFormMainProps } = useModalContext()
-	const { stellarPubKey, stellarKit, nearWallet, nearAccounts } = useWallet()
+	const { stellarPubKey, stellarKit, onOpenStellarWallet } = useWallet()
 	const [isProjectMissingInfo, setIsProjectMissingInfo] =
 		useState<boolean>(false)
 	const [projectData, setProjectData] = useState<Project | undefined>(undefined)
@@ -95,20 +95,6 @@ const ApplyProjectModal = ({
 				const res = await getProjectApplicant(stellarPubKey, contracts)
 				//@ts-ignore
 				if (!res?.error) setProjectData(res)
-			} else {
-				const contracts = storage.getNearContracts(null)
-				if (!contracts) {
-					return
-				}
-				const data = await contracts.near_social.getProjectData(
-					storage.my_address || '',
-				)
-				if (data) {
-					const json =
-						data[`${storage.my_address || ''}`]['profile']['gp_project'] || '{}'
-					const project = JSON.parse(json)
-					setProjectData(project)
-				}
 			}
 		} catch (error: any) {
 			console.log('error fetch project applicant', error)
@@ -152,29 +138,33 @@ const ApplyProjectModal = ({
 					onClose()
 				}
 			} else {
-				const contracts = storage.getNearContracts(nearWallet)
+				/* The above code is a TypeScript React code snippet that interacts with Near Protocol smart
+				contracts. It first retrieves Near Protocol contracts using the `storage.getNearContracts`
+				function with the `nearWallet` parameter. If the contracts are not found, the function returns
+				early. */
+				// const contracts = storage.getNearContracts(nearWallet)
 
-				if (!contracts) {
-					return
-				}
+				// if (!contracts) {
+				// 	return
+				// }
 
-				const txApplyProject = await contracts.round.applyProjectToRound(
-					roundData?.on_chain_id as number,
-					applyNote,
-					projectData?.video_url || '',
-				)
+				// const txApplyProject = await contracts.round.applyProjectToRound(
+				// 	roundData?.on_chain_id as number,
+				// 	applyNote,
+				// 	projectData?.video_url || '',
+				// )
 
-				if (txApplyProject) {
-					dismissPageLoading()
-					setSuccessApplyProjectInitProps((prev) => ({
-						...prev,
-						isOpen: true,
-						applyProjectRes: txApplyProject.result,
-						txHash: txApplyProject.outcome.transaction_outcome.id,
-						roundData,
-					}))
-					onClose()
-				}
+				// if (txApplyProject) {
+				// 	dismissPageLoading()
+				// 	setSuccessApplyProjectInitProps((prev) => ({
+				// 		...prev,
+				// 		isOpen: true,
+				// 		applyProjectRes: txApplyProject.result,
+				// 		txHash: txApplyProject.outcome.transaction_outcome.id,
+				// 		roundData,
+				// 	}))
+				// 	onClose()
+				// }
 			}
 		} catch (error: any) {
 			dismissPageLoading()
@@ -343,13 +333,8 @@ const ApplyProjectModal = ({
 						<Button
 							color="black-950"
 							onClick={() => {
-								if (!stellarPubKey && !nearAccounts[0]?.accountId) {
-									toast.error(
-										'Please connect your wallet to create new project',
-										{
-											style: toastOptions.error.style,
-										},
-									)
+								if (!stellarPubKey) {
+									onOpenStellarWallet()
 								} else {
 									addApplyQuery()
 									setCreateProjectFormMainProps((prev) => ({
@@ -365,7 +350,7 @@ const ApplyProjectModal = ({
 							<div className="flex items-center space-x-2">
 								<IconProject size={18} className="fill-grantpicks-black-400" />
 								<p className="text-sm font-semibold text-white">
-									Create New Project
+									{stellarPubKey ? 'Create New Project' : 'Connect Wallet'}
 								</p>
 							</div>
 						</Button>

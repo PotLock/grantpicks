@@ -23,7 +23,7 @@ const ChallengePayoutModal = ({
 	roundData,
 }: ChallengePayoutModalProps) => {
 	const [reason, setReason] = useState<string>('')
-	const { stellarPubKey, stellarKit, nearWallet } = useWallet()
+	const { stellarPubKey, stellarKit } = useWallet()
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const storage = useAppStorage()
 
@@ -52,25 +52,6 @@ const ChallengePayoutModal = ({
 					stellarPubKey,
 				)
 				if (txhash) {
-					toast.success('Payout challenged successfully', {
-						style: toastOptions.success.style,
-					})
-					dismissPageLoading()
-					onClose()
-				}
-			} else {
-				const contract = storage.getNearContracts(nearWallet)
-
-				if (!contract) {
-					return
-				}
-
-				const tx = await contract.round.challengePayoutRound(
-					Number(roundData?.id),
-					reason,
-				)
-
-				if (tx) {
 					toast.success('Payout challenged successfully', {
 						style: toastOptions.success.style,
 					})

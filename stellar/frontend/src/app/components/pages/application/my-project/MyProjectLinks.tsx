@@ -55,7 +55,7 @@ interface IContact {
 
 const MyProjectLinks = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()
-	const { stellarPubKey, stellarKit, nearWallet } = useWallet()
+	const { stellarPubKey, stellarKit } = useWallet()
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const [showContractMenu, setShowContractMenu] = useState<boolean[]>([])
 	const [showContactMenu, setShowContactMenu] = useState<boolean[]>([])
@@ -194,51 +194,6 @@ const MyProjectLinks = () => {
 					stellarPubKey,
 				)
 				if (txHashUpdateProject) {
-					dismissPageLoading()
-					setTimeout(async () => {
-						await fetchProjectApplicant()
-					}, 2000)
-					toast.success(`Update project links is succeed`, {
-						style: toastOptions.success.style,
-					})
-				}
-			} else {
-				const contracts = storage.getNearContracts(nearWallet)
-
-				if (!contracts) {
-					return
-				}
-
-				const params: NearSocialGPProject = {
-					name: projectData?.name || '',
-					overview: projectData?.overview || '',
-					fundings:
-						projectData?.funding_histories as unknown as NearProjectFundingHistory[],
-					contacts: data.contacts.map((c) => ({
-						name: c.platform,
-						value: c.link_url,
-					})),
-					owner: projectData?.owner || '',
-					contracts: data.smart_contracts.map((contract) => ({
-						name: contract.chain,
-						contract_address: contract.address,
-					})),
-					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
-					repositories: data.github_urls.map((repo) => ({
-						label: repo.id,
-						url: repo.github_url,
-					})),
-					team_members:
-						(projectData?.team_members as unknown as string[]) || [],
-					video_url: projectData?.video_url || '',
-				}
-
-				const txUpdateProject = await contracts.near_social.setProjectData(
-					storage.my_address || '',
-					params,
-				)
-
-				if (txUpdateProject) {
 					dismissPageLoading()
 					setTimeout(async () => {
 						await fetchProjectApplicant()

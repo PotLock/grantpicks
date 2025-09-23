@@ -39,7 +39,7 @@ interface IFunding {
 
 const MyProjectFundingRaised = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()
-	const { stellarPubKey, stellarKit, nearWallet } = useWallet()
+	const { stellarPubKey, stellarKit } = useWallet()
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const [currentFunding, setCurrentFunding] = useState<IFunding[]>([])
 	const [currentHaventRaised, setCurrentHaventRaised] = useState<boolean>(false)
@@ -144,47 +144,6 @@ const MyProjectFundingRaised = () => {
 						await fetchProjectApplicant()
 					}, 2000)
 					toast.success(`Update project funding raised is succeed`, {
-						style: toastOptions.success.style,
-					})
-				}
-			} else {
-				const contracts = storage.getNearContracts(nearWallet)
-
-				if (!contracts) {
-					return
-				}
-
-				const params: NearSocialGPProject = {
-					name: projectData?.name || '',
-					overview: projectData?.overview || '',
-					fundings: data.funding_histories.map((f) => ({
-						source: f.source,
-						denomination: f.denomination,
-						description: f.description,
-						amount: f.amount.toString(),
-						funded_ms: parseInt(f.date.getTime().toString()),
-					})),
-					contacts: projectData?.contacts || [],
-					contracts: projectData?.contracts || [],
-					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
-					repositories: projectData?.repositories || [],
-					team_members:
-						(projectData?.team_members as unknown as string[]) || [],
-					video_url: projectData?.video_url || '',
-					owner: projectData?.owner || '',
-				}
-
-				const txUpdateProject = await contracts.near_social.setProjectData(
-					storage.my_address || '',
-					params,
-				)
-
-				if (txUpdateProject) {
-					dismissPageLoading()
-					setTimeout(async () => {
-						await fetchProjectApplicant()
-					}, 2000)
-					toast.success(`Update project media is succeed`, {
 						style: toastOptions.success.style,
 					})
 				}

@@ -13,12 +13,7 @@ import { IAccount } from './account'
 export interface IWalletContext {
 	connectedWallet: 'near' | 'stellar' | null
 	profileData: IAccount | undefined
-	// near
-	// nearSelector: WalletSelector | null
-	// nearModal: WalletSelectorModal | null
-	// nearWallet: (Wallet & SignMessageMethod) | null
-	// nearAccounts: Account[]
-	// onOpenNearWallet?: () => void
+
 	onSignOut: () => Promise<void>
 	// stellar
 	currentBalance: number | undefined | null

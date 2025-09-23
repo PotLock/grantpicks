@@ -37,11 +37,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 	>(null)
 	const [profileData, setProfileData] = useState<IAccount>()
 	const potlockService = usePotlockService()
-	// near (disabled)
-	// const [nearSelector, setNearSelector] = useState<WalletSelector | null>(null)
-	// const [nearModal, setNearModal] = useState<WalletSelectorModal | null>(null)
-	// const [nearWallet, setNearWallet] = useState<(Wallet & SignMessageMethod) | null>(null)
-	// const [nearAccounts, setNearAccounts] = useState<Account[]>([])
+
 	// stellar
 	const [stellarKit, setStellarKit] = useState<StellarWalletsKit | null>(null)
 	const [stellarPubKey, setStellarPubKey] = useState<string>('')

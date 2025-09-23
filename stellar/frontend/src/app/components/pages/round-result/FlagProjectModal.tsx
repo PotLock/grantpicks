@@ -13,7 +13,7 @@ import IconLoading from '../../svgs/IconLoading'
 const FlagProjectModal = ({ isOpen, onClose }: BaseModalProps) => {
 	const [reason, setReason] = useState<string>('')
 	const [isLoading, setIsLoading] = useState<boolean>(false)
-	const { stellarKit, nearWallet } = useWallet()
+	const { stellarKit } = useWallet()
 	const storage = useAppStorage()
 
 	const flagProject = async () => {
@@ -39,17 +39,6 @@ const FlagProjectModal = ({ isOpen, onClose }: BaseModalProps) => {
 				if (!txHash) {
 					toast.error('Failed to flag project')
 				}
-			} else {
-				const contract = storage.getNearContracts(nearWallet)
-
-				if (!contract) return
-
-				await contract.round.flagProject(
-					storage.current_round?.id || 0,
-					storage.current_project?.owner?.id || '',
-				)
-
-				toast.success('Project flagged successfully')
 			}
 			setIsLoading(false)
 			onClose()

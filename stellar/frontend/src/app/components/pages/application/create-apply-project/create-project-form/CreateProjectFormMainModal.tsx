@@ -48,7 +48,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 	)
 	const { dismissPageLoading, openPageLoading } = useGlobalContext()
 	const [step, setStep] = useState<number>(1)
-	const { stellarKit, nearWallet } = useWallet()
+	const { stellarKit } = useWallet()
 	const { setSuccessCreateProjectModalProps, setApplyProjectInitProps } =
 		useModalContext()
 	const storage = useAppStorage()
@@ -75,7 +75,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 				const params: ICreateProjectParams = {
 					name: dataForm.title,
 					overview: dataForm.description,
-					admins: dataForm.team_member.map((mem) => mem),
+					admins: dataForm.team_member.length > 0 ? dataForm.team_member.map((mem) => mem) : [storage.my_address || ''],
 					contacts: dataForm.contacts.map((c) => ({
 						name: c.platform,
 						value: c.link_url,
@@ -98,10 +98,10 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 						url: g,
 					})),
 					video_url: dataForm.video.url,
-					team_members: dataForm.team_member.map((mem) => ({
+					team_members: dataForm.team_member.length > 0 ? dataForm.team_member.map((mem) => ({
 						name: mem,
 						value: mem,
-					})),
+					})) : [],
 				}
 
 				const isRegistered = await contracts.lists_contract.is_registered({
@@ -156,80 +156,6 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 					dismissPageLoading()
 					onClose()
 				}
-			} else {
-				const contracts = storage.getNearContracts(nearWallet)
-
-				if (!contracts) {
-					return
-				}
-
-				const params: NearSocialGPProject = {
-					name: dataForm.title,
-					overview: dataForm.description,
-					contacts: dataForm.contacts.map((c) => ({
-						name: c.platform,
-						value: c.link_url,
-					})),
-					owner: storage.my_address || '',
-					contracts: dataForm.smart_contracts.map((sm) => ({
-						name: sm.chain,
-						contract_address: sm.address,
-					})),
-					fundings: dataForm.funding_histories.map((f) => ({
-						source: f.source,
-						denomination: f.denomination,
-						description: f.description,
-						amount: f.amount.toString(),
-						funded_ms: parseInt(f.date.getTime().toString()),
-					})),
-					image_url: DEFAULT_IMAGE_URL,
-					repositories: dataForm.github_urls.map((g) => ({
-						label: 'github',
-						url: g,
-					})),
-					video_url: dataForm.video.url,
-					team_members: dataForm.team_member,
-				}
-
-
-				const txCreateProject = await contracts.near_social.setProjectData(
-					storage.my_address || '',
-					params,
-					true,
-				)
-
-				const listId = process.env.NEAR_PROJECTS_LIST_ID || '1'
-
-				const txRegisterList = await contracts.lists.registerList(listId, true)
-
-				await contracts.near_social.sendTransactions([
-					txRegisterList,
-					txCreateProject,
-				])
-
-				if (searchParams.has('apply_round')) {
-					setApplyProjectInitProps((prev) => ({
-						...prev,
-						isOpen: true,
-						round_id: BigInt(searchParams.get('apply_round') as string),
-						roundData: roundData,
-					}))
-				} else {
-					setSuccessCreateProjectModalProps((prev) => ({
-						...prev,
-						isOpen: true,
-						createProjectRes: params as unknown as IGetProjectsResponse,
-						txHash: undefined,
-					}))
-				}
-				setDataForm(DEFAULT_CREATE_PROJECT_DATA)
-				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_1)
-				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_2)
-				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_3)
-				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_4)
-				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_5)
-				dismissPageLoading()
-				onClose()
 			}
 		} catch (error: any) {
 			console.error(error)

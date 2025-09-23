@@ -5,7 +5,7 @@ import { useWallet } from '@/app/providers/WalletProvider'
 import UserMenu from '../pages/application/UserMenu'
 import IconExpandMore from '../svgs/IconExpandMore'
 import IconExpandLess from '../svgs/IconExpandLess'
-import { formatNearAddress, prettyTruncate } from '@/utils/helper'
+import { prettyTruncate } from '@/utils/helper'
 import { useRouter } from 'next/navigation'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import Image from 'next/image'
@@ -20,7 +20,7 @@ const HamburgerIcon = ({ open }: { open: boolean }) => (
 )
 
 const TopNav = () => {
-	const { connectedWallet, nearAccounts, stellarPubKey, profileData } =
+	const { connectedWallet, stellarPubKey, profileData, onOpenStellarWallet } =
 		useWallet()
 	const { showMenu, setShowMenu } = useGlobalContext()
 	const [navOpen, setNavOpen] = useState(false)
@@ -60,7 +60,7 @@ const TopNav = () => {
 			{/* Logo and GrantPicks text */}
 			<button
 				onClick={() => router.push(`/rounds`)}
-				className="flex items-center gap-x-[2px] px-2 sm:px-[10px]"
+				className="flex items-center gap-x-[2px] px-2 md:px-0 sm:px-[10px]"
 			>
 				<Image
 					src="/assets/images/grantpicks-logo-new.png"
@@ -92,11 +92,7 @@ const TopNav = () => {
 						>
 							<div className="sm:pr-2">
 								<Image
-									src={
-										connectedWallet === 'near'
-											? `https://www.tapback.co/api/avatar/${nearAccounts[0]?.accountId}`
-											: `https://www.tapback.co/api/avatar/${stellarPubKey}`
-									}
+									src={`https://www.tapback.co/api/avatar/${stellarPubKey}`}
 									alt="image"
 									width={32}
 									height={32}
@@ -107,16 +103,10 @@ const TopNav = () => {
 								<div className="flex items-center mr-4 lg:mr-6">
 									<div>
 										<p className="text-xs lg:text-sm font-semibold text-grantpicks-black-950">
-											{connectedWallet === 'near'
-												? profileData?.near_social_profile_data?.name ||
-												formatNearAddress(nearAccounts[0]?.accountId)
-												: prettyTruncate(stellarPubKey, 10, 'address')}
+											{prettyTruncate(stellarPubKey, 10, 'address')}
 										</p>
 										<p className="text-xs lg:text-sm font-normal text-grantpicks-black-600">
-											@
-											{connectedWallet === 'near'
-												? formatNearAddress(nearAccounts[0]?.accountId)
-												: prettyTruncate(stellarPubKey, 10, 'address')}
+											@{prettyTruncate(stellarPubKey, 10, 'address')}
 										</p>
 									</div>
 								</div>
@@ -135,9 +125,7 @@ const TopNav = () => {
 						</button>
 					) : (
 						<Button
-							onClick={() =>
-								setShowMenu(!!connectedWallet ? 'user' : 'choose-wallet')
-							}
+							onClick={() => onOpenStellarWallet()}
 							className="!text-xs sm:!text-sm !font-semibold !px-3 sm:!px-4 !py-2"
 							color="black-950"
 						>

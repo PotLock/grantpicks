@@ -43,7 +43,7 @@ import { LIMIT_SIZE_CONTRACT } from '@/constants/query'
 import { usePotlockService } from '@/services/potlock'
 
 const RoundResultPage = () => {
-	const { nearWallet, stellarPubKey, stellarKit } = useWallet()
+	const { stellarPubKey, stellarKit } = useWallet()
 	const [showChallengeModal, setShowChallengeModal] = useState<boolean>(false)
 	const global = useGlobalContext()
 	const [showViewChallengeDrawer, setShowViewChallengeDrawer] =
@@ -64,7 +64,6 @@ const RoundResultPage = () => {
 			const roundInfo = await potlockApi.getRound(roundId)
 			const newChainId = extractChainId(roundInfo)
 
-			console.log('roundInfo', roundInfo)
 
 			storage.setRound(roundInfo)
 			storage.roundes.set(roundId.toString(), roundInfo)
@@ -370,23 +369,6 @@ const RoundResultPage = () => {
 					await fetchRoundInfo()
 					global.dismissPageLoading()
 				}
-			} else {
-				const contract = storage.getNearContracts(nearWallet)
-
-				if (!contract) return
-
-				const txPayouts = await contract.round.processPayouts(
-					storage.current_round?.on_chain_id || 0,
-				)
-
-				if (!txPayouts) {
-					toast.error('Error processing payout')
-					return
-				} else {
-					toast.success('Payout processed successfully')
-					await fetchRoundInfo()
-					global.dismissPageLoading()
-				}
 			}
 		} catch (e) {
 			console.error(e)
@@ -415,24 +397,6 @@ const RoundResultPage = () => {
 				)
 
 				if (!txHash) {
-					toast.error('Error Set Round Completed')
-					return
-				} else {
-					toast.success('Round Completed successfully')
-					await fetchRoundInfo()
-					global.dismissPageLoading()
-				}
-			} else {
-				const contract = storage.getNearContracts(nearWallet)
-
-				if (!contract) return
-
-				const roundId = parseInt(params.roundId)
-
-				const txSetRoundCompleted =
-					await contract.round.setRoundComplete(roundId)
-
-				if (!txSetRoundCompleted) {
 					toast.error('Error Set Round Completed')
 					return
 				} else {
@@ -480,24 +444,6 @@ const RoundResultPage = () => {
 				)
 
 				if (!txHash) {
-					toast.error('Error Distribute Remaining Fund')
-					return
-				} else {
-					toast.success('Remaining Fund Distributed successfully')
-					await fetchRoundInfo()
-					global.dismissPageLoading()
-				}
-			} else {
-				const contract = storage.getNearContracts(nearWallet)
-
-				if (!contract) return
-
-				const txDistributeRemaining =
-					await contract.round.redistributeRemainingFund(
-						storage.current_round?.on_chain_id || 0,
-					)
-
-				if (!txDistributeRemaining) {
 					toast.error('Error Distribute Remaining Fund')
 					return
 				} else {
@@ -607,11 +553,7 @@ const RoundResultPage = () => {
 				</div>
 				<div className="p-3 md:p-4 lg:p-5 rounded-xl border border-black/10 flex items-center space-x-4 bg-white">
 					<div className="border border-black/10 p-2 rounded-full">
-						{storage.chainId === 'stellar' ? (
-							<IconStellar size={24} className="fill-grantpicks-black-400" />
-						) : (
-							<IconNear size={24} className="fill-grantpicks-black-400" />
-						)}
+						<IconStellar size={24} className="fill-grantpicks-black-400" />
 					</div>
 					<div>
 						<p className="text-[25px] font-normal text-grantpicks-black-950">

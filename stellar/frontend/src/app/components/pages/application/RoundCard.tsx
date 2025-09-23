@@ -1,24 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useModalContext } from '@/app/providers/ModalProvider'
-import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import { useWallet } from '@/app/providers/WalletProvider'
 import useRoundStore from '@/stores/zustand/useRoundStore'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { GPRound } from '@/models/round'
-import { extractChainId, formatStroopToXlm } from '@/utils/helper'
+import { extractChainId } from '@/utils/helper'
 import moment from 'moment'
 
 // Components
 import RoundCardHeader from './components/RoundCardHeader'
 import RoundCardContent from './components/RoundCardContent'
 import RoundCardActions from './components/RoundCardActions'
-import RoundCardMenu from './components/RoundCardMenu'
-import RoundDetailDrawer from './RoundDetailDrawer'
-import ApplicationsDrawer from './ApplicationsDrawer'
-import FundRoundModal from './FundRoundModal'
-import { TimePeriodDrawer } from './TimePeriodDrawer'
-import { UpdateRoundAdmins } from './UpdateRoundAdmins'
 
 // Services
 import {
@@ -26,6 +19,7 @@ import {
   HasVotedRoundParams,
   isHasVotedRound,
 } from '@/services/stellar/round'
+import FundRoundModal from './FundRoundModal'
 
 export const RoundCard = ({
   doc,
@@ -35,23 +29,19 @@ export const RoundCard = ({
   mutateRounds: any
 }) => {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const { selectedRoundType } = useRoundStore()
   const { setApplyProjectInitProps, setVoteConfirmationProps } = useModalContext()
-  const { connectedWallet, stellarPubKey } = useWallet()
-  const { setShowMenu } = useGlobalContext()
+  const { connectedWallet, stellarPubKey, onOpenStellarWallet } = useWallet()
   const storage = useAppStorage()
 
+
   // State
-  const [showDetailDrawer, setShowDetailDrawer] = useState<boolean>(false)
-  const [showAppsDrawer, setShowAppsDrawer] = useState<boolean>(false)
-  const [showFundRoundModal, setShowFundRoundModal] = useState<boolean>(false)
-  const [showTimePeriodDrawer, setShowTimePeriodDrawer] = useState<boolean>(false)
-  const [showUpdateRoundAdmins, setShowUpdateRoundAdmins] = useState<boolean>(false)
   const [totalApprovedProjects, setTotalApprovedProjects] = useState<number>(0)
   const [isUserApplied, setIsUserApplied] = useState<boolean>(false)
   const [hasVoted, setHasVoted] = useState<boolean>(false)
-
+  const [isAdminOrOwner, setIsAdminOrOwner] = useState<boolean>(false)
+  const [pendingApplicationsCount, setPendingApplicationsCount] = useState<number>(0)
+  const [showFundRoundModal, setShowFundRoundModal] = useState<boolean>(false)
   const chainId = extractChainId(doc)
 
   // Memoized values
@@ -119,7 +109,7 @@ export const RoundCard = ({
     if (selectedRoundType !== 'upcoming') return
 
     try {
-      if (chainId === 'stellar') {
+      if (doc?.on_chain_id) {
         const contracts = storage.getStellarContracts()
         if (!contracts) return
 
@@ -140,18 +130,6 @@ export const RoundCard = ({
           setIsUserApplied(false)
         }
 
-      } else {
-        const contracts = storage.getNearContracts(null)
-        if (!contracts) return
-
-        const application = await contracts.round.getApplicationForRound(
-          Number(doc.on_chain_id),
-          storage.my_address || '',
-        )
-
-        if (application) {
-          setIsUserApplied(true)
-        }
       }
     } catch (error: any) {
       console.log('error fetch project applicant')
@@ -163,62 +141,135 @@ export const RoundCard = ({
     if (!isVotingOpen) return
 
     try {
-      if (chainId === 'stellar') {
-        const contracts = storage.getStellarContracts()
-        if (!contracts) return
+      const contracts = storage.getStellarContracts()
+      if (!contracts) return
 
-        const params: HasVotedRoundParams = {
-          round_id: BigInt(doc.on_chain_id),
-          voter: storage.my_address || '',
-        }
-        const hasVoted = await isHasVotedRound(params, contracts)
-        setHasVoted(hasVoted)
-      } else {
-        const contracts = storage.getNearContracts(null)
-        if (!contracts) return
-
-        const hasVoted = await contracts.round.hasVote(
-          Number(doc.on_chain_id),
-          storage.my_address || '',
-        )
-        setHasVoted(hasVoted)
+      const params: HasVotedRoundParams = {
+        round_id: BigInt(doc.on_chain_id),
+        voter: storage.my_address || '',
       }
+      const hasVoted = await isHasVotedRound(params, contracts)
+      setHasVoted(hasVoted)
+
     } catch (error: any) {
       console.log('error checking if user has voted', error)
     }
   }, [isVotingOpen, chainId, doc.on_chain_id, storage])
+
+  const checkIsAdminOrOwner = useCallback(async () => {
+    try {
+      let isOwner = doc.owner?.id === storage.my_address
+      let isAdmin = Array.isArray(doc.admins)
+        ? doc.admins.includes(storage.my_address || '')
+        : false
+
+      if (!isAdmin && chainId === 'stellar') {
+        const contracts = storage.getStellarContracts()
+        if (contracts) {
+          try {
+            const admins = (
+              await contracts.round_contract.admins({
+                round_id: BigInt(doc.on_chain_id),
+              })
+            ).result as string[]
+            isAdmin = admins.includes(storage.my_address || '')
+          } catch (e) {
+            // ignore
+          }
+        }
+      }
+
+      setIsAdminOrOwner(Boolean(isOwner || isAdmin))
+    } catch (e) {
+      setIsAdminOrOwner(false)
+    }
+  }, [chainId, doc.admins, doc.on_chain_id, doc.owner?.id, storage])
+
+  const fetchPendingApplicationsCount = useCallback(async () => {
+    if (!isAdminOrOwner || selectedRoundType !== 'upcoming') return
+
+    try {
+      let total = 0
+      const LIMIT = BigInt(50)
+
+      if (chainId === 'stellar') {
+        const contracts = storage.getStellarContracts()
+        if (!contracts) return
+
+        let from = BigInt(0)
+        let keepFetching = true
+        while (keepFetching) {
+          const res = (
+            await contracts.round_contract.get_applications_for_round({
+              round_id: BigInt(doc.on_chain_id),
+              from_index: from,
+              limit: LIMIT,
+            })
+          ).result
+          res.forEach((app: any) => {
+            if (app.status.tag === 'Pending') total += 1
+          })
+          if (res.length < Number(LIMIT)) keepFetching = false
+          from = from + LIMIT
+        }
+      } else {
+        const contracts = storage.getNearContracts(null)
+        if (!contracts) return
+        let from = 0
+        const limit = 50
+        let keepFetching = true
+        while (keepFetching) {
+          const res = await contracts.round.getApplicationsForRound(
+            Number(doc.on_chain_id),
+            from,
+            limit,
+          )
+          res.forEach((app: any) => {
+            if (app.status === 'Pending') total += 1
+          })
+          if (res.length < limit) keepFetching = false
+          from += limit
+        }
+      }
+
+      setPendingApplicationsCount(total)
+    } catch (e) {
+      setPendingApplicationsCount(0)
+    }
+  }, [chainId, doc.on_chain_id, isAdminOrOwner, selectedRoundType, storage])
 
   // Effects
   useEffect(() => {
     fetchRoundApplication()
     checkIfUserHasVoted()
     fetchTotalApprovedProjects()
-  }, [doc.on_chain_id, connectedWallet, stellarPubKey])
+    checkIsAdminOrOwner()
+  }, [
+    doc.on_chain_id,
+    connectedWallet,
+    stellarPubKey,
+    fetchRoundApplication,
+    checkIfUserHasVoted,
+    fetchTotalApprovedProjects,
+    checkIsAdminOrOwner,
+  ])
 
   useEffect(() => {
-    if (searchParams.get('round_id') === doc.on_chain_id.toString()) {
-      setShowDetailDrawer(true)
-    }
-  }, [searchParams, doc.on_chain_id])
-
-  // Event handlers
-  const handleOpenDetailDrawer = () => {
-    setShowDetailDrawer(true)
-    router.push(
-      `?round_type=${selectedRoundType}&round_id=${doc.on_chain_id}`,
-      { scroll: false },
-    )
-  }
-
-  const handleCloseDetailDrawer = () => {
-    setShowDetailDrawer(false)
-    const url = new URL(window.location.href)
-    url.searchParams.delete('round_id')
-    router.replace(url.toString(), { scroll: false })
-  }
+    fetchPendingApplicationsCount()
+  }, [fetchPendingApplicationsCount])
 
   const handleMainAction = () => {
     if (isNotStarted) return
+
+    if (isApplicationOpen && isAdminOrOwner) {
+      router.push(`/round/${doc.on_chain_id}/applications`)
+      return
+    }
+
+    if (isVotingOpen && isAdminOrOwner) {
+      router.push(`/round/${doc.on_chain_id}`)
+      return
+    }
 
     if (isVotingOpen) {
       if (hasVoted) {
@@ -243,14 +294,6 @@ export const RoundCard = ({
     }
   }
 
-  const handleFundRound = () => {
-    if (!connectedWallet) {
-      setShowMenu('choose-wallet')
-      return
-    }
-    setShowFundRoundModal(true)
-  }
-
   const getMainActionText = () => {
     if (isUserApplied && isApplicationOpen) {
       return "You're already a part of this round."
@@ -264,8 +307,11 @@ export const RoundCard = ({
     if (isApplicationClosed) {
       return 'No application allowed'
     }
-    if (isApplicationOpen) {
+    if (isApplicationOpen && !isAdminOrOwner) {
       return 'Apply'
+    }
+    if (isApplicationOpen && isAdminOrOwner) {
+      return 'View Applications'
     }
     if (isCompleted) {
       if (!storage.my_address) return 'Connect Wallet'
@@ -284,103 +330,52 @@ export const RoundCard = ({
     )
   }
 
-  const shouldShowMenu = () => {
-    return (
-      isVotingOpen ||
-      isApplicationOpen ||
-      isNotStarted ||
-      isApplicationClosed
-    )
+  const handleFundRound = () => {
+    if (!connectedWallet) {
+      onOpenStellarWallet()
+      return
+    }
+    setShowFundRoundModal(true)
   }
-
   return (
-    <div className="p-4 md:p-5 rounded-xl border border-black/10">
+    <div
+      onClick={() => router.push(`/round/${doc.on_chain_id}`)}
+      className="p-4 md:p-5 rounded-xl border border-black/10 hover:shadow-md cursor-pointer transition-shadow duration-300 h-full flex flex-col">
       <RoundCardHeader
         chainId={chainId}
         currentTime={currentTime}
         selectedRoundType={selectedRoundType}
       />
 
-      <RoundCardContent
-        doc={doc}
-        selectedRoundType={selectedRoundType}
-        currentTime={currentTime}
-        totalApprovedProjects={totalApprovedProjects}
-        chainId={chainId}
-        onOpenDetailDrawer={handleOpenDetailDrawer}
-      />
+      <div className="flex-1">
+        <RoundCardContent
+          doc={doc}
+          selectedRoundType={selectedRoundType}
+          currentTime={currentTime}
+          totalApprovedProjects={totalApprovedProjects}
+          chainId={chainId}
+          isAdminOrOwner={isAdminOrOwner}
+          pendingApplicationsCount={pendingApplicationsCount}
+        />
+      </div>
 
-      <RoundCardActions
-        actionText={getMainActionText()}
-        isDisabled={isMainActionDisabled()}
-        onClick={handleMainAction}
-      />
-
-      {shouldShowMenu() && (
-        <RoundCardMenu
-          data={doc}
-          onUpdateTimePeriod={() => setShowTimePeriodDrawer(true)}
-          onViewDetails={handleOpenDetailDrawer}
-          onViewApps={() => setShowAppsDrawer(true)}
+      <div className="mt-auto pt-4">
+        <RoundCardActions
+          actionText={getMainActionText()}
+          isDisabled={isMainActionDisabled()}
+          onClick={handleMainAction}
+          showFundButton={!doc?.round_complete}
+          disableFundButton={!doc?.use_vault}
           onFundRound={handleFundRound}
-          onUpdateAdmins={() => setShowUpdateRoundAdmins(true)}
         />
-      )}
-
-      {showDetailDrawer && (
-        <RoundDetailDrawer
-          isUserApplied={isUserApplied}
-          isOpen={showDetailDrawer}
-          onClose={handleCloseDetailDrawer}
-          onOpenFundRound={handleFundRound}
-          showClose={true}
-          onApplyRound={() => {
-            setApplyProjectInitProps((prev) => ({
-              ...prev,
-              isOpen: true,
-            }))
-          }}
-          onVote={() => {
-            setVoteConfirmationProps((prev) => ({
-              ...prev,
-              isOpen: true,
-              doc: doc,
-            }))
-          }}
-          doc={doc}
-        />
-      )}
-
-      {showAppsDrawer && (
-        <ApplicationsDrawer
-          isOpen={showAppsDrawer}
-          onClose={() => setShowAppsDrawer(false)}
-          doc={doc}
-        />
-      )}
-
+      </div>
       {showFundRoundModal && (
         <FundRoundModal
           isOpen={showFundRoundModal}
-          doc={doc}
-          mutateRounds={mutateRounds}
-          onClose={() => setShowFundRoundModal(false)}
-        />
-      )}
-
-      {showTimePeriodDrawer && (
-        <TimePeriodDrawer
-          isOpen={showTimePeriodDrawer}
-          onClose={() => setShowTimePeriodDrawer(false)}
-          mutateRounds={mutateRounds}
-          doc={doc}
-        />
-      )}
-
-      {showUpdateRoundAdmins && (
-        <UpdateRoundAdmins
-          isOpen={showUpdateRoundAdmins}
-          onClose={() => setShowUpdateRoundAdmins(false)}
+          onClose={(e: any) => {
+            e.stopPropagation()
+            setShowFundRoundModal(false)
+          }}
           doc={doc}
           mutateRounds={mutateRounds}
         />

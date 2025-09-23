@@ -150,7 +150,6 @@ export type CreateProjectStep1Data = {
 	title: string
 	project_id: string
 	description: string
-	considering_desc: string
 }
 
 export type CreateProjectStep2Data = {

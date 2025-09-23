@@ -169,14 +169,6 @@ const RoundVotePage = () => {
 		}
 	}, [storage.chainId, storage.my_address, params.roundId])
 
-	useEffect(() => {
-		if (!storage.chainId) {
-			router.push('/rounds')
-			toast.error('Please connect your wallet to vote', {
-				style: toastOptions.error.style,
-			})
-		}
-	}, [])
 
 	return (
 		<RoundVoteLayout>

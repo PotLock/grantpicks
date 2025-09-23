@@ -31,7 +31,7 @@ import {
 
 const MyProjectTeam = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()
-	const { stellarPubKey, stellarKit, nearWallet } = useWallet()
+	const { stellarPubKey, stellarKit } = useWallet()
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const [members, setMembers] = useState<string[]>([])
 	const [sameMemberError, setSameMemberError] = useState<boolean>(false)
@@ -89,42 +89,6 @@ const MyProjectTeam = () => {
 					stellarPubKey,
 				)
 				if (txHashUpdateProject) {
-					dismissPageLoading()
-					setTimeout(async () => {
-						await fetchProjectApplicant()
-					}, 2000)
-					toast.success(`Update project team is succeed`, {
-						style: toastOptions.success.style,
-					})
-				}
-			} else {
-				const contracts = storage.getNearContracts(nearWallet)
-
-				if (!contracts) {
-					return
-				}
-
-				const params: NearSocialGPProject = {
-					name: projectData?.name || '',
-					overview: projectData?.overview || '',
-					fundings:
-						(projectData?.funding_histories as unknown as NearProjectFundingHistory[]) ||
-						[],
-					contacts: projectData?.contacts || [],
-					contracts: projectData?.contracts || [],
-					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
-					repositories: projectData?.repositories || [],
-					team_members: members,
-					video_url: projectData?.video_url || '',
-					owner: projectData?.owner || '',
-				}
-
-				const txUpdateProject = await contracts.near_social.setProjectData(
-					storage.my_address || '',
-					params,
-				)
-
-				if (txUpdateProject) {
 					dismissPageLoading()
 					setTimeout(async () => {
 						await fetchProjectApplicant()

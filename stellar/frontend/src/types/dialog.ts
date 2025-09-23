@@ -22,7 +22,7 @@ export interface IDrawerProps extends DialogProps {
 
 export interface BaseModalProps {
 	isOpen: boolean
-	onClose: () => void
+	onClose: (e?: any) => void
 	children?: React.ReactNode
 	closeOnEscape?: boolean
 	closeOnBgClick?: boolean

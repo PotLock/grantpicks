@@ -2,7 +2,6 @@ export const DEFAULT_CREATE_PROJECT_DATA = {
 	title: '',
 	project_id: '',
 	description: '',
-	considering_desc: '',
 	team_member: [],
 	smart_contracts: [],
 	is_open_source: false,

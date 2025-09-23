@@ -221,15 +221,15 @@ const AddProjectsModal = ({
 					<p className="text-sm font-normal text-grantpicks-black-600 mb-2">
 						ALL PROJECTS
 					</p>
-					{projects.length === 0 ? (
+					{isLoading ? (
+						<div className="h-20 flex items-center justify-center">
+							<IconLoading size={24} className="fill-grantpicks-black-600" />
+						</div>
+					) : projects.length === 0 ? (
 						<div className="h-20 flex items-center justify-center">
 							<p className="text-sm font-light text-grantpicks-black-600">
 								No projects found yet
 							</p>
-						</div>
-					) : isLoading ? (
-						<div className="h-20 flex items-center justify-center">
-							<IconLoading size={24} className="fill-grantpicks-black-600" />
 						</div>
 					) : (
 						<div

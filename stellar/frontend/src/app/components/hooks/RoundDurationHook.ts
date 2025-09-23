@@ -17,12 +17,11 @@ interface UseRoundDurationProps {
   storage: AppRepo
   stellarPubKey: string
   stellarKit: StellarWalletsKit
-  onClose: () => void
   doc: GPRound
   mutateRounds: any
 }
 
-export const useRoundDuration = ({ storage, stellarPubKey, stellarKit, onClose, doc, mutateRounds }: UseRoundDurationProps) => {
+export const useRoundDuration = ({ storage, stellarPubKey, stellarKit,  doc, mutateRounds }: UseRoundDurationProps) => {
   const { openPageLoading, dismissPageLoading } = useGlobalContext()
 
 
@@ -58,7 +57,6 @@ export const useRoundDuration = ({ storage, stellarPubKey, stellarKit, onClose, 
             style: toastOptions.success.style,
           })
           await mutateRounds()
-          onClose()
         }
       } catch (error) {
         console.error(error)
@@ -101,7 +99,6 @@ export const useRoundDuration = ({ storage, stellarPubKey, stellarKit, onClose, 
             style: toastOptions.success.style,
           })
           await mutateRounds()
-          onClose()
         }
       } catch (error) {
         console.error(error)

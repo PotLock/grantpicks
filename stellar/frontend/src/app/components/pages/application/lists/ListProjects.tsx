@@ -7,6 +7,10 @@ import Image from "next/image"
 import Menu from '@/app/components/commons/Menu'
 import { useSingleList } from "./hooks/useSingleList"
 import { mutate } from "swr"
+import { prettyTruncate } from "@/utils/helper"
+import IconCopy from "@/app/components/svgs/IconCopy"
+import toast from "react-hot-toast"
+import { toastOptions } from "@/constants/style"
 
 type StatusTag = "Pending" | "Approved" | "Rejected" | "Graylisted" | "Blacklisted"
 
@@ -162,8 +166,24 @@ const ProjectCard = ({
         width={64}
         height={64}
       />
-      <div className="font-bold text-xl text-center mt-4 mb-2">
-        {projectDetails?.name || 'Slim Project'}
+      <div className="relative flex flex-col items-center">
+        <div className="font-bold text-xl text-center mt-4 mb-2">
+          {projectDetails?.name || project.registrant_id}
+        </div>
+        <div
+          onClick={() => {
+            navigator.clipboard.writeText(project.registrant_id)
+            toast.success('Address copied to clipboard', {
+              style: toastOptions.success.style,
+            })
+          }}
+          className="relative group flex items-center gap-2">
+          <span className="text-sm cursor-pointer text-gray-500 text-center">{prettyTruncate(project.registrant_id, 20, 'address')}</span>
+          <IconCopy size={16} className="fill-gray-300 cursor-pointer hover:opacity-70 transition" />
+          <div className="absolute w-[300px] z-50 left-1/2 bottom-[-50px] -translate-x-1/2 mt-2 rounded-md whitespace-normal break-all h-auto bg-grantpicks-black-950 text-white px-3 py-1 shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition text-sm md:text-sm font-semibold">
+            {project.registrant_id}
+          </div>
+        </div>
       </div>
       {badge}
       {isOwner && (

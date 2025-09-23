@@ -43,8 +43,8 @@ export const AllLists = () => {
 
   return (
     <div className="flex flex-col gap-y-4">
-      <div className="flex flex-col justify-between items-center md:flex-row mt-10 gap-y-4">
-        <div className="flex items-center gap-x-2  rounded-full p-2 border border-grantpicks-black-950 w-full md:w-[40%]">
+      <div className="flex flex-col gap-4 justify-between items-center md:flex-row mt-10 gap-y-4">
+        <div className="flex flex-1 items-center gap-x-2  rounded-full p-2 border border-grantpicks-black-950 w-full md:w-[40%]">
           <IconSearch size={24} color="#292929" />
           <input
             type="text"
@@ -93,7 +93,7 @@ export const AllLists = () => {
         </div>
       )}
 
-      <div className="flex flex-wrap md:items-start items-center justify-center md:min-h-[700px] md:justify-start gap-x-4 mt-8 gap-y-4 text-grantpicks-black-950">
+      <div >
         {
           isLoading ? (
             <div className="flex items-center w-full flex-col gap-y-4 justify-center py-12">
@@ -112,9 +112,14 @@ export const AllLists = () => {
               )}
             </div>
           ) : (
-            filteredLists.map((list: IGetListExternalResponse) => (
-              <ListCard stellarPubKey={stellarPubKey || ''} chainId={storage.chainId} key={list.id} list={list} />
-            ))
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mt-8 text-grantpicks-black-950 w-full">
+              {filteredLists.map((list: IGetListExternalResponse) => (
+                <div key={list.id} className="w-full">
+                  <ListCard stellarPubKey={stellarPubKey || ''} chainId={storage.chainId} list={list} />
+                </div>
+              ))
+              }
+            </div>
           )
         }
       </div>

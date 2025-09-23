@@ -51,7 +51,7 @@ export const ListForm = ({ listId, existingList }: ListFormProps) => {
         coverImage: existingList.cover_img_url ? new File([], existingList.cover_img_url) : null,
       }))
     }
-  }, [existingList, listId])
+  }, [existingList, listId, setValue, setListFormState])
 
   const { getRootProps, getInputProps } = useDropzone({
     onDrop,
@@ -92,7 +92,7 @@ export const ListForm = ({ listId, existingList }: ListFormProps) => {
           <div className="flex items-center justify-between w-full">
             <p className=" font-semibold">Allow Applications</p>
             <Switch
-              checked={watch('allow_applications')}
+              checked={!!watch('allow_applications')}
               onChange={(checked: boolean) => {
                 setValue('allow_applications', checked)
               }}
@@ -109,7 +109,7 @@ export const ListForm = ({ listId, existingList }: ListFormProps) => {
           </div>
           <div className="flex items-center gap-x-1">
             <Checkbox
-              checked={watch('approve_applications')}
+              checked={!!watch('approve_applications')}
               onChange={(e: ChangeEvent<HTMLInputElement>) => {
                 setValue('approve_applications', e.target.checked)
               }}

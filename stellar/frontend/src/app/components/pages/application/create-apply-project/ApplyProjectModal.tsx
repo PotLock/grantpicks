@@ -7,9 +7,6 @@ import IconProject from '@/app/components/svgs/IconProject'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import { useModalContext } from '@/app/providers/ModalProvider'
 import { useWallet } from '@/app/providers/WalletProvider'
-import { toastOptions } from '@/constants/style'
-import Contracts from '@/lib/contracts'
-import CMDWallet from '@/lib/wallet'
 import { GPRound } from '@/models/round'
 import { getProjectApplicant } from '@/services/stellar/project-registry'
 import {
@@ -18,14 +15,12 @@ import {
 } from '@/services/stellar/round'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { BaseModalProps } from '@/types/dialog'
-import { IGetRoundsResponse, Network } from '@/types/on-chain'
 import { prettyTruncate } from '@/utils/helper'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Project } from 'project-registry-client'
 import React, { useCallback, useEffect, useState } from 'react'
-import toast from 'react-hot-toast'
 import { ListExternal } from '../../../../../../lists-client/src'
 import Link from 'next/link'
 
@@ -43,7 +38,7 @@ const ApplyProjectModal = ({
 	const router = useRouter()
 	const searchParams = useSearchParams()
 	const { setCreateProjectFormMainProps } = useModalContext()
-	const { stellarPubKey, stellarKit, nearWallet, nearAccounts } = useWallet()
+	const { stellarPubKey, stellarKit, onOpenStellarWallet } = useWallet()
 	const [isProjectMissingInfo, setIsProjectMissingInfo] =
 		useState<boolean>(false)
 	const [projectData, setProjectData] = useState<Project | undefined>(undefined)
@@ -95,20 +90,6 @@ const ApplyProjectModal = ({
 				const res = await getProjectApplicant(stellarPubKey, contracts)
 				//@ts-ignore
 				if (!res?.error) setProjectData(res)
-			} else {
-				const contracts = storage.getNearContracts(null)
-				if (!contracts) {
-					return
-				}
-				const data = await contracts.near_social.getProjectData(
-					storage.my_address || '',
-				)
-				if (data) {
-					const json =
-						data[`${storage.my_address || ''}`]['profile']['gp_project'] || '{}'
-					const project = JSON.parse(json)
-					setProjectData(project)
-				}
 			}
 		} catch (error: any) {
 			console.log('error fetch project applicant', error)
@@ -147,30 +128,6 @@ const ApplyProjectModal = ({
 						isOpen: true,
 						applyProjectRes: txApplyProject.result,
 						txHash: txHashApplyProject,
-						roundData,
-					}))
-					onClose()
-				}
-			} else {
-				const contracts = storage.getNearContracts(nearWallet)
-
-				if (!contracts) {
-					return
-				}
-
-				const txApplyProject = await contracts.round.applyProjectToRound(
-					roundData?.on_chain_id as number,
-					applyNote,
-					projectData?.video_url || '',
-				)
-
-				if (txApplyProject) {
-					dismissPageLoading()
-					setSuccessApplyProjectInitProps((prev) => ({
-						...prev,
-						isOpen: true,
-						applyProjectRes: txApplyProject.result,
-						txHash: txApplyProject.outcome.transaction_outcome.id,
 						roundData,
 					}))
 					onClose()
@@ -343,13 +300,8 @@ const ApplyProjectModal = ({
 						<Button
 							color="black-950"
 							onClick={() => {
-								if (!stellarPubKey && !nearAccounts[0]?.accountId) {
-									toast.error(
-										'Please connect your wallet to create new project',
-										{
-											style: toastOptions.error.style,
-										},
-									)
+								if (!stellarPubKey) {
+									onOpenStellarWallet()
 								} else {
 									addApplyQuery()
 									setCreateProjectFormMainProps((prev) => ({
@@ -365,7 +317,7 @@ const ApplyProjectModal = ({
 							<div className="flex items-center space-x-2">
 								<IconProject size={18} className="fill-grantpicks-black-400" />
 								<p className="text-sm font-semibold text-white">
-									Create New Project
+									{stellarPubKey ? 'Create New Project' : 'Connect Wallet'}
 								</p>
 							</div>
 						</Button>

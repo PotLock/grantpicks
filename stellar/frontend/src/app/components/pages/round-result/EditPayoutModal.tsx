@@ -30,7 +30,7 @@ export type PayoutTableItem = {
 
 const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 	const [memo, setMemo] = useState<string>('')
-	const { stellarPubKey, stellarKit, nearWallet } = useWallet()
+	const { stellarPubKey, stellarKit } = useWallet()
 	const [managerWeight, setManagerWeight] = useState<number>(0)
 	const [pairwiseWeight, setPairwiseWeight] = useState<number>(100)
 	const [isLoading, setIsLoading] = useState<boolean>(false)
@@ -116,25 +116,6 @@ const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 						memo,
 					})
 				})
-
-				const contract = storage.getNearContracts(nearWallet)
-
-				if (!contract) {
-					return
-				}
-
-				const savePayoutTx = await contract.round.setPayouts(
-					Number(storage.current_round?.id || 0),
-					payoutInputs,
-				)
-
-				if (!savePayoutTx) {
-					toast.error('Error submitting payout')
-				} else {
-					toast.success('Payout submitted successfully')
-					setIsLoading(false)
-					onClose()
-				}
 			}
 		} catch (e) {
 			console.error(e)

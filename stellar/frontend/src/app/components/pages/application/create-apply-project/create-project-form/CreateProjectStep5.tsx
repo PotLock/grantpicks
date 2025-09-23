@@ -398,7 +398,7 @@ const CreateProjectStep5 = () => {
 						color={loadingFlow !== null ? `disabled` : `black-950`}
 						isFullWidth
 						isDisabled={
-							loadingFlow !== null || (!embededYtHtml && (!playbackSrc || playbackSrc?.length === 0))
+							loadingFlow !== null
 						}
 						onClick={handleSubmit(onProceed)}
 						className="!py-3"

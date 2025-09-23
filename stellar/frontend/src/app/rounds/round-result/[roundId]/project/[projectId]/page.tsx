@@ -125,7 +125,7 @@ const RoundResultProjectDetailPage = () => {
 	const [pairFilter, setPairFilter] = useState<'all' | 'won' | 'lost'>('all')
 	const global = useGlobalContext()
 	const params = useParams<{ roundId: string; projectId: string }>()
-	const { stellarKit, nearWallet } = useWallet()
+	const { stellarKit } = useWallet()
 	const [showFlagModal, setShowFlagModal] = useState(false)
 	const [numberOfProjects, setNumberOfProjects] = useState(0)
 	const [owner, setOwner] = useState<string | null>(null)
@@ -344,20 +344,6 @@ const RoundResultProjectDetailPage = () => {
 					fetchVotingResultRound()
 					toast.success('Project unflagged successfully')
 				}
-			} else {
-				const contracts = storage.getNearContracts(nearWallet)
-
-				if (!contracts) {
-					return
-				}
-
-				await contracts.round.unflagProject(
-					storage.current_round?.on_chain_id || 0,
-					params.projectId,
-				)
-
-				fetchVotingResultRound()
-				toast.success('Project unflagged successfully')
 			}
 
 			global.dismissPageLoading()

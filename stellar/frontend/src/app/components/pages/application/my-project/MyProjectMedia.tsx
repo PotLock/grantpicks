@@ -40,7 +40,7 @@ import {
 
 const MyProjectMedia = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()
-	const { stellarKit, stellarPubKey, nearWallet } = useWallet()
+	const { stellarKit, stellarPubKey } = useWallet()
 	const { openPageLoading, dismissPageLoading, livepeer } = useGlobalContext()
 	const {
 		control,
@@ -174,43 +174,6 @@ const MyProjectMedia = () => {
 					stellarPubKey,
 				)
 				if (txHashUpdateProject) {
-					dismissPageLoading()
-					setTimeout(async () => {
-						await fetchProjectApplicant()
-					}, 2000)
-					toast.success(`Update project media is succeed`, {
-						style: toastOptions.success.style,
-					})
-				}
-			} else {
-				const contracts = storage.getNearContracts(nearWallet)
-
-				if (!contracts) {
-					return
-				}
-
-				const params: NearSocialGPProject = {
-					name: projectData?.name || '',
-					overview: projectData?.overview || '',
-					fundings:
-						(projectData?.funding_histories as unknown as NearProjectFundingHistory[]) ||
-						[],
-					contacts: projectData?.contacts || [],
-					contracts: projectData?.contracts || [],
-					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
-					repositories: projectData?.repositories || [],
-					team_members:
-						(projectData?.team_members as unknown as string[]) || [],
-					video_url: watch().video.url || '',
-					owner: projectData?.owner || '',
-				}
-
-				const txUpdateProject = await contracts.near_social.setProjectData(
-					storage.my_address || '',
-					params,
-				)
-
-				if (txUpdateProject) {
 					dismissPageLoading()
 					setTimeout(async () => {
 						await fetchProjectApplicant()

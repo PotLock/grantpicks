@@ -8,17 +8,20 @@ import { useWallet } from "@/app/providers/WalletProvider"
 import useAppStorage from "@/stores/zustand/useAppStorage"
 import { prettyTruncate } from "@/utils/helper"
 import Image from "next/image"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { FaUsers, FaCheckCircle, FaUserFriends, FaCalendar } from "react-icons/fa"
 import { useCallback, useEffect, useState } from "react"
 import { RegisterUsersModal } from "./RegisterUsersModal"
 import { ListProjects } from "./ListProjects"
 import IconMoreVert from "@/app/components/svgs/IconMoreVert"
+import { getProjectApplicant } from "@/services/stellar/project-registry"
+import { useModalContext } from "@/app/providers/ModalProvider"
 
 export const SingleListPage = () => {
   const params = useParams()
   const storage = useAppStorage()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const listId = params.listId as string
   const { stellarPubKey } = useWallet()
   const { data: list, isLoading, isError, handleDeleteList } = useSingleList({ listId })
@@ -26,6 +29,38 @@ export const SingleListPage = () => {
   const [menuOpen, setMenuOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [isRegistered, setIsRegistered] = useState(false)
+  const [isUserAProject, setIsUserAProject] = useState(true)
+  const { setCreateProjectFormMainProps } = useModalContext()
+
+  const isUserAProjectCallback = useCallback(async () => {
+
+    const contracts = storage.getStellarContracts()
+    if (!contracts) {
+      return false
+    }
+    try {
+      const isUserAProject = await getProjectApplicant(stellarPubKey, contracts)
+      //@ts-ignore
+      if (!isUserAProject?.error) {
+        setIsUserAProject(true)
+      } else {
+        setIsUserAProject(false)
+      }
+      return isUserAProject !== undefined
+    } catch (error) {
+      console.log('error', error)
+      return false
+    }
+  }, [stellarPubKey, storage])
+
+  const addApplyQuery = () => {
+    const currentParams = new URLSearchParams(searchParams.toString())
+    currentParams.set('apply_list', listId)
+    router.push(`?${currentParams.toString()}`, {
+      scroll: false,
+    })
+  }
+
 
 
   const fetchIsRegistered = useCallback(async () => {
@@ -44,6 +79,7 @@ export const SingleListPage = () => {
   }, [listId, stellarPubKey])
 
   useEffect(() => {
+    isUserAProjectCallback()
     fetchIsRegistered()
   }, [fetchIsRegistered])
 
@@ -120,10 +156,21 @@ export const SingleListPage = () => {
               <div className="flex-shrink-0">
                 <Button
                   isDisabled={(list?.admin_only_registrations && list?.owner !== stellarPubKey) || isRegistered}
-                  onClick={() => setIsOpen({ open: true, type: list?.owner === stellarPubKey ? 'BATCH' : 'SINGLE' })}
+                  onClick={() => {
+                    if (!isUserAProject) {
+                      addApplyQuery()
+                      setCreateProjectFormMainProps((prev) => ({
+                        ...prev,
+                        isOpen: true,
+                      }))
+                      return
+                    } else {
+                      setIsOpen({ open: true, type: list?.owner === stellarPubKey ? 'BATCH' : 'SINGLE' })
+                    }
+                  }}
                   className="w-full sm:w-auto"
                 >
-                  {isRegistered ? 'Already Registered' : list?.owner === stellarPubKey ? 'Register Project(s)' : 'Apply to List'}
+                  {isRegistered ? 'Already Registered' : list?.owner === stellarPubKey ? 'Register Project(s)' : !isUserAProject ? 'Create a Project to Apply' : 'Apply to List'}
                 </Button>
               </div>
             </div>

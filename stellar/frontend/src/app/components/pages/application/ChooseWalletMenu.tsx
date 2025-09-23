@@ -19,7 +19,7 @@ const ChooseWalletMenu = ({
 	isConnected: boolean
 }) => {
 	const router = useRouter()
-	const { onOpenNearWallet, onOpenStellarWallet } = useWallet()
+	const { onOpenStellarWallet } = useWallet()
 
 	return (
 		<Menu

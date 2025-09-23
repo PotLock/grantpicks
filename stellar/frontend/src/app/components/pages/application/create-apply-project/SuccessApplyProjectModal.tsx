@@ -28,6 +28,7 @@ const SuccessApplyProjectModal = ({
 	const router = useRouter()
 	const storage = useAppStorage()
 
+
 	return (
 		<Modal isOpen={isOpen} onClose={onClose} closeOnBgClick>
 			<div className="w-11/12 md:w-[60vw] lg:w-[45vw] mx-auto bg-white rounded-xl shadow-md p-4 md:p-6">
@@ -61,6 +62,7 @@ const SuccessApplyProjectModal = ({
 						className="!rounded-full"
 						isFullWidth
 						onClick={() => {
+							router.push(`/round/${roundData?.id}/applications`)
 							onClose()
 						}}
 					>

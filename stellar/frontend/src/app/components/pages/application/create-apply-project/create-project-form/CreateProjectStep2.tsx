@@ -40,45 +40,48 @@ const CreateProjectStep2 = () => {
 	}
 
 	const onAddMember = async () => {
+		const raw = watch('member') || ''
+		const member = raw.trim()
 		if (storage.chainId === 'stellar') {
-			if (!StrKey.isValidEd25519PublicKey(watch('member'))) {
+			if (!StrKey.isValidEd25519PublicKey(member)) {
 				toast.error('Address is not valid', { style: toastOptions.error.style })
 				return
 			}
 		} else {
-			if (!NEAR_ADDRESS_REGEX(watch('member'))) {
+			if (!NEAR_ADDRESS_REGEX(member)) {
 				toast.error('Address is not valid', { style: toastOptions.error.style })
 				return
 			}
 		}
-		if (members.includes(watch('member'))) {
+		if (members.includes(member)) {
 			toast.error('This admin is already added', {
 				style: toastOptions.error.style,
 			})
 			return
 		}
-		const member = watch('member')
 		setMembers((prev) => [...prev, member])
 		setValue('member', '')
 	}
 
 	useEffect(() => {
-		if (watch('member') !== '') {
+		const raw = watch('member') || ''
+		const value = raw.trim()
+		if (value !== '') {
 			if (storage.chainId === 'stellar') {
-				if (!StrKey.isValidEd25519PublicKey(watch('member'))) {
+				if (!StrKey.isValidEd25519PublicKey(value)) {
 					setValidationError(true)
 				} else {
 					setValidationError(false)
 				}
 			} else {
-				if (NEAR_ADDRESS_REGEX(watch('member'))) {
+				if (NEAR_ADDRESS_REGEX(value)) {
 					setValidationError(false)
 				} else {
 					setValidationError(true)
 				}
 			}
 
-			if (members.includes(watch('member'))) {
+			if (members.includes(value)) {
 				setSameMemberError(true)
 			} else {
 				setSameMemberError(false)
@@ -89,7 +92,8 @@ const CreateProjectStep2 = () => {
 
 	useEffect(() => {
 		setRequiredError(false)
-		if (watch('member') === '') {
+		const raw = watch('member') || ''
+		if (raw.trim() === '') {
 			setValidationError(false)
 			setSameMemberError(false)
 		}
@@ -173,20 +177,10 @@ const CreateProjectStep2 = () => {
 									<p className="text-red-500 text-xs mt-1 ml-2">
 										Team member is already added
 									</p>
-								) : watch('member') !== '' &&
-									watch('member') !== undefined &&
-									!validationError ? (
-									<p className="text-green-500 text-xs mt-1 ml-2">
-										Address is valid
-									</p>
 								) : undefined
 							}
-							className={`border ${validationError || sameMemberError ? 'border-red-500' : !validationError && watch('member') !== '' && watch('member') !== undefined ? 'border-green-500' : 'border-gray-300'}`}
-							hintLabel={
-								storage.chainId === 'stellar'
-									? 'You must put a valid STELLAR address that belongs to your team member(s)'
-									: 'You must put a valid NEAR address that belongs to your team member(s)'
-							}
+							className={`${validationError || sameMemberError ? '!border-red-500' : (!validationError && !sameMemberError && (watch('member') || '').trim() !== '' ? '!border-green-500' : '')}`}
+							hintLabel={'You must put a valid STELLAR address that belongs to your team member(s)'}
 						/>
 					</div>
 					<div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -232,7 +226,6 @@ const CreateProjectStep2 = () => {
 					<Button
 						color="black-950"
 						isFullWidth
-						isDisabled={members.length === 0}
 						onClick={handleSubmit(onNextStep2)}
 						className="!py-3"
 					>

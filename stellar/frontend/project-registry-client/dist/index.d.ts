@@ -9,11 +9,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CAUX3WSEWUR2Z7N3XKJBQXS5LBVRW62D2C7EYDOAUJXXI3T3YWCBTVMW";
-    };
-    readonly public: {
-        readonly networkPassphrase: "Public Global Stellar Network ; September 2015";
-        readonly contractId: "CCSQPTVDGEGZFKJ7D53WTCHQF5CYE55YEL7NB256Y7UJUK2ZWJGS6NM3";
+        readonly contractId: "CB7NHKUAQYXXLSWHWV57D6RDL3G57376DOR2JOIF375QSVQGMH6GVWTN";
     };
 };
 export interface Project {
@@ -30,7 +26,7 @@ export interface Project {
     submited_ms: u64;
     team_members: Array<ProjectTeamMember>;
     updated_ms: Option<u64>;
-    video_url: string;
+    video_url: Option<string>;
 }
 export interface CreateProjectParams {
     admins: Array<string>;
@@ -42,7 +38,7 @@ export interface CreateProjectParams {
     overview: string;
     repositories: Array<ProjectRepository>;
     team_members: Array<ProjectTeamMember>;
-    video_url: string;
+    video_url: Option<string>;
 }
 export interface UpdateProjectParams {
     contacts: Array<ProjectContact>;
@@ -53,7 +49,7 @@ export interface UpdateProjectParams {
     overview: string;
     repositories: Array<ProjectRepository>;
     team_members: Array<ProjectTeamMember>;
-    video_url: string;
+    video_url: Option<string>;
 }
 export interface ProjectContact {
     name: string;

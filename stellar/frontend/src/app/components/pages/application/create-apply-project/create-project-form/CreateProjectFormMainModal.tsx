@@ -97,7 +97,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 						label: 'github',
 						url: g,
 					})),
-					video_url: dataForm.video.url,
+					video_url: dataForm.video.url || 'sffs',
 					team_members: dataForm.team_member.length > 0 ? dataForm.team_member.map((mem) => ({
 						name: mem,
 						value: mem,

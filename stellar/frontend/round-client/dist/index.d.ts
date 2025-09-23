@@ -9,11 +9,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CCT5MBDD4QGHNHG3VWSJ5AC6FL7DIZHVFQRPXW2OATBWZZRHTQMHSW4O";
-    };
-    readonly public: {
-        readonly networkPassphrase: "Public Global Stellar Network ; September 2015";
-        readonly contractId: "CAF5DB2QTOH7XBG3PRG4CCYBSSWV245PC33DASEF454DZ3HJTJCM2LWU";
+        readonly contractId: "CALHL7KPBAPFMRHKMQGDR5MOZFCGSMEBJ5NXU2BA73RWRMKPP6JUYMFU";
     };
 };
 export type ApplicationStatus = {
@@ -41,6 +37,7 @@ export interface Config {
     token_contract: string;
 }
 export interface RoundDetail {
+    admins: Array<string>;
     allow_applications: boolean;
     allow_remaining_dist: Option<boolean>;
     application_end_ms: Option<u64>;
@@ -227,6 +224,8 @@ export declare const Errors: {
     66: {
         message: string;
     };
+};
+export declare const Errors: {
     0: {
         message: string;
     };
@@ -356,6 +355,8 @@ export declare const Errors: {
     90: {
         message: string;
     };
+};
+export declare const Errors: {
     6: {
         message: string;
     };
@@ -389,6 +390,8 @@ export declare const Errors: {
     60: {
         message: string;
     };
+};
+export declare const Errors: {
     10: {
         message: string;
     };

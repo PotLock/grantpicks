@@ -35,7 +35,7 @@ export interface ICreateProjectParams {
 	// payout_address: string
 	repositories: ProjectRepository[]
 	team_members: ProjectTeamMember[]
-	video_url: string
+	video_url?: string
 }
 
 export interface IUpdateProjectParams {

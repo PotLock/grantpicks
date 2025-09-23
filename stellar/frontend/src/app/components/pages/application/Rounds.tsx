@@ -258,8 +258,8 @@ const ApplicationRounds = () => {
 			</div>
 
 			<div className="mb-6 md:mb-7 lg:mb-8">
-				<div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-					<div className="md:col-span-7">
+				<div className="flex items-center flex-col md:flex-row w-full gap-3 justify-between">
+					<div className="flex-1 w-full">
 						<div className="flex h-[49px] items-center gap-x-2 rounded-full p-2 border border-grantpicks-black-200 w-full">
 							<IconSearch size={24} color="#292929" />
 							<input
@@ -333,8 +333,8 @@ const ApplicationRounds = () => {
 							</Menu>
 						)}
 					</div>
-					<div className="md:col-span-2 flex md:justify-end">
-						{stellarPubKey && (
+					{stellarPubKey && (
+						<div className="md:col-span-2 flex md:justify-end">
 							<Button
 								onClick={() => {
 									router.push('/rounds/create-round')
@@ -343,8 +343,8 @@ const ApplicationRounds = () => {
 							>
 								Create Round
 							</Button>
-						)}
-					</div>
+						</div>
+					)}
 				</div>
 			</div>
 			<div className="min-h-96">

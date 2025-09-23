@@ -170,7 +170,7 @@ export const SingleListPage = () => {
                   }}
                   className="w-full sm:w-auto"
                 >
-                  {isRegistered ? 'Already Registered' : list?.owner === stellarPubKey ? 'Register Project(s)' : !isUserAProject ? 'Only Projects can apply' : 'Apply to List'}
+                  {isRegistered ? 'Already Registered' : list?.owner === stellarPubKey ? 'Register Project(s)' : !isUserAProject ? 'Create a Project to Apply' : 'Apply to List'}
                 </Button>
               </div>
             </div>

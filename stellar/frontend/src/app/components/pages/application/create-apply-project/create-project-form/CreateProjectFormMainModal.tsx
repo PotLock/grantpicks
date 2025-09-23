@@ -75,7 +75,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 				const params: ICreateProjectParams = {
 					name: dataForm.title,
 					overview: dataForm.description,
-					admins: dataForm.team_member.map((mem) => mem),
+					admins: dataForm.team_member.length > 0 ? dataForm.team_member.map((mem) => mem) : [storage.my_address || ''],
 					contacts: dataForm.contacts.map((c) => ({
 						name: c.platform,
 						value: c.link_url,

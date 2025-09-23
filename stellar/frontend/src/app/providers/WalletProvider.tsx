@@ -147,7 +147,6 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 		}
 	}
 
-	// const onOpenNearWallet = () => { /* disabled */ }
 
 	const onOpenStellarWallet = (
 		onSelected?: (option: ISupportedWallet) => void,

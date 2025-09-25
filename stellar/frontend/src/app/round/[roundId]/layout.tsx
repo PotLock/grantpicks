@@ -127,6 +127,7 @@ const RoundLayout = ({ children, params }: { children: React.ReactNode; params: 
           <IconErrorCircle size={52} className="fill-grantpicks-black-600" />
           <h1 className="font-bold text-xl text-center mt-4 mb-2 text-red-600">Error</h1>
           <div className="text-sm text-red-400">Failed to load round information</div>
+          <p className="text-sm text-red-400">If this is a new round, please wait for atleast 30 seconds and refresh the page.</p>
           <Button className="mt-4" onClick={() => router.push('/rounds')}>Go back to rounds</Button>
         </div>
       </div>

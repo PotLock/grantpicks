@@ -18,7 +18,6 @@ import { toastOptions } from '@/constants/style'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import {
 	ICreateProjectParams,
-	IGetProjectsResponse,
 } from '@/services/stellar/project-registry'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
@@ -26,8 +25,6 @@ import { useModalContext } from '@/app/providers/ModalProvider'
 import IconClose from '@/app/components/svgs/IconClose'
 import { localStorageConfigs } from '@/configs/local-storage'
 import useAppStorage from '@/stores/zustand/useAppStorage'
-import { RegistrationStatus } from 'lists-client'
-import { NearSocialGPProject } from '@/services/near/type'
 import { useSearchParams } from 'next/navigation'
 import { usePotlockService } from '@/services/potlock'
 
@@ -92,12 +89,11 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 						funded_ms: BigInt(f.date.getTime() as number),
 					})),
 					image_url: DEFAULT_IMAGE_URL,
-					// payout_address: storage.my_address || '',
 					repositories: dataForm.github_urls.map((g) => ({
 						label: 'github',
 						url: g,
 					})),
-					video_url: dataForm.video.url || 'sffs',
+					video_url: dataForm.video.url || '',
 					team_members: dataForm.team_member.length > 0 ? dataForm.team_member.map((mem) => ({
 						name: mem,
 						value: mem,
@@ -141,6 +137,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 				)
 
 				if (txHashCreateProject) {
+					console.log('txHashCreateProject', txHashCreateProject)
 					setSuccessCreateProjectModalProps((prev) => ({
 						...prev,
 						isOpen: true,
@@ -159,7 +156,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 			}
 		} catch (error: any) {
 			console.error(error)
-			console.log('error', error?.message)
+			console.log('error', error)
 			toast.error(error?.message || 'Something went wrong', {
 				style: toastOptions.error.style,
 			})

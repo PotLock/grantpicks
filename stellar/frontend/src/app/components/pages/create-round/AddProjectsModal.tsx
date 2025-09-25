@@ -58,12 +58,12 @@ const AddProjectsModal = ({
 	}, [showProjectDetailDrawer])
 
 	const onFetchProjects = async (key: { skip: number; limit: number }) => {
-		if (storage.chainId == 'stellar') {
-			const contracts = storage.getStellarContracts()
+		const contracts = storage.getStellarContracts()
 
-			if (!contracts) {
-				return []
-			}
+		if (!contracts) {
+			return []
+		}
+		try {
 
 			const resProjects = await getProjects(
 				{
@@ -73,39 +73,9 @@ const AddProjectsModal = ({
 				contracts,
 			)
 			return resProjects
-		} else {
-			const contracts = storage.getNearContracts(null)
-			if (!contracts) {
-				return []
-			}
-
-			const listId = process.env.NEAR_PROJECTS_LIST_ID || '1'
-
-			const resProjects = await contracts.lists.getRegistrations(
-				listId,
-				key.skip,
-				key.limit,
-			)
-
-			const projectAddresses = resProjects.map(
-				(project: any) => project.registrant_id,
-			)
-
-			const getProjectsDetail = projectAddresses.map((address: string) => {
-				return contracts.near_social.getProjectData(address)
-			})
-
-			const resProjectsDetail = await Promise.all(getProjectsDetail)
-
-			const formated = resProjectsDetail.map((data: any, index: number) => {
-				const json =
-					data[`${projectAddresses[index]}`]['profile']['gp_project'] || '{}'
-				const project = JSON.parse(json)
-
-				return project
-			})
-
-			return formated
+		} catch (error) {
+			console.log(error)
+			return []
 		}
 	}
 	const getKey = (

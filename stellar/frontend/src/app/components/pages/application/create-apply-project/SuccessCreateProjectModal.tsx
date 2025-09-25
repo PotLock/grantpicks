@@ -88,11 +88,9 @@ const SuccessCreateProjectModal = ({
 							</p>
 							<Link
 								href={
-									storage.chainId === 'stellar'
-										? `https://stellar.expert/explorer/${storage.network}/tx/${txHash}`
-										: storage.network === 'mainnet'
-											? `https://nearblocks.io/txns/${txHash}`
-											: `https://testnet.nearblocks.io/txns/${txHash}`
+
+									`https://stellar.expert/explorer/${storage.network}/tx/${txHash}`
+
 								}
 								target="_blank"
 							>

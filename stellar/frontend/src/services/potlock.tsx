@@ -53,6 +53,11 @@ export class PotlockService {
 			: null
 	}
 
+	async getLists(chain: string = 'stellar') {
+		const result = await this._axios?.get(`/lists?chain=${chain}`)
+		return result?.data.results
+	}
+
 	async getProjectStats(owner: string) {
 		const result = await this._axios?.get(`/${owner}/project-stats`)
 		return result?.data

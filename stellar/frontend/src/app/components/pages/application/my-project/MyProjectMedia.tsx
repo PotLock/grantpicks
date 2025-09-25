@@ -160,7 +160,7 @@ const MyProjectMedia = () => {
 					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
 					repositories: projectData?.repositories || [],
 					team_members: projectData?.team_members || [],
-					video_url: watch().video.url || '',
+					video_url: watch().video.url || undefined,
 				}
 				const txUpdateProject = await updateProject(
 					stellarPubKey,
@@ -207,7 +207,7 @@ const MyProjectMedia = () => {
 					projectData.name,
 				)
 				setAccFiles((prev) => [...prev, blobRes as File])
-				setAccFileUrls((prev) => [...prev, projectData.video_url])
+				setAccFileUrls((prev) => [...prev, projectData.video_url || ''])
 				setValue('video.file', blobRes)
 				setValue('video.url', projectData.video_url)
 			}

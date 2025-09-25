@@ -35,7 +35,7 @@ export interface ICreateProjectParams {
 	// payout_address: string
 	repositories: ProjectRepository[]
 	team_members: ProjectTeamMember[]
-	video_url?: string
+    video_url: Option<string>
 }
 
 export interface IUpdateProjectParams {
@@ -47,7 +47,7 @@ export interface IUpdateProjectParams {
 	overview: string
 	repositories: ProjectRepository[]
 	team_members: ProjectTeamMember[]
-	video_url: string
+    video_url: Option<string>
 }
 
 export interface IChangeProjectStatusParams {
@@ -133,9 +133,9 @@ export const createProject = async (
 	params: ICreateProjectParams,
 	contract: Contracts,
 ) => {
-	let project = await contract.project_contract.apply({
+    let project = await contract.project_contract.apply({
 		applicant,
-		project_params: params,
+        project_params: params,
 	})
 	return project
 }
@@ -146,10 +146,10 @@ export const updateProject = async (
 	params: IUpdateProjectParams,
 	contract: Contracts,
 ) => {
-	let project = await contract.project_contract.update_project({
+    let project = await contract.project_contract.update_project({
 		admin,
 		project_id: project_id,
-		new_project_params: params,
+        new_project_params: params,
 	})
 	return project
 }

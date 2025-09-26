@@ -65,7 +65,7 @@ const RoundAdminsPage = () => {
       <UpdateRoundAdmins
         isOpen={showAddAdminsModal}
         onClose={() => setShowAddAdminsModal(false)}
-        doc={data as unknown as GPRound}
+        doc={data as unknown as Omit<GPRound, 'admins'> & { admins: { id: string }[] }}
         mutateRounds={mutate}
       />
     </div>

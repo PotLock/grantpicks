@@ -24,10 +24,7 @@ import { StrKey } from 'round-client'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import Image from 'next/image'
 import { NEAR_ADDRESS_REGEX } from '@/constants/regex'
-import {
-	NearProjectFundingHistory,
-	NearSocialGPProject,
-} from '@/services/near/type'
+import { UpdateProjectParams } from 'project-registry-client'
 
 const MyProjectTeam = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()
@@ -40,7 +37,7 @@ const MyProjectTeam = () => {
 		watch,
 		handleSubmit,
 		setValue,
-		formState: { errors },
+
 	} = useForm<CreateProjectStep2Data>()
 	const storage = useAppStorage()
 
@@ -65,7 +62,7 @@ const MyProjectTeam = () => {
 					return
 				}
 
-				const params: IUpdateProjectParams = {
+				const params: UpdateProjectParams = {
 					...projectData,
 					name: projectData?.name || '',
 					overview: projectData?.overview || '',

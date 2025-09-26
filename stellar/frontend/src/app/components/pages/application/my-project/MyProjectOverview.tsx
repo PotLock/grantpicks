@@ -6,7 +6,6 @@ import { useWallet } from '@/app/providers/WalletProvider'
 import { DEFAULT_IMAGE_URL } from '@/constants/project'
 import { toastOptions } from '@/constants/style'
 import {
-	IUpdateProjectParams,
 	updateProject,
 } from '@/services/stellar/project-registry'
 import { CreateProjectStep1Data } from '@/types/form'
@@ -16,10 +15,8 @@ import { SubmitHandler, useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { useMyProject } from './MyProjectProvider'
 import useAppStorage from '@/stores/zustand/useAppStorage'
-import {
-	NearProjectFundingHistory,
-	NearSocialGPProject,
-} from '@/services/near/type'
+
+import { UpdateProjectParams } from 'project-registry-client'
 
 const MyProjectOverview = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()
@@ -69,7 +66,7 @@ const MyProjectOverview = () => {
 					return
 				}
 
-				const params: IUpdateProjectParams = {
+				const params: UpdateProjectParams = {
 					...projectData,
 					name: data.title,
 					overview: data.description,

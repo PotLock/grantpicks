@@ -10,7 +10,6 @@ import { useWallet } from '@/app/providers/WalletProvider'
 import { DEFAULT_IMAGE_URL } from '@/constants/project'
 import { toastOptions } from '@/constants/style'
 import {
-	IUpdateProjectParams,
 	updateProject,
 } from '@/services/stellar/project-registry'
 import { CreateProjectStep4Data } from '@/types/form'
@@ -26,7 +25,7 @@ import {
 import toast from 'react-hot-toast'
 import { useMyProject } from './MyProjectProvider'
 import useAppStorage from '@/stores/zustand/useAppStorage'
-import { NearSocialGPProject } from '@/services/near/type'
+import { UpdateProjectParams } from 'project-registry-client'
 
 interface IFunding {
 	id: string
@@ -109,7 +108,7 @@ const MyProjectFundingRaised = () => {
 					return
 				}
 
-				const params: IUpdateProjectParams = {
+				const params: UpdateProjectParams = {
 					...projectData,
 					name: projectData?.name || '',
 					overview: projectData?.overview || '',

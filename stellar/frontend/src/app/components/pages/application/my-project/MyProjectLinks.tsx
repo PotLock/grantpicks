@@ -10,7 +10,6 @@ import { useWallet } from '@/app/providers/WalletProvider'
 import { DEFAULT_IMAGE_URL } from '@/constants/project'
 import { toastOptions } from '@/constants/style'
 import {
-	IUpdateProjectParams,
 	updateProject,
 } from '@/services/stellar/project-registry'
 import { CreateProjectStep3Data } from '@/types/form'
@@ -31,10 +30,7 @@ import {
 	TWITTER_USERNAME_REGEX,
 } from '@/constants/regex'
 import useAppStorage from '@/stores/zustand/useAppStorage'
-import {
-	NearProjectFundingHistory,
-	NearSocialGPProject,
-} from '@/services/near/type'
+import { UpdateProjectParams } from 'project-registry-client'
 
 interface IContract {
 	id: string
@@ -160,7 +156,7 @@ const MyProjectLinks = () => {
 					return
 				}
 
-				const params: IUpdateProjectParams = {
+				const params: UpdateProjectParams = {
 					...projectData,
 					name: projectData?.name || '',
 					overview: projectData?.overview || '',

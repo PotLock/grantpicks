@@ -149,7 +149,7 @@ const ApplyProjectModal = ({
 
 	const addApplyQuery = () => {
 		const currentParams = new URLSearchParams(searchParams.toString())
-		currentParams.set('apply_round', roundData?.id.toString() as string)
+		currentParams.set('apply_round', roundData?.on_chain_id.toString() as string)
 		router.push(`?${currentParams.toString()}`, {
 			scroll: false,
 		})

@@ -46,6 +46,11 @@ export class PotlockService {
 		return result?.data.results
 	}
 
+	async getProjects(skip: number, limit: number) {
+		const result = await this._axios?.get(`/projects?skip=${skip}&limit=${limit}`)
+		return result?.data.results
+	}
+
 	async getProjectByOwner(owner: string) {
 		const result = await this._axios?.get(`/projects?owner=${owner}`)
 		return result?.data.results && result?.data.results.length > 0
@@ -56,6 +61,11 @@ export class PotlockService {
 	async getLists(chain: string = 'stellar') {
 		const result = await this._axios?.get(`/lists?chain=${chain}`)
 		return result?.data.results
+	}
+
+	async getList(listId: number) {
+		const result = await this._axios?.get(`/lists/${listId}?chain=stellar`)
+		return result?.data
 	}
 
 	async getProjectStats(owner: string) {

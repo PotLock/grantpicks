@@ -13,7 +13,7 @@ import { useState, useMemo, useEffect } from "react"
 export const AllLists = () => {
   const router = useRouter()
   const storage = useAppStorage()
-  const { data, size, setSize, isValidating, isLoading } = useLists()
+  const { data, isValidating, isLoading } = useLists()
   const { stellarPubKey } = useWallet()
   const [searchQuery, setSearchQuery] = useState("")
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("")

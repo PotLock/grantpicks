@@ -1,12 +1,14 @@
 import { useGlobalContext } from "@/app/providers/GlobalProvider"
 import { useWallet } from "@/app/providers/WalletProvider"
-import { batchRegisterToList, deleteList, getList, getListRegistrations, updateProjectStatusInList } from "@/services/stellar/list"
+import { batchRegisterToList, deleteList, getListRegistrations, updateProjectStatusInList } from "@/services/stellar/list"
+import { usePotlockService } from "@/services/potlock"
 import useAppStorage from "@/stores/zustand/useAppStorage"
 import { StellarWalletsKit } from "@creit.tech/stellar-wallets-kit"
 import { RegistrationInput, RegistrationStatus } from "lists-client"
 import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
 import useSWR from "swr"
+import { APIListExternal } from "../ListCard"
 
 type UseSingleListProps = {
   listId: string
@@ -23,20 +25,22 @@ export const useSingleList = ({ listId, requiredStatus }: UseSingleListProps) =>
   const storage = useAppStorage()
   const { stellarPubKey, stellarKit } = useWallet()
   const { openPageLoading, dismissPageLoading } = useGlobalContext()
+  const potlockApi = usePotlockService()
   const router = useRouter()
   const getKey = () => {
-    if (!listId || !storage.getStellarContracts()) return null
     return `list-${listId}`
   }
 
   const { data, isLoading, error } = useSWR(
     getKey(),
-    async () => {
-      const contracts = storage.getStellarContracts()
-      if (!contracts) throw new Error('Contracts not found')
-      return getList({ list_id: BigInt(listId) }, contracts)
-    }
+    async () => await getList(listId)
   )
+
+  const getList = async (listId: string): Promise<APIListExternal | null> => {
+    if (!listId) return null
+    const res = await potlockApi.getList(Number(listId))
+    return res as APIListExternal
+  }
 
   const getKeyRegistrations = () => {
     if (!listId || !storage.getStellarContracts()) return null

@@ -27,7 +27,7 @@ import IconClose from '@/app/components/svgs/IconClose'
 import AddAdminsModal from '@/app/components/pages/create-round/AddAdminsModal'
 import clsx from 'clsx'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
-import { IGetProjectsResponse } from '@/services/stellar/project-registry'
+import { IGetProjectsResponse, IndexerProjectResponse } from '@/services/stellar/project-registry'
 import { useWallet } from '@/app/providers/WalletProvider'
 import {
 	addProjectsRound,
@@ -66,12 +66,14 @@ import { convertToBasisPoints, LIMIT_SIZE } from '@/constants/query'
 import useSWRInfinite from 'swr/infinite'
 import { GPRound } from '@/models/round'
 import { getLists } from '@/services/stellar/list'
+import { usePotlockService } from '@/services/potlock'
+import { APIListExternal } from '@/app/components/pages/application/lists/ListCard'
 
 const CreateRoundPage = () => {
 	const router = useRouter()
 	const [showContactType, setShowContactType] = useState<boolean>(false)
 	const [showTips, setShowTips] = useState<boolean>(false)
-	const { nearPrice, stellarPrice, openPageLoading, dismissPageLoading } =
+	const { stellarPrice, openPageLoading, dismissPageLoading } =
 		useGlobalContext()
 	const {
 		stellarPubKey,
@@ -125,6 +127,7 @@ const CreateRoundPage = () => {
 			application_wl_list_id: undefined,
 		},
 	})
+	const potlockApi = usePotlockService()
 	const { append: appendProject, remove: removeProject } = useFieldArray({
 		control,
 		name: 'projects',
@@ -134,7 +137,7 @@ const CreateRoundPage = () => {
 		name: 'admins',
 	})
 	const [selectedProjects, setSelectedProjects] = useState<
-		IGetProjectsResponse[]
+		IndexerProjectResponse[]
 	>([])
 	const [selectedAdmins, setSelectedAdmins] = useState<string[]>([])
 	const [cooldownPeriodData, setCooldownPeriodData] =
@@ -153,7 +156,7 @@ const CreateRoundPage = () => {
 
 	const onAddApprovedProjects = async (roundId: bigint) => {
 		try {
-			let contracts = storage.getStellarContracts()
+			const contracts = storage.getStellarContracts()
 
 			if (!contracts) {
 				return
@@ -448,28 +451,14 @@ const CreateRoundPage = () => {
 		return () => window.removeEventListener('resize', checkIfMobile)
 	}, [])
 
-	const onFetchLists = useCallback(async (key: {
-		url: string
-		skip: number
-		limit: number
-	}) => {
-		let contracts = storage.getStellarContracts()
-		if (!contracts) {
-			throw new Error('Network not ready')
-		}
-		const res = await getLists(
-			{ skip: key.skip, limit: key.limit },
-			contracts,
-		)
+	const onFetchLists = useCallback(async () => {
+		const res = await potlockApi.getLists()
 		return res
-	}, [stellarPubKey, storage])
+	}, [potlockApi])
 
 	const getKey = (
 		pageIndex: number,
-		previousPageData: IGetListExternalResponse[],
 	) => {
-		if (!storage.chainId) return null
-		if (previousPageData && !previousPageData.length) return null
 		return {
 			url: `get-lists`,
 			skip: pageIndex * LIMIT_SIZE,
@@ -480,15 +469,15 @@ const CreateRoundPage = () => {
 	}
 	const { data, size, setSize, isValidating, isLoading, error, mutate } = useSWRInfinite(
 		getKey,
-		async (key) => await onFetchLists(key),
+		async () => await onFetchLists(),
 		{
 			revalidateFirstPage: true,
 		},
 	)
 
 	const lists = data
-		? ([] as IGetListExternalResponse[]).concat(
-			...(data as any as IGetListExternalResponse[]),
+		? ([] as APIListExternal[]).concat(
+			...(data as any as APIListExternal[]),
 		)
 		: []
 	const isEmpty = data?.[0]?.length === 0
@@ -1168,15 +1157,10 @@ const CreateRoundPage = () => {
 										{...register('expected_amount', {
 											required: true,
 											onChange: async (e) => {
-												if (storage.chainId === 'stellar') {
-													const calculation =
-														parseFloat(e.target.value || '0') * stellarPrice
-													setExpectAmountUsd(`${calculation.toFixed(3)}`)
-												} else {
-													const calculation =
-														parseFloat(e.target.value || '0') * nearPrice
-													setExpectAmountUsd(`${calculation.toFixed(3)}`)
-												}
+												const calculation =
+													parseFloat(e.target.value || '0') * stellarPrice
+												setExpectAmountUsd(`${calculation.toFixed(3)}`)
+
 											},
 										})}
 										preffixIcon={
@@ -1233,13 +1217,8 @@ const CreateRoundPage = () => {
 											onChange: async (e) => {
 												let calculation = 0
 
-												if (storage.chainId === 'stellar') {
-													calculation =
-														parseFloat(e.target.value || '0') * stellarPrice
-												} else {
-													calculation =
-														parseFloat(e.target.value || '0') * nearPrice
-												}
+												calculation =
+													parseFloat(e.target.value || '0') * stellarPrice
 
 												setAmountUsd(`${calculation.toFixed(3)}`)
 												setValue('amount', e.target.value)
@@ -1300,15 +1279,9 @@ const CreateRoundPage = () => {
 										{...register('minimum_deposit', {
 											required: true,
 											onChange: async (e) => {
-												if (storage.chainId === 'stellar') {
-													const calculation =
-														parseFloat(e.target.value || '0') * stellarPrice
-													setMinimumDepositUsd(`${calculation.toFixed(3)}`)
-												} else {
-													const calculation =
-														parseFloat(e.target.value || '0') * nearPrice
-													setMinimumDepositUsd(`${calculation.toFixed(3)}`)
-												}
+												const calculation =
+													parseFloat(e.target.value || '0') * stellarPrice
+												setMinimumDepositUsd(`${calculation.toFixed(3)}`)
 											},
 											validate: (value) => {
 												const expectedAmount = watch().expected_amount
@@ -1363,7 +1336,7 @@ const CreateRoundPage = () => {
 							</div>
 							<div className="flex items-center">
 								<Checkbox
-									label="Allow Fund Deposits"
+									label="Allow Deposit of Funds"
 									checked={watch().use_vault}
 									onChange={(e) => {
 										setValue('use_vault', e.target.checked)
@@ -1573,7 +1546,7 @@ const CreateRoundPage = () => {
 									>
 										<div className="flex items-center space-x-2">
 											<Image
-												src={`https://www.tapback.co/api/avatar/${selected.owner}`}
+												src={`https://www.tapback.co/api/avatar/${selected.owner?.id}`}
 												alt=""
 												className="rounded-full object-fill"
 												width={24}
@@ -1736,26 +1709,26 @@ const CreateRoundPage = () => {
 													{lists?.length > 0 && lists?.map((list) => {
 														return (
 															<div
-																key={list.id}
+																key={list.on_chain_id}
 																className="py-4 flex items-center gap-x-4"
 															>
 																<Checkbox
-																	checked={checkedListIds.includes(list.id)}
+																	checked={checkedListIds.includes(BigInt(list.on_chain_id))}
 																	onChange={(e) => {
 																		if (e.target.checked) {
-																			setCheckedListIds([list.id])
-																			setValue('voting_wl_list_id', list.id)
+																			setCheckedListIds([BigInt(list.on_chain_id)])
+																			setValue('voting_wl_list_id', BigInt(list.on_chain_id))
 																		} else {
 																			setCheckedListIds(
 																				checkedListIds.filter(
-																					(id) => id !== list.id,
+																					(on_chain_id) => on_chain_id !== BigInt(list.on_chain_id),
 																				),
 																			)
 																			setValue('voting_wl_list_id', undefined)
 																		}
 																	}}
 																	name="voting_wl_list_id"
-																	value={list.id.toString()}
+																	value={list.on_chain_id.toString()}
 																/>
 																<div className="flex justify-between w-full items-center">
 																	<div className="flex gap-x-3 items-center">
@@ -1770,13 +1743,13 @@ const CreateRoundPage = () => {
 																				{list.name}
 																			</p>
 																			<p className="text-sm text-grantpicks-black-700">
-																				{list.total_registrations_count.toString()}{' '}
+																				{list.registrations_count.toString()}{' '}
 																				Eligible
 																			</p>
 																		</div>
 																	</div>
 																	<div className="flex gap-x-1">
-																		{isOwner(list.owner) && (
+																		{isOwner(list.owner.id) && (
 																			<div className="px-3 py-[2px] bg-grantpicks-black-950 rounded-full">
 																				<p className="font-semibold text-xs text-white">
 																					Owner
@@ -1871,24 +1844,24 @@ const CreateRoundPage = () => {
 														{lists?.length > 0 && lists?.map((list) => {
 															return (
 																<div
-																	key={list?.id}
+																	key={list?.on_chain_id}
 																	className="py-4 flex items-center gap-x-4"
 																>
 																	<Checkbox
 																		checked={checkedApplicationListIds.includes(
-																			list.id,
+																			BigInt(list.on_chain_id),
 																		)}
 																		onChange={(e) => {
 																			if (e.target.checked) {
-																				setCheckedApplicationListIds([list.id])
+																				setCheckedApplicationListIds([BigInt(list.on_chain_id)])
 																				setValue(
 																					'application_wl_list_id',
-																					list.id,
+																					BigInt(list.on_chain_id),
 																				)
 																			} else {
 																				setCheckedApplicationListIds(
 																					checkedApplicationListIds.filter(
-																						(id) => id !== list.id,
+																						(id) => id !== BigInt(list.on_chain_id),
 																					),
 																				)
 																				setValue(
@@ -1898,7 +1871,7 @@ const CreateRoundPage = () => {
 																			}
 																		}}
 																		name="application_wl_list_id"
-																		value={list.id.toString()}
+																		value={list.on_chain_id.toString()}
 																	/>
 																	<div className="flex justify-between w-full items-center">
 																		<div className="flex gap-x-3 items-center">
@@ -1913,13 +1886,13 @@ const CreateRoundPage = () => {
 																					{list.name}
 																				</p>
 																				<p className="text-sm text-grantpicks-black-700">
-																					{list.total_registrations_count.toString()}{' '}
+																					{list.registrations_count.toString()}{' '}
 																					Eligible
 																				</p>
 																			</div>
 																		</div>
 																		<div className="flex gap-x-1">
-																			{isOwner(list.owner) && (
+																			{isOwner(list.owner.id) && (
 																				<div className="px-3 py-[2px] bg-grantpicks-black-950 rounded-full">
 																					<p className="font-semibold text-xs text-white">
 																						Owner

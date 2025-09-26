@@ -1,4 +1,3 @@
-import useAppStorage from "@/stores/zustand/useAppStorage"
 import useSWRInfinite from "swr/infinite"
 import { IGetListExternalResponse } from "@/types/on-chain"
 import { usePotlockService } from "@/services/potlock"
@@ -7,8 +6,6 @@ import { usePotlockService } from "@/services/potlock"
 
 
 export const useLists = () => {
-  const storage = useAppStorage()
-  const isReady = storage.chainId === 'stellar' && !!storage.getStellarContracts()
   const potlockApi = usePotlockService()
 
   const getKey = (pageIndex: number, previousPageData: IGetListExternalResponse[]) => {
@@ -30,7 +27,6 @@ export const useLists = () => {
 
   const onFetchLists = async (key: { url: string; page: number }) => {
     const res = await potlockApi.getLists()
-    console.log('res', res)
     return res
   }
 
@@ -41,6 +37,6 @@ export const useLists = () => {
     size,
     setSize,
     isValidating,
-    isLoading: isLoading || !isReady,
+    isLoading,
   }
 } 

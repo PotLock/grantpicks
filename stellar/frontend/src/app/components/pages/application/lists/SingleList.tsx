@@ -23,7 +23,7 @@ export const SingleListPage = () => {
   const router = useRouter()
   const searchParams = useSearchParams()
   const listId = params.listId as string
-  const { stellarPubKey } = useWallet()
+  const { stellarPubKey, onOpenStellarWallet } = useWallet()
   const { data: list, isLoading, isError, handleDeleteList } = useSingleList({ listId })
   const [isOpen, setIsOpen] = useState<{ open: boolean, type: 'SINGLE' | 'BATCH' | null }>({ open: false, type: null })
   const [menuOpen, setMenuOpen] = useState(false)
@@ -99,13 +99,13 @@ export const SingleListPage = () => {
     )
   }
 
-  const isOwner = list?.owner === stellarPubKey
+  const isOwner = list?.owner?.id === stellarPubKey
 
 
   const adminsCount = list?.admins.length || 0
-  const membersCount = Number(list?.total_registrations_count) || 0
-  const applicationStatus = list?.default_registration_status?.tag === 'Approved' ? 'Auto-Approve' : list?.default_registration_status?.tag || 'Pending'
-  const createdAt = list?.created_ms ? new Date(Number(list.created_ms)).toLocaleDateString() : 'N/A'
+  const membersCount = Number(list?.registrations_count) || 0
+  const applicationStatus = list?.default_registration_status === 'Approved' ? 'Auto-Approve' : list?.default_registration_status || 'Pending'
+  const createdAt = list?.created_at ? new Date(list.created_at).toLocaleDateString() : 'N/A'
 
   return (
     <div className="min-h-screen text-grantpicks-black-950 pb-10">
@@ -144,7 +144,7 @@ export const SingleListPage = () => {
                       height={24}
                     />
                     <span>Created by</span>
-                    <p className="font-semibold text-grantpicks-black-950 text-base">{storage.chainId === 'stellar' ? prettyTruncate(list?.owner, 10, 'address') : list?.owner}</p>
+                    <p className="font-semibold text-grantpicks-black-950 text-base">{list?.owner?.id ? prettyTruncate(list?.owner?.id, 10, 'address') : list?.owner?.id}</p>
                   </div>
                   <span className="hidden sm:inline mx-2">•</span>
                   <div className="flex items-center gap-x-2">
@@ -155,8 +155,13 @@ export const SingleListPage = () => {
               </div>
               <div className="flex-shrink-0">
                 <Button
-                  isDisabled={(list?.admin_only_registrations && list?.owner !== stellarPubKey) || isRegistered}
+                  isDisabled={(list?.admin_only_registrations && list?.owner?.id !== stellarPubKey) || isRegistered}
                   onClick={() => {
+
+                    if (!stellarPubKey) {
+                      onOpenStellarWallet()
+                      return
+                    }
                     if (!isUserAProject) {
                       addApplyQuery()
                       setCreateProjectFormMainProps((prev) => ({
@@ -165,12 +170,12 @@ export const SingleListPage = () => {
                       }))
                       return
                     } else {
-                      setIsOpen({ open: true, type: list?.owner === stellarPubKey ? 'BATCH' : 'SINGLE' })
+                      setIsOpen({ open: true, type: list?.owner?.id === stellarPubKey ? 'BATCH' : 'SINGLE' })
                     }
                   }}
                   className="w-full sm:w-auto"
                 >
-                  {isRegistered ? 'Already Registered' : list?.owner === stellarPubKey ? 'Register Project(s)' : !isUserAProject ? 'Create a Project to Apply' : 'Apply to List'}
+                  {isRegistered ? 'Already Registered' : list?.owner?.id === stellarPubKey ? 'Register Project(s)' : !isUserAProject ? 'Create a Project to Apply' : 'Apply to List'}
                 </Button>
               </div>
             </div>

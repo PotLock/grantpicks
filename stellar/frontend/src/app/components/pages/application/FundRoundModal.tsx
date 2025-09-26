@@ -336,10 +336,12 @@ const FundRoundModal = ({
 							color="black-950"
 							className="!py-4 !text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
 							isFullWidth
-							isDisabled={!!errors.amount}
+							isDisabled={!!errors.amount || amount === '0' || amount === ''}
 							onClick={(e) => {
 								e.stopPropagation()
-								handleSubmit(onDepositFundRound)
+								if (amount > '0') {
+									onDepositFundRound()
+								}
 							}}
 						>
 							<div className="flex items-center justify-center space-x-2">

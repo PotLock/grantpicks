@@ -22,33 +22,23 @@ import { Src } from '@livepeer/react'
 import { GetAssetResponse } from 'livepeer/models/operations'
 import { getSrc } from '@livepeer/react/external'
 import IconLoading from '@/app/components/svgs/IconLoading'
-import CMDWallet from '@/lib/wallet'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import {
-	IUpdateProjectParams,
 	updateProject,
 } from '@/services/stellar/project-registry'
 import { DEFAULT_IMAGE_URL } from '@/constants/project'
-import Contracts from '@/lib/contracts'
-import { Network } from '@/types/on-chain'
 import { useMyProject } from './MyProjectProvider'
 import useAppStorage from '@/stores/zustand/useAppStorage'
-import {
-	NearProjectFundingHistory,
-	NearSocialGPProject,
-} from '@/services/near/type'
+import { UpdateProjectParams } from 'project-registry-client'
 
 const MyProjectMedia = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()
 	const { stellarKit, stellarPubKey } = useWallet()
 	const { openPageLoading, dismissPageLoading, livepeer } = useGlobalContext()
 	const {
-		control,
-		register,
 		watch,
 		handleSubmit,
 		setValue,
-		formState: { errors },
 	} = useForm<CreateProjectStep5Data>()
 	const [accFiles, setAccFiles] = useState<File[]>([])
 	const [accFileUrls, setAccFileUrls] = useState<string[]>([])
@@ -69,7 +59,6 @@ const MyProjectMedia = () => {
 	const embededYtHtmlRef = useRef<HTMLDivElement>(null)
 	const storage = useAppStorage()
 
-	console.log('projectData?.video_url', projectData)
 
 	const onDrop = useCallback(async (acceptedFiles: File[]) => {
 		if (acceptedFiles[0].size / 10 ** 6 > 25) {
@@ -150,7 +139,7 @@ const MyProjectMedia = () => {
 					return
 				}
 
-				const params: IUpdateProjectParams = {
+				const params: UpdateProjectParams = {
 					...projectData,
 					name: projectData?.name || '',
 					overview: projectData?.overview || '',

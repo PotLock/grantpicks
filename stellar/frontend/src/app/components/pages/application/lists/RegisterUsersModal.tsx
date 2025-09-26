@@ -1,11 +1,10 @@
 import Button from "@/app/components/commons/Button"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useSingleList } from "./hooks/useSingleList"
 import { RegistrationStatus } from "lists-client"
-import AddAdminsModal from "../../create-round/AddAdminsModal"
 import { useFieldArray, useForm } from "react-hook-form"
 import AddProjectsModal from "../../create-round/AddProjectsModal"
-import { IGetProjectsResponse } from "@/services/stellar/project-registry"
+import { IndexerProjectResponse } from "@/services/stellar/project-registry"
 import Image from "next/image"
 import { prettyTruncate } from "@/utils/helper"
 import IconTrash from "@/app/components/svgs/IconTrash"
@@ -20,7 +19,7 @@ export const RegisterUsersModal = ({ type, listId, onClose }: RegisterUsersModal
   const [note, setNote] = useState<string | null>(null)
   const [openAddProjectsModal, setOpenAddProjectsModal] = useState(false)
   const { handleApplyToList, handleBatchRegisterToList, data } = useSingleList({ listId })
-  const [selectedProjects, setSelectedProjects] = useState<IGetProjectsResponse[]>([])
+  const [selectedProjects, setSelectedProjects] = useState<IndexerProjectResponse[]>([])
   const { control } = useForm()
 
   const { append: appendProject, remove: removeProject } = useFieldArray({
@@ -43,7 +42,7 @@ export const RegisterUsersModal = ({ type, listId, onClose }: RegisterUsersModal
                   value={note || ''}
                   onChange={(e) => setNote(e.target.value)} />
                 <Button onClick={() => {
-                  handleApplyToList({ defaultRegistrationStatus: data?.default_registration_status as RegistrationStatus, note, onClose })
+                  handleApplyToList({ defaultRegistrationStatus: { tag: data?.default_registration_status as string, values: undefined } as RegistrationStatus, note, onClose })
                 }}>Apply</Button>
               </div>
             ) :
@@ -81,7 +80,7 @@ export const RegisterUsersModal = ({ type, listId, onClose }: RegisterUsersModal
                   <Button onClick={() => {
                     handleBatchRegisterToList(selectedProjects.map(project => ({
                       registrant: project?.owner as unknown as string,
-                      status: data?.default_registration_status as RegistrationStatus,
+                      status: { tag: data?.default_registration_status as string, values: undefined } as RegistrationStatus,
                       submitted_ms: BigInt(Date.now()),
                       updated_ms: BigInt(Date.now()),
                       notes: "test"

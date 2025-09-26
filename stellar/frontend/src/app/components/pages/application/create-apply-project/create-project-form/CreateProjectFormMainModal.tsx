@@ -16,9 +16,6 @@ import {
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
-import {
-	ICreateProjectParams,
-} from '@/services/stellar/project-registry'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import { useModalContext } from '@/app/providers/ModalProvider'
@@ -27,6 +24,7 @@ import { localStorageConfigs } from '@/configs/local-storage'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { useSearchParams } from 'next/navigation'
 import { usePotlockService } from '@/services/potlock'
+import { CreateProjectParams } from 'project-registry-client'
 
 const CreateProjectFormContext = createContext<ICreateProjectFormContext>({
 	data: DEFAULT_CREATE_PROJECT_DATA,
@@ -69,7 +67,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 				}
 
 
-				const params: ICreateProjectParams = {
+				const params: CreateProjectParams = {
 					name: dataForm.title,
 					overview: dataForm.description,
 					admins: dataForm.team_member.length > 0 ? dataForm.team_member.map((mem) => mem) : [storage.my_address || ''],
@@ -93,7 +91,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 						label: 'github',
 						url: g,
 					})),
-					video_url: dataForm.video.url || '',
+					video_url: dataForm.video.url || undefined,
 					team_members: dataForm.team_member.length > 0 ? dataForm.team_member.map((mem) => ({
 						name: mem,
 						value: mem,

@@ -11,8 +11,6 @@ import { StrKey } from 'round-client'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
 import Image from 'next/image'
-import useAppStorage from '@/stores/zustand/useAppStorage'
-import { NEAR_ADDRESS_REGEX } from '@/constants/regex'
 import Button from '../../commons/Button'
 import clsx from 'clsx'
 
@@ -38,23 +36,13 @@ const AddAdminsModal = ({
 	const [searchAdmin, setSearchAdmin] = useState<string>('')
 	const [errorMessage, setErrorMessage] = useState<boolean>(false)
 	const [sameAdminError, setSameAdminError] = useState<boolean>(false)
-	const storage = useAppStorage()
 
 	const onAddAdmin = async () => {
-		if (storage.chainId === 'stellar') {
-			if (!StrKey.isValidEd25519PublicKey(searchAdmin)) {
-				toast.error('Address is not valid stellar address', {
-					style: toastOptions.error.style,
-				})
-				return
-			}
-		} else {
-			if (!NEAR_ADDRESS_REGEX(searchAdmin)) {
-				toast.error('Address is not valid near address', {
-					style: toastOptions.error.style,
-				})
-				return
-			}
+		if (!StrKey.isValidEd25519PublicKey(searchAdmin)) {
+			toast.error('Address is not valid stellar address', {
+				style: toastOptions.error.style,
+			})
+			return
 		}
 
 		if (selectedAdmins.includes(searchAdmin)) {
@@ -69,18 +57,10 @@ const AddAdminsModal = ({
 	}
 
 	useEffect(() => {
-		if (storage.chainId === 'stellar') {
-			if (!StrKey.isValidEd25519PublicKey(searchAdmin)) {
-				setErrorMessage(true)
-			} else {
-				setErrorMessage(false)
-			}
+		if (!StrKey.isValidEd25519PublicKey(searchAdmin)) {
+			setErrorMessage(true)
 		} else {
-			if (!NEAR_ADDRESS_REGEX(searchAdmin)) {
-				setErrorMessage(true)
-			} else {
-				setErrorMessage(false)
-			}
+			setErrorMessage(false)
 		}
 
 		if (selectedAdmins.includes(searchAdmin)) {

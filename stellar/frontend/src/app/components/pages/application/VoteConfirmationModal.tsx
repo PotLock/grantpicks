@@ -36,9 +36,10 @@ const VoteConfirmationModal = ({
 	const [totalProjects, setTotalProjects] = useState<number>(0)
 	const storage = useAppStorage()
 	const [isRegistered, setIsRegistered] = useState<boolean>(true)
-	const [listDetails, setListDetails] = useState<ListExternal | undefined>(undefined)
+	const [listDetails, setListDetails] = useState<ListExternal | undefined>(
+		undefined,
+	)
 	const [loading, setLoading] = useState<boolean>(true)
-
 
 	const fetchIsRegistered = useCallback(async () => {
 		if (data?.application_wl_list_id) {
@@ -65,8 +66,6 @@ const VoteConfirmationModal = ({
 			}
 		}
 	}, [stellarPubKey, data])
-
-
 
 	const onFetchTotalProjects = useCallback(async () => {
 		try {
@@ -101,13 +100,22 @@ const VoteConfirmationModal = ({
 	}, [isOpen, fetchIsRegistered, onFetchTotalProjects])
 
 	return (
-		<Modal closeOnBgClick={true} closeOnEscape={true} isOpen={isOpen} onClose={onClose}>
+		<Modal
+			closeOnBgClick={true}
+			closeOnEscape={true}
+			isOpen={isOpen}
+			onClose={onClose}
+		>
 			<div className="w-11/12 md:w-[500px] mx-auto bg-white rounded-2xl border border-black/10 shadow p-4 md:p-8 lg:p-10">
 				<div className="flex items-center justify-between">
 					<div className="border border-black/10 rounded-full p-3 flex items-center justify-center mb-4">
 						<IconStellar size={16} className="fill-grantpicks-black-950" />
 					</div>
-					<IconClose onClick={onClose} size={24} className="cursor-pointer fill-grantpicks-black-950 mb-4" />
+					<IconClose
+						onClick={onClose}
+						size={24}
+						className="cursor-pointer fill-grantpicks-black-950 mb-4"
+					/>
 				</div>
 				<p className="text-grantpicks-black-950 text-2xl md:text-3xl lg:text-[32px] font-semibold mb-4">
 					{data?.name}
@@ -140,7 +148,8 @@ const VoteConfirmationModal = ({
 				<div className="flex items-center mb-6 md:mb-8 lg:mb-10">
 					<div className="flex-1">
 						<p className="font-semibold text-lg md:text-xl text-grantpicks-black-950">
-							{formatStroopToXlm(BigInt(data?.current_vault_balance || '0'))} XLM
+							{formatStroopToXlm(BigInt(data?.current_vault_balance || '0'))}{' '}
+							XLM
 						</p>
 						<p className="font-semibold text-xs text-grantpicks-black-600">
 							AVAILABLE FUNDS
@@ -148,10 +157,7 @@ const VoteConfirmationModal = ({
 					</div>
 					<div className="flex-1">
 						<p className="font-semibold text-lg md:text-xl text-grantpicks-black-950">
-							{
-								formatStroopToXlm(BigInt(data?.expected_amount || '0'))
-							}{' '}
-							XLM
+							{formatStroopToXlm(BigInt(data?.expected_amount || '0'))} XLM
 						</p>
 						<p className="font-semibold text-xs text-grantpicks-black-600">
 							EXPECTED FUNDS
@@ -162,8 +168,16 @@ const VoteConfirmationModal = ({
 				{listDetails?.name && (
 					<div className="flex flex-col w-full mt-6">
 						<p className="text-sm font-semibold text-grantpicks-black-950">
-							This is a private round. You must be an approved registrant to{` `}
-							<Link className='text-blue-500' href={`/list/${listDetails.id}`} target="_blank">{listDetails.name}</Link> list to vote.
+							This is a private round. You must be an approved registrant to
+							{` `}
+							<Link
+								className="text-blue-500"
+								href={`/list/${listDetails.id}`}
+								target="_blank"
+							>
+								{listDetails.name}
+							</Link>{' '}
+							list to vote.
 						</p>
 					</div>
 				)}
@@ -198,7 +212,11 @@ const VoteConfirmationModal = ({
 							}}
 							className="!py-3 flex-1"
 						>
-							{!stellarPubKey ? 'Connect Wallet' : isRegistered ? 'Proceed' : 'Not Eligible to Vote'}
+							{!stellarPubKey
+								? 'Connect Wallet'
+								: isRegistered
+									? 'Proceed'
+									: 'Not Eligible to Vote'}
 						</Button>
 					</div>
 				</div>

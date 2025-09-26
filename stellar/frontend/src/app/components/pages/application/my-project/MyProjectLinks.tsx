@@ -9,10 +9,7 @@ import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { DEFAULT_IMAGE_URL } from '@/constants/project'
 import { toastOptions } from '@/constants/style'
-import {
-	IUpdateProjectParams,
-	updateProject,
-} from '@/services/stellar/project-registry'
+import { updateProject } from '@/services/stellar/project-registry'
 import { CreateProjectStep3Data } from '@/types/form'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import React, { useEffect, useState } from 'react'
@@ -31,10 +28,7 @@ import {
 	TWITTER_USERNAME_REGEX,
 } from '@/constants/regex'
 import useAppStorage from '@/stores/zustand/useAppStorage'
-import {
-	NearProjectFundingHistory,
-	NearSocialGPProject,
-} from '@/services/near/type'
+import { UpdateProjectParams } from 'project-registry-client'
 
 interface IContract {
 	id: string
@@ -160,7 +154,7 @@ const MyProjectLinks = () => {
 					return
 				}
 
-				const params: IUpdateProjectParams = {
+				const params: UpdateProjectParams = {
 					...projectData,
 					name: projectData?.name || '',
 					overview: projectData?.overview || '',
@@ -322,13 +316,13 @@ const MyProjectLinks = () => {
 													watch().smart_contracts[index].chain === 'bitcoin'
 														? BITCOIN_ADDRESS_REGEX(value)
 														: watch().smart_contracts[index].chain ===
-															'ethereum'
+															  'ethereum'
 															? ETHEREUM_ADDRESS_REGEX(value)
 															: watch().smart_contracts[index].chain ===
-																'stellar'
+																  'stellar'
 																? StrKey.isValidEd25519PublicKey(value)
 																: watch().smart_contracts[index].chain ===
-																	'near'
+																	  'near'
 																	? NEAR_ADDRESS_REGEX(value)
 																	: true,
 											})}
@@ -348,7 +342,7 @@ const MyProjectLinks = () => {
 									</div>
 								</div>
 								{errors?.smart_contracts?.[index]?.address?.type ===
-									'validate' ? (
+								'validate' ? (
 									<p className="text-red-500 text-xs ml-2">
 										Address is invalid
 									</p>
@@ -397,7 +391,7 @@ const MyProjectLinks = () => {
 										})}
 										errorMessage={
 											errors?.github_urls?.[index]?.github_url?.type ===
-												'validate' ? (
+											'validate' ? (
 												<p className="text-red-500 text-xs mt-1 ml-2">
 													Please enter a valid GitHub URL
 												</p>
@@ -597,11 +591,11 @@ const MyProjectLinks = () => {
 						className="!py-3 !border !border-grantpicks-black-400"
 						isDisabled={
 							JSON.stringify(watch().smart_contracts) ===
-							JSON.stringify(currentContract) &&
+								JSON.stringify(currentContract) &&
 							JSON.stringify(watch().github_urls) ===
-							JSON.stringify(currentRepo) &&
+								JSON.stringify(currentRepo) &&
 							JSON.stringify(watch().contacts) ===
-							JSON.stringify(currentContact)
+								JSON.stringify(currentContact)
 						}
 					>
 						Discard
@@ -615,11 +609,11 @@ const MyProjectLinks = () => {
 						className="!py-3 disabled:cursor-not-allowed"
 						isDisabled={
 							JSON.stringify(watch().smart_contracts) ===
-							JSON.stringify(currentContract) &&
+								JSON.stringify(currentContract) &&
 							JSON.stringify(watch().github_urls) ===
-							JSON.stringify(currentRepo) &&
+								JSON.stringify(currentRepo) &&
 							JSON.stringify(watch().contacts) ===
-							JSON.stringify(currentContact)
+								JSON.stringify(currentContact)
 						}
 					>
 						Save changes

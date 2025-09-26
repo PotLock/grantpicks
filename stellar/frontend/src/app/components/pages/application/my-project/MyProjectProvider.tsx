@@ -2,7 +2,13 @@ import MyProjectHeader from '@/app/components/pages/application/my-project/MyPro
 import MyProjectLayout from '@/app/components/pages/application/my-project/MyProjectLayout'
 import MyProjectSection from '@/app/components/pages/application/my-project/MyProjectSection'
 import { IMyProjectContext } from '@/types/context'
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import React, {
+	createContext,
+	useCallback,
+	useContext,
+	useEffect,
+	useState,
+} from 'react'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { getProjectApplicant } from '@/services/stellar/project-registry'
 import Button from '@/app/components/commons/Button'
@@ -39,8 +45,6 @@ const MyProjectProvider = () => {
 	const storage = useAppStorage()
 	const potlockService = usePotlockService()
 
-
-
 	const fetchProjectApplicant = useCallback(async () => {
 		try {
 			if (storage.chainId === 'stellar') {
@@ -49,7 +53,6 @@ const MyProjectProvider = () => {
 				if (!contracts) {
 					return
 				}
-
 
 				const res = await getProjectApplicant(stellarPubKey, contracts)
 				//@ts-ignore
@@ -105,7 +108,14 @@ const MyProjectProvider = () => {
 			storage.chainId === 'near' && setNoProject(true)
 			console.log('error fetch project applicant', error)
 		}
-	}, [stellarPubKey, storage, potlockService, setProjectData, setProjectDataModel, setStats])
+	}, [
+		stellarPubKey,
+		storage,
+		potlockService,
+		setProjectData,
+		setProjectDataModel,
+		setStats,
+	])
 
 	useEffect(() => {
 		if (storage.my_address) {

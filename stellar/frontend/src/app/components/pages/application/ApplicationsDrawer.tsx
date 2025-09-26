@@ -173,17 +173,24 @@ export const ApplicationItem = ({
 					className="rounded-full ring-1 ring-grantpicks-black-200"
 				/>
 				<div className="flex flex-col min-w-0 flex-1">
-					<p className="text-sm mb-1 md:text-base font-semibold text-grantpicks-black-950 leading-tight truncate">{item?.project?.name || ''}</p>
+					<p className="text-sm mb-1 md:text-base font-semibold text-grantpicks-black-950 leading-tight truncate">
+						{item?.project?.name || ''}
+					</p>
 					<span
 						title={item.applicant.id}
 						aria-label="Copy applicant address"
 						onClick={() => {
-							navigator?.clipboard?.writeText(item.applicant.id)
+							navigator?.clipboard
+								?.writeText(item.applicant.id)
 								.then(() =>
-									toast.success('Copied address', { style: toastOptions.success.style }),
+									toast.success('Copied address', {
+										style: toastOptions.success.style,
+									}),
 								)
 								.catch(() =>
-									toast.error('Failed to copy', { style: toastOptions.error.style }),
+									toast.error('Failed to copy', {
+										style: toastOptions.error.style,
+									}),
 								)
 						}}
 						className="text-xs md:text-sm font-mono font-medium text-grantpicks-black-700 cursor-copy hover:underline"

@@ -95,7 +95,6 @@ const SuccessCreateRoundModal = ({
 					</div>
 				</div>
 			</Modal>
-
 		</>
 	)
 }

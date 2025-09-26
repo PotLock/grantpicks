@@ -9,11 +9,12 @@
 		"lint": "next lint",
 		"prepare": "husky install",
 		"format": "prettier --write .",
+		"typecheck": "tsc --noEmit",
 		"prettier-check": "prettier --check .",
 		"gen:contracts": "node ./scripts/update-contract-networks.js && yarn --cwd ./lists-client build && yarn --cwd ./project-registry-client build && yarn --cwd ./round-client build"
 	},
 	"dependencies": {
-		"@creit.tech/stellar-wallets-kit": "^1.7.6",
+		"@creit.tech/stellar-wallets-kit": "^1.9.5",
 		"@hookform/resolvers": "^5.1.1",
 		"@livepeer/react": "^4.2.2",
 		"@near-wallet-selector/bitget-wallet": "^8.9.13",

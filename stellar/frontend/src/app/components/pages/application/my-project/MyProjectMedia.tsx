@@ -9,9 +9,7 @@ import { useWallet } from '@/app/providers/WalletProvider'
 import { YOUTUBE_URL_REGEX } from '@/constants/regex'
 import { toastOptions } from '@/constants/style'
 import { requestUpload, retrieveAsset, uploadFile } from '@/services/upload'
-import {
-	CreateProjectStep5Data,
-} from '@/types/form'
+import { CreateProjectStep5Data } from '@/types/form'
 import { fetchYoutubeIframe, onFetchingBlobToFile } from '@/utils/helper'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
@@ -22,34 +20,18 @@ import { Src } from '@livepeer/react'
 import { GetAssetResponse } from 'livepeer/models/operations'
 import { getSrc } from '@livepeer/react/external'
 import IconLoading from '@/app/components/svgs/IconLoading'
-import CMDWallet from '@/lib/wallet'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
-import {
-	IUpdateProjectParams,
-	updateProject,
-} from '@/services/stellar/project-registry'
+import { updateProject } from '@/services/stellar/project-registry'
 import { DEFAULT_IMAGE_URL } from '@/constants/project'
-import Contracts from '@/lib/contracts'
-import { Network } from '@/types/on-chain'
 import { useMyProject } from './MyProjectProvider'
 import useAppStorage from '@/stores/zustand/useAppStorage'
-import {
-	NearProjectFundingHistory,
-	NearSocialGPProject,
-} from '@/services/near/type'
+import { UpdateProjectParams } from 'project-registry-client'
 
 const MyProjectMedia = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()
 	const { stellarKit, stellarPubKey } = useWallet()
 	const { openPageLoading, dismissPageLoading, livepeer } = useGlobalContext()
-	const {
-		control,
-		register,
-		watch,
-		handleSubmit,
-		setValue,
-		formState: { errors },
-	} = useForm<CreateProjectStep5Data>()
+	const { watch, handleSubmit, setValue } = useForm<CreateProjectStep5Data>()
 	const [accFiles, setAccFiles] = useState<File[]>([])
 	const [accFileUrls, setAccFileUrls] = useState<string[]>([])
 	const [linkInput, setLinkInput] = useState<string>('')
@@ -68,8 +50,6 @@ const MyProjectMedia = () => {
 	const [embededYtTitle, setEmbededYtTitle] = useState<string>('')
 	const embededYtHtmlRef = useRef<HTMLDivElement>(null)
 	const storage = useAppStorage()
-
-	console.log('projectData?.video_url', projectData)
 
 	const onDrop = useCallback(async (acceptedFiles: File[]) => {
 		if (acceptedFiles[0].size / 10 ** 6 > 25) {
@@ -150,7 +130,7 @@ const MyProjectMedia = () => {
 					return
 				}
 
-				const params: IUpdateProjectParams = {
+				const params: UpdateProjectParams = {
 					...projectData,
 					name: projectData?.name || '',
 					overview: projectData?.overview || '',
@@ -160,7 +140,7 @@ const MyProjectMedia = () => {
 					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
 					repositories: projectData?.repositories || [],
 					team_members: projectData?.team_members || [],
-					video_url: watch().video.url || '',
+					video_url: watch().video.url || undefined,
 				}
 				const txUpdateProject = await updateProject(
 					stellarPubKey,
@@ -207,7 +187,7 @@ const MyProjectMedia = () => {
 					projectData.name,
 				)
 				setAccFiles((prev) => [...prev, blobRes as File])
-				setAccFileUrls((prev) => [...prev, projectData.video_url])
+				setAccFileUrls((prev) => [...prev, projectData.video_url || ''])
 				setValue('video.file', blobRes)
 				setValue('video.url', projectData.video_url)
 			}

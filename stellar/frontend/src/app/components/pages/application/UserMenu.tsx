@@ -25,11 +25,7 @@ const UserMenu = ({
 	onClose: () => void
 }) => {
 	const router = useRouter()
-	const {
-		onSignOut,
-		stellarPubKey,
-		onOpenStellarWallet,
-	} = useWallet()
+	const { onSignOut, stellarPubKey, onOpenStellarWallet } = useWallet()
 
 	return (
 		<Menu isOpen={isOpen} onClose={onClose} position={`right-0 -bottom-72`}>
@@ -44,21 +40,22 @@ const UserMenu = ({
 						/>
 						<div>
 							<p className="text-sm font-semibold text-grantpicks-black-950">
-								{stellarPubKey ? prettyTruncate(stellarPubKey, 10, 'address') : ''}
+								{stellarPubKey
+									? prettyTruncate(stellarPubKey, 10, 'address')
+									: ''}
 							</p>
 							<div className="flex items-center space-x-2">
 								<p className="text-sm font-normal text-grantpicks-black-600">
 									@
 									{stellarPubKey
-										? prettyTruncate(stellarPubKey, 10, 'address') : ''}
+										? prettyTruncate(stellarPubKey, 10, 'address')
+										: ''}
 								</p>
 								<IconCopy
 									size={16}
 									className="stroke-grantpicks-black-600 cursor-pointer hover:opacity-70 transition"
 									onClick={async () => {
-										await navigator.clipboard.writeText(
-											stellarPubKey,
-										)
+										await navigator.clipboard.writeText(stellarPubKey)
 										toast.success('Address is copied', {
 											style: toastOptions.success.style,
 										})

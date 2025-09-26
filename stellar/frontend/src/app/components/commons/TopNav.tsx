@@ -13,9 +13,15 @@ import Image from 'next/image'
 // Add a simple hamburger icon
 const HamburgerIcon = ({ open }: { open: boolean }) => (
 	<div className="flex flex-col justify-center items-center w-8 h-8 cursor-pointer">
-		<span className={`block h-0.5 w-6 bg-black rounded transition-all duration-200 ${open ? 'rotate-45 translate-y-2' : ''}`}></span>
-		<span className={`block h-0.5 w-6 bg-black rounded my-1 transition-all duration-200 ${open ? 'opacity-0' : ''}`}></span>
-		<span className={`block h-0.5 w-6 bg-black rounded transition-all duration-200 ${open ? '-rotate-45 -translate-y-2' : ''}`}></span>
+		<span
+			className={`block h-0.5 w-6 bg-black rounded transition-all duration-200 ${open ? 'rotate-45 translate-y-2' : ''}`}
+		></span>
+		<span
+			className={`block h-0.5 w-6 bg-black rounded my-1 transition-all duration-200 ${open ? 'opacity-0' : ''}`}
+		></span>
+		<span
+			className={`block h-0.5 w-6 bg-black rounded transition-all duration-200 ${open ? '-rotate-45 -translate-y-2' : ''}`}
+		></span>
 	</div>
 )
 
@@ -36,7 +42,10 @@ const TopNav = () => {
 		<div className="flex fixed z-20 inset-x-0 items-center justify-between px-3 sm:px-[5vw] md:px-[10vw] xl:px-[15vw] py-3 sm:py-4 bg-white">
 			{/* Mobile Hamburger - now first */}
 			<div className="flex sm:hidden items-center mr-2">
-				<button onClick={() => setNavOpen((prev) => !prev)} aria-label="Open navigation menu">
+				<button
+					onClick={() => setNavOpen((prev) => !prev)}
+					aria-label="Open navigation menu"
+				>
 					<HamburgerIcon open={navOpen} />
 				</button>
 				{/* Dropdown menu */}
@@ -75,10 +84,16 @@ const TopNav = () => {
 			</button>
 			{/* Desktop Nav */}
 			<div className="hidden sm:flex items-center gap-x-2 sm:gap-x-4">
-				<p className="text-xs sm:text-sm md:text-base font-bold hover:underline text-grantpicks-black-950 cursor-pointer" onClick={() => router.push(`/lists`)}>
+				<p
+					className="text-xs sm:text-sm md:text-base font-bold hover:underline text-grantpicks-black-950 cursor-pointer"
+					onClick={() => router.push(`/lists`)}
+				>
 					LISTS
 				</p>
-				<p className="text-xs sm:text-sm md:text-base font-bold hover:underline text-grantpicks-black-950 cursor-pointer" onClick={() => router.push(`/rounds`)}>
+				<p
+					className="text-xs sm:text-sm md:text-base font-bold hover:underline text-grantpicks-black-950 cursor-pointer"
+					onClick={() => router.push(`/rounds`)}
+				>
 					ROUNDS
 				</p>
 			</div>

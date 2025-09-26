@@ -46,7 +46,9 @@ const ApplyProjectModal = ({
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const { setSuccessApplyProjectInitProps } = useModalContext()
 	const [loading, setLoading] = useState<boolean>(true)
-	const [listDetails, setListDetails] = useState<ListExternal | undefined>(undefined)
+	const [listDetails, setListDetails] = useState<ListExternal | undefined>(
+		undefined,
+	)
 	const [isRegistered, setIsRegistered] = useState<boolean>(true)
 	const storage = useAppStorage()
 
@@ -75,7 +77,6 @@ const ApplyProjectModal = ({
 			}
 		}
 	}, [stellarPubKey, roundData])
-
 
 	const fetchProjectApplicant = useCallback(async () => {
 		try {
@@ -149,7 +150,10 @@ const ApplyProjectModal = ({
 
 	const addApplyQuery = () => {
 		const currentParams = new URLSearchParams(searchParams.toString())
-		currentParams.set('apply_round', roundData?.id.toString() as string)
+		currentParams.set(
+			'apply_round',
+			roundData?.on_chain_id.toString() as string,
+		)
 		router.push(`?${currentParams.toString()}`, {
 			scroll: false,
 		})
@@ -213,7 +217,7 @@ const ApplyProjectModal = ({
 											</p>
 										</div>
 									</div>
-									<Button color="alpha-50" onClick={() => { }}>
+									<Button color="alpha-50" onClick={() => {}}>
 										Update
 									</Button>
 								</div>
@@ -269,7 +273,16 @@ const ApplyProjectModal = ({
 				{listDetails?.name && (
 					<div className="flex flex-col w-full mt-6">
 						<p className="text-sm font-semibold text-grantpicks-black-950">
-							This is a private round. You must be an approved registrant to the list <Link className='text-blue-500' href={`/list/${listDetails.id}`} target="_blank">{listDetails.name}</Link> to apply.
+							This is a private round. You must be an approved registrant to the
+							list{' '}
+							<Link
+								className="text-blue-500"
+								href={`/list/${listDetails.id}`}
+								target="_blank"
+							>
+								{listDetails.name}
+							</Link>{' '}
+							to apply.
 						</p>
 					</div>
 				)}
@@ -281,7 +294,9 @@ const ApplyProjectModal = ({
 							isDisabled={!isRegistered}
 							isFullWidth
 						>
-							<p className="text-sm font-semibold text-white">{isRegistered ? 'Apply' : 'Not Eligible to Apply'}</p>
+							<p className="text-sm font-semibold text-white">
+								{isRegistered ? 'Apply' : 'Not Eligible to Apply'}
+							</p>
 						</Button>
 						<Button
 							color="transparent"

@@ -95,7 +95,6 @@ const CreateProjectStep1 = () => {
 							) : undefined
 						}
 					/>
-
 				</div>
 			</div>
 			<div className="p-5 md:p-6 flex flex-col items-center space-y-4  border-t border-black/10">

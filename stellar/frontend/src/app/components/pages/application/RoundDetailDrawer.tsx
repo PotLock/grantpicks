@@ -4,7 +4,10 @@ import { IDrawerProps } from '@/types/dialog'
 import useRoundStore from '@/stores/zustand/useRoundStore'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { useWallet } from '@/app/providers/WalletProvider'
-import { getProjects, IGetProjectsResponse } from '@/services/stellar/project-registry'
+import {
+	getProjects,
+	IGetProjectsResponse,
+} from '@/services/stellar/project-registry'
 import useSWRInfinite from 'swr/infinite'
 import { LIMIT_SIZE } from '@/constants/query'
 import { GPRound } from '@/models/round'
@@ -77,7 +80,8 @@ const RoundDetailDrawer = ({
 			const resProjectsDetail = await Promise.all(getProjectsDetail)
 
 			return resProjectsDetail.map((data: any, index: number) => {
-				const json = data[`${projectAddresses[index]}`]['profile']['gp_project'] || '{}'
+				const json =
+					data[`${projectAddresses[index]}`]['profile']['gp_project'] || '{}'
 				return JSON.parse(json)
 			})
 		}
@@ -98,17 +102,18 @@ const RoundDetailDrawer = ({
 		}
 	}
 
-	const {
-		data: projectData,
-		isLoading: isLoadingProjects,
-	} = useSWRInfinite(getKey, async (key) => await onFetchProjects(key), {
-		revalidateFirstPage: false,
-	})
+	const { data: projectData, isLoading: isLoadingProjects } = useSWRInfinite(
+		getKey,
+		async (key) => await onFetchProjects(key),
+		{
+			revalidateFirstPage: false,
+		},
+	)
 
 	const projects = projectData
 		? ([] as IGetProjectsResponse[]).concat(
-			...(projectData as any as IGetProjectsResponse[]),
-		)
+				...(projectData as any as IGetProjectsResponse[]),
+			)
 		: []
 
 	const currentTime = useMemo(() => {
@@ -136,15 +141,16 @@ const RoundDetailDrawer = ({
 		}
 	}, [selectedRoundType, doc])
 
-
-
-
-
 	return (
 		<Drawer onClose={onClose} showClose={showClose} isOpen={isOpen}>
 			<div className="bg-white p-4 flex flex-col w-full h-full overflow-y-auto">
 				<div className="flex justify-end">
-					<Button className='md:hidden bg-grantpicks-black-600 text-white' onClick={onClose}>X</Button>
+					<Button
+						className="md:hidden bg-grantpicks-black-600 text-white"
+						onClick={onClose}
+					>
+						X
+					</Button>
 				</div>
 				<RoundStatusBadge
 					selectedRoundType={selectedRoundType}
@@ -158,10 +164,7 @@ const RoundDetailDrawer = ({
 					currentTime={currentTime}
 				/>
 
-				<FundingInfo
-					doc={doc}
-					chainId={chainId}
-				/>
+				<FundingInfo doc={doc} chainId={chainId} />
 
 				<OwnerAdminSection
 					doc={doc}

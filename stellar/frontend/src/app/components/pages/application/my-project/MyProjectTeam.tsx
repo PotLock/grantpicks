@@ -24,10 +24,7 @@ import { StrKey } from 'round-client'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import Image from 'next/image'
 import { NEAR_ADDRESS_REGEX } from '@/constants/regex'
-import {
-	NearProjectFundingHistory,
-	NearSocialGPProject,
-} from '@/services/near/type'
+import { UpdateProjectParams } from 'project-registry-client'
 
 const MyProjectTeam = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()
@@ -35,13 +32,8 @@ const MyProjectTeam = () => {
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const [members, setMembers] = useState<string[]>([])
 	const [sameMemberError, setSameMemberError] = useState<boolean>(false)
-	const {
-		register,
-		watch,
-		handleSubmit,
-		setValue,
-		formState: { errors },
-	} = useForm<CreateProjectStep2Data>()
+	const { register, watch, handleSubmit, setValue } =
+		useForm<CreateProjectStep2Data>()
 	const storage = useAppStorage()
 
 	const setDefaultData = () => {
@@ -65,7 +57,7 @@ const MyProjectTeam = () => {
 					return
 				}
 
-				const params: IUpdateProjectParams = {
+				const params: UpdateProjectParams = {
 					...projectData,
 					name: projectData?.name || '',
 					overview: projectData?.overview || '',
@@ -236,7 +228,7 @@ const MyProjectTeam = () => {
 						className="!py-3 !border !border-grantpicks-black-400 disabled:cursor-not-allowed"
 						isDisabled={
 							projectData?.team_members.map((mem: any) => mem.value)?.length ===
-							members.length || members.length === 0
+								members.length || members.length === 0
 						}
 					>
 						Discard
@@ -250,7 +242,7 @@ const MyProjectTeam = () => {
 						className="!py-3 disabled:cursor-not-allowed"
 						isDisabled={
 							projectData?.team_members.map((mem: any) => mem.value)?.length ===
-							members.length || members.length === 0
+								members.length || members.length === 0
 						}
 					>
 						Save changes

@@ -105,7 +105,6 @@ export const getHorizonConfig = (env: string) => {
 				explorer: RPC_EXPLORER.MAINNET,
 			}
 	}
-
 }
 
 export const getSorobanConfig = (env: string) => {
@@ -167,7 +166,7 @@ export const submitTx = async ({
 		// 	getTx = await server.getTransaction(sendResponse.hash)
 		// 	await sleep(200)
 		// }
-		
+
 		// return sendResponse.hash
 		throw new Error('You are using the wrong server')
 	}

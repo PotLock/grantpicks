@@ -37,7 +37,9 @@ const Drawer = ({
 			{isOpen && (
 				<div
 					ref={drawerRef}
-					className={clsx('fixed inset-0 z-[9999] bg-black/10 max-w-full mx-auto')}
+					className={clsx(
+						'fixed inset-0 z-[9999] bg-black/10 max-w-full mx-auto',
+					)}
 					onClick={(e) => _bgClick(e)}
 				/>
 			)}

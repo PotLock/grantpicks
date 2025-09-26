@@ -5,7 +5,7 @@ import IconClose from "@/app/components/svgs/IconClose"
 import { useRouter } from "next/navigation"
 import { useLists } from "./hooks/useLists"
 import { IGetListExternalResponse } from "@/types/on-chain"
-import { ListCard } from "./ListCard"
+import { APIListExternal, ListCard } from "./ListCard"
 import useAppStorage from "@/stores/zustand/useAppStorage"
 import { useWallet } from "@/app/providers/WalletProvider"
 import { useState, useMemo, useEffect } from "react"
@@ -113,8 +113,8 @@ export const AllLists = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mt-8 text-grantpicks-black-950 w-full">
-              {filteredLists.map((list: IGetListExternalResponse) => (
-                <div key={list.id} className="w-full">
+              {filteredLists.map((list: APIListExternal) => (
+                <div key={list.on_chain_id} className="w-full">
                   <ListCard stellarPubKey={stellarPubKey || ''} chainId={storage.chainId} list={list} />
                 </div>
               ))

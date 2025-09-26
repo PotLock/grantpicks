@@ -21,7 +21,7 @@ export const UpdateRoundAdmins = ({
 }: {
   isOpen: boolean
   onClose: () => void
-  doc: GPRound
+  doc: Omit<GPRound, 'admins'> & { admins: { id: string }[] }
   mutateRounds: () => void
 }) => {
   const [selectedAdmins, setSelectedAdmins] = useState<string[]>([])
@@ -34,7 +34,7 @@ export const UpdateRoundAdmins = ({
   } = useForm<FormData>({
     mode: 'onChange',
     defaultValues: {
-      admins: doc?.admins?.map(admin => ({ admin_id: admin })) || [],
+      admins: doc?.admins?.map(admin => ({ admin_id: admin?.id })) || [],
     },
   })
   const { append: appendAdmin, remove: removeAdmin } = useFieldArray({

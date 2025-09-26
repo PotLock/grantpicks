@@ -27,7 +27,7 @@ export class PotlockService {
 		return result?.data.results
 	}
 
-	async getRound(roundId: number): Promise<GPRound> {
+	async getRound(roundId: number): Promise<Omit<GPRound, 'admins'> & { admins: { id: string }[] }> {
 		const result = await this._axios?.get(`/round/${roundId}`)
 		return result?.data
 	}

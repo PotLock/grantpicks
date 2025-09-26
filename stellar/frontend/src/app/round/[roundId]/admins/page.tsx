@@ -17,7 +17,6 @@ const RoundAdminsPage = () => {
   const potlockService = usePotlockService()
   const { data, isLoading, error, mutate } = useSWR(`/rounds/${roundId}/admins`, () => potlockService.getRound(Number(roundId)))
 
-  console.log(data)
 
   if (error) {
     return <div className="text-center text-grantpicks-black-950">Error Loading Round Admins</div>
@@ -52,7 +51,7 @@ const RoundAdminsPage = () => {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {data?.admins?.length && data?.admins?.length > 0 ? data?.admins.map((admin, idx) => (
-          <AdminCard key={idx} address={admin.id} />
+          <AdminCard key={idx} address={admin?.id} />
         )) : (
           <div className="col-span-full">
             <div className="text-center border border-black/10 rounded-xl p-8 bg-white">
@@ -66,7 +65,7 @@ const RoundAdminsPage = () => {
       <UpdateRoundAdmins
         isOpen={showAddAdminsModal}
         onClose={() => setShowAddAdminsModal(false)}
-        doc={data as GPRound}
+        doc={data as unknown as GPRound}
         mutateRounds={mutate}
       />
     </div>

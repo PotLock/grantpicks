@@ -41,6 +41,7 @@ import { GPVotingResult } from '@/models/voting'
 import { GPPayout, GPPayoutChallenge } from '@/models/payout'
 import { LIMIT_SIZE_CONTRACT } from '@/constants/query'
 import { usePotlockService } from '@/services/potlock'
+import { GPRound } from '@/models/round'
 
 const RoundResultPage = () => {
 	const { stellarPubKey, stellarKit } = useWallet()
@@ -62,11 +63,10 @@ const RoundResultPage = () => {
 			let isAdmin = false
 
 			const roundInfo = await potlockApi.getRound(roundId)
-			const newChainId = extractChainId(roundInfo)
+			const newChainId = extractChainId(roundInfo as unknown as GPRound)
 
-
-			storage.setRound(roundInfo)
-			storage.roundes.set(roundId.toString(), roundInfo)
+			storage.setRound(roundInfo as unknown as GPRound)
+			storage.roundes.set(roundId.toString(), roundInfo as unknown as GPRound)
 
 			setChainId(newChainId)
 			storage.setChainId(newChainId)
@@ -79,7 +79,7 @@ const RoundResultPage = () => {
 				}
 				const admins = (
 					await contracts.round_contract.admins({
-						round_id: BigInt(roundInfo.on_chain_id),
+						round_id: BigInt(roundInfo.on_chain_id || 0),
 					})
 				).result
 
@@ -132,8 +132,8 @@ const RoundResultPage = () => {
 				}
 
 				if (roundInfo) {
-					isOwner = roundInfo.owner?.id === storage.my_address
-					isAdmin = roundInfo.admins.includes(storage.my_address || '')
+					isOwner = roundInfo.owner?.id === storage.my_address || false
+					isAdmin = roundInfo.admins.map(admin => admin.id).includes(storage.my_address || '')
 
 					const isAdminOrOwner = isAdmin || isOwner
 

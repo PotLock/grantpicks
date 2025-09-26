@@ -16,7 +16,6 @@ import { prettyTruncate } from '@/utils/helper'
 import { envVarConfigs } from '@/configs/env-var'
 
 const Footer = () => {
-
 	const chains = [
 		{
 			name: 'Round',
@@ -24,12 +23,12 @@ const Footer = () => {
 			contract: envVarConfigs.ROUND_CONTRACT_ID,
 		},
 		{
-			name: "Project Registry",
+			name: 'Project Registry',
 			icon: <IconStellar size={16} className="fill-grantpicks-black-950" />,
 			contract: envVarConfigs.PROJECT_REGISTRY_CONTRACT_ID,
 		},
 		{
-			name: "List",
+			name: 'List',
 			icon: <IconStellar size={16} className="fill-grantpicks-black-950" />,
 			contract: envVarConfigs.LISTS_CONTRACT_ID,
 		},
@@ -52,22 +51,35 @@ const Footer = () => {
 							<p className="text-[#020909] font-black text-lg">GrantPicks</p>
 						</div>
 						<p className="text-sm text-gray-600 mb-4 max-w-xs">
-							Decentralized grant funding platform built on blockchain technology.
+							Decentralized grant funding platform built on blockchain
+							technology.
 						</p>
 						<div className="flex gap-x-3">
-							<Link href={`https://x.com/potlock_`} target="_blank" className="group">
+							<Link
+								href={`https://x.com/potlock_`}
+								target="_blank"
+								className="group"
+							>
 								<IconTwitter
 									size={20}
 									className="cursor-pointer transition-colors fill-gray-400 group-hover:fill-grantpicks-black-950"
 								/>
 							</Link>
-							<Link href={`https://t.me/+27V0rWUiq5liZmIx`} target="_blank" className="group">
+							<Link
+								href={`https://t.me/+27V0rWUiq5liZmIx`}
+								target="_blank"
+								className="group"
+							>
 								<IconTelegram
 									size={20}
 									className="cursor-pointer transition-colors fill-gray-400 group-hover:fill-grantpicks-black-950"
 								/>
 							</Link>
-							<Link href={`https://github.com/potlock`} target="_blank" className="group">
+							<Link
+								href={`https://github.com/potlock`}
+								target="_blank"
+								className="group"
+							>
 								<IconGithub
 									size={20}
 									className="cursor-pointer transition-colors fill-gray-400 group-hover:fill-grantpicks-black-950"
@@ -78,30 +90,58 @@ const Footer = () => {
 
 					{/* Quick Links */}
 					<div>
-						<h3 className="font-semibold text-base text-gray-900 mb-4">Quick Links</h3>
+						<h3 className="font-semibold text-base text-gray-900 mb-4">
+							Quick Links
+						</h3>
 						<div className="space-y-2">
-							<Link href={'/privacy-policy'} className="block" target="_blank" rel="noopener noreferrer">
-								<p className="text-sm text-gray-600 hover:text-gray-900 transition-colors">Privacy Policy</p>
+							<Link
+								href={'/privacy-policy'}
+								className="block"
+								target="_blank"
+								rel="noopener noreferrer"
+							>
+								<p className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+									Privacy Policy
+								</p>
 							</Link>
-							<Link href={'/terms'} className="block" target="_blank" rel="noopener noreferrer">
-								<p className="text-sm text-gray-600 hover:text-gray-900 transition-colors">Terms of Service</p>
+							<Link
+								href={'/terms'}
+								className="block"
+								target="_blank"
+								rel="noopener noreferrer"
+							>
+								<p className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+									Terms of Service
+								</p>
 							</Link>
 						</div>
 					</div>
 
 					{/* Built By & Inspired By */}
 					<div>
-						<h3 className="font-semibold text-base text-gray-900 mb-4">Built By</h3>
-						<Link href={`https://www.potlock.org/`} target="_blank" className="block mb-6">
+						<h3 className="font-semibold text-base text-gray-900 mb-4">
+							Built By
+						</h3>
+						<Link
+							href={`https://www.potlock.org/`}
+							target="_blank"
+							className="block mb-6"
+						>
 							<div className="flex items-center gap-x-2 group">
 								<div className="text-lg">🫕</div>
 								<IconPotlock />
 							</div>
 						</Link>
 
-						<h3 className="font-semibold text-base text-gray-900 mb-4">Inspired By</h3>
+						<h3 className="font-semibold text-base text-gray-900 mb-4">
+							Inspired By
+						</h3>
 						<div className="flex gap-x-4">
-							<Link href={`https://pairdrop.daodrops.io/`} target="_blank" className="group">
+							<Link
+								href={`https://pairdrop.daodrops.io/`}
+								target="_blank"
+								className="group"
+							>
 								<IconDorg />
 							</Link>
 							<Link
@@ -116,7 +156,9 @@ const Footer = () => {
 
 					{/* Smart Contracts */}
 					<div>
-						<h3 className="font-semibold text-base text-gray-900 mb-4">Smart Contracts</h3>
+						<h3 className="font-semibold text-base text-gray-900 mb-4">
+							Smart Contracts
+						</h3>
 						<div className="space-y-3">
 							{chains.map((c) => (
 								<button
@@ -142,7 +184,6 @@ const Footer = () => {
 											{c.contract}
 										</div>
 									</div>
-
 								</button>
 							))}
 
@@ -153,8 +194,20 @@ const Footer = () => {
 								className="flex items-center gap-x-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
 							>
 								<svg width="16" height="16" fill="none" viewBox="0 0 24 24">
-									<path d="M6 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8.828A2 2 0 0 0 19.414 7.414l-4.828-4.828A2 2 0 0 0 12.172 2H6zm7 1.414L18.586 9H15a2 2 0 0 1-2-2V3.414z" stroke="currentColor" strokeWidth="1.5" />
-									<text x="12" y="16" textAnchor="middle" fontSize="8" fill="currentColor">AUDIT</text>
+									<path
+										d="M6 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8.828A2 2 0 0 0 19.414 7.414l-4.828-4.828A2 2 0 0 0 12.172 2H6zm7 1.414L18.586 9H15a2 2 0 0 1-2-2V3.414z"
+										stroke="currentColor"
+										strokeWidth="1.5"
+									/>
+									<text
+										x="12"
+										y="16"
+										textAnchor="middle"
+										fontSize="8"
+										fill="currentColor"
+									>
+										AUDIT
+									</text>
 								</svg>
 								Audit Report
 							</a>
@@ -167,8 +220,16 @@ const Footer = () => {
 					<div className="mt-8 p-4 bg-gray-50 border border-gray-200 rounded-lg">
 						<div className="flex items-center gap-x-3">
 							<div className="flex-shrink-0">
-								<svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-									<path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+								<svg
+									className="w-5 h-5 text-gray-600"
+									fill="currentColor"
+									viewBox="0 0 20 20"
+								>
+									<path
+										fillRule="evenodd"
+										d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+										clipRule="evenodd"
+									/>
 								</svg>
 							</div>
 							<div className="flex-1">
@@ -176,7 +237,9 @@ const Footer = () => {
 									Reset Disclaimer
 								</h4>
 								<p className="text-sm text-gray-700">
-									The Stellar testnet network is bound to be reset and when that is done all data will be lost in the contract including user tokens as well. Everything will be wiped.
+									The Stellar testnet network is bound to be reset and when that
+									is done all data will be lost in the contract including user
+									tokens as well. Everything will be wiped.
 								</p>
 							</div>
 						</div>
@@ -191,7 +254,11 @@ const Footer = () => {
 						</p>
 						<div className="flex items-center gap-x-4 text-sm text-gray-500">
 							<span>Powered by</span>
-							<Link href="https://www.potlock.org/" target="_blank" className="hover:text-gray-700 flex items-center gap-x-2 transition-colors">
+							<Link
+								href="https://www.potlock.org/"
+								target="_blank"
+								className="hover:text-gray-700 flex items-center gap-x-2 transition-colors"
+							>
 								<div className="text-lg">🫕</div>
 								Potlock
 							</Link>

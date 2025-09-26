@@ -27,15 +27,15 @@ export class PotlockService {
 		return result?.data.results
 	}
 
-	async getRound(roundId: number): Promise<Omit<GPRound, 'admins'> & { admins: { id: string }[] }> {
+	async getRound(
+		roundId: number,
+	): Promise<Omit<GPRound, 'admins'> & { admins: { id: string }[] }> {
 		const result = await this._axios?.get(`/round/${roundId}`)
 		return result?.data
 	}
 
 	async getApplications(roundId: number): Promise<GPApplication[]> {
-		const result = await this._axios?.get(
-			`/rounds/${roundId}/applications`,
-		)
+		const result = await this._axios?.get(`/rounds/${roundId}/applications`)
 		return result?.data.results
 	}
 
@@ -47,7 +47,9 @@ export class PotlockService {
 	}
 
 	async getProjects(skip: number, limit: number) {
-		const result = await this._axios?.get(`/projects?skip=${skip}&limit=${limit}`)
+		const result = await this._axios?.get(
+			`/projects?skip=${skip}&limit=${limit}`,
+		)
 		return result?.data.results
 	}
 

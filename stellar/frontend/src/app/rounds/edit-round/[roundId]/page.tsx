@@ -10,14 +10,9 @@ import CreateRoundLayout from '@/app/components/pages/create-round/CreateRoundLa
 import IconAdd from '@/app/components/svgs/IconAdd'
 import IconRemove from '@/app/components/svgs/IconRemove'
 import IconUnfoldMore from '@/app/components/svgs/IconUnfoldMore'
-import {
-	UpdateRoundData,
-} from '@/types/form'
+import { UpdateRoundData } from '@/types/form'
 import React, { useEffect, useState } from 'react'
-import {
-	useForm,
-	SubmitHandler,
-} from 'react-hook-form'
+import { useForm, SubmitHandler } from 'react-hook-form'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import {
 	editRound,
@@ -27,9 +22,7 @@ import {
 import { useParams, useRouter } from 'next/navigation'
 
 import { useWallet } from '@/app/providers/WalletProvider'
-import {
-	formatStroopToXlm,
-} from '@/utils/helper'
+import { formatStroopToXlm } from '@/utils/helper'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
@@ -63,8 +56,11 @@ const EditRoundPage = () => {
 	const { stellarPrice, nearPrice } = useGlobalContext()
 	const { stellarPubKey, stellarKit, connectedWallet } = useWallet()
 	const [checkedListIds, setCheckedListIds] = useState<bigint[]>([])
-	const [checkedApplicationListIds, setCheckedApplicationListIds] = useState<bigint[]>([])
-	const [showApplicationLists, setShowApplicationLists] = useState<boolean>(true)
+	const [checkedApplicationListIds, setCheckedApplicationListIds] = useState<
+		bigint[]
+	>([])
+	const [showApplicationLists, setShowApplicationLists] =
+		useState<boolean>(true)
 	const [isVaultDeposit, setIsVaultDeposit] = useState<boolean>(false)
 	const [showLists, setShowLists] = useState<boolean>(true)
 
@@ -94,18 +90,15 @@ const EditRoundPage = () => {
 	})
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 
-
 	const storage = useAppStorage()
 
-
 	const isOwner = (listOwnerId: string): boolean => {
-		return (stellarPubKey) === listOwnerId
+		return stellarPubKey === listOwnerId
 	}
 
 	const isAdmin = (adminIds: string[]): boolean => {
 		return adminIds.includes(stellarPubKey)
 	}
-
 
 	const onFetchRoundInfo = async (): Promise<GPRound | undefined> => {
 		let contracts = storage.getStellarContracts()
@@ -142,9 +135,9 @@ const EditRoundPage = () => {
 						formatNearAmount(resRoundInfo?.current_vault_balance) === '0'
 							? '0'
 							: formatNearAmount(resRoundInfo?.current_vault_balance).replace(
-								',',
-								'',
-							),
+									',',
+									'',
+								),
 					)
 				}
 				if (resRoundInfo?.application_wl_list_id) {
@@ -160,8 +153,8 @@ const EditRoundPage = () => {
 					'expected_amount',
 					storage.chainId === 'stellar'
 						? (formatStroopToXlm(
-							BigInt(resRoundInfo?.expected_amount),
-						) as string)
+								BigInt(resRoundInfo?.expected_amount),
+							) as string)
 						: (resRoundInfo?.expected_amount as string),
 				)
 				let calculation = 0
@@ -199,10 +192,6 @@ const EditRoundPage = () => {
 		}
 	}
 
-
-
-
-
 	const onEditRound: SubmitHandler<UpdateRoundData> = async (data) => {
 		try {
 			openPageLoading()
@@ -221,13 +210,16 @@ const EditRoundPage = () => {
 						value: data.contact_address,
 					},
 				],
-				max_participants:
-					data.max_participants,
+				max_participants: data.max_participants,
 				num_picks_per_voter: data.vote_per_person,
-				application_wl_list_id: checkedApplicationListIds.length > 0 ? checkedApplicationListIds[0] : undefined,
-				voting_wl_list_id: checkedListIds.length > 0 ? checkedListIds[0] : undefined,
+				application_wl_list_id:
+					checkedApplicationListIds.length > 0
+						? checkedApplicationListIds[0]
+						: undefined,
+				voting_wl_list_id:
+					checkedListIds.length > 0 ? checkedListIds[0] : undefined,
 				is_video_required: data.is_video_required,
-				use_vault: data.use_vault || false
+				use_vault: data.use_vault || false,
 			}
 			const txUpdateRound = await editRound(
 				stellarPubKey,
@@ -274,10 +266,7 @@ const EditRoundPage = () => {
 		if (!contracts) {
 			return []
 		}
-		const res = await getLists(
-			{ skip: key.skip, limit: key.limit },
-			contracts,
-		)
+		const res = await getLists({ skip: key.skip, limit: key.limit }, contracts)
 		return res
 	}
 
@@ -301,12 +290,15 @@ const EditRoundPage = () => {
 		},
 	)
 
-	const lists = data && data.length > 0 ? ([] as IGetListExternalResponse[]).concat(...(data as unknown as IGetListExternalResponse[])) : []
+	const lists =
+		data && data.length > 0
+			? ([] as IGetListExternalResponse[]).concat(
+					...(data as unknown as IGetListExternalResponse[]),
+				)
+			: []
 	const isEmpty = data?.[0]?.length === 0
 	const isReachingEnd =
-		isEmpty || (!!data && ((data[data.length - 1]?.length || 0) < LIMIT_SIZE))
-
-
+		isEmpty || (!!data && (data[data.length - 1]?.length || 0) < LIMIT_SIZE)
 
 	return (
 		<CreateRoundLayout>
@@ -357,7 +349,7 @@ const EditRoundPage = () => {
 										className={clsx(
 											'border border-grantpicks-black-200 rounded-xl py-3 px-3 flex items-center justify-between cursor-pointer hover:opacity-80 transition',
 											errors.contact_address?.type === 'required' &&
-											'border-red-500',
+												'border-red-500',
 										)}
 									>
 										<p
@@ -433,7 +425,7 @@ const EditRoundPage = () => {
 										className={clsx(
 											(errors.contact_address?.type === 'required' ||
 												errors.contact_address) &&
-											'border border-red-500',
+												'border border-red-500',
 										)}
 										disabled={!watch('contact_type')}
 										required
@@ -488,9 +480,10 @@ const EditRoundPage = () => {
 							</p>
 						</div>
 					</div>
-					<div className='bg-white p-6 justify-between flex flex-col gap-2 rounded-2xl shadow-md mb-6'>
-
-						<div className={`pt-4 flex flex-col items-center md:flex-row gap-2`}>
+					<div className="bg-white p-6 justify-between flex flex-col gap-2 rounded-2xl shadow-md mb-6">
+						<div
+							className={`pt-4 flex flex-col items-center md:flex-row gap-2`}
+						>
 							<div className="flex flex-col w-full md:w-[38%] space-x-4 mb-2">
 								<div className="w-full">
 									<InputText
@@ -586,7 +579,10 @@ const EditRoundPage = () => {
 												setValue('vote_per_person', watch().vote_per_person + 1)
 											}}
 										>
-											<IconAdd size={24} className="fill-grantpicks-black-600" />
+											<IconAdd
+												size={24}
+												className="fill-grantpicks-black-600"
+											/>
 										</Button>
 									</div>
 								</div>
@@ -606,8 +602,6 @@ const EditRoundPage = () => {
 							/>
 						</div>
 					</div>
-
-
 
 					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
 						<div className="flex items-center justify-between pb-4 border-b border-black/10">
@@ -677,7 +671,9 @@ const EditRoundPage = () => {
 															className="py-4 flex items-center gap-x-4"
 														>
 															<Checkbox
-																checked={checkedListIds?.includes(list.id) || false}
+																checked={
+																	checkedListIds?.includes(list.id) || false
+																}
 																onChange={(e) => {
 																	if (e.target.checked) {
 																		setCheckedListIds([list?.id])
@@ -737,7 +733,6 @@ const EditRoundPage = () => {
 							)}
 						</div>
 					</div>
-
 
 					{/* Application Requirements - Only show when allow_application is true */}
 					{watch().allow_application && (
@@ -882,7 +877,6 @@ const EditRoundPage = () => {
 							</div>
 						</div>
 					)}
-
 
 					<Button
 						color="black-950"

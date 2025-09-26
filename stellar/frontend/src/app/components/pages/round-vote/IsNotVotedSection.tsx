@@ -44,8 +44,14 @@ const IsNotVotedSection = ({
 			})
 			// desktop horizontal scroll
 			if (desktopScrollerRef.current) {
-				const child = desktopScrollerRef.current.children[currIdx - 1] as HTMLElement
-				child?.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' })
+				const child = desktopScrollerRef.current.children[
+					currIdx - 1
+				] as HTMLElement
+				child?.scrollIntoView({
+					behavior: 'smooth',
+					inline: 'start',
+					block: 'nearest',
+				})
 			}
 		}
 	}
@@ -60,12 +66,17 @@ const IsNotVotedSection = ({
 			})
 			// desktop horizontal scroll
 			if (desktopScrollerRef.current) {
-				const child = desktopScrollerRef.current.children[currIdx + 1] as HTMLElement
-				child?.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' })
+				const child = desktopScrollerRef.current.children[
+					currIdx + 1
+				] as HTMLElement
+				child?.scrollIntoView({
+					behavior: 'smooth',
+					inline: 'start',
+					block: 'nearest',
+				})
 			}
 		}
 	}
-
 
 	const onVotePair = async () => {
 		try {
@@ -155,12 +166,17 @@ const IsNotVotedSection = ({
 				See Evaluation guide
 			</span>
 			<p className="text-xs md:text-sm text-grantpicks-black-600 mb-10 md:mb-12 lg:mb-16">
-				You need to vote for more than one pair. Voted: {selectedVotes.filter(Boolean).length} / {pairsData.length}
+				You need to vote for more than one pair. Voted:{' '}
+				{selectedVotes.filter(Boolean).length} / {pairsData.length}
 			</p>
 			{/* Mobile vertical stack with snap */}
 			<div className="flex md:hidden flex-col w-full space-y-6 px-4 mb-8 snap-y snap-mandatory overflow-y-auto h-[70vh]">
 				{pairsData.map((doc, idx) => (
-					<div key={`m-${idx}`} id={`boxing-m-${idx}`} className="w-full snap-start">
+					<div
+						key={`m-${idx}`}
+						id={`boxing-m-${idx}`}
+						className="w-full snap-start"
+					>
 						<RoundVotePairItem
 							index={idx}
 							data={doc}
@@ -174,7 +190,10 @@ const IsNotVotedSection = ({
 			</div>
 
 			{/* Desktop horizontal scroller */}
-			<div ref={desktopScrollerRef} className="hidden md:flex items-center snap-x snap-mandatory overflow-x-auto mb-10 md:mb-12 lg:mb-16 no-scrollbar max-w-full space-x-4 md:space-x-6">
+			<div
+				ref={desktopScrollerRef}
+				className="hidden md:flex items-center snap-x snap-mandatory overflow-x-auto mb-10 md:mb-12 lg:mb-16 no-scrollbar max-w-full space-x-4 md:space-x-6"
+			>
 				{pairsData.map((doc, idx) => (
 					<div key={`d-${idx}`} className="snap-start min-w-full">
 						<RoundVotePairItem

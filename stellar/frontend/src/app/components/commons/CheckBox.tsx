@@ -10,7 +10,7 @@ const Checkbox = ({
 	disabled = false,
 	name,
 	value,
-  onChecked
+	onChecked,
 }: CheckboxProps) => {
 	return (
 		<div className={`${parentClassName} flex items-center space-x-2`}>
@@ -20,10 +20,10 @@ const Checkbox = ({
 				checked={checked}
 				onChange={(e: ChangeEvent<HTMLInputElement>) => {
 					onChange(e)
-					
-          if(onChecked && value) {
-            onChecked(value, e.target.checked)
-          }
+
+					if (onChecked && value) {
+						onChecked(value, e.target.checked)
+					}
 				}}
 				disabled={disabled}
 				value={value}

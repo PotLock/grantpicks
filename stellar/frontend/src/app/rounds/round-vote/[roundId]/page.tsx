@@ -169,7 +169,6 @@ const RoundVotePage = () => {
 		}
 	}, [storage.chainId, storage.my_address, params.roundId])
 
-
 	return (
 		<RoundVoteLayout>
 			{!hasVoted ? (

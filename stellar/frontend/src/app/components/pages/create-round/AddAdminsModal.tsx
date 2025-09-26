@@ -84,8 +84,8 @@ const AddAdminsModal = ({
 				<div className="px-4 md:px-5 lg:px-6 pb-6 pt-8 bg-grantpicks-black-50 rounded-t-xl relative rounded-xl">
 					<IconClose
 						size={24}
-						className={clsx("fill-grantpicks-black-400 absolute right-4 top-4 cursor-pointer transition hover:opacity-80",
-
+						className={clsx(
+							'fill-grantpicks-black-400 absolute right-4 top-4 cursor-pointer transition hover:opacity-80',
 						)}
 						onClick={() => {
 							setSearchAdmin('')
@@ -167,13 +167,11 @@ const AddAdminsModal = ({
 						))}
 					</div>
 				)}
-				{
-					handleSaveChanges && (
-						<div className="flex my-3 justify-center items-center gap-2">
-							<Button onClick={handleSaveChanges}>Save Changes</Button>
-						</div>
-					)
-				}
+				{handleSaveChanges && (
+					<div className="flex my-3 justify-center items-center gap-2">
+						<Button onClick={handleSaveChanges}>Save Changes</Button>
+					</div>
+				)}
 			</div>
 		</Modal>
 	)

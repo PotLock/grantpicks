@@ -59,7 +59,9 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 			modules: [
 				new FreighterModule(),
 				new xBullModule(),
-				...(envVarConfigs.NETWORK_ENV !== 'testnet' ? [new HotWalletModule()] : []),
+				...(envVarConfigs.NETWORK_ENV !== 'testnet'
+					? [new HotWalletModule()]
+					: []),
 			],
 		})
 	}
@@ -139,14 +141,15 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 
 			store.setMyAddress(localStellarPubKey || pubKey)
 			store.setChainId('stellar')
-			store.setNetwork(envVarConfigs.NETWORK_ENV === 'testnet' ? 'testnet' : 'mainnet')
+			store.setNetwork(
+				envVarConfigs.NETWORK_ENV === 'testnet' ? 'testnet' : 'mainnet',
+			)
 			return
 		} else {
 			store.clear()
 			setConnectedWallet(null)
 		}
 	}
-
 
 	const onOpenStellarWallet = (
 		onSelected?: (option: ISupportedWallet) => void,
@@ -164,7 +167,8 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 					)
 
 					const appNetwork = envVarConfigs.NETWORK_ENV
-					const currentAppNetwork = appNetwork === 'testnet' ? 'TESTNET' : 'PUBLIC'
+					const currentAppNetwork =
+						appNetwork === 'testnet' ? 'TESTNET' : 'PUBLIC'
 					try {
 						const info = await kit.getNetwork()
 						if (![currentAppNetwork, 'mainnet'].includes(info.network)) {
@@ -174,7 +178,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 							)
 							return
 						}
-					} catch { }
+					} catch {}
 
 					const pubKey = (await kit.getAddress()).address
 					let cmdWallet = new CMDWallet({
@@ -194,7 +198,9 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 					onSelected?.(option)
 				} catch (error: any) {
 					localStorage.removeItem(localStorageConfigs.CONNECTED_WALLET)
-					toast.error('Error connecting to Stellar wallet, Please make sure your wallet is Valid')
+					toast.error(
+						'Error connecting to Stellar wallet, Please make sure your wallet is Valid',
+					)
 					localStorage.removeItem(localStorageConfigs.STELLAR_PUBLIC_KEY)
 					setConnectedWallet(null)
 					setStellarPubKey('')

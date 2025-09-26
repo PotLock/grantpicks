@@ -5,9 +5,7 @@ import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { DEFAULT_IMAGE_URL } from '@/constants/project'
 import { toastOptions } from '@/constants/style'
-import {
-	updateProject,
-} from '@/services/stellar/project-registry'
+import { updateProject } from '@/services/stellar/project-registry'
 import { CreateProjectStep1Data } from '@/types/form'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import React, { useEffect } from 'react'
@@ -143,7 +141,6 @@ const MyProjectOverview = () => {
 							) : undefined
 						}
 					/>
-
 				</div>
 			</div>
 			<div className="p-3 md:p-5 flex flex-col md:flex-row items-center md:justify-end space-x-0 md:space-x-4 space-y-4 md:space-y-0">

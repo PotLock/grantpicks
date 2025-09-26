@@ -1,9 +1,5 @@
 import { ListExternal, Soroban } from 'lists-client'
-import {
-	Horizon,
-	RoundApplication,
-	RoundDetail,
-} from 'round-client'
+import { Horizon, RoundApplication, RoundDetail } from 'round-client'
 
 export type Network = 'testnet' | 'mainnet'
 

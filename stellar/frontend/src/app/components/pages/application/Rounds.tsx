@@ -32,7 +32,7 @@ const ApplicationRounds = () => {
 	const searchParams = useSearchParams()
 	const { stellarPubKey } = useWallet()
 	const [myRoundsData, setMyRoundsData] = useState<GPRound[]>([])
-	const [searchQuery, setSearchQuery] = useState("")
+	const [searchQuery, setSearchQuery] = useState('')
 
 	const filterRoundsByType = (rounds: GPRound[], type: string) => {
 		switch (type) {
@@ -45,7 +45,7 @@ const ApplicationRounds = () => {
 					(t) =>
 						new Date(t.voting_start).getTime() <= new Date().getTime() &&
 						new Date().getTime() < new Date(t.voting_end).getTime() &&
-						t.approved_projects.length > 0
+						t.approved_projects.length > 0,
 				)
 			case 'ended':
 				return rounds.filter(
@@ -55,7 +55,6 @@ const ApplicationRounds = () => {
 				return rounds
 		}
 	}
-
 
 	const onFetchRounds = async (key: { url: string; page: number }) => {
 		let beChainId = null
@@ -100,7 +99,6 @@ const ApplicationRounds = () => {
 		})
 	const hasMore = data ? data.length >= LIMIT_SIZE : false
 
-
 	useEffect(() => {
 		if (data) {
 			const rounds = data
@@ -127,10 +125,7 @@ const ApplicationRounds = () => {
 
 			return stellarPubKey ? `get-my-rounds:${stellarPubKey}` : null
 		},
-		() =>
-			onFetchMyRounds(
-				stellarPubKey,
-			),
+		() => onFetchMyRounds(stellarPubKey),
 	)
 
 	useEffect(() => {
@@ -270,13 +265,13 @@ const ApplicationRounds = () => {
 								onChange={(e) => setSearchQuery(e.target.value)}
 								onKeyDown={(e) => {
 									if (e.key === 'Escape') {
-										setSearchQuery("")
+										setSearchQuery('')
 									}
 								}}
 							/>
 							{searchQuery && (
 								<button
-									onClick={() => setSearchQuery("")}
+									onClick={() => setSearchQuery('')}
 									className="p-1 hover:bg-gray-100 rounded-full transition-colors"
 									title="Clear search"
 								>
@@ -356,11 +351,7 @@ const ApplicationRounds = () => {
 					) : (
 						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
 							{filteredMyRounds.map((doc, idx) => (
-								<RoundCard
-									key={idx}
-									doc={doc}
-									mutateRounds={mutateMyRounds}
-								/>
+								<RoundCard key={idx} doc={doc} mutateRounds={mutateMyRounds} />
 							))}
 						</div>
 					)
@@ -383,11 +374,7 @@ const ApplicationRounds = () => {
 						) : (
 							<div className="grid grid-cols-1 z-10 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
 								{filteredRounds?.map((doc, idx) => (
-									<RoundCard
-										key={idx}
-										doc={doc}
-										mutateRounds={mutate}
-									/>
+									<RoundCard key={idx} doc={doc} mutateRounds={mutate} />
 								))}
 							</div>
 						)}

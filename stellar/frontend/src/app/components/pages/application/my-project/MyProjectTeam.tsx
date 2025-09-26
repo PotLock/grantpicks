@@ -32,13 +32,8 @@ const MyProjectTeam = () => {
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const [members, setMembers] = useState<string[]>([])
 	const [sameMemberError, setSameMemberError] = useState<boolean>(false)
-	const {
-		register,
-		watch,
-		handleSubmit,
-		setValue,
-
-	} = useForm<CreateProjectStep2Data>()
+	const { register, watch, handleSubmit, setValue } =
+		useForm<CreateProjectStep2Data>()
 	const storage = useAppStorage()
 
 	const setDefaultData = () => {
@@ -233,7 +228,7 @@ const MyProjectTeam = () => {
 						className="!py-3 !border !border-grantpicks-black-400 disabled:cursor-not-allowed"
 						isDisabled={
 							projectData?.team_members.map((mem: any) => mem.value)?.length ===
-							members.length || members.length === 0
+								members.length || members.length === 0
 						}
 					>
 						Discard
@@ -247,7 +242,7 @@ const MyProjectTeam = () => {
 						className="!py-3 disabled:cursor-not-allowed"
 						isDisabled={
 							projectData?.team_members.map((mem: any) => mem.value)?.length ===
-							members.length || members.length === 0
+								members.length || members.length === 0
 						}
 					>
 						Save changes

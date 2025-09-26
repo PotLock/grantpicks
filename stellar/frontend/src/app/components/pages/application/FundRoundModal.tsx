@@ -37,10 +37,19 @@ const FundRoundModal = ({
 	const { setSuccessFundRoundModalProps } = useModalContext()
 	const { stellarPrice, openPageLoading, dismissPageLoading, nearPrice } =
 		useGlobalContext()
-	const { stellarPubKey, stellarKit, currentBalance, onOpenStellarWallet } = useWallet()
+	const { stellarPubKey, stellarKit, currentBalance, onOpenStellarWallet } =
+		useWallet()
 	const storage = useAppStorage()
 
-	const { register, watch, handleSubmit, formState: { errors }, setError, setValue, clearErrors } = useForm()
+	const {
+		register,
+		watch,
+		handleSubmit,
+		formState: { errors },
+		setError,
+		setValue,
+		clearErrors,
+	} = useForm()
 
 	const getFee = async () => {
 		if (storage.chainId === 'stellar') {
@@ -94,7 +103,6 @@ const FundRoundModal = ({
 					return
 				}
 
-
 				const tx = await depositFundRound(
 					{
 						round_id: BigInt(doc.on_chain_id),
@@ -136,27 +144,34 @@ const FundRoundModal = ({
 	}, [storage.my_address])
 
 	// Calculate progress percentage
-	const progressPercentage = storage.chainId !== 'near'
-		? (parseFloat(formatStroopToXlm(BigInt(doc.current_vault_balance))) / parseFloat(formatStroopToXlm(BigInt(doc.expected_amount)))) * 100
-		: (parseFloat(formatNearAmount(doc.current_vault_balance)) / parseFloat(formatNearAmount(doc.expected_amount))) * 100
+	const progressPercentage =
+		storage.chainId !== 'near'
+			? (parseFloat(formatStroopToXlm(BigInt(doc.current_vault_balance))) /
+					parseFloat(formatStroopToXlm(BigInt(doc.expected_amount)))) *
+				100
+			: (parseFloat(formatNearAmount(doc.current_vault_balance)) /
+					parseFloat(formatNearAmount(doc.expected_amount))) *
+				100
 
 	return (
-		<Modal isOpen={isOpen} onClose={(e: any) => {
-			e.stopPropagation()
-			onClose()
-		}}>
+		<Modal
+			isOpen={isOpen}
+			onClose={(e: any) => {
+				e.stopPropagation()
+				onClose()
+			}}
+		>
 			<div
 				onClick={(e) => {
 					e.stopPropagation()
 				}}
-				className="w-11/12 md:w-[420px] overflow-y-auto max-h-[calc(100vh-2rem)] mx-auto bg-white rounded-3xl border border-gray-200 shadow-2xl p-2 md:p-0">
+				className="w-11/12 md:w-[420px] overflow-y-auto max-h-[calc(100vh-2rem)] mx-auto bg-white rounded-3xl border border-gray-200 shadow-2xl p-2 md:p-0"
+			>
 				{/* Header */}
 				<div className="bg-gradient-to-r from-gray-800 to-gray-900 px-6 py-5">
 					<div className="flex items-center justify-between">
 						<div>
-							<h2 className="text-xl font-bold text-white">
-								Fund Round
-							</h2>
+							<h2 className="text-xl font-bold text-white">Fund Round</h2>
 							<p className="text-gray-300 text-sm mt-1">
 								Support this funding round
 							</p>
@@ -165,10 +180,7 @@ const FundRoundModal = ({
 							onClick={onClose}
 							className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-200"
 						>
-							<IconClose
-								size={20}
-								className="fill-white"
-							/>
+							<IconClose size={20} className="fill-white" />
 						</button>
 					</div>
 				</div>
@@ -222,7 +234,9 @@ const FundRoundModal = ({
 
 					{/* Round Details */}
 					<div className="bg-gray-50 rounded-xl p-4 mb-6">
-						<h4 className="text-sm font-semibold text-gray-700 mb-3">Round Details</h4>
+						<h4 className="text-sm font-semibold text-gray-700 mb-3">
+							Round Details
+						</h4>
 						<div className="space-y-2">
 							<div className="flex justify-between items-center">
 								<span className="text-sm text-gray-600">Minimum Deposit:</span>
@@ -235,7 +249,9 @@ const FundRoundModal = ({
 							</div>
 							<div className="flex justify-between items-center">
 								<span className="text-sm text-gray-600">Protocol Fee:</span>
-								<span className="text-sm font-semibold text-gray-800">{fee}%</span>
+								<span className="text-sm font-semibold text-gray-800">
+									{fee}%
+								</span>
 							</div>
 						</div>
 					</div>
@@ -267,10 +283,17 @@ const FundRoundModal = ({
 											: parseFloat(e.target.value || '0') * nearPrice
 									setAmountUsd(`${calculation.toFixed(3)}`)
 									setAmount(e.target.value)
-									if (parseFloat(e.target.value) < parseFloat(formatStroopToXlm(BigInt(doc.minimum_deposit))) || e.target.value === '') {
+									if (
+										parseFloat(e.target.value) <
+											parseFloat(
+												formatStroopToXlm(BigInt(doc.minimum_deposit)),
+											) ||
+										e.target.value === ''
+									) {
 										setError('amount', {
 											type: 'manual',
-											message: 'Funding amount cannot be less than minimum deposit'
+											message:
+												'Funding amount cannot be less than minimum deposit',
 										})
 									} else {
 										clearErrors('amount')
@@ -290,17 +313,23 @@ const FundRoundModal = ({
 									<p className="text-sm font-medium text-gray-600">
 										${amountUsd}
 									</p>
-									<p className="text-xs text-gray-400">
-										USD
-									</p>
+									<p className="text-xs text-gray-400">USD</p>
 								</div>
 							}
 						/>
 						{errors.amount && (
 							<div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
 								<p className="text-sm text-red-600 flex items-center">
-									<svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-										<path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+									<svg
+										className="w-4 h-4 mr-2"
+										fill="currentColor"
+										viewBox="0 0 20 20"
+									>
+										<path
+											fillRule="evenodd"
+											d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+											clipRule="evenodd"
+										/>
 									</svg>
 									Funding amount cannot be less than minimum deposit
 								</p>
@@ -308,7 +337,6 @@ const FundRoundModal = ({
 						)}
 						{doc.referrer_fee_basis_points > 0 && (
 							<div className="mt-4">
-
 								<InputText
 									placeholder="Enter Referrer Account ID"
 									hintLabel={`Referrer fee: ${(doc.referrer_fee_basis_points / 100).toFixed(2)}%`}
@@ -316,9 +344,14 @@ const FundRoundModal = ({
 									errorMessage={errors.referrer_id?.message as string}
 									onChange={(e) => {
 										if (storage.chainId === 'stellar') {
-											if (!StrKey.isValidEd25519PublicKey(e.target.value) && e.target.value !== '') {
-												setError('referrer_id', { type: 'manual', message: 'Invalid Account ID' })
-
+											if (
+												!StrKey.isValidEd25519PublicKey(e.target.value) &&
+												e.target.value !== ''
+											) {
+												setError('referrer_id', {
+													type: 'manual',
+													message: 'Invalid Account ID',
+												})
 											} else {
 												clearErrors('referrer_id')
 											}
@@ -359,7 +392,7 @@ const FundRoundModal = ({
 							className="!py-4 !text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
 							isFullWidth
 							onClick={() => onOpenStellarWallet()}
-							type='button'
+							type="button"
 						>
 							Connect Wallet
 						</Button>

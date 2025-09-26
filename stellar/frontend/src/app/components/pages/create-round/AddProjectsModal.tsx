@@ -8,9 +8,7 @@ import Button from '../../commons/Button'
 import IconAdd from '../../svgs/IconAdd'
 import IconTrash from '../../svgs/IconTrash'
 import { useWallet } from '@/app/providers/WalletProvider'
-import {
-	IndexerProjectResponse,
-} from '@/services/stellar/project-registry'
+import { IndexerProjectResponse } from '@/services/stellar/project-registry'
 import { LIMIT_SIZE } from '@/constants/query'
 import useSWRInfinite from 'swr/infinite'
 import InfiniteScroll from 'react-infinite-scroll-component'
@@ -53,8 +51,7 @@ const AddProjectsModal = ({
 	const storage = useAppStorage()
 	const potlockApi = usePotlockService()
 
-	useEffect(() => {
-	}, [showProjectDetailDrawer])
+	useEffect(() => {}, [showProjectDetailDrawer])
 
 	const onFetchProjects = async (key: { skip: number; limit: number }) => {
 		try {
@@ -89,8 +86,8 @@ const AddProjectsModal = ({
 	})
 	const projects = projectData
 		? ([] as IndexerProjectResponse[]).concat(
-			...(projectData as any as IndexerProjectResponse[]),
-		)
+				...(projectData as any as IndexerProjectResponse[]),
+			)
 		: []
 	const hasMore = projectData ? projectData.length >= LIMIT_SIZE : false
 
@@ -222,12 +219,12 @@ const AddProjectsModal = ({
 											onClick={() =>
 												tempSelectedProjects.length < 10
 													? setTempSelectedProjects((prev) => [
-														project,
-														...prev,
-													])
+															project,
+															...prev,
+														])
 													: toast.error('Max. 10 projects', {
-														style: toastOptions.error.style,
-													})
+															style: toastOptions.error.style,
+														})
 											}
 										>
 											<Image

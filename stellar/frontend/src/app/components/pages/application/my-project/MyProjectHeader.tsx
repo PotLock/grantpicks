@@ -14,7 +14,6 @@ export interface IMyProjectHeaderProps {
 const MyProjectHeader = ({ stats }: IMyProjectHeaderProps) => {
 	const storage = useAppStorage()
 
-
 	return (
 		<>
 			<p className="text-[62px] font-black text-grantpicks-black-950 mb-8 md:mb-10 lg:mb-14">
@@ -46,9 +45,11 @@ const MyProjectHeader = ({ stats }: IMyProjectHeaderProps) => {
 						<p className="text-[25px] font-normal text-grantpicks-black-950">
 							{storage.chainId === 'stellar'
 								? formatStroopToXlm(
-									parseToStroop(String(stats?.total_funds_received ?? 0)),
-								)
-								: formatNearAmount(String(stats?.total_funds_received ?? 0))}{' '}
+										parseToStroop(String(stats?.total_funds_received ?? 0)),
+									)
+								: formatNearAmount(
+										String(stats?.total_funds_received ?? 0),
+									)}{' '}
 							{storage.chainId === 'near' ? 'NEAR' : 'XLM'}
 						</p>
 						<p className="text-xs font-semibold text-grantpicks-black-600">

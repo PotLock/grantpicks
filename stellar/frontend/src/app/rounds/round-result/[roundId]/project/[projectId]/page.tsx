@@ -32,6 +32,7 @@ import Image from 'next/image'
 import { GPProject } from '@/models/project'
 import IconCheck from '@/app/components/svgs/IconCheck'
 import IconCloseFilled from '@/app/components/svgs/IconCloseFilled'
+import { GPRound } from '@/models/round'
 
 const VoteItem = ({ index, data }: { index: number; data: any }) => {
 	const store = useAppStorage()
@@ -259,10 +260,10 @@ const RoundResultProjectDetailPage = () => {
 			let isAdmin = false
 
 			const roundInfo = await potlockService.getRound(Number(params.roundId))
-			const chainId = extractChainId(roundInfo)
+			const chainId = extractChainId(roundInfo as unknown as GPRound)
 
-			storage.setRound(roundInfo)
-			storage.roundes.set(roundInfo.id.toString(), roundInfo)
+			storage.setRound(roundInfo as unknown as GPRound)
+			storage.roundes.set(roundInfo.id.toString(), roundInfo as unknown as GPRound)
 			storage.setChainId(chainId)
 
 			if (storage.chainId === 'stellar') {
@@ -302,7 +303,7 @@ const RoundResultProjectDetailPage = () => {
 
 				if (roundInfo) {
 					isOwner = roundInfo.owner?.id === storage.my_address
-					isAdmin = roundInfo.admins.includes(storage.my_address || '')
+					isAdmin = roundInfo.admins.map(admin => admin.id).includes(storage.my_address || '')
 
 					const isAdminOrOwner = isAdmin || isOwner
 

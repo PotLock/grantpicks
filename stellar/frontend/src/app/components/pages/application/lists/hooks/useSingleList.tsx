@@ -1,203 +1,244 @@
-import { useGlobalContext } from "@/app/providers/GlobalProvider"
-import { useWallet } from "@/app/providers/WalletProvider"
-import { batchRegisterToList, deleteList, getListRegistrations, updateProjectStatusInList } from "@/services/stellar/list"
-import { usePotlockService } from "@/services/potlock"
-import useAppStorage from "@/stores/zustand/useAppStorage"
-import { StellarWalletsKit } from "@creit.tech/stellar-wallets-kit"
-import { RegistrationInput, RegistrationStatus } from "lists-client"
-import { useRouter } from "next/navigation"
-import toast from "react-hot-toast"
-import useSWR from "swr"
-import { APIListExternal } from "../ListCard"
+import { useGlobalContext } from '@/app/providers/GlobalProvider'
+import { useWallet } from '@/app/providers/WalletProvider'
+import {
+	batchRegisterToList,
+	deleteList,
+	getListRegistrations,
+	updateProjectStatusInList,
+} from '@/services/stellar/list'
+import { usePotlockService } from '@/services/potlock'
+import useAppStorage from '@/stores/zustand/useAppStorage'
+import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
+import { RegistrationInput, RegistrationStatus } from 'lists-client'
+import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
+import useSWR from 'swr'
+import { APIListExternal } from '../ListCard'
 
 type UseSingleListProps = {
-  listId: string
-  requiredStatus?: RegistrationStatus
+	listId: string
+	requiredStatus?: RegistrationStatus
 }
 
 type ApplyToListParams = {
-  defaultRegistrationStatus: RegistrationStatus
-  note: string | null
-  onClose: () => void
+	defaultRegistrationStatus: RegistrationStatus
+	note: string | null
+	onClose: () => void
 }
 
-export const useSingleList = ({ listId, requiredStatus }: UseSingleListProps) => {
-  const storage = useAppStorage()
-  const { stellarPubKey, stellarKit } = useWallet()
-  const { openPageLoading, dismissPageLoading } = useGlobalContext()
-  const potlockApi = usePotlockService()
-  const router = useRouter()
-  const getKey = () => {
-    return `list-${listId}`
-  }
+export const useSingleList = ({
+	listId,
+	requiredStatus,
+}: UseSingleListProps) => {
+	const storage = useAppStorage()
+	const { stellarPubKey, stellarKit } = useWallet()
+	const { openPageLoading, dismissPageLoading } = useGlobalContext()
+	const potlockApi = usePotlockService()
+	const router = useRouter()
+	const getKey = () => {
+		return `list-${listId}`
+	}
 
-  const { data, isLoading, error } = useSWR(
-    getKey(),
-    async () => await getList(listId)
-  )
+	const { data, isLoading, error } = useSWR(
+		getKey(),
+		async () => await getList(listId),
+	)
 
-  const getList = async (listId: string): Promise<APIListExternal | null> => {
-    if (!listId) return null
-    const res = await potlockApi.getList(Number(listId))
-    return res as APIListExternal
-  }
+	const getList = async (listId: string): Promise<APIListExternal | null> => {
+		if (!listId) return null
+		const res = await potlockApi.getList(Number(listId))
+		return res as APIListExternal
+	}
 
-  const getKeyRegistrations = () => {
-    if (!listId || !storage.getStellarContracts()) return null
-    const statusTag = requiredStatus?.tag || 'Approved'
-    return `list-registrations-${listId}-${statusTag}`
-  }
+	const getKeyRegistrations = () => {
+		if (!listId || !storage.getStellarContracts()) return null
+		const statusTag = requiredStatus?.tag || 'Approved'
+		return `list-registrations-${listId}-${statusTag}`
+	}
 
-  const { data: registrations, isLoading: isLoadingRegistrations, error: errorRegistrations } = useSWR(
-    getKeyRegistrations(),
-    async () => {
-      const contracts = storage.getStellarContracts()
-      if (!contracts) throw new Error('Contracts not found')
-      return getListRegistrations({ list_id: BigInt(listId), required_status: requiredStatus || { tag: 'Approved', values: undefined } }, contracts)
-    }
-  )
+	const {
+		data: registrations,
+		isLoading: isLoadingRegistrations,
+		error: errorRegistrations,
+	} = useSWR(getKeyRegistrations(), async () => {
+		const contracts = storage.getStellarContracts()
+		if (!contracts) throw new Error('Contracts not found')
+		return getListRegistrations(
+			{
+				list_id: BigInt(listId),
+				required_status: requiredStatus || {
+					tag: 'Approved',
+					values: undefined,
+				},
+			},
+			contracts,
+		)
+	})
 
+	// REGISTER MULTIPLE PROJECTS TO LIST
+	const handleBatchRegisterToList = async (
+		registrations: RegistrationInput[],
+		onClose: () => void,
+	) => {
+		const contracts = storage.getStellarContracts()
+		if (!contracts || !stellarPubKey) throw new Error('Contracts not found')
+		try {
+			openPageLoading()
+			const txBatchRegisterToList = await batchRegisterToList(
+				{
+					list_id: BigInt(listId),
+					submitter: stellarPubKey,
+					notes: 'test',
+					registrations,
+				},
+				contracts,
+			)
+			const txHashBatchRegisterToList = await contracts.signAndSendTx(
+				stellarKit as StellarWalletsKit,
+				txBatchRegisterToList.toXDR(),
+				stellarPubKey,
+			)
 
-  // REGISTER MULTIPLE PROJECTS TO LIST
-  const handleBatchRegisterToList = async (registrations: RegistrationInput[], onClose: () => void) => {
-    const contracts = storage.getStellarContracts()
-    if (!contracts || !stellarPubKey) throw new Error('Contracts not found')
-    try {
-      openPageLoading()
-      const txBatchRegisterToList = await batchRegisterToList({ list_id: BigInt(listId), submitter: stellarPubKey, notes: 'test', registrations }, contracts)
-      const txHashBatchRegisterToList = await contracts.signAndSendTx(
-        stellarKit as StellarWalletsKit,
-        txBatchRegisterToList.toXDR(),
-        stellarPubKey,
-      )
+			if (txHashBatchRegisterToList) {
+				toast.success('Registered project(s) to list successfully')
+				return onClose()
+			} else {
+				toast.error('Failed to register project(s) to list')
+			}
+		} catch (error) {
+			toast.error('Failed to register project(s) to list')
+		} finally {
+			dismissPageLoading()
+		}
+	}
 
-      if (txHashBatchRegisterToList) {
-        toast.success('Registered project(s) to list successfully')
-        return onClose()
-      } else {
-        toast.error('Failed to register project(s) to list')
-      }
-    } catch (error) {
-      toast.error('Failed to register project(s) to list')
-    } finally {
-      dismissPageLoading()
-    }
-  }
+	// APPLY TO LIST
+	const handleApplyToList = async ({
+		defaultRegistrationStatus,
+		note,
+		onClose,
+	}: ApplyToListParams) => {
+		const contracts = storage.getStellarContracts()
+		if (!contracts || !stellarPubKey) {
+			toast.error('Something went wrong with your connected wallet')
+			return
+		}
+		try {
+			openPageLoading()
+			const txApplyToList = await batchRegisterToList(
+				{
+					list_id: BigInt(listId),
+					submitter: stellarPubKey,
+					notes: note || '',
+					registrations: [
+						{
+							registrant: stellarPubKey,
+							status: defaultRegistrationStatus,
+							submitted_ms: BigInt(Date.now()),
+							updated_ms: BigInt(Date.now()),
+							notes: note || '',
+						},
+					],
+				},
+				contracts,
+			)
 
-  // APPLY TO LIST
-  const handleApplyToList = async ({ defaultRegistrationStatus, note, onClose }: ApplyToListParams) => {
-    const contracts = storage.getStellarContracts()
-    if (!contracts || !stellarPubKey) {
-      toast.error('Something went wrong with your connected wallet')
-      return
-    }
-    try {
-      openPageLoading()
-      const txApplyToList = await batchRegisterToList({
-        list_id: BigInt(listId), submitter: stellarPubKey, notes: note || '', registrations: [{
-          registrant: stellarPubKey,
-          status: defaultRegistrationStatus,
-          submitted_ms: BigInt(Date.now()),
-          updated_ms: BigInt(Date.now()),
-          notes: note || ''
-        }]
-      }, contracts)
+			const txHashApplyToList = await contracts.signAndSendTx(
+				stellarKit as StellarWalletsKit,
+				txApplyToList.toXDR(),
+				stellarPubKey,
+			)
 
-      const txHashApplyToList = await contracts.signAndSendTx(
-        stellarKit as StellarWalletsKit,
-        txApplyToList.toXDR(),
-        stellarPubKey,
-      )
+			if (txHashApplyToList) {
+				toast.success('Applied Successfully')
+				return onClose()
+			} else {
+				toast.error('Failed to apply to list')
+			}
+		} catch (error) {
+			toast.error('Failed to apply to list')
+		} finally {
+			dismissPageLoading()
+		}
+	}
 
-      if (txHashApplyToList) {
-        toast.success('Applied Successfully')
-        return onClose()
-      } else {
-        toast.error('Failed to apply to list')
-      }
+	// UPDATE PROJECT STATUS
+	const handleUpdateProjectStatus = async (
+		registrationId: bigint,
+		status: RegistrationStatus,
+	) => {
+		const contracts = storage.getStellarContracts()
+		if (!contracts || !stellarPubKey) throw new Error('Contracts not found')
+		try {
+			openPageLoading()
+			const txUpdateProjectStatus = await updateProjectStatusInList(
+				{
+					list_id: BigInt(listId),
+					submitter: stellarPubKey,
+					notes: 'test',
+					registration_id: registrationId,
+					status,
+				},
+				contracts,
+			)
 
-    } catch (error) {
-      toast.error('Failed to apply to list')
-    } finally {
-      dismissPageLoading()
-    }
-  }
+			const txHashUpdateProjectStatus = await contracts.signAndSendTx(
+				stellarKit as StellarWalletsKit,
+				txUpdateProjectStatus.toXDR(),
+				stellarPubKey,
+			)
 
+			if (txHashUpdateProjectStatus) {
+				toast.success('Project status updated successfully')
+			} else {
+				toast.error('Failed to update project status')
+			}
+		} catch (error) {
+			console.log(error)
+			toast.error('Failed to update project status')
+		} finally {
+			dismissPageLoading()
+		}
+	}
 
-  // UPDATE PROJECT STATUS
-  const handleUpdateProjectStatus = async (registrationId: bigint, status: RegistrationStatus) => {
-    const contracts = storage.getStellarContracts()
-    if (!contracts || !stellarPubKey) throw new Error('Contracts not found')
-    try {
-      openPageLoading()
-      const txUpdateProjectStatus = await updateProjectStatusInList({
-        list_id: BigInt(listId),
-        submitter: stellarPubKey,
-        notes: 'test',
-        registration_id: registrationId,
-        status
-      },
-        contracts)
+	// DELETE LIST
 
-      const txHashUpdateProjectStatus = await contracts.signAndSendTx(
-        stellarKit as StellarWalletsKit,
-        txUpdateProjectStatus.toXDR(),
-        stellarPubKey,
-      )
+	const handleDeleteList = async () => {
+		const contracts = storage.getStellarContracts()
+		if (!contracts || !stellarPubKey) throw new Error('Contracts not found')
+		try {
+			openPageLoading()
+			const txDeleteList = await deleteList(BigInt(listId), contracts)
+			const txHashDeleteList = await contracts.signAndSendTx(
+				stellarKit as StellarWalletsKit,
+				txDeleteList.toXDR(),
+				stellarPubKey,
+			)
 
+			if (txHashDeleteList) {
+				toast.success('List deleted successfully')
+				router.push('/lists')
+			} else {
+				toast.error('Failed to delete list')
+			}
+		} catch (error) {
+			console.log(error)
+			toast.error('Failed to delete list')
+		} finally {
+			dismissPageLoading()
+		}
+	}
 
-      if (txHashUpdateProjectStatus) {
-        toast.success('Project status updated successfully')
-      } else {
-        toast.error('Failed to update project status')
-      }
-    } catch (error) {
-      console.log(error)
-      toast.error('Failed to update project status')
-    } finally {
-      dismissPageLoading()
-    }
-  }
-
-  // DELETE LIST
-
-  const handleDeleteList = async () => {
-    const contracts = storage.getStellarContracts()
-    if (!contracts || !stellarPubKey) throw new Error('Contracts not found')
-    try {
-      openPageLoading()
-      const txDeleteList = await deleteList(BigInt(listId), contracts)
-      const txHashDeleteList = await contracts.signAndSendTx(
-        stellarKit as StellarWalletsKit,
-        txDeleteList.toXDR(),
-        stellarPubKey,
-      )
-
-      if (txHashDeleteList) {
-        toast.success('List deleted successfully')
-        router.push('/lists')
-      } else {
-        toast.error('Failed to delete list')
-      }
-    } catch (error) {
-      console.log(error)
-      toast.error('Failed to delete list')
-    } finally {
-      dismissPageLoading()
-    }
-  }
-
-
-  return {
-    data,
-    isLoading,
-    isError: !!error,
-    handleBatchRegisterToList,
-    handleApplyToList,
-    registrations,
-    isLoadingRegistrations,
-    errorRegistrations,
-    handleUpdateProjectStatus,
-    handleDeleteList,
-  }
+	return {
+		data,
+		isLoading,
+		isError: !!error,
+		handleBatchRegisterToList,
+		handleApplyToList,
+		registrations,
+		isLoadingRegistrations,
+		errorRegistrations,
+		handleUpdateProjectStatus,
+		handleDeleteList,
+	}
 }

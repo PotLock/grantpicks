@@ -1,10 +1,10 @@
 import Contracts from '@/lib/contracts'
+import { Option, u128, u64 } from '@stellar/stellar-sdk/contract'
 import {
-	Option,
-	u128,
-	u64,
-} from '@stellar/stellar-sdk/contract'
-import { CreateProjectParams, Project, UpdateProjectParams } from 'project-registry-client'
+	CreateProjectParams,
+	Project,
+	UpdateProjectParams,
+} from 'project-registry-client'
 
 interface GetProjectsParams {
 	skip: number
@@ -34,7 +34,7 @@ export interface ICreateProjectParams {
 	// payout_address: string
 	repositories: ProjectRepository[]
 	team_members: ProjectTeamMember[]
-    video_url?: string
+	video_url?: string
 }
 
 export interface IUpdateProjectParams {
@@ -46,7 +46,7 @@ export interface IUpdateProjectParams {
 	overview: string
 	repositories: ProjectRepository[]
 	team_members: ProjectTeamMember[]
-    video_url?: string
+	video_url?: string
 }
 
 export interface IChangeProjectStatusParams {
@@ -138,9 +138,9 @@ export const createProject = async (
 	params: CreateProjectParams,
 	contract: Contracts,
 ) => {
-    let project = await contract.project_contract.apply({
+	let project = await contract.project_contract.apply({
 		applicant,
-        project_params: params,
+		project_params: params,
 	})
 	return project
 }
@@ -151,10 +151,10 @@ export const updateProject = async (
 	params: UpdateProjectParams,
 	contract: Contracts,
 ) => {
-    let project = await contract.project_contract.update_project({
+	let project = await contract.project_contract.update_project({
 		admin,
 		project_id: project_id,
-        new_project_params: params,
+		new_project_params: params,
 	})
 	return project
 }

@@ -9,9 +9,7 @@ import { useWallet } from '@/app/providers/WalletProvider'
 import { YOUTUBE_URL_REGEX } from '@/constants/regex'
 import { toastOptions } from '@/constants/style'
 import { requestUpload, retrieveAsset, uploadFile } from '@/services/upload'
-import {
-	CreateProjectStep5Data,
-} from '@/types/form'
+import { CreateProjectStep5Data } from '@/types/form'
 import { fetchYoutubeIframe, onFetchingBlobToFile } from '@/utils/helper'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
@@ -23,9 +21,7 @@ import { GetAssetResponse } from 'livepeer/models/operations'
 import { getSrc } from '@livepeer/react/external'
 import IconLoading from '@/app/components/svgs/IconLoading'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
-import {
-	updateProject,
-} from '@/services/stellar/project-registry'
+import { updateProject } from '@/services/stellar/project-registry'
 import { DEFAULT_IMAGE_URL } from '@/constants/project'
 import { useMyProject } from './MyProjectProvider'
 import useAppStorage from '@/stores/zustand/useAppStorage'
@@ -35,11 +31,7 @@ const MyProjectMedia = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()
 	const { stellarKit, stellarPubKey } = useWallet()
 	const { openPageLoading, dismissPageLoading, livepeer } = useGlobalContext()
-	const {
-		watch,
-		handleSubmit,
-		setValue,
-	} = useForm<CreateProjectStep5Data>()
+	const { watch, handleSubmit, setValue } = useForm<CreateProjectStep5Data>()
 	const [accFiles, setAccFiles] = useState<File[]>([])
 	const [accFileUrls, setAccFileUrls] = useState<string[]>([])
 	const [linkInput, setLinkInput] = useState<string>('')
@@ -58,7 +50,6 @@ const MyProjectMedia = () => {
 	const [embededYtTitle, setEmbededYtTitle] = useState<string>('')
 	const embededYtHtmlRef = useRef<HTMLDivElement>(null)
 	const storage = useAppStorage()
-
 
 	const onDrop = useCallback(async (acceptedFiles: File[]) => {
 		if (acceptedFiles[0].size / 10 ** 6 > 25) {

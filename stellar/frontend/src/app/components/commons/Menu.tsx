@@ -16,7 +16,9 @@ const Menu = ({
 	const menuRef = useRef<HTMLDivElement>(null)
 	const overlayRef = useRef<HTMLDivElement>(null)
 	const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({})
-	const [isDesktop, setIsDesktop] = useState<boolean>(() => (typeof window !== 'undefined' ? window.innerWidth >= 768 : false))
+	const [isDesktop, setIsDesktop] = useState<boolean>(() =>
+		typeof window !== 'undefined' ? window.innerWidth >= 768 : false,
+	)
 
 	// Detect desktop (md: 768px and up) - only on resize, not on initial render
 	useEffect(() => {
@@ -58,27 +60,25 @@ const Menu = ({
 	}
 
 	// Desktop: render menu in portal if buttonRef is provided
-	const shouldUsePortal = isOpen && buttonRef?.current && typeof window !== 'undefined'
+	const shouldUsePortal =
+		isOpen && buttonRef?.current && typeof window !== 'undefined'
 
 	const desktopMenu = shouldUsePortal
 		? createPortal(
-			<div
-				ref={menuRef}
-				style={menuStyle}
-				className={clsx(
-					'hidden md:block',
-					className,
-				)}
-			>
-				{children}
-			</div>,
-			document.body
-		)
+				<div
+					ref={menuRef}
+					style={menuStyle}
+					className={clsx('hidden md:block', className)}
+				>
+					{children}
+				</div>,
+				document.body,
+			)
 		: null
 
 	// Fallback: render menu in place if no buttonRef (for custom-positioned menus)
-	const fallbackMenu = isOpen && isDesktop && !buttonRef
-		? (
+	const fallbackMenu =
+		isOpen && isDesktop && !buttonRef ? (
 			<div
 				className={clsx(
 					'absolute hidden md:block z-[60]',
@@ -88,8 +88,7 @@ const Menu = ({
 			>
 				{children}
 			</div>
-		)
-		: null
+		) : null
 
 	return (
 		<>

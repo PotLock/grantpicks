@@ -272,7 +272,7 @@ const CreateProjectStep5 = () => {
 									isStopPropagation={true}
 									errorMessage={
 										isDirtyInput &&
-											(linkInput === '' || !YOUTUBE_URL_REGEX.test(linkInput)) ? (
+										(linkInput === '' || !YOUTUBE_URL_REGEX.test(linkInput)) ? (
 											<p className="text-xs text-grantpicks-red-600">
 												Invalid link
 											</p>
@@ -397,9 +397,7 @@ const CreateProjectStep5 = () => {
 					<Button
 						color={loadingFlow !== null ? `disabled` : `black-950`}
 						isFullWidth
-						isDisabled={
-							loadingFlow !== null
-						}
+						isDisabled={loadingFlow !== null}
 						onClick={handleSubmit(onProceed)}
 						className="!py-3"
 					>

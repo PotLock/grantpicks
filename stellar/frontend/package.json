@@ -9,6 +9,7 @@
 		"lint": "next lint",
 		"prepare": "husky install",
 		"format": "prettier --write .",
+		"typecheck": "tsc --noEmit",
 		"prettier-check": "prettier --check .",
 		"gen:contracts": "node ./scripts/update-contract-networks.js && yarn --cwd ./lists-client build && yarn --cwd ./project-registry-client build && yarn --cwd ./round-client build"
 	},

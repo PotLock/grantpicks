@@ -145,7 +145,8 @@ const RoundVotePairItem = ({
 	const firstVideoComponent = useMemo(() => {
 		return (
 			<div>
-				{(!firstProjectData?.video_url || !firstProjectData.video_url.includes('youtube')) && (
+				{(!firstProjectData?.video_url ||
+					!firstProjectData.video_url.includes('youtube')) && (
 					<div className="relative">
 						<video
 							ref={video1Ref}
@@ -190,7 +191,8 @@ const RoundVotePairItem = ({
 	const secondVideoComponent = useMemo(() => {
 		return (
 			<div>
-				{(!secondProjectData?.video_url || !secondProjectData.video_url.includes('youtube')) && (
+				{(!secondProjectData?.video_url ||
+					!secondProjectData.video_url.includes('youtube')) && (
 					<div className="relative">
 						<video
 							ref={video2Ref}
@@ -250,7 +252,7 @@ const RoundVotePairItem = ({
 					`rounded-3xl transition-all duration-200 w-full md:w-[360px] lg:w-[448px] cursor-pointer`,
 					selectedPairs[index] === data.projects[0].toString()
 						? // true
-						`border-4 border-grantpicks-purple-500`
+							`border-4 border-grantpicks-purple-500`
 						: `border-4 border-black/10`,
 				)}
 			>

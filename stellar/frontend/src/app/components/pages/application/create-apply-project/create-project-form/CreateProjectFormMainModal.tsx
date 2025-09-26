@@ -28,10 +28,10 @@ import { CreateProjectParams } from 'project-registry-client'
 
 const CreateProjectFormContext = createContext<ICreateProjectFormContext>({
 	data: DEFAULT_CREATE_PROJECT_DATA,
-	setData: () => { },
+	setData: () => {},
 	step: 1,
-	setStep: () => { },
-	onClose: () => { },
+	setStep: () => {},
+	onClose: () => {},
 	onProceedApply: () => Promise.resolve(),
 })
 
@@ -66,11 +66,13 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 					return
 				}
 
-
 				const params: CreateProjectParams = {
 					name: dataForm.title,
 					overview: dataForm.description,
-					admins: dataForm.team_member.length > 0 ? dataForm.team_member.map((mem) => mem) : [storage.my_address || ''],
+					admins:
+						dataForm.team_member.length > 0
+							? dataForm.team_member.map((mem) => mem)
+							: [storage.my_address || ''],
 					contacts: dataForm.contacts.map((c) => ({
 						name: c.platform,
 						value: c.link_url,
@@ -92,10 +94,13 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 						url: g,
 					})),
 					video_url: dataForm.video.url || undefined,
-					team_members: dataForm.team_member.length > 0 ? dataForm.team_member.map((mem) => ({
-						name: mem,
-						value: mem,
-					})) : [],
+					team_members:
+						dataForm.team_member.length > 0
+							? dataForm.team_member.map((mem) => ({
+									name: mem,
+									value: mem,
+								}))
+							: [],
 				}
 
 				const isRegistered = await contracts.lists_contract.is_registered({
@@ -103,7 +108,6 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 					list_id: BigInt(process.env.PROJECTS_LIST_ID || '1'),
 					required_status: undefined,
 				})
-
 
 				if (!isRegistered) {
 					const txRegisterList = await contracts.lists_contract.register_batch({
@@ -120,13 +124,10 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 					)
 				}
 
-
-
 				const txCreateProject = await contracts.project_contract.apply({
 					applicant: storage.my_address || '',
 					project_params: params,
 				})
-
 
 				const txHashCreateProject = await contracts.signAndSendTx(
 					stellarKit as StellarWalletsKit,

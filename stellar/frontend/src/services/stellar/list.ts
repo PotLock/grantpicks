@@ -55,6 +55,7 @@ export const createList = async (
 	params: CreateListParams,
 	contract: Contracts,
 ) => {
+	console.log('params', params)
 	const tx = await contract.lists_contract.create_list({
 		owner: caller,
 		name: params.name,

@@ -14,11 +14,11 @@ import IconAdd from "@/app/components/svgs/IconAdd"
 import IconLoading from "@/app/components/svgs/IconLoading"
 import { useListForm } from "@/app/components/hooks/useListForm"
 import Button from "@/app/components/commons/Button"
-import { ListExternal } from "lists-client"
+import { APIListExternal } from "./ListCard"
 
 type ListFormProps = {
   listId?: string
-  existingList?: ListExternal
+  existingList?: APIListExternal
 }
 
 export const ListForm = ({ listId, existingList }: ListFormProps) => {
@@ -44,7 +44,7 @@ export const ListForm = ({ listId, existingList }: ListFormProps) => {
       setValue('description', existingList.description)
       setValue('cover_img_url', existingList.cover_img_url || '')
       setValue('allow_applications', !existingList.admin_only_registrations)
-      setValue('approve_applications', existingList.default_registration_status.tag === 'Approved')
+      setValue('approve_applications', existingList.default_registration_status === 'Approved')
       setListFormState(prev => ({
         ...prev,
         coverImageUrl: existingList.cover_img_url || '',
@@ -99,6 +99,7 @@ export const ListForm = ({ listId, existingList }: ListFormProps) => {
               height={22}
               width={42}
               checkedIcon={false}
+              defaultChecked={!!watch('allow_applications')}
               uncheckedIcon={false}
               offColor="#DCDCDC"
               onColor="#292929"

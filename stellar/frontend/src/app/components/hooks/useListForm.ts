@@ -155,7 +155,7 @@ export const useListForm = ({ listId }: UseListFormProps) => {
             name: data.name,
             description: data.description,
             cover_image_url: data.cover_img_url || '',
-            default_registration_status: data.approve_applications ? { tag: 'Approved' } as RegistrationStatus : { tag: 'Pending' } as RegistrationStatus,
+            default_registration_status: data.approve_applications ? { tag: 'Approved', values: undefined } as RegistrationStatus : { tag: 'Pending', values: undefined } as RegistrationStatus,
             admin_only_registrations: data.allow_applications ? false : true
           }, contracts)
           const txHashUpdateList = await contracts.signAndSendTx(
@@ -176,7 +176,7 @@ export const useListForm = ({ listId }: UseListFormProps) => {
             cover_image_url: data.cover_img_url,
             admins: data.admins?.map(admin => admin.admin_id) || [],
             owner: stellarPubKey,
-            default_registration_status: data.approve_applications ? { tag: 'Approved' } as RegistrationStatus : { tag: 'Pending' } as RegistrationStatus,
+            default_registration_status: data.approve_applications ? { tag: 'Approved', values: undefined } as RegistrationStatus : { tag: 'Pending', values: undefined } as RegistrationStatus,
             admin_only_registrations: data.allow_applications ? false : true
           }, contracts)
           const txHashCreateList = await contracts.signAndSendTx(

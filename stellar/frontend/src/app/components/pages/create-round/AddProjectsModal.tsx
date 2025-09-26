@@ -9,7 +9,6 @@ import IconAdd from '../../svgs/IconAdd'
 import IconTrash from '../../svgs/IconTrash'
 import { useWallet } from '@/app/providers/WalletProvider'
 import {
-	IGetProjectsResponse,
 	IndexerProjectResponse,
 } from '@/services/stellar/project-registry'
 import { LIMIT_SIZE } from '@/constants/query'
@@ -60,7 +59,6 @@ const AddProjectsModal = ({
 	const onFetchProjects = async (key: { skip: number; limit: number }) => {
 		try {
 			const resProjects = await potlockApi.getProjects(key.skip, key.limit)
-			console.log(resProjects)
 			return resProjects
 		} catch (error) {
 			console.log(error)

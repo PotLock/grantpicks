@@ -5,6 +5,7 @@ import { ListForm } from "@/app/components/pages/application/lists"
 import Footer from "@/app/components/commons/Footer"
 import { useParams } from "next/navigation"
 import { useSingleList } from "@/app/components/pages/application/lists/hooks/useSingleList"
+import { APIListExternal } from "@/app/components/pages/application/lists/ListCard"
 
 
 const UpdateListPage = () => {
@@ -26,7 +27,7 @@ const UpdateListPage = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-grantpicks-black-950"></div>
         </div>
       ) : (
-        <ListForm listId={listId as string} existingList={list} />
+        <ListForm listId={listId as string} existingList={list as APIListExternal} />
       )}
       <Footer />
     </ApplicationLayout>

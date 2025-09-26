@@ -34,6 +34,8 @@ export const SingleListPage = () => {
 
   const isUserAProjectCallback = useCallback(async () => {
 
+    console.log(list)
+
     const contracts = storage.getStellarContracts()
     if (!contracts) {
       return false
@@ -113,7 +115,6 @@ export const SingleListPage = () => {
         className="relative w-full flex justify-center"
         style={{ minHeight: 320 }}
       >
-
         <div
           className="absolute inset-0 w-full h-full"
           style={{
@@ -138,7 +139,7 @@ export const SingleListPage = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center gap-y-2 sm:gap-x-2 py-2 text-gray-500 text-sm">
                   <div className="flex items-center gap-x-2">
                     <Image
-                      src={`https://www.tapback.co/api/avatar/${list?.owner}`}
+                      src={`https://www.tapback.co/api/avatar/${list?.owner?.id}`}
                       alt="image"
                       width={24}
                       height={24}

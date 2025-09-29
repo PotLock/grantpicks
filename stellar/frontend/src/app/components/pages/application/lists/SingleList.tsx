@@ -46,8 +46,6 @@ export const SingleListPage = () => {
 	const { setCreateProjectFormMainProps } = useModalContext()
 
 	const isUserAProjectCallback = useCallback(async () => {
-		console.log(list)
-
 		const contracts = storage.getStellarContracts()
 		if (!contracts) {
 			return false
@@ -65,7 +63,7 @@ export const SingleListPage = () => {
 			console.log('error', error)
 			return false
 		}
-	}, [stellarPubKey, storage])
+	}, [stellarPubKey, storage, list])
 
 	const addApplyQuery = () => {
 		const currentParams = new URLSearchParams(searchParams.toString())
@@ -93,7 +91,7 @@ export const SingleListPage = () => {
 	useEffect(() => {
 		isUserAProjectCallback()
 		fetchIsRegistered()
-	}, [fetchIsRegistered])
+	}, [fetchIsRegistered, isUserAProjectCallback])
 
 	if (isLoading && !list) {
 		return (
@@ -110,6 +108,7 @@ export const SingleListPage = () => {
 			</div>
 		)
 	}
+
 
 	const isOwner = list?.owner?.id === stellarPubKey
 
@@ -185,7 +184,7 @@ export const SingleListPage = () => {
 							<div className="flex-shrink-0">
 								<Button
 									isDisabled={
-										(list?.admin_only_registrations &&
+										(!list?.admin_only_registrations &&
 											list?.owner?.id !== stellarPubKey) ||
 										isRegistered
 									}

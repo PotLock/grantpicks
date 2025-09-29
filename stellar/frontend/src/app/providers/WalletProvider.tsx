@@ -3,32 +3,20 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { WalletContext } from '../contexts/WalletContext'
 import { envVarConfigs } from '@/configs/env-var'
-// import {
-// 	Wallet,
-// 	WalletSelector,
-// } from '@near-wallet-selector/core'
-// import type { WalletSelectorModal } from '@near-wallet-selector/modal-ui'
 import { localStorageConfigs } from '@/configs/local-storage'
-// import {
-// 	Account,
-// 	SignMessageMethod,
-// 	// WalletModuleFactory,
-// } from '@near-wallet-selector/core/src/lib/wallet'
+
 import {
 	xBullModule,
 	FreighterModule,
 	ISupportedWallet,
 	HotWalletModule,
-	XBULL_ID,
 	StellarWalletsKit,
 	WalletNetwork,
 } from '@creit.tech/stellar-wallets-kit'
-// import { distinctUntilChanged, map } from 'rxjs'
 import CMDWallet from '@/lib/wallet'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { IAccount } from '@/types/account'
 import { usePotlockService } from '@/services/potlock'
-// import { formatNearAmount } from 'near-api-js/lib/utils/format'
 import toast from 'react-hot-toast'
 
 const WalletProvider = ({ children }: { children: React.ReactNode }) => {
@@ -55,7 +43,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 					: WalletNetwork.PUBLIC,
 			selectedWalletId:
 				localStorage.getItem(localStorageConfigs.LAST_STELLAR_WALLET_ID) ||
-				XBULL_ID,
+				'freighter',
 			modules: [
 				new FreighterModule(),
 				new xBullModule(),
@@ -178,7 +166,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 							)
 							return
 						}
-					} catch {}
+					} catch { }
 
 					const pubKey = (await kit.getAddress()).address
 					let cmdWallet = new CMDWallet({
@@ -199,7 +187,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 				} catch (error: any) {
 					localStorage.removeItem(localStorageConfigs.CONNECTED_WALLET)
 					toast.error(
-						'Error connecting to Stellar wallet, Please make sure your wallet is Valid',
+						'Error connecting to Stellar wallet, Your account is inactive (deposit XLM tokens to activate it)',
 					)
 					localStorage.removeItem(localStorageConfigs.STELLAR_PUBLIC_KEY)
 					setConnectedWallet(null)

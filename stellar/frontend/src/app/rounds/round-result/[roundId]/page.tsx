@@ -12,13 +12,13 @@ import IconStellar from '@/app/components/svgs/IconStellar'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { extractChainId, formatStroopToXlm } from '@/utils/helper'
 import clsx from 'clsx'
-import { useParams, useRouter, useSearchParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 import TimerEnd from '@/app/components/commons/TimerEnd'
 import IconEdit from '@/app/components/svgs/IconEdit'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import ResultItem from '@/app/components/commons/ResultItem'
-import { Payout, PayoutsChallenge, ProjectVotingResult } from 'round-client'
+import { Payout, ProjectVotingResult } from 'round-client'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import EditPayoutModal from '@/app/components/pages/round-result/EditPayoutModal'
 import toast from 'react-hot-toast'
@@ -26,16 +26,14 @@ import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import {
 	payoutChallengeToGPPayoutChallenge,
 	projectToGPProject,
-	// roundDetailToGPRound,
 } from '@/services/stellar/type'
-import { formatNearAmount, parseNearAmount } from 'near-api-js/lib/utils/format'
+import { formatNearAmount } from 'near-api-js/lib/utils/format'
 import {
 	NearPayout,
 	NearPayoutChallenge,
 	nearPayoutChallengeToGPPayoutChallenge,
 	nearProjectToGPProject,
 	NearProjectVotingResult,
-	nearRoundToGPRound,
 } from '@/services/near/type'
 import { GPVotingResult } from '@/models/voting'
 import { GPPayout, GPPayoutChallenge } from '@/models/payout'
@@ -584,38 +582,20 @@ const RoundResultPage = () => {
 				{(roundData?.use_vault || storage.chainId === 'near') && (
 					<div className="p-3 md:p-4 lg:p-5 rounded-xl border border-black/10 flex items-center space-x-4 bg-white">
 						<div className="border border-black/10 p-2 rounded-full">
-							{storage.chainId === 'stellar' ? (
-								<IconStellar size={24} className="fill-grantpicks-black-400" />
-							) : (
-								<IconNear size={24} className="fill-grantpicks-black-400" />
-							)}
+							<IconStellar size={24} className="fill-grantpicks-black-400" />
 						</div>
 						<div>
 							<p className="text-[25px] font-normal text-grantpicks-black-950">
-								{storage.chainId === 'stellar'
-									? formatStroopToXlm(
-										BigInt(roundData?.vault_total_deposits || 0),
-									)
-									: formatNearAmount(
-										roundData?.vault_total_deposits || '0',
-									)}{' '}
-								{storage.chainId === 'stellar' ? 'XLM' : 'NEAR'}{' '}
+								{formatStroopToXlm(
+									BigInt(roundData?.vault_total_deposits || 0)
+								)}{' '}
+								{'XLM'}{' '}
 								<span className="text-xs md:text-base font-normal text-grantpicks-black-600">
-									{storage.chainId === 'stellar'
-										? (
-											Number(
-												formatStroopToXlm(
-													BigInt(roundData?.vault_total_deposits || 0),
-												),
-											) * global.stellarPrice
-										).toFixed(2)
-										: (
-											Number(
-												formatNearAmount(
-													roundData?.vault_total_deposits || '0',
-												).replace(',', ''),
-											) * global.nearPrice
-										).toFixed(2)}{' '}
+									{(Number(
+										formatStroopToXlm(
+											BigInt(roundData?.vault_total_deposits || 0),
+										),
+									) * global.stellarPrice).toFixed(2)}{' '}
 									USD
 								</span>
 							</p>

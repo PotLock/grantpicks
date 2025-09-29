@@ -42,7 +42,7 @@ export const AllLists = () => {
 	}, [data, debouncedSearchQuery])
 
 	return (
-		<div className="flex flex-col gap-y-4">
+		<div className="flex min-h-[90vh] flex-col gap-y-4">
 			<div className="flex flex-col gap-4 justify-between items-center md:flex-row mt-10 gap-y-4">
 				<div className="flex flex-1 items-center gap-x-2  rounded-full p-2 border border-grantpicks-black-950 w-full md:w-[40%]">
 					<IconSearch size={24} color="#292929" />

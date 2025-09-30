@@ -184,8 +184,8 @@ export const SingleListPage = () => {
 							<div className="flex-shrink-0">
 								<Button
 									isDisabled={
-										(!list?.admin_only_registrations &&
-											list?.owner?.id !== stellarPubKey) ||
+										(list?.admin_only_registrations &&
+											list?.owner?.id !== stellarPubKey && !list?.admins.includes(stellarPubKey)) ||
 										isRegistered
 									}
 									onClick={() => {

@@ -28,10 +28,10 @@ import { CreateProjectParams } from 'project-registry-client'
 
 const CreateProjectFormContext = createContext<ICreateProjectFormContext>({
 	data: DEFAULT_CREATE_PROJECT_DATA,
-	setData: () => {},
+	setData: () => { },
 	step: 1,
-	setStep: () => {},
-	onClose: () => {},
+	setStep: () => { },
+	onClose: () => { },
 	onProceedApply: () => Promise.resolve(),
 })
 
@@ -97,9 +97,9 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 					team_members:
 						dataForm.team_member.length > 0
 							? dataForm.team_member.map((mem) => ({
-									name: mem,
-									value: mem,
-								}))
+								name: mem,
+								value: mem,
+							}))
 							: [],
 				}
 
@@ -136,7 +136,6 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 				)
 
 				if (txHashCreateProject) {
-					console.log('txHashCreateProject', txHashCreateProject)
 					setSuccessCreateProjectModalProps((prev) => ({
 						...prev,
 						isOpen: true,

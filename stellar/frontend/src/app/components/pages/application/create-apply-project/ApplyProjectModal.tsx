@@ -39,7 +39,7 @@ const ApplyProjectModal = ({
 	const searchParams = useSearchParams()
 	const { setCreateProjectFormMainProps } = useModalContext()
 	const { stellarPubKey, stellarKit, onOpenStellarWallet } = useWallet()
-	const [isProjectMissingInfo, setIsProjectMissingInfo] =
+	const [isProjectMissingInfo] =
 		useState<boolean>(false)
 	const [projectData, setProjectData] = useState<Project | undefined>(undefined)
 	const [applyNote, setApplyNote] = useState<string>('')
@@ -217,7 +217,7 @@ const ApplyProjectModal = ({
 											</p>
 										</div>
 									</div>
-									<Button color="alpha-50" onClick={() => {}}>
+									<Button color="alpha-50" onClick={() => { }}>
 										Update
 									</Button>
 								</div>

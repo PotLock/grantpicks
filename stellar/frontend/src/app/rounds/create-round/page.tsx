@@ -12,7 +12,7 @@ import IconNear from '@/app/components/svgs/IconNear'
 import IconRemove from '@/app/components/svgs/IconRemove'
 import IconUnfoldMore from '@/app/components/svgs/IconUnfoldMore'
 import { CreateRoundData } from '@/types/form'
-import React, { ChangeEvent, useCallback, useEffect, useState } from 'react'
+import React, { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react'
 import {
 	useForm,
 	useFieldArray,
@@ -74,6 +74,7 @@ import { APIListExternal } from '@/app/components/pages/application/lists/ListCa
 
 const CreateRoundPage = () => {
 	const router = useRouter()
+	const buttonRef = useRef<HTMLDivElement>(null)
 	const [showContactType, setShowContactType] = useState<boolean>(false)
 	const [showTips, setShowTips] = useState<boolean>(false)
 	const { stellarPrice, openPageLoading, dismissPageLoading } =
@@ -268,9 +269,9 @@ const CreateRoundPage = () => {
 				else if (
 					applyEndDate &&
 					startDate.toDateString() ===
-						new Date(
-							new Date().setDate(applyEndDate.getDate() + 1),
-						).toDateString()
+					new Date(
+						new Date().setDate(applyEndDate.getDate() + 1),
+					).toDateString()
 				) {
 					startDate.setHours(applyEndDate.getHours())
 					startDate.setMinutes(applyEndDate.getMinutes())
@@ -534,9 +535,8 @@ const CreateRoundPage = () => {
 								)}
 							</button>
 							<div
-								className={`overflow-hidden transition-all duration-500 ease-in-out ${
-									showTips ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'
-								}`}
+								className={`overflow-hidden transition-all duration-500 ease-in-out ${showTips ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'
+									}`}
 							>
 								<div className="pt-4 space-y-4 border-t border-black/10">
 									<div>
@@ -679,8 +679,8 @@ const CreateRoundPage = () => {
 									/>
 								</div>
 								<div className={`pt-4 mb-6`}>
-									<div className="flex space-x-4 mb-2">
-										<div className="w-[35%] space-y-1">
+									<div className="flex md:flex-row flex-col gap-2 md:space-x-0 md:mb-2">
+										<div className="w-full md:w-[35%] space-y-1">
 											<InputText
 												type="number"
 												disabled={!watch().allow_application}
@@ -738,7 +738,7 @@ const CreateRoundPage = () => {
 													Max Participants is required
 												</p>
 											) : watch().max_participants < 10 ||
-											  watch().max_participants > 100 ? (
+												watch().max_participants > 100 ? (
 												<p className="text-red-500 text-xs mt-1 ml-2">
 													{watch().max_participants < 10
 														? 'Min. 10 Participants'
@@ -746,7 +746,7 @@ const CreateRoundPage = () => {
 												</p>
 											) : undefined}
 										</div>
-										<div className="w-[65%]">
+										<div className="w-full md:w-[65%]">
 											<p
 												className={clsx(
 													`text-sm font-semibold mb-2`,
@@ -1003,15 +1003,15 @@ const CreateRoundPage = () => {
 									Contact
 									<span className="text-grantpicks-red-600 ml-1">*</span>
 								</p>
-								<div className="flex items-center space-x-4">
-									<div className="relative w-40 md:w-44 lg:w-52">
+								<div className="flex flex-col md:flex-row items-center gap-4">
+									<div className="relative w-full md:w-44 lg:w-52" ref={buttonRef}>
 										<button
 											{...register('contact_type', { required: true })}
 											onClick={() => setShowContactType(true)}
 											className={clsx(
 												'border w-full border-grantpicks-black-200 rounded-xl py-3 px-3 flex items-center justify-between cursor-pointer hover:opacity-80 transition',
 												errors.contact_address?.type === 'required' &&
-													'border-red-500',
+												'border-red-500',
 											)}
 										>
 											<p
@@ -1036,8 +1036,10 @@ const CreateRoundPage = () => {
 												isOpen={showContactType}
 												onClose={() => setShowContactType(false)}
 												position="right-0 left-0 -bottom-[150px]"
+												mobileAsPortal
+												buttonRef={buttonRef}
 											>
-												<div className="border border-black/10 p-3 rounded-xl space-y-3 bg-white">
+												<div className="border border-black/10 p-3 rounded-xl space-y-3 bg-white w-full">
 													<p
 														onClick={() => {
 															setValue('contact_type', 'Telegram')
@@ -1082,12 +1084,12 @@ const CreateRoundPage = () => {
 											</Menu>
 										)}
 									</div>
-									<div className="flex-1">
+									<div className="w-full md:flex-1">
 										<InputText
 											className={clsx(
 												(errors.contact_address?.type === 'required' ||
 													errors.contact_address) &&
-													'border border-red-500',
+												'border border-red-500',
 											)}
 											disabled={!watch('contact_type')}
 											required
@@ -1150,7 +1152,7 @@ const CreateRoundPage = () => {
 										type="number"
 										label="Expected Amount"
 										required
-										className="text-sm"
+										className="text-sm w-full"
 										placeholder={isMobile ? '' : 'Enter amount...'}
 										{...register('expected_amount', {
 											required: true,
@@ -1190,7 +1192,7 @@ const CreateRoundPage = () => {
 													Expected Amount is required
 												</p>
 											) : parseFloat(watch().expected_amount) <
-											  parseFloat(watch().amount) ? (
+												parseFloat(watch().amount) ? (
 												<p className="text-red-500 text-xs mt-1 ml-2">
 													Expected Amount should not be less than intiial
 													deposit
@@ -1209,7 +1211,7 @@ const CreateRoundPage = () => {
 										type="number"
 										disabled={!watch().use_vault}
 										label="Initial Deposit"
-										className="text-sm"
+										className="text-sm w-full"
 										placeholder={isMobile ? '' : 'Enter amount...'}
 										{...register('amount', {
 											onChange: async (e) => {
@@ -1272,7 +1274,7 @@ const CreateRoundPage = () => {
 										type="number"
 										label="Minimum Deposit"
 										required
-										className="text-sm"
+										className="text-sm w-full"
 										placeholder={isMobile ? '' : 'Enter amount...'}
 										{...register('minimum_deposit', {
 											required: true,
@@ -1334,7 +1336,7 @@ const CreateRoundPage = () => {
 							</div>
 							<div className="flex items-center">
 								<Checkbox
-									label="Allow Deposit of Funds"
+									label="Allow Deposit to Vault"
 									checked={watch().use_vault}
 									onChange={(e) => {
 										setValue('use_vault', e.target.checked)

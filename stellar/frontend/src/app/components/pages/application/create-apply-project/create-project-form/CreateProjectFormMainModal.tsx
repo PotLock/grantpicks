@@ -24,7 +24,7 @@ import { localStorageConfigs } from '@/configs/local-storage'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { useSearchParams } from 'next/navigation'
 import { usePotlockService } from '@/services/potlock'
-import { CreateProjectParams } from 'project-registry-client'
+import { CreateProjectParams, scValToNative } from 'project-registry-client'
 
 const CreateProjectFormContext = createContext<ICreateProjectFormContext>({
 	data: DEFAULT_CREATE_PROJECT_DATA,
@@ -44,7 +44,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 	const { dismissPageLoading, openPageLoading } = useGlobalContext()
 	const [step, setStep] = useState<number>(1)
 	const { stellarKit } = useWallet()
-	const { setSuccessCreateProjectModalProps, setApplyProjectInitProps } =
+	const { setSuccessCreateProjectModalProps } =
 		useModalContext()
 	const storage = useAppStorage()
 
@@ -103,6 +103,7 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 							: [],
 				}
 
+
 				const isRegistered = await contracts.lists_contract.is_registered({
 					registrant_id: storage.my_address || '',
 					list_id: BigInt(process.env.PROJECTS_LIST_ID || '1'),
@@ -135,11 +136,12 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 					storage.my_address || '',
 				)
 
+
 				if (txHashCreateProject) {
 					setSuccessCreateProjectModalProps((prev) => ({
 						...prev,
 						isOpen: true,
-						createProjectRes: txCreateProject.result,
+						createProjectRes: scValToNative(txCreateProject.simulationData.result.retval),
 						txHash: txHashCreateProject,
 					}))
 					setDataForm(DEFAULT_CREATE_PROJECT_DATA)

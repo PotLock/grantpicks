@@ -253,7 +253,7 @@ const ApplicationRounds = () => {
 			</div>
 
 			<div className="mb-6 md:mb-7 lg:mb-8">
-				<div className="flex items-center flex-col md:flex-row w-full gap-3 justify-between">
+				<div className="flex w-full flex-col gap-3 md:flex-row md:items-center md:justify-between">
 					<div className="flex-1 w-full">
 						<div className="flex h-[49px] items-center gap-x-2 rounded-full p-2 border border-grantpicks-black-200 w-full">
 							<IconSearch size={24} color="#292929" />
@@ -280,66 +280,68 @@ const ApplicationRounds = () => {
 							)}
 						</div>
 					</div>
-					<div className="md:col-span-3">
-						<div
-							onClick={() => setShowSortType(!showSortType)}
-							className="border border-black/10 rounded-full py-3 px-3 flex items-center justify-between cursor-pointer hover:opacity-80 transition w-full"
-						>
-							<p className="text-sm font-normal text-grantpicks-black-950">
-								{sortType}
-							</p>
-							<IconUnfoldMore size={24} className="fill-grantpicks-black-400" />
-						</div>
-						{showSortType && (
-							<Menu
-								isOpen={showSortType}
-								onClose={() => setShowSortType(false)}
-								position="top-14 right-0"
+					<div className="flex w-full flex-row items-center justify-center gap-3 md:w-auto md:justify-end">
+						<div className="md:col-span-3 flex-shrink-0">
+							<div
+								onClick={() => setShowSortType(!showSortType)}
+								className="border border-black/10 rounded-full py-3 px-3 flex items-center justify-between cursor-pointer hover:opacity-80 transition"
 							>
-								<div className="border border-black/10 p-3 w-52 rounded-xl space-y-3 bg-white">
-									<p
-										onClick={() => {
-											setSortType('Most Recent')
-											setShowSortType(false)
-										}}
-										className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
-									>
-										Most Recent
-									</p>
-									<p
-										onClick={() => {
-											setSortType('Vault Total Deposits')
-											setShowSortType(false)
-										}}
-										className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
-									>
-										Vault Total Deposits
-									</p>
-									<p
-										onClick={() => {
-											setSortType('My Rounds')
-											setShowSortType(false)
-										}}
-										className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
-									>
-										My Rounds
-									</p>
-								</div>
-							</Menu>
+								<p className="text-sm font-normal text-grantpicks-black-950">
+									{sortType}
+								</p>
+								<IconUnfoldMore size={24} className="fill-grantpicks-black-400" />
+							</div>
+							{showSortType && (
+								<Menu
+									isOpen={showSortType}
+									onClose={() => setShowSortType(false)}
+									position="top-14 right-0"
+								>
+									<div className="border border-black/10 p-3 w-52 rounded-xl space-y-3 bg-white">
+										<p
+											onClick={() => {
+												setSortType('Most Recent')
+												setShowSortType(false)
+											}}
+											className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
+										>
+											Most Recent
+										</p>
+										<p
+											onClick={() => {
+												setSortType('Vault Total Deposits')
+												setShowSortType(false)
+											}}
+											className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
+										>
+											Vault Total Deposits
+										</p>
+										<p
+											onClick={() => {
+												setSortType('My Rounds')
+												setShowSortType(false)
+											}}
+											className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
+										>
+											My Rounds
+										</p>
+									</div>
+								</Menu>
+							)}
+						</div>
+						{stellarPubKey && (
+							<div className="md:col-span-2 flex justify-end flex-shrink-0">
+								<Button
+									onClick={() => {
+										router.push('/rounds/create-round')
+									}}
+									className="w-auto"
+								>
+									Create Round
+								</Button>
+							</div>
 						)}
 					</div>
-					{stellarPubKey && (
-						<div className="md:col-span-2 flex md:justify-end">
-							<Button
-								onClick={() => {
-									router.push('/rounds/create-round')
-								}}
-								className="w-full md:w-auto"
-							>
-								Create Round
-							</Button>
-						</div>
-					)}
 				</div>
 			</div>
 			<div className="min-h-96">

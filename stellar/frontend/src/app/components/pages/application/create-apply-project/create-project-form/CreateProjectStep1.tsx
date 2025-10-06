@@ -6,8 +6,6 @@ import { CreateProjectStep1Data } from '@/types/form'
 import React, { useEffect, useState } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
 import { useCreateProject } from './CreateProjectFormMainModal'
-import { DEFAULT_CREATE_PROJECT_DATA } from '@/constants/project'
-import PreviousConfirmationModal from './PreviousConfirmationModal'
 import { localStorageConfigs } from '@/configs/local-storage'
 
 const CreateProjectStep1 = () => {

@@ -6,9 +6,9 @@ import { envVarConfigs } from '@/configs/env-var'
 import { localStorageConfigs } from '@/configs/local-storage'
 
 import {
-	xBullModule,
 	FreighterModule,
 	ISupportedWallet,
+	// AlbedoModule,
 	HotWalletModule,
 	StellarWalletsKit,
 	WalletNetwork,
@@ -46,7 +46,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 				'freighter',
 			modules: [
 				new FreighterModule(),
-				new xBullModule(),
+				// new AlbedoModule(),
 				...(envVarConfigs.NETWORK_ENV !== 'testnet'
 					? [new HotWalletModule()]
 					: []),
@@ -62,7 +62,6 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 				onCheckConnected(kit)
 			}
 		} catch (error: any) {
-			console.log('error', error)
 			toast.error('Error initializing Stellar wallet, please try again')
 			localStorage.removeItem(localStorageConfigs.LAST_STELLAR_WALLET_ID)
 			localStorage.removeItem(localStorageConfigs.STELLAR_PUBLIC_KEY)
@@ -159,6 +158,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 						appNetwork === 'testnet' ? 'TESTNET' : 'PUBLIC'
 					try {
 						const info = await kit.getNetwork()
+						console.log('info', info)
 						if (![currentAppNetwork, 'mainnet'].includes(info.network)) {
 							toast.error(
 								`Network Mismatch: Your Stellar wallet is set to ${info.network} but this app is running on ${currentAppNetwork}. Please switch networks in your wallet.`,

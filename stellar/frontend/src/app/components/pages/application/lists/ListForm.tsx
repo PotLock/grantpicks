@@ -42,7 +42,7 @@ export const ListForm = ({ listId, existingList }: ListFormProps) => {
 		if (existingList && listId) {
 			setValue('name', existingList.name)
 			setValue('description', existingList.description)
-			setValue('cover_img_url', existingList.cover_img_url || '')
+			setValue('cover_img_url', existingList.cover_image_url || '')
 			setValue('allow_applications', !existingList.admin_only_registrations)
 			setValue(
 				'approve_applications',
@@ -50,9 +50,9 @@ export const ListForm = ({ listId, existingList }: ListFormProps) => {
 			)
 			setListFormState((prev) => ({
 				...prev,
-				coverImageUrl: existingList.cover_img_url || '',
-				coverImage: existingList.cover_img_url
-					? new File([], existingList.cover_img_url)
+				coverImageUrl: existingList.cover_image_url || '',
+				coverImage: existingList.cover_image_url
+					? new File([], existingList.cover_image_url)
 					: null,
 			}))
 		}

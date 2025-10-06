@@ -62,7 +62,6 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 				onCheckConnected(kit)
 			}
 		} catch (error: any) {
-			console.log('error', error)
 			toast.error('Error initializing Stellar wallet, please try again')
 			localStorage.removeItem(localStorageConfigs.LAST_STELLAR_WALLET_ID)
 			localStorage.removeItem(localStorageConfigs.STELLAR_PUBLIC_KEY)

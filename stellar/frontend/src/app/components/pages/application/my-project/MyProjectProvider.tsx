@@ -56,16 +56,11 @@ const MyProjectProvider = () => {
 
 				const res = await getProjectApplicant(stellarPubKey, contracts)
 				//@ts-ignore
-				console.log('res', res)
 				if (!res?.error) {
 					setProjectData(res)
 					setProjectDataModel(res)
 
-					if (res) {
-						const projectStats =
-							await potlockService.getProjectStats(stellarPubKey)
-						setStats(projectStats)
-					}
+
 				} else {
 					setNoProject(true)
 				}
@@ -78,18 +73,26 @@ const MyProjectProvider = () => {
 	}, [
 		stellarPubKey,
 		storage,
-		potlockService,
 		setProjectData,
 		setProjectDataModel,
-		setStats,
 	])
+
+	const fetchProjectStats = useCallback(async () => {
+		if (projectData) {
+			const projectStats = await potlockService.getProjectStats(stellarPubKey)
+			setStats(projectStats)
+		}
+	}, [projectData, potlockService, stellarPubKey])
+
+
 
 	useEffect(() => {
 		if (storage.my_address) {
 			fetchProjectApplicant()
+			fetchProjectStats()
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [storage.my_address, fetchProjectApplicant])
+	}, [storage.my_address, fetchProjectApplicant, fetchProjectStats])
 
 	return (
 		<MyProjectContext.Provider

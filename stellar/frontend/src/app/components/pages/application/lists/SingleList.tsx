@@ -131,7 +131,7 @@ export const SingleListPage = () => {
 				<div
 					className="absolute inset-0 w-full h-full"
 					style={{
-						backgroundImage: `url(${list?.cover_img_url || '/assets/images/default-list-image.png'})`,
+						backgroundImage: `url(${list?.cover_image_url || '/assets/images/default-list-image.png'})`,
 						backgroundSize: 'cover',
 						backgroundPosition: 'center',
 						height: '80%',

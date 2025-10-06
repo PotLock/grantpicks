@@ -6,7 +6,7 @@ export type APIListExternal = {
 	owner: { id: string }
 	registrations_count: number
 	on_chain_id: string
-	cover_img_url: string
+	cover_image_url: string
 	name: string
 	description: string
 	updated_at: string
@@ -33,7 +33,7 @@ export const ListCard = ({ list, stellarPubKey }: ListCardProps) => {
 			{/* Image Container */}
 			<div className="relative h-[180px] overflow-hidden">
 				<Image
-					src={list.cover_img_url || '/assets/images/default-list-image.png'}
+					src={list.cover_image_url || '/assets/images/default-list-image.png'}
 					alt={list.name}
 					className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
 					width={300}

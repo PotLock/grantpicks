@@ -3,7 +3,7 @@ import React from 'react'
 const ApplicationHeader = () => {
 	return (
 		<div className="flex flex-col items-center mb-8 justify-center px-4">
-			<div className="flex flex-col w-full md:w-10/12 items-center justify-center">
+			<div className="flex flex-col w-full md:w-11/12 items-center justify-center">
 				<div className="flex flex-col items-center justify-center mb-10 md:mb-14 lg:mb-16">
 					<h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[65px] xl:text-[76px] font-black uppercase text-center leading-tight sm:leading-tight md:leading-[1.1] bg-gradient-to-r from-[#7B3AED] to-[#5A21B6] bg-clip-text text-transparent">
 						Easily decide how funding is allocated

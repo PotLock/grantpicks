@@ -56,6 +56,7 @@ const MyProjectProvider = () => {
 
 				const res = await getProjectApplicant(stellarPubKey, contracts)
 				//@ts-ignore
+				console.log('res', res)
 				if (!res?.error) {
 					setProjectData(res)
 					setProjectDataModel(res)
@@ -68,41 +69,7 @@ const MyProjectProvider = () => {
 				} else {
 					setNoProject(true)
 				}
-			} else {
-				const contracts = storage.getNearContracts(null)
-
-				if (!contracts) {
-					return
-				}
-
-				const data = await contracts.near_social.getProjectData(
-					storage.my_address || '',
-				)
-
-				if (data) {
-					const json =
-						data[`${storage.my_address || ''}`]['profile']['gp_project'] || '{}'
-					const project = JSON.parse(json)
-
-					if (project.fundings) {
-						project.funding_histories = project.fundings
-					}
-
-					if (project.name) {
-						setProjectDataModel(project)
-						setProjectData(project)
-						// // const projectStats = await potlockService.getProjectStats(
-						// // 	nearAccounts[0].accountId,
-						// // )
-						// setStats(projectStats)
-					} else {
-						setNoProject(true)
-					}
-				} else {
-					setNoProject(true)
-				}
 			}
-			//@ts-ignore
 		} catch (error: any) {
 			storage.chainId === 'stellar' && setNoProject(true)
 			storage.chainId === 'near' && setNoProject(true)

@@ -295,13 +295,13 @@ export const RoundCard = ({
 
 	const getMainActionText = () => {
 		if (isUserApplied && isApplicationOpen) {
-			return "You're already a part of this round."
+			return "Applied."
 		}
 		if (isVotingOpen) {
-			return hasVoted ? "You've voted in this round" : 'Vote'
+			return hasVoted ? "Voted." : 'Vote'
 		}
 		if (isNotStarted) {
-			return `Application starts in ${moment(new Date(doc.application_start || '')).fromNow()}`
+			return 'Apply'
 		}
 		if (isApplicationClosed) {
 			return 'No application allowed'
@@ -314,7 +314,6 @@ export const RoundCard = ({
 		}
 		if (isCompleted) {
 			if (!storage.my_address) return 'Connect Wallet'
-			if (totalApprovedProjects === 0) return 'No projects Participated'
 			return 'View Result'
 		}
 		return 'Application Closed'
@@ -336,6 +335,42 @@ export const RoundCard = ({
 		}
 		setShowFundRoundModal(true)
 	}
+
+	const getHelperText = () => {
+		if (currentTime === 'upcoming-not-started') {
+			return `Application starts ${moment(new Date(doc.application_start || '')).fromNow()}`
+		}
+		if (currentTime === 'upcoming-open') {
+			return 'Accepting Applications'
+		}
+		if (currentTime === 'upcoming' || currentTime === 'upcoming-closed') {
+			return 'Applications Closed'
+		}
+		if (currentTime === 'on-going') {
+			return 'Voting Open'
+		}
+		if (currentTime === 'ended') {
+			return 'Voting Closed'
+		}
+		if (currentTime === 'payout-pending' && totalApprovedProjects === 0) {
+			return 'No participants. Hence, no results'
+		}
+		if (currentTime === 'payout-pending') {
+			return 'Payout Pending'
+		}
+		return ''
+	}
+
+	const currentStageColorClass = () => {
+		if (isApplicationOpen) return 'fill-grantpicks-green-500'
+		if (isVotingOpen) return 'fill-grantpicks-green-500'
+		if (isNotStarted) return 'fill-amber-500'
+		if (isApplicationClosed) return 'fill-grantpicks-black-400'
+		if (isCompleted) return 'fill-grantpicks-amber-500'
+		return 'fill-grantpicks-black-400'
+	}
+
+
 	return (
 		<div
 			onClick={() => router.push(`/round/${doc.on_chain_id}`)}
@@ -367,6 +402,8 @@ export const RoundCard = ({
 					showFundButton={!doc?.round_complete}
 					disableFundButton={!doc?.use_vault}
 					onFundRound={handleFundRound}
+					helperText={getHelperText()}
+					helperColorClass={currentStageColorClass()}
 				/>
 			</div>
 			{showFundRoundModal && (

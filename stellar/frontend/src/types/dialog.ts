@@ -10,6 +10,7 @@ export interface IMenuProps extends DialogProps {
 	closeOnEscape?: boolean
 	className?: string
 	buttonRef?: React.RefObject<HTMLElement>
+    mobileAsPortal?: boolean
 }
 
 export interface IDrawerProps extends DialogProps {

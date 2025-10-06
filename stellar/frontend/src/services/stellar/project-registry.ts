@@ -5,6 +5,7 @@ import {
 	Project,
 	UpdateProjectParams,
 } from 'project-registry-client'
+import { scValToNative} from '@stellar/stellar-sdk'
 
 interface GetProjectsParams {
 	skip: number
@@ -123,14 +124,14 @@ export const getProject: (
 export const getProjectApplicant: (
 	applicant: string,
 	contract: Contracts,
-) => Promise<Project | undefined> = async (
+) => Promise<Project | undefined | any> = async (
 	applicant: string,
 	contract: Contracts,
 ) => {
 	let project = await contract.project_contract.get_project_from_applicant({
 		applicant,
 	})
-	if (project) return project.result
+	return scValToNative(project.simulationData.result.retval)
 }
 
 export const createProject = async (

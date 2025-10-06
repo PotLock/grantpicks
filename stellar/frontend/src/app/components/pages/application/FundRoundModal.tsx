@@ -147,19 +147,21 @@ const FundRoundModal = ({
 	const progressPercentage =
 		storage.chainId !== 'near'
 			? (parseFloat(formatStroopToXlm(BigInt(doc.current_vault_balance))) /
-					parseFloat(formatStroopToXlm(BigInt(doc.expected_amount)))) *
-				100
+				parseFloat(formatStroopToXlm(BigInt(doc.expected_amount)))) *
+			100
 			: (parseFloat(formatNearAmount(doc.current_vault_balance)) /
-					parseFloat(formatNearAmount(doc.expected_amount))) *
-				100
+				parseFloat(formatNearAmount(doc.expected_amount))) *
+			100
 
 	return (
 		<Modal
 			isOpen={isOpen}
 			onClose={(e: any) => {
 				e.stopPropagation()
-				onClose()
+				onClose(e)
 			}}
+			zIndex={1000}
+			closeOnBgClick={true}
 		>
 			<div
 				onClick={(e) => {
@@ -285,9 +287,9 @@ const FundRoundModal = ({
 									setAmount(e.target.value)
 									if (
 										parseFloat(e.target.value) <
-											parseFloat(
-												formatStroopToXlm(BigInt(doc.minimum_deposit)),
-											) ||
+										parseFloat(
+											formatStroopToXlm(BigInt(doc.minimum_deposit)),
+										) ||
 										e.target.value === ''
 									) {
 										setError('amount', {

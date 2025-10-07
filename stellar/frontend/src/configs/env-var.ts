@@ -41,6 +41,7 @@ const selectedNetworkConfig = perNetworkConfig[NETWORK_ENV]
 
 export const envVarConfigs = {
 	NETWORK_ENV,
+	LOCAL_STORAGE_SAVED_WALLET: 'stellar_saved_wallet' as string,
 	CRYPTO_COMPARE_URL: process.env.CRYPTO_COMPARE_URL as string,
 	NFT_STORAGE_API_KEY: process.env.NFT_STORAGE_API_KEY as string,
 	ADMIN_SECRET: process.env.ADMIN_SECRET as string,

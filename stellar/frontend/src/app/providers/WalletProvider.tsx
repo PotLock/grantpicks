@@ -40,6 +40,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 	const [stellarPubKey, setStellarPubKey] = useState<string>('')
 	const [currentBalance, setCurrentBalance] = useState<number | null>()
 	const [savedWallet, setSavedWallet] = useState<SavedWallet | null>(null)
+	const [hasAttemptedAutoConnect, setHasAttemptedAutoConnect] = useState<boolean>(false)
 	const [isInit, setIsInit] = useState<boolean>(true)
 	const store = useAppStorage()
 
@@ -108,6 +109,57 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 		}
 		return true
 	}
+	const handleSetWalletAddress = async (kit: StellarWalletsKit, opts?: { skipRequestAccess?: boolean }) => {
+		try {
+			const addressRes = await kit.getAddress({ skipRequestAccess: Boolean(opts?.skipRequestAccess) })
+			const pubKey = addressRes?.address
+			if (!pubKey) return false
+
+			setConnectedWallet('stellar')
+			localStorage.setItem(localStorageConfigs.CONNECTED_WALLET, 'stellar')
+			setStellarPubKey(pubKey)
+			localStorage.setItem(localStorageConfigs.STELLAR_PUBLIC_KEY, pubKey)
+			store.setMyAddress(pubKey)
+			store.setChainId('stellar')
+			store.setNetwork(envVarConfigs.NETWORK_ENV === 'testnet' ? 'testnet' : 'mainnet')
+
+			let cmdWallet = new CMDWallet({ stellarPubKey: pubKey })
+			const filterXLM = (await cmdWallet.getBalances()).filter((xlm) => xlm.asset_type === 'native')
+			if (filterXLM?.[0]?.balance) {
+				setCurrentBalance(parseInt(filterXLM[0].balance))
+			}
+			return true
+		} catch {
+			return false
+		}
+	}
+
+	useEffect(() => {
+		let t: any
+		if (
+			!connectedWallet &&
+			!hasAttemptedAutoConnect &&
+			savedWallet?.id &&
+			![undefined as any, 'false', 'wallet_connect'].includes(savedWallet.id as any) &&
+			savedWallet.network.id === envVarConfigs.NETWORK_ENV &&
+			stellarKit
+		) {
+			t = setTimeout(async () => {
+				try {
+					stellarKit.setWallet(savedWallet.id)
+					const success = await handleSetWalletAddress(stellarKit, { skipRequestAccess: true })
+					if (!success) {
+						setHasAttemptedAutoConnect(true)
+					}
+				} catch {
+					setHasAttemptedAutoConnect(true)
+				}
+			}, 750)
+		}
+		return () => clearTimeout(t)
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [savedWallet?.id, stellarKit, connectedWallet, hasAttemptedAutoConnect])
+
 
 
 
@@ -127,13 +179,13 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 				return
 			}
 
-			const pubKey = (await kit?.getAddress()).address
+			// Use cached public key directly to avoid wallet prompts on refresh
 			setConnectedWallet('stellar')
 			localStorage.setItem(localStorageConfigs.CONNECTED_WALLET, 'stellar')
-			setStellarPubKey(localStellarPubKey || pubKey)
+			setStellarPubKey(localStellarPubKey)
 			localStorage.setItem(
 				localStorageConfigs.STELLAR_PUBLIC_KEY,
-				localStellarPubKey || pubKey,
+				localStellarPubKey,
 			)
 
 			let cmdWallet = new CMDWallet({
@@ -145,7 +197,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 			const balances = parseInt(filterXLM[0].balance)
 			setCurrentBalance(balances)
 
-			store.setMyAddress(localStellarPubKey || pubKey)
+			store.setMyAddress(localStellarPubKey)
 			store.setChainId('stellar')
 			store.setNetwork(
 				envVarConfigs.NETWORK_ENV === 'testnet' ? 'testnet' : 'mainnet',
@@ -236,7 +288,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 			setIsInit(false)
 		}
 		initialization()
-	}, [])
+	}, [onInitStellar])
 
 
 	// NEAR effect subscription disabled

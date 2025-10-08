@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { WalletContext } from '../contexts/WalletContext'
 import { envVarConfigs } from '@/configs/env-var'
 import { localStorageConfigs } from '@/configs/local-storage'
@@ -23,7 +23,7 @@ import { IAccount } from '@/types/account'
 import { usePotlockService } from '@/services/potlock'
 import toast from 'react-hot-toast'
 import { LedgerModule } from "@creit.tech/stellar-wallets-kit/modules/ledger.module";
-import { LocalStorageSavedNetwork } from './types'
+import { SavedWallet } from './types'
 import { localStorageSavedWallet } from '@/utils/helper'
 import { Network } from '@/types/on-chain'
 
@@ -39,20 +39,26 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 	const [stellarKit, setStellarKit] = useState<StellarWalletsKit | null>(null)
 	const [stellarPubKey, setStellarPubKey] = useState<string>('')
 	const [currentBalance, setCurrentBalance] = useState<number | null>()
-	const [savedWallet, setSavedWallet] = useState<LocalStorageSavedNetwork | null>(null)
+	const [savedWallet, setSavedWallet] = useState<SavedWallet | null>(null)
 	const [isInit, setIsInit] = useState<boolean>(true)
 	const store = useAppStorage()
 
-	// const onInitNear = async () => { /* disabled */ }
+	useEffect(() => {
+		const localSavedWallet = localStorageSavedWallet.get()
+		if (localSavedWallet && localSavedWallet.network.id === envVarConfigs.NETWORK_ENV) {
+			setSavedWallet(localSavedWallet)
+		}
+	}, [])
 
-	const createKit = () => {
+	const createKit = useMemo(() => {
+		const localSavedWallet = localStorageSavedWallet.get()
 		return new StellarWalletsKit({
 			network:
 				envVarConfigs.NETWORK_ENV === 'testnet'
 					? WalletNetwork.TESTNET
 					: WalletNetwork.PUBLIC,
 			selectedWalletId:
-				savedWallet?.id ||
+				localSavedWallet?.id ||
 				"",
 			modules: [
 				new FreighterModule(),
@@ -67,25 +73,20 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 					: []),
 			],
 		})
-	}
+	}, [savedWallet])
 
-	const onInitStellar = async () => {
+	const onInitStellar = useCallback(async () => {
 		try {
-			const kit: StellarWalletsKit = createKit()
+			const kit: StellarWalletsKit = createKit
 			setStellarKit(kit)
 			if (kit) {
 				onCheckConnected(kit)
 			}
 		} catch (error: any) {
 			toast.error('Error initializing Stellar wallet, please try again')
-			localStorage.removeItem(localStorageConfigs.LAST_STELLAR_WALLET_ID)
-			localStorage.removeItem(localStorageConfigs.STELLAR_PUBLIC_KEY)
-			localStorage.removeItem(localStorageConfigs.CONNECTED_WALLET)
-			setConnectedWallet(null)
-			setStellarPubKey('')
-			store.clear()
+			onSignOut()
 		}
-	}
+	}, [createKit])
 
 	const checkNetworkValidation = async () => {
 		const appNetwork = envVarConfigs.NETWORK_ENV
@@ -108,12 +109,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 		return true
 	}
 
-	useEffect(() => {
-		const savedWallet = localStorageSavedWallet.get()
-		if (savedWallet && savedWallet.network.id === envVarConfigs.NETWORK_ENV) {
-			setSavedWallet(savedWallet.network)
-		}
-	}, [])
+
 
 
 	const onCheckConnected = async (kit?: StellarWalletsKit) => {
@@ -165,7 +161,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 		onSelected?: (option: ISupportedWallet) => void,
 	) => {
 		// ensure kit exists before opening modal
-		const kit = stellarKit ?? createKit()
+		const kit = stellarKit ?? createKit
 		if (!stellarKit) setStellarKit(kit)
 		kit.openModal({
 			onWalletSelected: async (option: ISupportedWallet) => {

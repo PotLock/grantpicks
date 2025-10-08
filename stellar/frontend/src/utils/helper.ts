@@ -204,18 +204,33 @@ export const extractChainId = (round: GPRound) => {
 
 export const localStorageSavedWallet = {
   get: () => {
-    const savedWalletString = localStorage.getItem(envVarConfigs.LOCAL_STORAGE_SAVED_WALLET);
-    return savedWalletString
-      ? (JSON.parse(savedWalletString) as SavedWallet)
-      : null;
+    if (typeof window === 'undefined') return null;
+    try {
+      const savedWalletString = window.localStorage.getItem(
+        envVarConfigs.LOCAL_STORAGE_SAVED_WALLET,
+      );
+      return savedWalletString
+        ? (JSON.parse(savedWalletString) as SavedWallet)
+        : null;
+    } catch {
+      return null;
+    }
   },
   set: (savedWallet: SavedWallet) => {
-    return localStorage.setItem(
-      envVarConfigs.LOCAL_STORAGE_SAVED_WALLET,
-      JSON.stringify(savedWallet),
-    );
+    if (typeof window === 'undefined') return;
+    try {
+      return window.localStorage.setItem(
+        envVarConfigs.LOCAL_STORAGE_SAVED_WALLET,
+        JSON.stringify(savedWallet),
+      );
+    } catch {}
   },
   remove: () => {
-    return localStorage.removeItem(envVarConfigs.LOCAL_STORAGE_SAVED_WALLET);
+    if (typeof window === 'undefined') return;
+    try {
+      return window.localStorage.removeItem(
+        envVarConfigs.LOCAL_STORAGE_SAVED_WALLET,
+      );
+    } catch {}
   },
 };

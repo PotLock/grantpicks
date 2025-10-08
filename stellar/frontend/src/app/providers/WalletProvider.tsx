@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { WalletContext } from '../contexts/WalletContext'
 import { envVarConfigs } from '@/configs/env-var'
 import { localStorageConfigs } from '@/configs/local-storage'
@@ -8,20 +8,29 @@ import { localStorageConfigs } from '@/configs/local-storage'
 import {
 	FreighterModule,
 	ISupportedWallet,
-	// AlbedoModule,
+	AlbedoModule,
 	HotWalletModule,
 	StellarWalletsKit,
 	WalletNetwork,
+	LobstrModule,
+	xBullModule,
+	HanaModule,
+	RabetModule,
 } from '@creit.tech/stellar-wallets-kit'
 import CMDWallet from '@/lib/wallet'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { IAccount } from '@/types/account'
 import { usePotlockService } from '@/services/potlock'
 import toast from 'react-hot-toast'
+import { LedgerModule } from "@creit.tech/stellar-wallets-kit/modules/ledger.module";
+import { SavedWallet } from './types'
+import { localStorageSavedWallet } from '@/utils/helper'
+import { Network } from '@/types/on-chain'
+
 
 const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 	const [connectedWallet, setConnectedWallet] = useState<
-		'near' | 'stellar' | null
+		'stellar' | null
 	>(null)
 	const [profileData, setProfileData] = useState<IAccount>()
 	const potlockService = usePotlockService()
@@ -30,47 +39,54 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 	const [stellarKit, setStellarKit] = useState<StellarWalletsKit | null>(null)
 	const [stellarPubKey, setStellarPubKey] = useState<string>('')
 	const [currentBalance, setCurrentBalance] = useState<number | null>()
+	const [savedWallet, setSavedWallet] = useState<SavedWallet | null>(null)
 	const [isInit, setIsInit] = useState<boolean>(true)
 	const store = useAppStorage()
 
-	// const onInitNear = async () => { /* disabled */ }
+	useEffect(() => {
+		const localSavedWallet = localStorageSavedWallet.get()
+		if (localSavedWallet && localSavedWallet.network.id === envVarConfigs.NETWORK_ENV) {
+			setSavedWallet(localSavedWallet)
+		}
+	}, [])
 
-	const createKit = () => {
+	const createKit = useMemo(() => {
+		const localSavedWallet = localStorageSavedWallet.get()
 		return new StellarWalletsKit({
 			network:
 				envVarConfigs.NETWORK_ENV === 'testnet'
 					? WalletNetwork.TESTNET
 					: WalletNetwork.PUBLIC,
 			selectedWalletId:
-				localStorage.getItem(localStorageConfigs.LAST_STELLAR_WALLET_ID) ||
-				'freighter',
+				localSavedWallet?.id ||
+				"",
 			modules: [
 				new FreighterModule(),
-				// new AlbedoModule(),
+				new AlbedoModule(),
+				new xBullModule(),
+				new LobstrModule(),
+				new RabetModule(),
+				new HanaModule(),
+				new LedgerModule(),
 				...(envVarConfigs.NETWORK_ENV !== 'testnet'
 					? [new HotWalletModule()]
 					: []),
 			],
 		})
-	}
+	}, [savedWallet])
 
-	const onInitStellar = async () => {
+	const onInitStellar = useCallback(async () => {
 		try {
-			const kit: StellarWalletsKit = createKit()
+			const kit: StellarWalletsKit = createKit
 			setStellarKit(kit)
 			if (kit) {
 				onCheckConnected(kit)
 			}
 		} catch (error: any) {
 			toast.error('Error initializing Stellar wallet, please try again')
-			localStorage.removeItem(localStorageConfigs.LAST_STELLAR_WALLET_ID)
-			localStorage.removeItem(localStorageConfigs.STELLAR_PUBLIC_KEY)
-			localStorage.removeItem(localStorageConfigs.CONNECTED_WALLET)
-			setConnectedWallet(null)
-			setStellarPubKey('')
-			store.clear()
+			onSignOut()
 		}
-	}
+	}, [createKit])
 
 	const checkNetworkValidation = async () => {
 		const appNetwork = envVarConfigs.NETWORK_ENV
@@ -92,6 +108,9 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 		}
 		return true
 	}
+
+
+
 
 	const onCheckConnected = async (kit?: StellarWalletsKit) => {
 		const localStellarPubKey = localStorage.getItem(
@@ -142,7 +161,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 		onSelected?: (option: ISupportedWallet) => void,
 	) => {
 		// ensure kit exists before opening modal
-		const kit = stellarKit ?? createKit()
+		const kit = stellarKit ?? createKit
 		if (!stellarKit) setStellarKit(kit)
 		kit.openModal({
 			onWalletSelected: async (option: ISupportedWallet) => {
@@ -152,13 +171,19 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 						localStorageConfigs.LAST_STELLAR_WALLET_ID,
 						option.id,
 					)
+					localStorageSavedWallet.set({
+						id: option.id,
+						network: {
+							id: envVarConfigs.NETWORK_ENV as Network,
+							label: option.name,
+						},
+					})
 
 					const appNetwork = envVarConfigs.NETWORK_ENV
 					const currentAppNetwork =
 						appNetwork === 'testnet' ? 'TESTNET' : 'PUBLIC'
 					try {
 						const info = await kit.getNetwork()
-						console.log('info', info)
 						if (![currentAppNetwork, 'mainnet'].includes(info.network)) {
 							toast.error(
 								`Network Mismatch: Your Stellar wallet is set to ${info.network} but this app is running on ${currentAppNetwork}. Please switch networks in your wallet.`,
@@ -185,27 +210,22 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 
 					onSelected?.(option)
 				} catch (error: any) {
-					localStorage.removeItem(localStorageConfigs.CONNECTED_WALLET)
 					toast.error(
 						'Error connecting to Stellar wallet, Your account is inactive (deposit XLM tokens to activate it)',
 					)
-					localStorage.removeItem(localStorageConfigs.STELLAR_PUBLIC_KEY)
-					setConnectedWallet(null)
-					setStellarPubKey('')
-					store.clear()
+					onSignOut()
 				}
 			},
 		})
 	}
 
 	const onSignOut = async () => {
-		if (connectedWallet === 'stellar') {
-			localStorage.removeItem(localStorageConfigs.CONNECTED_WALLET)
-			localStorage.removeItem(localStorageConfigs.STELLAR_PUBLIC_KEY)
-			setConnectedWallet(null)
-			setStellarPubKey('')
-			store.clear()
-		}
+		localStorage.removeItem(localStorageConfigs.CONNECTED_WALLET)
+		localStorage.removeItem(localStorageConfigs.STELLAR_PUBLIC_KEY)
+		setConnectedWallet(null)
+		localStorageSavedWallet.remove()
+		setStellarPubKey('')
+		store.clear()
 	}
 
 	useEffect(() => {
@@ -217,6 +237,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 		}
 		initialization()
 	}, [])
+
 
 	// NEAR effect subscription disabled
 

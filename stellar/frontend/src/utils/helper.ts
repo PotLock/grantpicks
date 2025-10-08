@@ -1,3 +1,4 @@
+import { SavedWallet } from '@/app/providers/types'
 import { envVarConfigs } from '@/configs/env-var'
 import {
 	HORIZON_RPC_URL,
@@ -200,3 +201,36 @@ export const extractChainId = (round: GPRound) => {
 		return 'near'
 	}
 }
+
+export const localStorageSavedWallet = {
+  get: () => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const savedWalletString = window.localStorage.getItem(
+        envVarConfigs.LOCAL_STORAGE_SAVED_WALLET,
+      );
+      return savedWalletString
+        ? (JSON.parse(savedWalletString) as SavedWallet)
+        : null;
+    } catch {
+      return null;
+    }
+  },
+  set: (savedWallet: SavedWallet) => {
+    if (typeof window === 'undefined') return;
+    try {
+      return window.localStorage.setItem(
+        envVarConfigs.LOCAL_STORAGE_SAVED_WALLET,
+        JSON.stringify(savedWallet),
+      );
+    } catch {}
+  },
+  remove: () => {
+    if (typeof window === 'undefined') return;
+    try {
+      return window.localStorage.removeItem(
+        envVarConfigs.LOCAL_STORAGE_SAVED_WALLET,
+      );
+    } catch {}
+  },
+};

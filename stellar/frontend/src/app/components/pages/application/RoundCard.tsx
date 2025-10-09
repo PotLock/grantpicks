@@ -304,7 +304,7 @@ export const RoundCard = ({
 			return 'Apply'
 		}
 		if (isApplicationClosed) {
-			return 'No application allowed'
+			return 'Apply'
 		}
 		if (isApplicationOpen && !isAdminOrOwner) {
 			return 'Apply'
@@ -313,7 +313,7 @@ export const RoundCard = ({
 			return 'View Applications'
 		}
 		if (isCompleted) {
-			if (!storage.my_address) return 'Connect Wallet'
+			if (!storage.my_address) return 'Login'
 			return 'View Result'
 		}
 		return 'Application Closed'
@@ -362,8 +362,8 @@ export const RoundCard = ({
 	}
 
 	const currentStageColorClass = () => {
-		if (isApplicationOpen) return 'fill-grantpicks-green-500'
-		if (isVotingOpen) return 'fill-grantpicks-green-500'
+		if (isApplicationOpen) return 'fill-grantpicks-green-700'
+		if (isVotingOpen) return 'fill-grantpicks-green-700'
 		if (isNotStarted) return 'fill-amber-500'
 		if (isApplicationClosed) return 'fill-grantpicks-black-400'
 		if (isCompleted) return 'fill-grantpicks-amber-500'

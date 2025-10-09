@@ -51,7 +51,7 @@ const AddProjectsModal = ({
 	const storage = useAppStorage()
 	const potlockApi = usePotlockService()
 
-	useEffect(() => {}, [showProjectDetailDrawer])
+	useEffect(() => { }, [showProjectDetailDrawer])
 
 	const onFetchProjects = async (key: { skip: number; limit: number }) => {
 		try {
@@ -86,8 +86,8 @@ const AddProjectsModal = ({
 	})
 	const projects = projectData
 		? ([] as IndexerProjectResponse[]).concat(
-				...(projectData as any as IndexerProjectResponse[]),
-			)
+			...(projectData as any as IndexerProjectResponse[]),
+		)
 		: []
 	const hasMore = projectData ? projectData.length >= LIMIT_SIZE : false
 
@@ -142,7 +142,7 @@ const AddProjectsModal = ({
 													project: selected as unknown as Project,
 												}))
 											}}
-											className="text-base font-normal"
+											className="text-base text-grantpicks-black-950 font-normal"
 										>
 											{prettyTruncate(selected.name, 20, 'address')}
 										</button>
@@ -219,12 +219,12 @@ const AddProjectsModal = ({
 											onClick={() =>
 												tempSelectedProjects.length < 10
 													? setTempSelectedProjects((prev) => [
-															project,
-															...prev,
-														])
+														project,
+														...prev,
+													])
 													: toast.error('Max. 10 projects', {
-															style: toastOptions.error.style,
-														})
+														style: toastOptions.error.style,
+													})
 											}
 										>
 											<Image
@@ -234,7 +234,7 @@ const AddProjectsModal = ({
 												width={24}
 												height={24}
 											/>
-											<p className="text-base font-normal">
+											<p className="text-base text-grantpicks-black-950 font-normal">
 												{prettyTruncate(project.name, 20, 'address')}
 											</p>
 										</div>

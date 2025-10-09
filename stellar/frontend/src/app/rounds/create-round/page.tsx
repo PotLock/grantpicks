@@ -109,6 +109,7 @@ const CreateRoundPage = () => {
 	} = useForm<CreateRoundData>({
 		mode: 'onChange',
 		defaultValues: {
+			contact_type: '',
 			vote_per_person: 1,
 			apply_duration_start: undefined,
 			apply_duration_end: undefined,
@@ -1005,26 +1006,28 @@ const CreateRoundPage = () => {
 								</p>
 								<div className="flex flex-col md:flex-row items-center gap-4">
 									<div className="relative w-full md:w-44 lg:w-52" ref={buttonRef}>
+										<input type="hidden" {...register('contact_type', { required: true })} />
 										<button
-											{...register('contact_type', { required: true })}
+											type="button"
+											// visual trigger only; value is managed via hidden input above
 											onClick={() => setShowContactType(true)}
 											className={clsx(
 												'border w-full border-grantpicks-black-200 rounded-xl py-3 px-3 flex items-center justify-between cursor-pointer hover:opacity-80 transition',
-												errors.contact_address?.type === 'required' &&
+												errors.contact_type?.type === 'required' &&
 												'border-red-500',
 											)}
 										>
 											<p
 												className={clsx(
 													'text-sm font-normal ',
-													watch().contact_type === ''
+													watch('contact_type') === ''
 														? 'text-grantpicks-black-950/50'
 														: 'text-grantpicks-black-950',
 												)}
 											>
-												{watch().contact_type === ''
+												{watch('contact_type') === ''
 													? 'Select platform'
-													: watch().contact_type}
+													: watch('contact_type')}
 											</p>
 											<IconUnfoldMore
 												size={24}
@@ -1040,46 +1043,86 @@ const CreateRoundPage = () => {
 												buttonRef={buttonRef}
 											>
 												<div className="border border-black/10 p-3 rounded-xl space-y-3 bg-white w-full">
-													<p
-														onClick={() => {
-															setValue('contact_type', 'Telegram')
-															trigger('contact_address')
+													<button
+														type="button"
+														onPointerDown={(e) => {
+															e.preventDefault()
+															e.stopPropagation()
+															setValue('contact_type', 'Telegram', { shouldValidate: true, shouldDirty: true })
+															trigger(['contact_type', 'contact_address'])
 															setShowContactType(false)
 														}}
-														className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
+														onClick={(e) => {
+															e.preventDefault()
+															e.stopPropagation()
+															setValue('contact_type', 'Telegram', { shouldValidate: true, shouldDirty: true })
+															trigger(['contact_type', 'contact_address'])
+															setShowContactType(false)
+														}}
+														className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition w-full text-left"
 													>
 														Telegram
-													</p>
-													<p
-														onClick={() => {
-															setValue('contact_type', 'Instagram')
-															trigger('contact_address')
+													</button>
+													<button
+														type="button"
+														onPointerDown={(e) => {
+															e.preventDefault()
+															e.stopPropagation()
+															setValue('contact_type', 'Instagram', { shouldValidate: true, shouldDirty: true })
+															trigger(['contact_type', 'contact_address'])
 															setShowContactType(false)
 														}}
-														className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
+														onClick={(e) => {
+															e.preventDefault()
+															e.stopPropagation()
+															setValue('contact_type', 'Instagram', { shouldValidate: true, shouldDirty: true })
+															trigger(['contact_type', 'contact_address'])
+															setShowContactType(false)
+														}}
+														className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition w-full text-left"
 													>
 														Instagram
-													</p>
-													<p
-														onClick={() => {
-															setValue('contact_type', 'Twitter')
-															trigger('contact_address')
+													</button>
+													<button
+														type="button"
+														onPointerDown={(e) => {
+															e.preventDefault()
+															e.stopPropagation()
+															setValue('contact_type', 'Twitter', { shouldValidate: true, shouldDirty: true })
+															trigger(['contact_type', 'contact_address'])
 															setShowContactType(false)
 														}}
-														className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
+														onClick={(e) => {
+															e.preventDefault()
+															e.stopPropagation()
+															setValue('contact_type', 'Twitter', { shouldValidate: true, shouldDirty: true })
+															trigger(['contact_type', 'contact_address'])
+															setShowContactType(false)
+														}}
+														className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition w-full text-left"
 													>
 														Twitter
-													</p>
-													<p
-														onClick={() => {
-															setValue('contact_type', 'Email')
-															trigger('contact_address')
+													</button>
+													<button
+														type="button"
+														onPointerDown={(e) => {
+															e.preventDefault()
+															e.stopPropagation()
+															setValue('contact_type', 'Email', { shouldValidate: true, shouldDirty: true })
+															trigger(['contact_type', 'contact_address'])
 															setShowContactType(false)
 														}}
-														className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
+														onClick={(e) => {
+															e.preventDefault()
+															e.stopPropagation()
+															setValue('contact_type', 'Email', { shouldValidate: true, shouldDirty: true })
+															trigger(['contact_type', 'contact_address'])
+															setShowContactType(false)
+														}}
+														className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition w-full text-left"
 													>
 														Email
-													</p>
+													</button>
 												</div>
 											</Menu>
 										)}

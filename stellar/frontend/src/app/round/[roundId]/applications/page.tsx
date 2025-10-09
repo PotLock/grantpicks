@@ -53,7 +53,7 @@ const RoundApplicationsPage = () => {
 	}
 	return (
 		<div className="max-w-7xl mx-auto px-4 md:px-6">
-			<div className="sticky top-0 z-10 -mx-4 md:-mx-6 px-4 md:px-6 bg-white pt-4 pb-3 border-b border-black/10">
+			<div className="sticky top-0 z-10 -mx-4 md:-mx-6 px-4 md:px-0 bg-white pt-4 pb-3 border-b border-black/10">
 				<div
 					className="flex items-center overflow-x-auto space-x-2 md:space-x-3"
 					role="tablist"

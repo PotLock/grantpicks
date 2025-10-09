@@ -29,7 +29,7 @@ const RoundCardActions: React.FC<RoundCardActionsProps> = ({
 				<p className="text-xs font-semibold text-grantpicks-black-950">Current Stage:</p>
 				<div className="text-xs font-semibold text-grantpicks-black-950 flex items-center gap-2">
 					{helperText && (
-						<IconDot size={10} className={helperColorClass || 'fill-grantpicks-black-400'} />
+						<IconDot size={10} className={helperColorClass || 'fill-grantpicks-green-400'} />
 					)}
 					<span>{helperText}</span>
 				</div>

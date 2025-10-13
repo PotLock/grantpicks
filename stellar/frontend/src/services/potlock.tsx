@@ -60,6 +60,11 @@ export class PotlockService {
 			: null
 	}
 
+	async getProjectById(projectId: string) {
+		const result = await this._axios?.get(`/${projectId}/projects`)
+		return result?.data
+	}
+
 	async getLists(chain: string = 'stellar') {
 		const result = await this._axios?.get(`/lists?chain=${chain}`)
 		return result?.data.results

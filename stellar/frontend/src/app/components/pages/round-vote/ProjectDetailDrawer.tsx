@@ -9,6 +9,7 @@ import Button from '../../commons/Button'
 import IconArrowOutward from '../../svgs/IconArrowOutward'
 import Link from 'next/link'
 import { Project } from 'project-registry-client'
+import { GPProject } from '@/models/project'
 import Image from 'next/image'
 import { Contact } from 'round-client'
 import IconTelegram from '../../svgs/IconTelegram'
@@ -17,7 +18,7 @@ import IconTwitter from '../../svgs/IconTwitter'
 import IconEmail from '../../svgs/IconEmail'
 
 interface ProjectDetailDrawerProps extends IDrawerProps {
-	projectData?: Project
+	projectData?: Project | GPProject
 }
 
 const RoundDetailContact = ({ contact }: { contact: Contact }) => {
@@ -62,7 +63,7 @@ const RoundDetailContact = ({ contact }: { contact: Contact }) => {
 			<Link href={generateLink()} target="_blank">
 				<Button
 					color="alpha-50"
-					onClick={() => {}}
+					onClick={() => { }}
 					className="!text-sm !font-semibold"
 				>
 					Chat
@@ -99,14 +100,20 @@ const ProjectDetailDrawer = ({
 		) {
 			fetchIframe()
 		}
-	}, [isOpen])
+	}, [isOpen, projectData?.video_url])
+
+	const getOwnerId = (): string => {
+		const owner: any = (projectData as any)?.owner
+		if (!owner) return ''
+		return typeof owner === 'string' ? owner : owner?.id || ''
+	}
 
 	return (
 		<Drawer onClose={onClose} isOpen={isOpen}>
 			<div className="bg-white flex flex-col w-full h-full overflow-y-auto text-grantpicks-black-950">
 				<div className="bg-grantpicks-black-50 flex flex-col items-center justify-center pt-10 md:pt-12 px-3 md:px-5 pb-6">
 					<Image
-						src={`https://www.tapback.co/api/avatar/${projectData?.owner}`}
+						src={`https://www.tapback.co/api/avatar/${getOwnerId()}`}
 						alt=""
 						className="rounded-full object-fill mb-2 md:mb-3"
 						width={56}
@@ -193,36 +200,35 @@ const ProjectDetailDrawer = ({
 						<div className="space-y-3 md:space-y-4">
 							<div className="flex items-center space-x-2">
 								<Image
-									src={`https://www.tapback.co/api/avatar/${projectData?.owner}`}
+									src={`https://www.tapback.co/api/avatar/${getOwnerId()}`}
 									alt="admin"
 									width={24}
 									height={24}
 								/>
 								<div>
 									<p className="text-sm md:text-base font-bold">
-										{prettyTruncate(projectData?.owner, 20, 'address')}
+										{prettyTruncate(getOwnerId(), 20, 'address')}
 									</p>
 								</div>
 							</div>
-							{projectData?.team_members?.map((admin, index) => (
-								<div className="flex items-center space-x-2" key={index}>
-									<Image
-										src={`https://www.tapback.co/api/avatar/${admin.value || (String(admin) as string)}`}
-										alt="admin"
-										width={24}
-										height={24}
-									/>
-									<div>
-										<p className="text-sm md:text-base font-bold">
-											{prettyTruncate(
-												admin.value || (String(admin) as string),
-												20,
-												'address',
-											)}
-										</p>
+							{projectData?.team_members?.map((member, index) => {
+								const memberId = typeof member === 'string' ? member : (member as any)?.value
+								return (
+									<div className="flex items-center space-x-2" key={index}>
+										<Image
+											src={`https://www.tapback.co/api/avatar/${memberId}`}
+											alt="admin"
+											width={24}
+											height={24}
+										/>
+										<div>
+											<p className="text-sm md:text-base font-bold">
+												{prettyTruncate(memberId, 20, 'address')}
+											</p>
+										</div>
 									</div>
-								</div>
-							))}
+								)
+							})}
 						</div>
 					</div>
 					<div className="mb-6 md:mb-8">

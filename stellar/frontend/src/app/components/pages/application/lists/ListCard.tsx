@@ -33,8 +33,10 @@ export const ListCard = ({ list, stellarPubKey }: ListCardProps) => {
 			{/* Image Container */}
 			<div className="relative h-[180px] overflow-hidden">
 				<Image
-					src={list.cover_image_url || '/assets/images/default-list-image.png'}
+					src={list?.cover_image_url || '/assets/images/default-list-image.png'}
 					alt={list.name}
+					loading="lazy"
+					unoptimized
 					className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
 					width={300}
 					height={180}

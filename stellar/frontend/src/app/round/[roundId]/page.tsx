@@ -85,9 +85,7 @@ const RoundAboutPage = () => {
 			<div>
 				<div className="flex items-center justify-between flex-wrap gap-3 mb-3">
 					<SectionTitle>Duration</SectionTitle>
-					<button className="flex items-center gap-2 text-sm font-semibold text-grantpicks-black-950 hover:opacity-80 transition">
-						Edit Duration
-					</button>
+
 				</div>
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 					<div>

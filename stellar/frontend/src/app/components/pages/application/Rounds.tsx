@@ -281,7 +281,7 @@ const ApplicationRounds = () => {
 						</div>
 					</div>
 					<div className="flex w-full flex-row items-center justify-center gap-3 md:w-auto md:justify-end">
-						<div className="md:col-span-3 flex-shrink-0">
+						<div className="relative md:col-span-3 flex-shrink-0">
 							<div
 								onClick={() => setShowSortType(!showSortType)}
 								className="border border-black/10 rounded-full py-3 px-3 flex items-center justify-between cursor-pointer hover:opacity-80 transition"

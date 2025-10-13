@@ -409,8 +409,8 @@ export const RoundCard = ({
 			{showFundRoundModal && (
 				<FundRoundModal
 					isOpen={showFundRoundModal}
-					onClose={(e: any) => {
-						e.stopPropagation()
+					onClose={(e?: any) => {
+						e?.stopPropagation()
 						setShowFundRoundModal(false)
 					}}
 					doc={doc}

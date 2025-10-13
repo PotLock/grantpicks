@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import Button from './Button'
 import ChooseWalletMenu from '../pages/application/ChooseWalletMenu'
 import { useWallet } from '@/app/providers/WalletProvider'
@@ -30,6 +30,7 @@ const TopNav = () => {
 		useWallet()
 	const { showMenu, setShowMenu } = useGlobalContext()
 	const [navOpen, setNavOpen] = useState(false)
+	const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 	const router = useRouter()
 
 	// Close nav dropdown on route change
@@ -99,7 +100,22 @@ const TopNav = () => {
 			</div>
 			{/* User/Wallet section */}
 			<div className="flex items-center space-x-2 sm:space-x-4">
-				<div className="relative">
+				<div
+					className="relative"
+					onMouseEnter={() => {
+						if (hoverTimerRef.current) {
+							clearTimeout(hoverTimerRef.current)
+							hoverTimerRef.current = null
+						}
+						setShowMenu('user')
+					}}
+					onMouseLeave={() => {
+						if (hoverTimerRef.current) {
+							clearTimeout(hoverTimerRef.current)
+						}
+						hoverTimerRef.current = setTimeout(() => setShowMenu(null), 200)
+					}}
+				>
 					{!!connectedWallet ? (
 						<button
 							onClick={() => setShowMenu((prev) => (!!prev ? null : 'user'))}
@@ -152,6 +168,19 @@ const TopNav = () => {
 						onShowChooseWallet={() => setShowMenu('choose-wallet')}
 						onCloseChooseWalletMenu={() => setShowMenu(null)}
 						onClose={() => setShowMenu(null)}
+						onMouseEnter={() => {
+							if (hoverTimerRef.current) {
+								clearTimeout(hoverTimerRef.current)
+								hoverTimerRef.current = null
+							}
+							setShowMenu('user')
+						}}
+						onMouseLeave={() => {
+							if (hoverTimerRef.current) {
+								clearTimeout(hoverTimerRef.current)
+							}
+							hoverTimerRef.current = setTimeout(() => setShowMenu(null), 200)
+						}}
 					/>
 					<ChooseWalletMenu
 						isOpen={showMenu === 'choose-wallet'}

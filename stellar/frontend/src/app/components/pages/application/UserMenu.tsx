@@ -18,18 +18,26 @@ const UserMenu = ({
 	onCloseChooseWalletMenu,
 	onClose,
 	isOpen,
+	onMouseEnter,
+	onMouseLeave,
 }: {
 	isOpen: boolean
 	onShowChooseWallet: () => void
 	onCloseChooseWalletMenu: () => void
 	onClose: () => void
+	onMouseEnter?: () => void
+	onMouseLeave?: () => void
 }) => {
 	const router = useRouter()
 	const { onSignOut, stellarPubKey, onOpenStellarWallet } = useWallet()
 
 	return (
 		<Menu isOpen={isOpen} onClose={onClose} position={`right-0 -bottom-72`}>
-			<div className="p-4 rounded-t-2xl md:rounded-2xl bg-white shadow-xl border border-grantpicks-black-200 min-w-[320px]">
+			<div
+				onMouseEnter={onMouseEnter}
+				onMouseLeave={onMouseLeave}
+				className={`p-4 rounded-t-2xl md:rounded-2xl bg-white shadow-xl border border-grantpicks-black-200 min-w-[320px] transition-all duration-150 ${isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`}
+			>
 				<div className="flex items-center justify-between mb-4">
 					<div className="flex items-center space-x-2">
 						<Image

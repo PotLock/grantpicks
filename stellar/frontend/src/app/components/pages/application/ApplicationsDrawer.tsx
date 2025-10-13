@@ -31,6 +31,9 @@ import { usePotlockService } from '@/services/potlock'
 import { GPApplication } from '@/models/application'
 import { NearProjectApplication } from '@/services/near/type'
 import { RoundApplication } from 'round-client'
+import ProjectDetailDrawer from '../round-vote/ProjectDetailDrawer'
+import { Project } from 'project-registry-client'
+import { GPProject } from '@/models/project'
 
 interface ApplicationsDrawerProps extends IDrawerProps {
 	doc: GPRound
@@ -54,6 +57,13 @@ export const ApplicationItem = ({
 	const [openAcceptModal, setOpenAcceptModal] = useState<boolean>(false)
 	const [openRejectModal, setOpenRejectModal] = useState<boolean>(false)
 	const storage = useAppStorage()
+	const [showProjectDetailDrawer, setShowProjectDetailDrawer] = useState<{
+		isOpen: boolean
+		project: Project | GPProject | null
+	}>({
+		isOpen: false,
+		project: null,
+	})
 
 	const onAcceptReject = async (type: 'accept' | 'reject', note: string) => {
 		try {
@@ -103,8 +113,13 @@ export const ApplicationItem = ({
 		}
 	}
 
+
 	return (
-		<div className="bg-grantpicks-black-50 rounded-xl border border-grantpicks-black-200">
+		<div onClick={() => setShowProjectDetailDrawer((prev) => ({
+			...prev,
+			isOpen: true,
+			project: item.project as unknown as Project | GPProject,
+		}))} className="bg-grantpicks-black-50 rounded-xl border border-grantpicks-black-200">
 			{type === 'Pending' ? (
 				<div className="flex items-center justify-between bg-white px-3 md:px-4 py-2 rounded-t-xl">
 					<div className="flex items-center space-x-1 py-1">
@@ -233,6 +248,16 @@ export const ApplicationItem = ({
 				roundData={roundData}
 				applicationData={item}
 				onConfirm={(note) => onAcceptReject('reject', note)}
+			/>
+			<ProjectDetailDrawer
+				isOpen={showProjectDetailDrawer?.isOpen || false}
+				onClose={() =>
+					setShowProjectDetailDrawer((prev) => ({
+						...prev,
+						isOpen: false,
+					}))
+				}
+				projectData={showProjectDetailDrawer.project || undefined}
 			/>
 		</div>
 	)

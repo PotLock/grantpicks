@@ -14,7 +14,7 @@ import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { GPRound } from '@/models/round'
 import IconNear from '../../svgs/IconNear'
-import { formatNearAmount, parseNearAmount } from 'near-api-js/lib/utils/format'
+import { formatNearAmount } from 'near-api-js/lib/utils/format'
 import { useForm } from 'react-hook-form'
 import { StrKey } from '@stellar/stellar-base'
 import { toastOptions } from '@/constants/style'
@@ -44,7 +44,6 @@ const FundRoundModal = ({
 	const {
 		register,
 		watch,
-		handleSubmit,
 		formState: { errors },
 		setError,
 		setValue,
@@ -96,45 +95,46 @@ const FundRoundModal = ({
 		try {
 			openPageLoading()
 
-			if (storage.chainId === 'stellar') {
-				const contracts = storage.getStellarContracts()
+			const contracts = storage.getStellarContracts()
 
-				if (!contracts) {
-					return
-				}
+			if (!contracts) {
+				return
+			}
 
-				const tx = await depositFundRound(
-					{
-						round_id: BigInt(doc.on_chain_id),
-						caller: stellarPubKey,
-						amount: BigInt(parseToStroop(amount)),
-						memo: '',
-						referrer_id: watch('referrer_id') || undefined,
-					},
-					contracts,
-				)
-				const txHash = await contracts.signAndSendTx(
-					stellarKit as StellarWalletsKit,
-					tx.toXDR(),
-					stellarPubKey,
-				)
-				if (txHash) {
-					dismissPageLoading()
-					setSuccessFundRoundModalProps((prev) => ({
-						...prev,
-						isOpen: true,
-						amount,
-						doc,
-						txHash,
-					}))
-					await mutateRounds()
-					onClose()
-				}
+			const tx = await depositFundRound(
+				{
+					round_id: BigInt(doc.on_chain_id),
+					caller: stellarPubKey,
+					amount: BigInt(parseToStroop(amount)),
+					memo: '',
+					referrer_id: watch('referrer_id') || undefined,
+				},
+				contracts,
+			)
+			const txHash = await contracts.signAndSendTx(
+				stellarKit as StellarWalletsKit,
+				tx.toXDR(),
+				stellarPubKey,
+			)
+			if (txHash) {
+				dismissPageLoading()
+				setSuccessFundRoundModalProps((prev) => ({
+					...prev,
+					isOpen: true,
+					amount,
+					doc,
+					txHash,
+				}))
+				await mutateRounds()
+				onClose()
 			}
 		} catch (error: any) {
 			dismissPageLoading()
 			toast.error(error.message, { style: toastOptions.error.style })
 			console.log('error', error)
+		}
+		finally {
+			dismissPageLoading()
 		}
 	}
 
@@ -145,13 +145,10 @@ const FundRoundModal = ({
 
 	// Calculate progress percentage
 	const progressPercentage =
-		storage.chainId !== 'near'
-			? (parseFloat(formatStroopToXlm(BigInt(doc.current_vault_balance))) /
-				parseFloat(formatStroopToXlm(BigInt(doc.expected_amount)))) *
-			100
-			: (parseFloat(formatNearAmount(doc.current_vault_balance)) /
-				parseFloat(formatNearAmount(doc.expected_amount))) *
-			100
+		(parseFloat(formatStroopToXlm(BigInt(doc.current_vault_balance))) /
+			parseFloat(formatStroopToXlm(BigInt(doc.expected_amount)))) *
+		100
+
 
 	return (
 		<Modal

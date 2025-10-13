@@ -21,6 +21,9 @@ import { ListProjects } from './ListProjects'
 import IconMoreVert from '@/app/components/svgs/IconMoreVert'
 import { getProjectApplicant } from '@/services/stellar/project-registry'
 import { useModalContext } from '@/app/providers/ModalProvider'
+import toast from 'react-hot-toast'
+import { toastOptions } from '@/constants/style'
+import IconCopy from '@/app/components/svgs/IconCopy'
 
 export const SingleListPage = () => {
 	const params = useParams()
@@ -158,19 +161,34 @@ export const SingleListPage = () => {
 									{list?.name}
 								</h1>
 								<div className="flex flex-col sm:flex-row sm:items-center gap-y-2 sm:gap-x-2 py-2 text-gray-500 text-sm">
-									<div className="flex items-center gap-x-2">
+									<div className="flex items-center space-x-2">
 										<Image
 											src={`https://www.tapback.co/api/avatar/${list?.owner?.id}`}
 											alt="image"
-											width={24}
-											height={24}
+											width={25}
+											height={25}
 										/>
-										<span>Created by</span>
-										<p className="font-semibold text-grantpicks-black-950 text-base">
-											{list?.owner?.id
-												? prettyTruncate(list?.owner?.id, 10, 'address')
-												: list?.owner?.id}
-										</p>
+										<div>
+											<p className="text-sm font-semibold text-grantpicks-black-950"></p>
+											<div className="flex items-center space-x-2">
+												<p
+													className="text-sm font-normal text-grantpicks-black-600"
+													title={list?.owner?.id || ''}
+												>
+													{list?.owner?.id ? prettyTruncate(list?.owner?.id, 10, 'address') : ''}
+												</p>
+												<IconCopy
+													size={16}
+													className="stroke-grantpicks-black-600 cursor-pointer hover:opacity-70 transition"
+													onClick={async () => {
+														await navigator.clipboard.writeText(list?.owner?.id || '')
+														toast.success('Address is copied', {
+															style: toastOptions.success.style,
+														})
+													}}
+												/>
+											</div>
+										</div>
 									</div>
 									<span className="hidden sm:inline mx-2">•</span>
 									<div className="flex items-center gap-x-2">

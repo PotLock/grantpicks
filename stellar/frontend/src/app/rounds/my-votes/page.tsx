@@ -44,14 +44,19 @@ const ApplicationRoundsItem = ({
 	const { connectedWallet } = useWallet()
 
 	const getSpecificTime = () => {
-		if (new Date().getTime() < new Date(doc.voting_end || '').getTime()) {
+		if (doc?.voting_end && new Date().getTime() < new Date(doc?.voting_end || '').getTime()) {
 			return `on-going`
-		} else if (doc.round_complete) {
+		} else if (doc?.round_complete) {
 			return `ended`
 		} else {
 			return `payout-pending`
 		}
 	}
+
+	if (!doc) {
+		return ""
+	}
+
 
 	return (
 		<div className="p-4 md:p-5 rounded-2xl border border-black/10 bg-white">
@@ -329,7 +334,7 @@ const MyVotesPage = () => {
 						}
 					>
 						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
-							{rounds.map((doc, idx) => (
+							{!isLoading && !isValidating && rounds.map((doc, idx) => (
 								<ApplicationRoundsItem
 									key={idx}
 									doc={doc}

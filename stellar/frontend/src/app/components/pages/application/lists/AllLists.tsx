@@ -41,6 +41,7 @@ export const AllLists = () => {
 		})
 	}, [data, debouncedSearchQuery])
 
+
 	return (
 		<div className="flex min-h-[90vh] flex-col gap-y-4">
 			<div className="flex flex-col gap-4 justify-between items-center md:flex-row mt-10 gap-y-4">

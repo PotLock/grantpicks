@@ -30,10 +30,14 @@ if (typeof window !== 'undefined') {
 }
 
 export const networks = {
-	testnet: {
-		networkPassphrase: 'Test SDF Network ; September 2015',
-		contractId: 'CALHL7KPBAPFMRHKMQGDR5MOZFCGSMEBJ5NXU2BA73RWRMKPP6JUYMFU',
-	},
+  testnet: {
+    networkPassphrase: "Test SDF Network ; September 2015",
+    contractId: "CCIJKRYCBOJ4CNY6EGINPTMX5OJLGGRVR3OFMM42NRY2YRKRHXS4UXPI",
+  },
+  public: {
+    networkPassphrase: "Public Global Stellar Network ; September 2015",
+    contractId: "CAF5DB2QTOH7XBG3PRG4CCYBSSWV245PC33DASEF454DZ3HJTJCM2LWU",
+  }
 } as const
 
 export type ApplicationStatus =

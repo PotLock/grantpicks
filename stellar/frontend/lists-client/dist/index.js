@@ -9,9 +9,13 @@ if (typeof window !== 'undefined') {
 }
 export const networks = {
     testnet: {
-        networkPassphrase: 'Test SDF Network ; September 2015',
-        contractId: 'CAJUJPM6KRM4I7JVXPNPLYWZMEXIZNALD6PKVR2JBX6JK7JGCJSQCTDG',
+        networkPassphrase: "Test SDF Network ; September 2015",
+        contractId: "CCLXSELRRF67M3K5JJYNT6HRTJN26JDJKZYKR5QTZAEZU2TSCF6OGFZT",
     },
+    public: {
+        networkPassphrase: "Public Global Stellar Network ; September 2015",
+        contractId: "CAFRPR2FE2ASZGZDGLCGGUGPUJMBHCPWXVAGZ3GZR5ITZIFPPSAG53B6",
+    }
 };
 export const Errors = {
     1: { message: 'NameCannotBeEmpty' },

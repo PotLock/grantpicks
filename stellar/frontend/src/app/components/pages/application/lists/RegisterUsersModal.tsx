@@ -37,7 +37,7 @@ export const RegisterUsersModal = ({
 
 	return (
 		<>
-			<div className="p-4 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-11/12 md:w-[35vw] lg:w-[35vw] bg-white rounded-lg flex flex-col gap-4 justify-center items-center">
+			<div className="p-4 absolute top-1/2 left-1/2 text-grantpicks-black-950 -translate-x-1/2 -translate-y-1/2 w-11/12 md:w-[35vw] lg:w-[35vw] bg-white rounded-lg flex flex-col gap-4 justify-center items-center">
 				<h1 className="text-2xl font-bold">
 					{type === 'SINGLE' ? 'Apply to List' : 'Register Project(s)'}
 				</h1>
@@ -73,12 +73,12 @@ export const RegisterUsersModal = ({
 							<div className="overflow-y-auto max-h-[20vh]">
 								{selectedProjects.map((selected, index) => (
 									<div
-										className="flex items-center justify-between p-2 hover:bg-grantpicks-black-200 transition"
+										className="flex items-center justify-between p-2 hover:bg-grantpicks-black-200 transition text-grantpicks-black-950"
 										key={index}
 									>
-										<div className="flex items-center space-x-2">
+										<div className="flex items-center gap-2 text-grantpicks-black-950">
 											<Image
-												src={`https://www.tapback.co/api/avatar/${selected.owner}`}
+												src={`https://www.tapback.co/api/avatar/${selected.owner?.id}`}
 												alt=""
 												className="rounded-full object-fill"
 												width={24}
@@ -101,7 +101,7 @@ export const RegisterUsersModal = ({
 							<h2
 								role="button"
 								onClick={() => setOpenAddProjectsModal(true)}
-								className="text-sm hover:underline text-center"
+								className="text-sm text-grantpicks-black-950 hover:underline text-center"
 							>
 								Add / remove Projects
 							</h2>
@@ -109,7 +109,7 @@ export const RegisterUsersModal = ({
 								onClick={() => {
 									handleBatchRegisterToList(
 										selectedProjects.map((project) => ({
-											registrant: project?.owner as unknown as string,
+											registrant: project?.owner?.id as unknown as string,
 											status: {
 												tag: data?.default_registration_status as string,
 												values: undefined,

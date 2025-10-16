@@ -9,9 +9,13 @@ if (typeof window !== 'undefined') {
 }
 export const networks = {
     testnet: {
-        networkPassphrase: 'Test SDF Network ; September 2015',
-        contractId: 'CB7NHKUAQYXXLSWHWV57D6RDL3G57376DOR2JOIF375QSVQGMH6GVWTN',
+        networkPassphrase: "Test SDF Network ; September 2015",
+        contractId: "CAI6747A7VHSYWL7KIJ3J43OJBM57IH3VC6HCAMEL4EQESEF2QFGIED7",
     },
+    public: {
+        networkPassphrase: "Public Global Stellar Network ; September 2015",
+        contractId: "CCSQPTVDGEGZFKJ7D53WTCHQF5CYE55YEL7NB256Y7UJUK2ZWJGS6NM3",
+    }
 };
 export const Errors = {
     1: { message: 'EmptyName' },

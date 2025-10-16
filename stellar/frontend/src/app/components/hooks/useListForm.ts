@@ -219,6 +219,7 @@ export const useListForm = ({ listId }: UseListFormProps) => {
 			}
 		} catch (error) {
 			toast.error('Failed to create list')
+			dismissPageLoading()
 			console.log('error', error)
 		} finally {
 			dismissPageLoading()

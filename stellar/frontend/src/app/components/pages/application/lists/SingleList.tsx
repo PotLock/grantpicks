@@ -270,7 +270,7 @@ export const SingleListPage = () => {
 						<div className="mb-6">
 							<div className="flex items-center justify-between mb-2">
 								<h2 className="text-lg font-semibold">About this List</h2>
-								{isOwner && (
+								{(isOwner || list?.admins.includes(stellarPubKey)) && (
 									<div className="relative">
 										<button
 											className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -298,15 +298,16 @@ export const SingleListPage = () => {
 												>
 													Edit List
 												</button>
-												{/* <button
-                          className="px-4 py-3 text-left text-sm hover:bg-gray-100 transition-colors"
-                          onClick={() => {
-                            setMenuOpen(false)
-                            setIsDeleteOpen(true)
-                          }}
-                        >
-                          Delete List
-                        </button> */}
+												<button
+													className="px-4 py-3 text-left text-sm hover:bg-gray-100 transition-colors"
+													disabled={!isOwner}
+													onClick={() => {
+														setMenuOpen(false)
+														setIsDeleteOpen(true)
+													}}
+												>
+													Delete List
+												</button>
 											</div>
 										</Menu>
 									</div>

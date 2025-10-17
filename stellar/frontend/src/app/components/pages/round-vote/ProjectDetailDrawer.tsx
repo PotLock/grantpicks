@@ -124,7 +124,7 @@ const ProjectDetailDrawer = ({
 					</p>
 				</div>
 				<div ref={embededYtHtmlRef} className="px-3 md:px-5 py-6">
-					{!ytIframe && (
+					{!ytIframe && projectData?.video_url && (
 						<div className="relative mb-6 md:mb-8">
 							<video
 								ref={videoRef}
@@ -172,14 +172,7 @@ const ProjectDetailDrawer = ({
 							{projectData?.overview}
 						</p>
 					</div>
-					<div className="mb-6 md:mb-8">
-						<p className="text-base md:text-xl font-semibold mb-3">
-							Why we are a public good
-						</p>
-						<p className="text-sm md:text-base text-grantpicks-black-600">
-							{projectData?.overview}
-						</p>
-					</div>
+
 					<div className="mb-6 md:mb-8">
 						<p className="text-xs font-semibold text-grantpicks-black-600 mb-3">
 							TOTAL FUNDING RAISED

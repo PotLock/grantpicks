@@ -47,7 +47,7 @@ import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import { useRouter } from 'next/navigation'
 import { PERIODS } from '@/constants/round'
 import { IRoundPeriodData } from '@/types/round'
-import { subDays } from 'date-fns'
+import { isSameDay, subDays } from 'date-fns'
 import { StrKey } from 'round-client'
 import IconInfoCircle from '@/app/components/svgs/IconInfoCircle'
 import { Tooltip } from 'react-tooltip'
@@ -800,6 +800,31 @@ const CreateRoundPage = () => {
 																field.onChange(start)
 																setValue('apply_duration_end', end)
 
+																const votingStart = watch().voting_duration_start as Date
+
+
+																const votingStartDate = new Date(votingStart)
+
+
+																const isCurrentDay = isSameDay(votingStartDate, new Date())
+
+																if (isCurrentDay) {
+																	toast.error(
+																		'Voting duration cleared: it must start at least 24 hours after application ends',
+																		{ style: toastOptions.error.style },
+																	)
+																	setValue('voting_duration_start', null, {
+																		shouldValidate: true,
+																		shouldDirty: true,
+																		shouldTouch: true,
+																	})
+																	setValue('voting_duration_end', null, {
+																		shouldValidate: true,
+																		shouldDirty: true,
+																		shouldTouch: true,
+																	})
+																}
+
 																if (!start || !end) return
 
 																const startDate = new Date(start)
@@ -875,7 +900,7 @@ const CreateRoundPage = () => {
 											<DatePicker
 												showIcon
 												minDate={
-													subDays(watch().apply_duration_end as Date, 0) ||
+													(watch().apply_duration_end ? subDays(watch().apply_duration_end as Date, 0) : undefined) ||
 													new Date()
 												}
 												selectsRange={true}

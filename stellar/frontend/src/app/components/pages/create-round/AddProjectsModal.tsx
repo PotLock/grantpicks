@@ -49,6 +49,7 @@ const AddProjectsModal = ({
 	const [showProjectDetailDrawer, setShowProjectDetailDrawer] =
 		useState<IProjectDetailOwner>({ isOpen: false, project: null })
 	const storage = useAppStorage()
+	const myAddress = storage.my_address
 	const potlockApi = usePotlockService()
 
 	useEffect(() => { }, [showProjectDetailDrawer])
@@ -208,9 +209,12 @@ const AddProjectsModal = ({
 								{projects
 									.filter(
 										(project) =>
+											// exclude already selected projects
 											!tempSelectedProjects
 												.map((tsp) => tsp.owner?.id)
-												.includes(project.owner?.id),
+												.includes(project.owner?.id) &&
+											// exclude projects owned by the connected account
+											project.owner?.id !== myAddress,
 									)
 									?.map((project, index) => (
 										<div

@@ -47,7 +47,7 @@ import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import { useRouter } from 'next/navigation'
 import { PERIODS } from '@/constants/round'
 import { IRoundPeriodData } from '@/types/round'
-import { subDays } from 'date-fns'
+import { isSameDay, subDays } from 'date-fns'
 import { StrKey } from 'round-client'
 import IconInfoCircle from '@/app/components/svgs/IconInfoCircle'
 import { Tooltip } from 'react-tooltip'
@@ -64,11 +64,9 @@ import IconLoading from '@/app/components/svgs/IconLoading'
 import IconExpandLess from '@/app/components/svgs/IconExpandLess'
 import IconExpandMore from '@/app/components/svgs/IconExpandMore'
 import InfiniteScroll from 'react-infinite-scroll-component'
-import { IGetListExternalResponse } from '@/types/on-chain'
 import { convertToBasisPoints, LIMIT_SIZE } from '@/constants/query'
 import useSWRInfinite from 'swr/infinite'
 import { GPRound } from '@/models/round'
-import { getLists } from '@/services/stellar/list'
 import { usePotlockService } from '@/services/potlock'
 import { APIListExternal } from '@/app/components/pages/application/lists/ListCard'
 
@@ -163,7 +161,7 @@ const CreateRoundPage = () => {
 				return
 			}
 
-			const projects = selectedProjects.map((p) => p.id)
+			const projects = selectedProjects.map((p) => p.on_chain_id)
 			const txAddProject = await addProjectsRound(
 				BigInt(roundId),
 				stellarPubKey,
@@ -375,6 +373,7 @@ const CreateRoundPage = () => {
 						data.referrer_fee_basis_points,
 					),
 				}
+
 
 				const txCreateRound = await createRound(
 					stellarPubKey,
@@ -801,6 +800,31 @@ const CreateRoundPage = () => {
 																field.onChange(start)
 																setValue('apply_duration_end', end)
 
+																const votingStart = watch().voting_duration_start as Date
+
+
+																const votingStartDate = new Date(votingStart)
+
+
+																const isCurrentDay = isSameDay(votingStartDate, new Date())
+
+																if (isCurrentDay) {
+																	toast.error(
+																		'Voting duration cleared: it must start at least 24 hours after application ends',
+																		{ style: toastOptions.error.style },
+																	)
+																	setValue('voting_duration_start', null, {
+																		shouldValidate: true,
+																		shouldDirty: true,
+																		shouldTouch: true,
+																	})
+																	setValue('voting_duration_end', null, {
+																		shouldValidate: true,
+																		shouldDirty: true,
+																		shouldTouch: true,
+																	})
+																}
+
 																if (!start || !end) return
 
 																const startDate = new Date(start)
@@ -876,7 +900,7 @@ const CreateRoundPage = () => {
 											<DatePicker
 												showIcon
 												minDate={
-													subDays(watch().apply_duration_end as Date, 0) ||
+													(watch().apply_duration_end ? subDays(watch().apply_duration_end as Date, 0) : undefined) ||
 													new Date()
 												}
 												selectsRange={true}

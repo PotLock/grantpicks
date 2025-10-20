@@ -64,11 +64,9 @@ import IconLoading from '@/app/components/svgs/IconLoading'
 import IconExpandLess from '@/app/components/svgs/IconExpandLess'
 import IconExpandMore from '@/app/components/svgs/IconExpandMore'
 import InfiniteScroll from 'react-infinite-scroll-component'
-import { IGetListExternalResponse } from '@/types/on-chain'
 import { convertToBasisPoints, LIMIT_SIZE } from '@/constants/query'
 import useSWRInfinite from 'swr/infinite'
 import { GPRound } from '@/models/round'
-import { getLists } from '@/services/stellar/list'
 import { usePotlockService } from '@/services/potlock'
 import { APIListExternal } from '@/app/components/pages/application/lists/ListCard'
 
@@ -163,7 +161,7 @@ const CreateRoundPage = () => {
 				return
 			}
 
-			const projects = selectedProjects.map((p) => p.id)
+			const projects = selectedProjects.map((p) => p.on_chain_id)
 			const txAddProject = await addProjectsRound(
 				BigInt(roundId),
 				stellarPubKey,
@@ -375,6 +373,7 @@ const CreateRoundPage = () => {
 						data.referrer_fee_basis_points,
 					),
 				}
+
 
 				const txCreateRound = await createRound(
 					stellarPubKey,

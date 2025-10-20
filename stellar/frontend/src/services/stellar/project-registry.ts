@@ -89,6 +89,7 @@ export type IndexerProjectResponse = Omit<Project, 'owner'> & {
 	owner: {
 		id: string
 	}
+	on_chain_id: bigint
 }
 
 export const getProjects: (

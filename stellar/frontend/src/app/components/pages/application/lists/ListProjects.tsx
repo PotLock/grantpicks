@@ -150,7 +150,7 @@ const ProjectCard = ({
 		listRegistrationStatuses[status] || listRegistrationStatuses['Pending']
 	const badge = (
 		<span
-			className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium mt-2"
+			className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium"
 			style={{
 				color: badgeStyle.color,
 				background: badgeStyle.background,
@@ -167,9 +167,9 @@ const ProjectCard = ({
 
 	return (
 		<div className="flex flex-col w-full md:w-[360px] bg-white rounded-2xl border border-gray-200 shadow-sm p-6  min-h-[260px] transition-all hover:shadow-md hover:border-gray-300">
-			<div className="flex items-center gap-4 w-full">
+			<div className="flex items-start gap-4 w-full">
 				<div className="relative">
-					<div className="rounded-full p-[3px] bg-gradient-to-tr from-emerald-400 to-cyan-400">
+					<div className="rounded-full p-[3px] bg-gradient-to-tr from-emerald-400 to-cyan-400 shadow-sm">
 						<Image
 							src={`https://www.tapback.co/api/avatar/${project.registrant_id}`}
 							alt=""
@@ -180,7 +180,7 @@ const ProjectCard = ({
 					</div>
 				</div>
 				<div className="flex-1 min-w-0">
-					<div className="font-semibold text-lg leading-snug">
+					<div className="font-semibold text-lg leading-tight">
 						{data?.name || prettyTruncate(project.registrant_id, 20, 'address')}
 					</div>
 					<div
@@ -190,7 +190,7 @@ const ProjectCard = ({
 								style: toastOptions.success.style,
 							})
 						}}
-						className="relative group flex items-center gap-2 mt-1"
+						className="relative group inline-flex items-center gap-2 mt-1"
 					>
 						<span className="text-sm cursor-pointer text-gray-500 font-mono truncate">
 							{prettyTruncate(project.registrant_id, 20, 'address')}
@@ -199,15 +199,15 @@ const ProjectCard = ({
 							size={16}
 							className="fill-gray-300 cursor-pointer group-hover:opacity-80 transition"
 						/>
-						<div className="absolute w-[300px] z-50 left-0 top-full mt-2 rounded-md whitespace-normal break-all h-auto bg-grantpicks-black-950 text-white px-3 py-1 shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition text-sm md:text-sm font-semibold">
+						<div className="absolute w-[300px] z-50 left-0 top-full mt-2 rounded-md whitespace-normal break-all h-auto bg-grantpicks-black-950 text-white px-3 py-1 shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition text-xs md:text-sm font-semibold">
 							{project.registrant_id}
 						</div>
 					</div>
 				</div>
 			</div>
-			<div className="mt-3">{badge}</div>
+			<div className="mt-2">{badge}</div>
 			<p
-				className="mt-3 text-sm text-gray-600"
+				className="mt-2 text-[15px] leading-relaxed text-gray-700"
 				style={{
 					display: '-webkit-box',
 					WebkitLineClamp: 2,

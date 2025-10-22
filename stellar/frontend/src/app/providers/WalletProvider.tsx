@@ -271,7 +271,7 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 		})
 	}
 
-	const onSignOut = async () => {
+	const onSignOut = () => {
 		localStorage.removeItem(localStorageConfigs.CONNECTED_WALLET)
 		localStorage.removeItem(localStorageConfigs.STELLAR_PUBLIC_KEY)
 		setConnectedWallet(null)

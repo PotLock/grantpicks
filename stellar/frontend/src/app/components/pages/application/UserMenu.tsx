@@ -126,10 +126,9 @@ const UserMenu = ({
 					</div>
 					<div
 						className="flex items-center space-x-3 cursor-pointer hover:opacity-70 transition"
-						onClick={async () => {
-							await onSignOut()
+						onClick={() => {
+							onSignOut()
 							onCloseChooseWalletMenu()
-							router.push(`/rounds`)
 						}}
 					>
 						<IconLogout size={24} className="fill-grantpicks-red-400" />

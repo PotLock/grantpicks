@@ -14,7 +14,7 @@ export interface IWalletContext {
 	connectedWallet: 'near' | 'stellar' | null
 	profileData: IAccount | undefined
 
-	onSignOut: () => Promise<void>
+	onSignOut: () => void
 	// stellar
 	currentBalance: number | undefined | null
 	stellarKit: StellarWalletsKit | null

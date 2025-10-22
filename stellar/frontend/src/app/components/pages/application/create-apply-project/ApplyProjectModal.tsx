@@ -62,7 +62,10 @@ const ApplyProjectModal = ({
 				const isRegistered = await contracts.lists_contract.is_registered({
 					list_id: BigInt(roundData?.application_wl_list_id),
 					registrant_id: stellarPubKey,
-					required_status: undefined,
+					required_status: {
+						tag: 'Approved',
+						values: undefined,
+					},
 				})
 				setIsRegistered(isRegistered.result)
 

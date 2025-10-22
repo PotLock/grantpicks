@@ -80,7 +80,7 @@ const ApplyProjectModal = ({
 
 	const fetchProjectApplicant = useCallback(async () => {
 		try {
-			if (storage.chainId === 'stellar') {
+			if (stellarPubKey) {
 				const contracts = storage.getStellarContracts()
 
 				if (!contracts) {
@@ -97,7 +97,7 @@ const ApplyProjectModal = ({
 		} finally {
 			setLoading(false)
 		}
-	}, [storage.chainId, storage.my_address, stellarPubKey])
+	}, [storage.chainId, storage, stellarPubKey])
 
 	const onApplyProjectToRound = useCallback(async () => {
 		try {
@@ -145,8 +145,7 @@ const ApplyProjectModal = ({
 			fetchProjectApplicant()
 			fetchIsRegistered()
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [isOpen, storage.my_address, storage.chainId])
+	}, [isOpen, projectData, fetchProjectApplicant, fetchIsRegistered])
 
 	const addApplyQuery = () => {
 		const currentParams = new URLSearchParams(searchParams.toString())

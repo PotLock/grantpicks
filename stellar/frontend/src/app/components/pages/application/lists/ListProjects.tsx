@@ -1,8 +1,5 @@
 import { RegistrationExternal } from 'lists-client'
-import { useEffect, useState } from 'react'
-import useAppStorage from '@/stores/zustand/useAppStorage'
-import { getProjectApplicant } from '@/services/stellar/project-registry'
-import { Project } from 'project-registry-client'
+import { useState } from 'react'
 import Image from 'next/image'
 import Menu from '@/app/components/commons/Menu'
 import { useSingleList } from './hooks/useSingleList'
@@ -11,6 +8,7 @@ import { prettyTruncate } from '@/utils/helper'
 import IconCopy from '@/app/components/svgs/IconCopy'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
+import { useProject } from '@/app/components/hooks/useProject'
 
 type StatusTag =
 	| 'Pending'
@@ -143,42 +141,9 @@ const ProjectCard = ({
 		status: { tag: StatusTag; values: undefined },
 	) => Promise<void>
 }) => {
-	const [projectDetails, setProjectDetails] = useState<Project | null>(null)
-	const [isLoading, setIsLoading] = useState(false)
-	const [error, setError] = useState(false)
 	const [menuOpen, setMenuOpen] = useState(false)
-	const storage = useAppStorage()
+	const { data, isLoading, error } = useProject({ projectId: project.registrant_id })
 
-	useEffect(() => {
-		let isMounted = true
-		const fetchProjectDetails = async () => {
-			if (storage.chainId === 'stellar') {
-				setIsLoading(true)
-				setError(false)
-				try {
-					const contracts = storage.getStellarContracts()
-					if (!contracts) {
-						throw new Error('Contracts not found')
-					}
-					const details = await getProjectApplicant(
-						project.registrant_id,
-						contracts,
-					)
-					if (details && isMounted) {
-						setProjectDetails(details)
-					}
-				} catch (e) {
-					if (isMounted) setError(true)
-				} finally {
-					if (isMounted) setIsLoading(false)
-				}
-			}
-		}
-		fetchProjectDetails()
-		return () => {
-			isMounted = false
-		}
-	}, [project.registrant_id, storage])
 
 	const status = project.status.tag
 	const badgeStyle =
@@ -199,19 +164,25 @@ const ProjectCard = ({
 	if (isLoading) return <ProjectCardSkeleton />
 	if (error) return <ProjectCardError />
 
+
 	return (
-		<div className="flex flex-col w-full md:w-[319px] items-center bg-white rounded-xl border border-black/10 shadow p-6 min-h-[240px]">
-			<Image
-				src={`https://www.tapback.co/api/avatar/${project.registrant_id}`}
-				alt=""
-				className="rounded-full object-cover"
-				width={64}
-				height={64}
-			/>
-			<div className="relative flex flex-col items-center">
-				<div className="font-bold text-xl text-center mt-4 mb-2">
-					{projectDetails?.name || project.registrant_id}
+		<div className="group flex flex-col w-full md:w-[340px] items-center bg-white rounded-2xl border border-gray-200 shadow-sm p-6 min-h-[260px] transition-all hover:shadow-md hover:border-gray-300">
+			<div className="relative">
+				<div className="rounded-full p-[3px] bg-gradient-to-tr from-emerald-400 to-cyan-400">
+					<Image
+						src={`https://www.tapback.co/api/avatar/${project.registrant_id}`}
+						alt=""
+						className="rounded-full object-cover ring-2 ring-white"
+						width={72}
+						height={72}
+					/>
 				</div>
+			</div>
+			<div className="relative flex flex-col items-center text-center">
+				<div className="font-semibold text-lg leading-snug mt-4">
+					{data?.name || prettyTruncate(project.registrant_id, 20, 'address')}
+				</div>
+
 				<div
 					onClick={() => {
 						navigator.clipboard.writeText(project.registrant_id)
@@ -219,25 +190,38 @@ const ProjectCard = ({
 							style: toastOptions.success.style,
 						})
 					}}
-					className="relative group flex items-center gap-2"
+					className="relative group flex items-center gap-2 mt-3"
 				>
-					<span className="text-sm cursor-pointer text-gray-500 text-center">
+					<span className="text-sm cursor-pointer text-gray-500 text-center font-mono">
 						{prettyTruncate(project.registrant_id, 20, 'address')}
 					</span>
 					<IconCopy
 						size={16}
-						className="fill-gray-300 cursor-pointer hover:opacity-70 transition"
+						className="fill-gray-300 cursor-pointer group-hover:opacity-80 transition"
 					/>
 					<div className="absolute w-[300px] z-50 left-1/2 bottom-[-50px] -translate-x-1/2 mt-2 rounded-md whitespace-normal break-all h-auto bg-grantpicks-black-950 text-white px-3 py-1 shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition text-sm md:text-sm font-semibold">
 						{project.registrant_id}
 					</div>
 				</div>
+
 			</div>
 			{badge}
+			<p
+				className="mt-2 text-sm text-gray-600 max-w-[260px]"
+				style={{
+					display: '-webkit-box',
+					WebkitLineClamp: 2,
+					WebkitBoxOrient: 'vertical',
+					overflow: 'hidden',
+				}}
+			>
+				{data?.overview ?? ''}
+			</p>
+			<div className="h-px w-full bg-gray-100 mt-4" />
 			{isOwner && (
 				<div className="relative mt-4">
 					<button
-						className="border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 min-w-[160px] flex items-center justify-between gap-2 bg-white"
+						className="border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-100 min-w-[160px] flex items-center justify-between gap-2 bg-white hover:border-gray-400"
 						onClick={() => setMenuOpen((open) => !open)}
 						type="button"
 					>

@@ -78,6 +78,9 @@ export const SingleListPage = () => {
 
 	const fetchIsRegistered = useCallback(async () => {
 		if (list) {
+			if (!stellarPubKey) {
+				return
+			}
 			const contracts = storage.getStellarContracts()
 			if (!contracts) {
 				return
@@ -89,7 +92,7 @@ export const SingleListPage = () => {
 			})
 			setIsRegistered(isRegistered.result)
 		}
-	}, [listId, stellarPubKey])
+	}, [listId, stellarPubKey, storage, list])
 
 	useEffect(() => {
 		isUserAProjectCallback()
@@ -230,7 +233,7 @@ export const SingleListPage = () => {
 									}}
 									className="w-full sm:w-auto"
 								>
-									{isRegistered
+									{!stellarPubKey ? "Login to Apply" : isRegistered
 										? 'Already Registered'
 										: list?.owner?.id === stellarPubKey
 											? 'Register Project(s)'

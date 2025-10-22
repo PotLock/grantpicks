@@ -5,9 +5,9 @@ import useSWR from "swr"
 export const useProject = ({ projectId }: { projectId: string }) => {
   const potlockService = usePotlockService()
 
-  const { data: project, isLoading, error } = useSWR(`/api/${projectId}/projects`, async () => {
+  const { data, isLoading, error } = useSWR(`/api/${projectId}/projects`, async () => {
     return potlockService.getProjectById(projectId)
   })
 
-  return { project, isLoading, error }
+  return { data: data?.results[0], isLoading, error }
 }

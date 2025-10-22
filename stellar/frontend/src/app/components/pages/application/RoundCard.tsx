@@ -135,7 +135,7 @@ export const RoundCard = ({
 			console.log('error fetch project applicant')
 			setIsUserApplied(false)
 		}
-	}, [selectedRoundType, chainId, doc.on_chain_id, storage])
+	}, [selectedRoundType, stellarPubKey, chainId, doc.on_chain_id, storage])
 
 	const checkIfUserHasVoted = useCallback(async () => {
 		if (!isVotingOpen) return

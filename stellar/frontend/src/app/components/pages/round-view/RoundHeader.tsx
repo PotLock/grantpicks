@@ -12,7 +12,7 @@ import { GPRound } from '@/models/round'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { useModalContext } from '@/app/providers/ModalProvider'
 import useAppStorage from '@/stores/zustand/useAppStorage'
-import { getRoundApplication } from '@/services/stellar/round'
+import { getRoundApplication, HasVotedRoundParams, isHasVotedRound } from '@/services/stellar/round'
 import Menu from '../../commons/Menu'
 import IconMoreVert from '../../svgs/IconMoreVert'
 import { useRouter } from 'next/navigation'
@@ -47,6 +47,7 @@ const RoundHeader = ({
 		useModalContext()
 	const storage = useAppStorage()
 	const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false)
+	const [hasVoted, setHasVoted] = useState<boolean>(false)
 	const [isUserApplied, setIsUserApplied] = useState<boolean>(false)
 	const router = useRouter()
 
@@ -66,6 +67,24 @@ const RoundHeader = ({
 		}
 	}, [currentTime])
 
+	const checkIfUserHasVoted = useCallback(async () => {
+		if (currentTime !== RoundTimelineStatus.VOTING_OPEN || !doc?.on_chain_id) return
+
+		try {
+			const contracts = storage.getStellarContracts()
+			if (!contracts) return
+
+			const params: HasVotedRoundParams = {
+				round_id: BigInt(doc?.on_chain_id || ''),
+				voter: storage.my_address || '',
+			}
+			const hasVoted = await isHasVotedRound(params, contracts)
+			setHasVoted(hasVoted)
+		} catch (error: any) {
+			console.log('error checking if user has voted', error)
+		}
+	}, [currentTime, doc, storage.my_address])
+
 	const currentText = useMemo(() => {
 		switch (currentTime) {
 			case RoundTimelineStatus.APPLICATION_OPEN:
@@ -77,11 +96,11 @@ const RoundHeader = ({
 			case RoundTimelineStatus.APPLICATION_ENDED:
 				return 'Application Ended'
 			case RoundTimelineStatus.VOTING_OPEN:
-				return 'Vote'
+				return hasVoted ? 'Voted' : 'Vote'
 			case RoundTimelineStatus.VOTING_ENDED:
 				return 'Voting Ended'
 		}
-	}, [currentTime, isUserApplied])
+	}, [currentTime, isUserApplied, hasVoted])
 
 	const fetchRoundApplication = useCallback(async () => {
 		if (currentTime !== RoundTimelineStatus.APPLICATION_OPEN) return
@@ -114,7 +133,8 @@ const RoundHeader = ({
 
 	useEffect(() => {
 		fetchRoundApplication()
-	}, [fetchRoundApplication, storage.my_address])
+		checkIfUserHasVoted()
+	}, [fetchRoundApplication, checkIfUserHasVoted, storage.my_address])
 
 	const handleMainAction = () => {
 		if (currentTime === RoundTimelineStatus.APPLICATION_OPEN) {
@@ -148,7 +168,7 @@ const RoundHeader = ({
 				<div className="flex items-center gap-2">
 					{stellarPubKey !== owner && stellarPubKey && (
 						<Button
-							isDisabled={isButtonDisabled || isUserApplied}
+							isDisabled={isButtonDisabled || isUserApplied || hasVoted}
 							onClick={handleMainAction}
 						>
 							{currentText}
@@ -163,34 +183,34 @@ const RoundHeader = ({
 					</Button>
 					{(doc?.owner?.id === storage.my_address ||
 						doc?.admins?.includes(storage.my_address || '')) && (
-						<div className="relative">
-							<button
-								className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-								onClick={() => setIsMenuOpen(!isMenuOpen)}
-								type="button"
-							>
-								<IconMoreVert size={20} className="fill-grantpicks-black-600" />
-							</button>
-							<Menu
-								position="right-0 mt-2"
-								className="min-w-[180px]"
-								onClose={() => setIsMenuOpen(false)}
-								isOpen={isMenuOpen}
-							>
-								<div className="flex flex-col divide-y divide-gray-100 bg-white rounded-xl shadow-lg">
-									<button
-										className="px-4 py-3 text-left text-grantpicks-black-950 text-sm hover:bg-gray-100 transition-colors"
-										onClick={() => {
-											router.push(`/rounds/edit-round/${doc?.on_chain_id}`)
-											setIsMenuOpen(false)
-										}}
-									>
-										Edit Round
-									</button>
-								</div>
-							</Menu>
-						</div>
-					)}
+							<div className="relative">
+								<button
+									className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+									onClick={() => setIsMenuOpen(!isMenuOpen)}
+									type="button"
+								>
+									<IconMoreVert size={20} className="fill-grantpicks-black-600" />
+								</button>
+								<Menu
+									position="right-0 mt-2"
+									className="min-w-[180px]"
+									onClose={() => setIsMenuOpen(false)}
+									isOpen={isMenuOpen}
+								>
+									<div className="flex flex-col divide-y divide-gray-100 bg-white rounded-xl shadow-lg">
+										<button
+											className="px-4 py-3 text-left text-grantpicks-black-950 text-sm hover:bg-gray-100 transition-colors"
+											onClick={() => {
+												router.push(`/rounds/edit-round/${doc?.on_chain_id}`)
+												setIsMenuOpen(false)
+											}}
+										>
+											Edit Round
+										</button>
+									</div>
+								</Menu>
+							</div>
+						)}
 				</div>
 			</div>
 			<div className="flex md:ml-8 items-center gap-3 text-sm text-grantpicks-black-600 flex-wrap">

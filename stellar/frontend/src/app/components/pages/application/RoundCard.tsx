@@ -297,7 +297,7 @@ export const RoundCard = ({
 		if (isUserApplied && isApplicationOpen) {
 			return "Applied."
 		}
-		if (isVotingOpen) {
+		if (isVotingOpen && !isAdminOrOwner) {
 			return hasVoted ? "Voted." : 'Vote'
 		}
 		if (isNotStarted) {
@@ -309,7 +309,7 @@ export const RoundCard = ({
 		if (isApplicationOpen && !isAdminOrOwner) {
 			return 'Apply'
 		}
-		if (isApplicationOpen && isAdminOrOwner) {
+		if ((isApplicationOpen || isVotingOpen) && isAdminOrOwner) {
 			return 'View Applications'
 		}
 		if (isCompleted) {

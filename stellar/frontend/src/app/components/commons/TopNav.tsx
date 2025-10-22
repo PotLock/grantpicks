@@ -103,14 +103,14 @@ const TopNav = () => {
 				<div
 					className="relative"
 					onMouseEnter={() => {
-						if (hoverTimerRef.current) {
+						if (hoverTimerRef.current && connectedWallet) {
 							clearTimeout(hoverTimerRef.current)
 							hoverTimerRef.current = null
+							setShowMenu('user')
 						}
-						setShowMenu('user')
 					}}
 					onMouseLeave={() => {
-						if (hoverTimerRef.current) {
+						if (hoverTimerRef.current && connectedWallet) {
 							clearTimeout(hoverTimerRef.current)
 						}
 						hoverTimerRef.current = setTimeout(() => setShowMenu(null), 200)

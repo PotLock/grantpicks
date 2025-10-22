@@ -47,7 +47,7 @@ export const ListProjects = ({
 	const filteredProjects = projects || []
 
 	return (
-		<div className="mt-8 mx-auto px-4">
+		<div className="mt-8 mx-auto md:px-0 px-4">
 			<div className="bg-white rounded-xl shadow p-6">
 				<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-2">
 					<div className="font-semibold text-lg">
@@ -150,7 +150,7 @@ const ProjectCard = ({
 		listRegistrationStatuses[status] || listRegistrationStatuses['Pending']
 	const badge = (
 		<span
-			className="flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium mt-2"
+			className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium mt-2"
 			style={{
 				color: badgeStyle.color,
 				background: badgeStyle.background,
@@ -166,48 +166,48 @@ const ProjectCard = ({
 
 
 	return (
-		<div className="group flex flex-col w-full md:w-[340px] items-center bg-white rounded-2xl border border-gray-200 shadow-sm p-6 min-h-[260px] transition-all hover:shadow-md hover:border-gray-300">
-			<div className="relative">
-				<div className="rounded-full p-[3px] bg-gradient-to-tr from-emerald-400 to-cyan-400">
-					<Image
-						src={`https://www.tapback.co/api/avatar/${project.registrant_id}`}
-						alt=""
-						className="rounded-full object-cover ring-2 ring-white"
-						width={72}
-						height={72}
-					/>
-				</div>
-			</div>
-			<div className="relative flex flex-col items-center text-center">
-				<div className="font-semibold text-lg leading-snug mt-4">
-					{data?.name || prettyTruncate(project.registrant_id, 20, 'address')}
-				</div>
-
-				<div
-					onClick={() => {
-						navigator.clipboard.writeText(project.registrant_id)
-						toast.success('Address copied to clipboard', {
-							style: toastOptions.success.style,
-						})
-					}}
-					className="relative group flex items-center gap-2 mt-3"
-				>
-					<span className="text-sm cursor-pointer text-gray-500 text-center font-mono">
-						{prettyTruncate(project.registrant_id, 20, 'address')}
-					</span>
-					<IconCopy
-						size={16}
-						className="fill-gray-300 cursor-pointer group-hover:opacity-80 transition"
-					/>
-					<div className="absolute w-[300px] z-50 left-1/2 bottom-[-50px] -translate-x-1/2 mt-2 rounded-md whitespace-normal break-all h-auto bg-grantpicks-black-950 text-white px-3 py-1 shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition text-sm md:text-sm font-semibold">
-						{project.registrant_id}
+		<div className="flex flex-col w-full md:w-[360px] bg-white rounded-2xl border border-gray-200 shadow-sm p-6  min-h-[260px] transition-all hover:shadow-md hover:border-gray-300">
+			<div className="flex items-center gap-4 w-full">
+				<div className="relative">
+					<div className="rounded-full p-[3px] bg-gradient-to-tr from-emerald-400 to-cyan-400">
+						<Image
+							src={`https://www.tapback.co/api/avatar/${project.registrant_id}`}
+							alt=""
+							className="rounded-full object-cover ring-2 ring-white"
+							width={72}
+							height={72}
+						/>
 					</div>
 				</div>
-
+				<div className="flex-1 min-w-0">
+					<div className="font-semibold text-lg leading-snug">
+						{data?.name || prettyTruncate(project.registrant_id, 20, 'address')}
+					</div>
+					<div
+						onClick={() => {
+							navigator.clipboard.writeText(project.registrant_id)
+							toast.success('Address copied to clipboard', {
+								style: toastOptions.success.style,
+							})
+						}}
+						className="relative group flex items-center gap-2 mt-1"
+					>
+						<span className="text-sm cursor-pointer text-gray-500 font-mono truncate">
+							{prettyTruncate(project.registrant_id, 20, 'address')}
+						</span>
+						<IconCopy
+							size={16}
+							className="fill-gray-300 cursor-pointer group-hover:opacity-80 transition"
+						/>
+						<div className="absolute w-[300px] z-50 left-0 top-full mt-2 rounded-md whitespace-normal break-all h-auto bg-grantpicks-black-950 text-white px-3 py-1 shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition text-sm md:text-sm font-semibold">
+							{project.registrant_id}
+						</div>
+					</div>
+				</div>
 			</div>
-			{badge}
+			<div className="mt-3">{badge}</div>
 			<p
-				className="mt-2 text-sm text-gray-600 max-w-[260px]"
+				className="mt-3 text-sm text-gray-600"
 				style={{
 					display: '-webkit-box',
 					WebkitLineClamp: 2,
@@ -244,24 +244,32 @@ const ProjectCard = ({
 						isOpen={menuOpen}
 						onClose={() => setMenuOpen(false)}
 						position="right-0 mt-2"
-						className="min-w-[160px]"
+						className="min-w-[200px]"
 					>
-						<div className="flex flex-col divide-y divide-gray-100 bg-white rounded-xl shadow-lg">
-							{Object.keys(listRegistrationStatuses).map((status) => (
-								<button
-									key={status}
-									className={`px-4 py-2 text-left text-sm hover:bg-gray-100`}
-									onClick={() => {
-										handleUpdateProjectStatus(project.id, {
-											tag: status as StatusTag,
-											values: undefined,
-										})
-										setMenuOpen(false)
-									}}
-								>
-									{status}
-								</button>
-							))}
+						<div className="flex flex-col bg-white rounded-xl shadow-lg p-1">
+							{Object.keys(listRegistrationStatuses).map((statusKey) => {
+								const isActive = statusKey === status
+								return (
+									<button
+										key={statusKey}
+										className={`flex w-full items-center justify-between px-4 py-2 text-left text-sm rounded-lg hover:bg-gray-100 ${isActive ? 'bg-emerald-50 text-emerald-700 font-semibold' : ''}`}
+										onClick={() => {
+											handleUpdateProjectStatus(project.id, {
+												tag: statusKey as StatusTag,
+												values: undefined,
+											})
+											setMenuOpen(false)
+										}}
+									>
+										<span>{statusKey}</span>
+										{isActive && (
+											<svg className="w-4 h-4 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
+												<path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-7.25 7.25a1 1 0 01-1.414 0l-3-3a1 1 0 111.414-1.414l2.293 2.293 6.543-6.543a1 1 0 011.414 0z" clipRule="evenodd" />
+											</svg>
+										)}
+									</button>
+								)
+							})}
 						</div>
 					</Menu>
 				</div>
@@ -271,7 +279,7 @@ const ProjectCard = ({
 }
 
 const ProjectCardSkeleton = () => (
-	<div className="flex flex-col items-center bg-white rounded-xl border border-black/10 shadow p-6 min-h-[240px] animate-pulse">
+	<div className="flex flex-col items-center bg-white rounded-xl border border-black/10 shadow w-full md:w-[360px] p-6 min-h-[240px] animate-pulse">
 		<div className="rounded-full bg-gray-200 w-16 h-16 mb-4" />
 		<div className="h-5 w-24 bg-gray-200 rounded mb-2" />
 		<div className="h-4 w-16 bg-gray-100 rounded" />

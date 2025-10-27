@@ -13,7 +13,7 @@ export declare const networks: {
     };
     readonly public: {
         readonly networkPassphrase: "Public Global Stellar Network ; September 2015";
-        readonly contractId: "CAF5DB2QTOH7XBG3PRG4CCYBSSWV245PC33DASEF454DZ3HJTJCM2LWU";
+        readonly contractId: "CDCRTJQ3SP2LJEOT5EA2B6WTGUUI6BVYDJXKYRJCKRSPSYJHXV5V6X3O";
     };
 };
 export type ApplicationStatus = {

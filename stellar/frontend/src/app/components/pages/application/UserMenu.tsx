@@ -1,12 +1,11 @@
 import { useWallet } from '@/app/providers/WalletProvider'
 import React from 'react'
-import IconNear from '../../svgs/IconNear'
 import IconStellar from '../../svgs/IconStellar'
 import Button from '../../commons/Button'
 import IconCube from '../../svgs/IconCube'
 import IconProject from '../../svgs/IconProject'
 import IconCheckCircle from '../../svgs/IconCheckCircle'
-import { formatNearAddress, prettyTruncate } from '@/utils/helper'
+import { prettyTruncate } from '@/utils/helper'
 import Menu from '../../commons/Menu'
 import { useRouter } from 'next/navigation'
 import IconCopy from '../../svgs/IconCopy'
@@ -16,65 +15,56 @@ import IconLogout from '../../svgs/IconLogout'
 import Image from 'next/image'
 
 const UserMenu = ({
-	onShowChooseWallet,
 	onCloseChooseWalletMenu,
 	onClose,
 	isOpen,
+	onMouseEnter,
+	onMouseLeave,
 }: {
 	isOpen: boolean
 	onShowChooseWallet: () => void
 	onCloseChooseWalletMenu: () => void
 	onClose: () => void
+	onMouseEnter?: () => void
+	onMouseLeave?: () => void
 }) => {
 	const router = useRouter()
-	const {
-		connectedWallet,
-		nearAccounts,
-		onSignOut,
-		stellarPubKey,
-		profileData,
-	} = useWallet()
+	const { onSignOut, stellarPubKey, onOpenStellarWallet } = useWallet()
 
 	return (
 		<Menu isOpen={isOpen} onClose={onClose} position={`right-0 -bottom-72`}>
-			<div className="p-4 rounded-t-2xl md:rounded-2xl bg-white shadow-xl border border-grantpicks-black-200 min-w-[320px]">
+			<div
+				onMouseEnter={onMouseEnter}
+				onMouseLeave={onMouseLeave}
+				className={`p-4 rounded-t-2xl md:rounded-2xl bg-white shadow-xl border border-grantpicks-black-200 min-w-[320px] transition-all duration-150 ${isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`}
+			>
 				<div className="flex items-center justify-between mb-4">
 					<div className="flex items-center space-x-2">
 						<Image
-							src={
-								connectedWallet === 'near'
-									? // profileData?.near_social_profile_data?.image.nft.media ||
-									`https://www.tapback.co/api/avatar/${nearAccounts[0]?.accountId}`
-									: `https://www.tapback.co/api/avatar/${stellarPubKey}`
-							}
+							src={`https://www.tapback.co/api/avatar/${stellarPubKey}`}
 							alt="image"
 							width={40}
 							height={40}
 						/>
 						<div>
 							<p className="text-sm font-semibold text-grantpicks-black-950">
-								{connectedWallet === 'near'
-									? profileData?.near_social_profile_data?.name ||
-									formatNearAddress(nearAccounts[0]?.accountId)
-									: prettyTruncate(stellarPubKey, 10, 'address')}
+								{stellarPubKey
+									? prettyTruncate(stellarPubKey, 10, 'address')
+									: ''}
 							</p>
 							<div className="flex items-center space-x-2">
 								<p className="text-sm font-normal text-grantpicks-black-600">
 									@
-									{connectedWallet === 'near'
-										? formatNearAddress(nearAccounts[0]?.accountId)
-										: prettyTruncate(stellarPubKey, 10, 'address')}
+									{stellarPubKey
+										? prettyTruncate(stellarPubKey, 10, 'address')
+										: ''}
 								</p>
 								<IconCopy
 									size={16}
 									className="stroke-grantpicks-black-600 cursor-pointer hover:opacity-70 transition"
 									onClick={async () => {
-										await navigator.clipboard.writeText(
-											connectedWallet === 'near'
-												? nearAccounts[0]?.accountId
-												: stellarPubKey,
-										)
-										toast.success('Addess is copied', {
+										await navigator.clipboard.writeText(stellarPubKey)
+										toast.success('Address is copied', {
 											style: toastOptions.success.style,
 										})
 									}}
@@ -85,9 +75,7 @@ const UserMenu = ({
 					<div>
 						<div className="rounded-full border border-grantpicks-black-200/10 p-1">
 							<div className="bg-black p-1 rounded-full flex items-center justify-center">
-								{connectedWallet === 'near' ? (
-									<IconNear size={16} className="fill-white" />
-								) : (
+								{stellarPubKey && (
 									<IconStellar size={16} className="fill-white" />
 								)}
 							</div>
@@ -99,21 +87,23 @@ const UserMenu = ({
 						color="alpha-50"
 						isFullWidth
 						className="!font-semibold !text-sm"
-						onClick={() => onShowChooseWallet()}
+						onClick={() => onOpenStellarWallet()}
 					>
 						Switch Wallet
 					</Button>
 				</div>
 				<div className="flex flex-col space-y-3">
-					<div
-						onClick={() => router.push(`/rounds/create-round`)}
-						className="flex items-center space-x-3 cursor-pointer hover:opacity-70 transition"
-					>
-						<IconCube size={24} className="fill-grantpicks-black-400" />
-						<p className="text-sm font-normal text-grantpicks-black-950">
-							Create Round
-						</p>
-					</div>
+					{stellarPubKey && (
+						<div
+							onClick={() => router.push(`/rounds/create-round`)}
+							className="flex items-center space-x-3 cursor-pointer hover:opacity-70 transition"
+						>
+							<IconCube size={24} className="fill-grantpicks-black-400" />
+							<p className="text-sm font-normal text-grantpicks-black-950">
+								Create Round
+							</p>
+						</div>
+					)}
 					{stellarPubKey && (
 						<div
 							onClick={() => router.push(`/rounds/my-project`)}
@@ -136,10 +126,9 @@ const UserMenu = ({
 					</div>
 					<div
 						className="flex items-center space-x-3 cursor-pointer hover:opacity-70 transition"
-						onClick={async () => {
-							await onSignOut()
+						onClick={() => {
+							onSignOut()
 							onCloseChooseWalletMenu()
-							router.push(`/rounds`)
 						}}
 					>
 						<IconLogout size={24} className="fill-grantpicks-red-400" />

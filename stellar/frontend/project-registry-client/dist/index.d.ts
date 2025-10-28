@@ -1,6 +1,6 @@
 /// <reference types="node" resolution-mode="require"/>
 /// <reference types="node" resolution-mode="require"/>
-import { Buffer } from "buffer";
+import { Buffer } from 'buffer';
 import { AssembledTransaction, Client as ContractClient, ClientOptions as ContractClientOptions } from '@stellar/stellar-sdk/contract';
 import type { u32, u64, u128, Option } from '@stellar/stellar-sdk/contract';
 export * from '@stellar/stellar-sdk';
@@ -9,11 +9,11 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CAUX3WSEWUR2Z7N3XKJBQXS5LBVRW62D2C7EYDOAUJXXI3T3YWCBTVMW";
+        readonly contractId: "CAI6747A7VHSYWL7KIJ3J43OJBM57IH3VC6HCAMEL4EQESEF2QFGIED7";
     };
     readonly public: {
         readonly networkPassphrase: "Public Global Stellar Network ; September 2015";
-        readonly contractId: "CCSQPTVDGEGZFKJ7D53WTCHQF5CYE55YEL7NB256Y7UJUK2ZWJGS6NM3";
+        readonly contractId: "CD6X5JVK6ITAZGOMIUBVJUHFMK34YW2ZEWQ2BDLV6XFRFGNV56A4L3RC";
     };
 };
 export interface Project {
@@ -30,7 +30,7 @@ export interface Project {
     submited_ms: u64;
     team_members: Array<ProjectTeamMember>;
     updated_ms: Option<u64>;
-    video_url: string;
+    video_url: Option<string>;
 }
 export interface CreateProjectParams {
     admins: Array<string>;
@@ -42,7 +42,7 @@ export interface CreateProjectParams {
     overview: string;
     repositories: Array<ProjectRepository>;
     team_members: Array<ProjectTeamMember>;
-    video_url: string;
+    video_url: Option<string>;
 }
 export interface UpdateProjectParams {
     contacts: Array<ProjectContact>;
@@ -53,7 +53,7 @@ export interface UpdateProjectParams {
     overview: string;
     repositories: Array<ProjectRepository>;
     team_members: Array<ProjectTeamMember>;
-    video_url: string;
+    video_url: Option<string>;
 }
 export interface ProjectContact {
     name: string;
@@ -119,19 +119,19 @@ export declare const Errors: {
     };
 };
 export type ContractKey = {
-    tag: "NumOfProjects";
+    tag: 'NumOfProjects';
     values: void;
 } | {
-    tag: "Projects";
+    tag: 'Projects';
     values: void;
 } | {
-    tag: "Project";
+    tag: 'Project';
     values: readonly [u128];
 } | {
-    tag: "RegistryAdmin";
+    tag: 'RegistryAdmin';
     values: void;
 } | {
-    tag: "ApplicantToProjectID";
+    tag: 'ApplicantToProjectID';
     values: readonly [string];
 };
 export interface Client {
@@ -157,7 +157,7 @@ export interface Client {
     /**
      * Construct and simulate a apply transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    apply: ({ applicant, project_params }: {
+    apply: ({ applicant, project_params, }: {
         applicant: string;
         project_params: CreateProjectParams;
     }, options?: {
@@ -177,7 +177,7 @@ export interface Client {
     /**
      * Construct and simulate a update_project transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    update_project: ({ admin, project_id, new_project_params }: {
+    update_project: ({ admin, project_id, new_project_params, }: {
         admin: string;
         project_id: u128;
         new_project_params: UpdateProjectParams;
@@ -218,7 +218,7 @@ export interface Client {
     /**
      * Construct and simulate a remove_admin transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    remove_admin: ({ project_id, admin_to_remove }: {
+    remove_admin: ({ project_id, admin_to_remove, }: {
         project_id: u128;
         admin_to_remove: string;
     }, options?: {

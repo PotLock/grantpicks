@@ -282,6 +282,8 @@ export const createRound = async (
 			voting_start_ms: params.voting_start_ms,
 			voting_wl_list_id: params.voting_wl_list_id,
 		},
+	}, {
+		fee: 200,
 	})
 	return round
 }
@@ -298,6 +300,8 @@ export const updateRoundApplicationDuration = async (
 		start_ms: params?.application_start ? params.application_start : undefined,
 		end_ms: params?.application_end ? params.application_end : undefined,
 		allow_applications: params.allow_applications,
+	}, {
+		fee: 200,
 	})
 	return round
 }
@@ -313,6 +317,8 @@ export const updateRoundVotingDuration = async (
 		round_id,
 		start_ms: params?.voting_start,
 		end_ms: params?.voting_end,
+	}, {
+		fee: 200,
 	})
 	return round
 }
@@ -339,6 +345,8 @@ export const editRound = async (
 			use_whitelist_voting: params.use_whitelist_voting,
 			voting_wl_list_id: params.voting_wl_list_id,
 		},
+	}, {
+		fee: 200,
 	})
 	return round
 }
@@ -353,6 +361,8 @@ export const setAdminRound = async (
 	let round = await contract.round_contract.set_admins({
 		round_id,
 		round_admin,
+	}, {
+		fee: 200,
 	})
 	return round
 }
@@ -369,7 +379,7 @@ export const addProjectsRound = async (
 			admin,
 			project_ids,
 		},
-		{ simulate: true },
+		{ simulate: true, fee: 200 },
 	)
 	return round
 }
@@ -384,6 +394,8 @@ export const depositFundRound = async (
 		amount: params.amount,
 		memo: params.memo,
 		referrer_id: params.referrer_id,
+	}, {
+		fee: 200,
 	})
 	return res
 }
@@ -398,6 +410,8 @@ export const applyProjectToRound = async (
 		applicant: undefined as Option<string>,
 		note: params.note,
 		review_note: undefined as Option<string>,
+	}, {
+		fee: 200,
 	})
 	return res
 }
@@ -412,6 +426,8 @@ export const reviewApplicationRound = async (
 		applicant: params.applicant,
 		note: params.note,
 		status: params.status,
+	}, {
+		fee: 200,
 	})
 	return res
 }
@@ -424,6 +440,8 @@ export const voteRound = async (
 		round_id: params.round_id,
 		voter: params.voter,
 		picks: params.picks,
+	}, {
+		fee: 10000
 	})
 	return round
 }
@@ -516,6 +534,8 @@ export const challengePayoutRound = async (
 		round_id: params.round_id,
 		caller: params.caller,
 		reason: params.reason,
+	}, {
+		fee: 200,
 	})
 	return round
 }
@@ -530,6 +550,8 @@ export const updateChallengePayoutRound = async (
 		challenger_id: params.challenger_id,
 		notes: params.notes,
 		resolve_challenge: params.resolve_challenge,
+	}, {
+		fee: 200,
 	})
 	return round
 }
@@ -541,6 +563,8 @@ export const setAdminsRound = async (
 	let round = await contract.round_contract.set_admins({
 		round_id: params.round_id,
 		round_admin: params.round_admin,
+	}, {
+		fee: 200,
 	})
 	return round
 }

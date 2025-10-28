@@ -5,28 +5,20 @@ import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { DEFAULT_IMAGE_URL } from '@/constants/project'
 import { toastOptions } from '@/constants/style'
-import Contracts from '@/lib/contracts'
-import CMDWallet from '@/lib/wallet'
-import {
-	IUpdateProjectParams,
-	updateProject,
-} from '@/services/stellar/project-registry'
+import { updateProject } from '@/services/stellar/project-registry'
 import { CreateProjectStep1Data } from '@/types/form'
-import { Network } from '@/types/on-chain'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import React, { useEffect } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { useMyProject } from './MyProjectProvider'
 import useAppStorage from '@/stores/zustand/useAppStorage'
-import {
-	NearProjectFundingHistory,
-	NearSocialGPProject,
-} from '@/services/near/type'
+
+import { UpdateProjectParams } from 'project-registry-client'
 
 const MyProjectOverview = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()
-	const { stellarPubKey, stellarKit, nearWallet } = useWallet()
+	const { stellarPubKey, stellarKit } = useWallet()
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const {
 		register,
@@ -39,7 +31,6 @@ const MyProjectOverview = () => {
 			title: projectData?.name,
 			project_id: projectData?.id ? projectData.id.toString() : '',
 			description: projectData?.overview,
-			considering_desc: projectData?.overview,
 		},
 	})
 	const storage = useAppStorage()
@@ -53,7 +44,6 @@ const MyProjectOverview = () => {
 			}
 
 			setValue('description', projectData.overview)
-			setValue('considering_desc', projectData.overview)
 		}
 	}
 
@@ -74,7 +64,7 @@ const MyProjectOverview = () => {
 					return
 				}
 
-				const params: IUpdateProjectParams = {
+				const params: UpdateProjectParams = {
 					...projectData,
 					name: data.title,
 					overview: data.description,
@@ -98,43 +88,6 @@ const MyProjectOverview = () => {
 					stellarPubKey,
 				)
 				if (txHashUpdateProject) {
-					dismissPageLoading()
-					setTimeout(async () => {
-						await fetchProjectApplicant()
-					}, 2000)
-					toast.success(`Update project overview is succeed`, {
-						style: toastOptions.success.style,
-					})
-				}
-			} else {
-				const contracts = storage.getNearContracts(nearWallet)
-
-				if (!contracts) {
-					return
-				}
-
-				const params: NearSocialGPProject = {
-					name: data.title || '',
-					overview: data.description || '',
-					fundings:
-						(projectData?.funding_histories as unknown as NearProjectFundingHistory[]) ||
-						[],
-					contacts: projectData?.contacts || [],
-					contracts: projectData?.contracts || [],
-					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
-					repositories: projectData?.repositories || [],
-					team_members:
-						(projectData?.team_members as unknown as string[]) || [],
-					video_url: projectData?.video_url || '',
-					owner: projectData?.owner || '',
-				}
-
-				const txUpdateProject = await contracts.near_social.setProjectData(
-					storage.my_address || '',
-					params,
-				)
-
-				if (txUpdateProject) {
 					dismissPageLoading()
 					setTimeout(async () => {
 						await fetchProjectApplicant()
@@ -174,7 +127,7 @@ const MyProjectOverview = () => {
 						}
 					/>
 					<InputTextArea
-						label="A brief Description"
+						label="Project Description"
 						required
 						rows={2}
 						maxLength={300}
@@ -184,21 +137,6 @@ const MyProjectOverview = () => {
 							errors.description?.type === 'required' ? (
 								<p className="text-red-500 text-xs mt-1 ml-2">
 									Project brief description is required
-								</p>
-							) : undefined
-						}
-					/>
-					<InputTextArea
-						label="Why do you consider yourself a public good?"
-						required
-						rows={2}
-						maxLength={300}
-						hintLabel="Max. 300 characters"
-						{...register('considering_desc', { required: true })}
-						errorMessage={
-							errors.considering_desc?.type === 'required' ? (
-								<p className="text-red-500 text-xs mt-1 ml-2">
-									Considering description is required
 								</p>
 							) : undefined
 						}
@@ -214,8 +152,7 @@ const MyProjectOverview = () => {
 						className="!py-3 !border !border-grantpicks-black-400 disabled:cursor-not-allowed"
 						isDisabled={
 							projectData?.name === watch().title &&
-							projectData?.overview === watch().description &&
-							projectData?.overview === watch().considering_desc
+							projectData?.overview === watch().description
 						}
 					>
 						Discard
@@ -229,8 +166,7 @@ const MyProjectOverview = () => {
 						className="!py-3 disabled:cursor-not-allowed"
 						isDisabled={
 							projectData?.name === watch().title &&
-							projectData?.overview === watch().description &&
-							projectData?.overview === watch().considering_desc
+							projectData?.overview === watch().description
 						}
 					>
 						Save changes

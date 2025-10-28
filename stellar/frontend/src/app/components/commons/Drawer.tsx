@@ -28,6 +28,7 @@ const Drawer = ({
 	}, [onClose, closeOnEscape])
 
 	const _bgClick = (e: React.MouseEvent<HTMLDivElement>) => {
+		e.stopPropagation()
 		if (e.target === drawerRef.current && closeOnBgClick) {
 			onClose()
 		}
@@ -37,7 +38,9 @@ const Drawer = ({
 			{isOpen && (
 				<div
 					ref={drawerRef}
-					className={clsx('fixed inset-0 z-[9999] bg-black/10 max-w-full mx-auto')}
+					className={clsx(
+						'fixed inset-0 z-[9999] bg-black/10 max-w-full mx-auto',
+					)}
 					onClick={(e) => _bgClick(e)}
 				/>
 			)}
@@ -47,15 +50,17 @@ const Drawer = ({
 					isOpen ? 'translate-x-[0%]' : 'translate-x-[100%]',
 					className,
 				)}
+				onClick={(e) => e.stopPropagation()}
 			>
 				{showClose && (
-					<IconClose
-						size={24}
-						// className="fill-grantpicks-black-600 absolute top-5 right-5 cursor-pointer hover:opacity-70 transition z-10"
-						onClick={onClose}
-					/>
+					<div onClick={(e) => { e.stopPropagation(); onClose() }}>
+						<IconClose
+							size={24}
+							className="fill-grantpicks-black-600 absolute top-5 right-5 cursor-pointer hover:opacity-70 transition z-10"
+						/>
+					</div>
 				)}
-				<div className="mx-0 mt-8 h-[calc(100vh-48px)] overflow-y-auto">
+				<div className="mx-0 h-screen overflow-y-auto">
 					{children}
 				</div>
 			</div>

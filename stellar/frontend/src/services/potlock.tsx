@@ -1,6 +1,7 @@
 'use client'
 
 import { envVarConfigs } from '@/configs/env-var'
+import { GPApplication } from '@/models/application'
 import { GPRound } from '@/models/round'
 import axios, { AxiosInstance } from 'axios'
 import React from 'react'
@@ -26,15 +27,15 @@ export class PotlockService {
 		return result?.data.results
 	}
 
-	async getRound(roundId: number): Promise<GPRound> {
+	async getRound(
+		roundId: number,
+	): Promise<Omit<GPRound, 'admins'> & { admins: { id: string }[] }> {
 		const result = await this._axios?.get(`/round/${roundId}`)
 		return result?.data
 	}
 
-	async getApplications(roundId: number, page: number = 1) {
-		const result = await this._axios?.get(
-			`/rounds/${roundId}/applications?page=${page}`,
-		)
+	async getApplications(roundId: number): Promise<GPApplication[]> {
+		const result = await this._axios?.get(`/rounds/${roundId}/applications`)
 		return result?.data.results
 	}
 
@@ -45,11 +46,33 @@ export class PotlockService {
 		return result?.data.results
 	}
 
+	async getProjects(skip: number, limit: number) {
+		const result = await this._axios?.get(
+			`/projects?skip=${skip}&limit=${limit}`,
+		)
+		return result?.data.results
+	}
+
 	async getProjectByOwner(owner: string) {
 		const result = await this._axios?.get(`/projects?owner=${owner}`)
 		return result?.data.results && result?.data.results.length > 0
 			? result?.data.results[0]
 			: null
+	}
+
+	async getProjectById(projectId: string) {
+		const result = await this._axios?.get(`/${projectId}/projects`)
+		return result?.data
+	}
+
+	async getLists(chain: string = 'stellar') {
+		const result = await this._axios?.get(`/lists?chain=${chain}`)
+		return result?.data.results
+	}
+
+	async getList(listId: number) {
+		const result = await this._axios?.get(`/lists/${listId}?chain=stellar`)
+		return result?.data
 	}
 
 	async getProjectStats(owner: string) {

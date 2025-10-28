@@ -92,8 +92,6 @@ const useAppStorage = create<AppRepo>((set, get) => ({
 	chainId: null,
 	setChainId: (chainId: string) => set(() => ({ chainId })),
 	getStellarContracts: () => {
-		const chainId = get().chainId
-		if (chainId === 'stellar') {
 			const network = get().network
 			const myAddress = get().my_address
 			if (myAddress) {
@@ -104,10 +102,12 @@ const useAppStorage = create<AppRepo>((set, get) => ({
 				const contracts = new Contracts(network as Network, cmdWallet)
 				return contracts
 			} else {
-				return new Contracts('testnet', undefined)
+				const defaultAddress = "GDJGKJAXTBJLQAOLLCMFFGNLDANCVPK3Q67IOGELDNQDIG77VWOQNH53"
+				let cmdWallet = new CMDWallet({
+					stellarPubKey: defaultAddress,
+				})
+				return new Contracts(network as Network, cmdWallet)
 			}
-		}
-		return null
 	},
 	clear: () =>
 		set(() => ({

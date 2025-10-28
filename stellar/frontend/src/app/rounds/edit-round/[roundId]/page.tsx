@@ -10,14 +10,9 @@ import CreateRoundLayout from '@/app/components/pages/create-round/CreateRoundLa
 import IconAdd from '@/app/components/svgs/IconAdd'
 import IconRemove from '@/app/components/svgs/IconRemove'
 import IconUnfoldMore from '@/app/components/svgs/IconUnfoldMore'
-import {
-	UpdateRoundData,
-} from '@/types/form'
+import { UpdateRoundData } from '@/types/form'
 import React, { useEffect, useState } from 'react'
-import {
-	useForm,
-	SubmitHandler,
-} from 'react-hook-form'
+import { useForm, SubmitHandler } from 'react-hook-form'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import {
 	editRound,
@@ -27,9 +22,7 @@ import {
 import { useParams, useRouter } from 'next/navigation'
 
 import { useWallet } from '@/app/providers/WalletProvider'
-import {
-	formatStroopToXlm,
-} from '@/utils/helper'
+import { formatStroopToXlm } from '@/utils/helper'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
@@ -41,7 +34,6 @@ import {
 	TWITTER_USERNAME_REGEX,
 } from '@/constants/regex'
 import useAppStorage from '@/stores/zustand/useAppStorage'
-import { nearRoundToGPRound, NearUpdateRoundParams } from '@/services/near/type'
 import { GPRound } from '@/models/round'
 import { roundDetailToGPRound } from '@/services/stellar/type'
 import { formatNearAmount } from 'near-api-js/lib/utils/format'
@@ -62,10 +54,13 @@ const EditRoundPage = () => {
 	const { setSuccessUpdateRoundModalProps } = useModalContext()
 	const [showContactType, setShowContactType] = useState<boolean>(false)
 	const { stellarPrice, nearPrice } = useGlobalContext()
-	const { stellarPubKey, stellarKit, nearWallet, connectedWallet } = useWallet()
+	const { stellarPubKey, stellarKit, connectedWallet } = useWallet()
 	const [checkedListIds, setCheckedListIds] = useState<bigint[]>([])
-	const [checkedApplicationListIds, setCheckedApplicationListIds] = useState<bigint[]>([])
-	const [showApplicationLists, setShowApplicationLists] = useState<boolean>(true)
+	const [checkedApplicationListIds, setCheckedApplicationListIds] = useState<
+		bigint[]
+	>([])
+	const [showApplicationLists, setShowApplicationLists] =
+		useState<boolean>(true)
 	const [isVaultDeposit, setIsVaultDeposit] = useState<boolean>(false)
 	const [showLists, setShowLists] = useState<boolean>(true)
 
@@ -94,42 +89,27 @@ const EditRoundPage = () => {
 		},
 	})
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
-	const { nearAccounts } = useWallet()
-
 
 	const storage = useAppStorage()
 
-
 	const isOwner = (listOwnerId: string): boolean => {
-		return (stellarPubKey || nearAccounts[0]?.accountId) === listOwnerId
+		return stellarPubKey === listOwnerId
 	}
 
 	const isAdmin = (adminIds: string[]): boolean => {
-		return adminIds.includes(stellarPubKey || nearAccounts[0]?.accountId)
+		return adminIds.includes(stellarPubKey)
 	}
 
-
 	const onFetchRoundInfo = async (): Promise<GPRound | undefined> => {
-		if (storage.chainId === 'stellar') {
-			let contracts = storage.getStellarContracts()
-			if (!contracts) {
-				return
-			}
-			const resRoundInfo = await getRoundInfo(
-				{ round_id: BigInt(params.roundId) },
-				contracts,
-			)
-			return roundDetailToGPRound(resRoundInfo)
-		} else {
-			let contracts = storage.getNearContracts(nearWallet)
-			if (!contracts) {
-				return
-			}
-			const resRoundInfo = await contracts.round.getRoundById(
-				parseInt(params.roundId),
-			)
-			return nearRoundToGPRound(resRoundInfo)
+		let contracts = storage.getStellarContracts()
+		if (!contracts) {
+			return
 		}
+		const resRoundInfo = await getRoundInfo(
+			{ round_id: BigInt(params.roundId) },
+			contracts,
+		)
+		return roundDetailToGPRound(resRoundInfo)
 	}
 	const onFetchDefaultValue = async () => {
 		try {
@@ -155,9 +135,9 @@ const EditRoundPage = () => {
 						formatNearAmount(resRoundInfo?.current_vault_balance) === '0'
 							? '0'
 							: formatNearAmount(resRoundInfo?.current_vault_balance).replace(
-								',',
-								'',
-							),
+									',',
+									'',
+								),
 					)
 				}
 				if (resRoundInfo?.application_wl_list_id) {
@@ -173,8 +153,8 @@ const EditRoundPage = () => {
 					'expected_amount',
 					storage.chainId === 'stellar'
 						? (formatStroopToXlm(
-							BigInt(resRoundInfo?.expected_amount),
-						) as string)
+								BigInt(resRoundInfo?.expected_amount),
+							) as string)
 						: (resRoundInfo?.expected_amount as string),
 				)
 				let calculation = 0
@@ -212,101 +192,53 @@ const EditRoundPage = () => {
 		}
 	}
 
-
-
-
-
 	const onEditRound: SubmitHandler<UpdateRoundData> = async (data) => {
 		try {
 			openPageLoading()
+			let contracts = storage.getStellarContracts()
 
-			if (storage.chainId === 'stellar') {
-				let contracts = storage.getStellarContracts()
+			if (!contracts) {
+				return
+			}
+			const updateRoundParams: UpdateRoundParams = {
+				name: data.title,
+				description: data.description,
 
-				if (!contracts) {
-					return
-				}
-
-
-				const updateRoundParams: UpdateRoundParams = {
-					name: data.title,
-					description: data.description,
-
-					contacts: [
-						{
-							name: data.contact_type,
-							value: data.contact_address,
-						},
-					],
-					max_participants:
-						data.max_participants,
-					num_picks_per_voter: data.vote_per_person,
-					application_wl_list_id: checkedApplicationListIds.length > 0 ? checkedApplicationListIds[0] : undefined,
-					voting_wl_list_id: checkedListIds.length > 0 ? checkedListIds[0] : undefined,
-					is_video_required: data.is_video_required,
-					...(isVaultDeposit ? { use_vault: data.use_vault } : {}),
-				}
-				const txUpdateRound = await editRound(
-					stellarPubKey,
-					BigInt(params.roundId),
-					updateRoundParams,
-					contracts,
-				)
-				const txHashUpdateRound = await contracts.signAndSendTx(
-					stellarKit as StellarWalletsKit,
-					txUpdateRound.toXDR(),
-					stellarPubKey,
-				)
-				if (txHashUpdateRound) {
-					setSuccessUpdateRoundModalProps((prev) => ({
-						...prev,
-						isOpen: true,
-						updateRoundRes: txUpdateRound.result,
-						txHash: txHashUpdateRound,
-					}))
-					reset()
-					dismissPageLoading()
-					router.push(`/rounds`)
-				}
-			} else {
-				const updateRoundParams: NearUpdateRoundParams = {
-					round_id: parseInt(params.roundId),
-					name: data.title,
-					description: data.description,
-					allow_applications: data.allow_application,
-					application_end_ms: data.allow_application
-						? data.apply_duration_end?.getTime()
+				contacts: [
+					{
+						name: data.contact_type,
+						value: data.contact_address,
+					},
+				],
+				max_participants: data.max_participants,
+				num_picks_per_voter: data.vote_per_person,
+				application_wl_list_id:
+					checkedApplicationListIds.length > 0
+						? checkedApplicationListIds[0]
 						: undefined,
-					application_start_ms: data.allow_application
-						? data.apply_duration_start?.getTime()
-						: undefined,
-					expected_amount: data.expected_amount,
-					contacts: [
-						{
-							name: data.contact_type,
-							value: data.contact_address,
-						},
-					],
-					use_whitelist: checkedListIds.length > 0,
-					wl_list_id: checkedListIds.length > 0 ? checkedListIds[0] : undefined,
-					voting_end_ms: data.voting_duration_end?.getTime() || 0,
-					voting_start_ms: data.voting_duration_start?.getTime() || 0,
-					num_picks_per_voter: data.vote_per_person,
-					max_participants: data.max_participants,
-					application_requires_video: data.is_video_required,
-				}
-
-				if (!nearWallet) {
-					return
-				}
-
-				const nearContracts = storage.getNearContracts(nearWallet)
-				const txNearEditRound =
-					await nearContracts?.round.editRound(updateRoundParams)
-
-
-				//TODO: handle & test after BE indexed by prometheus
-
+				voting_wl_list_id:
+					checkedListIds.length > 0 ? checkedListIds[0] : undefined,
+				is_video_required: data.is_video_required,
+				use_vault: data.use_vault || false,
+			}
+			const txUpdateRound = await editRound(
+				stellarPubKey,
+				BigInt(params.roundId),
+				updateRoundParams,
+				contracts,
+			)
+			const txHashUpdateRound = await contracts.signAndSendTx(
+				stellarKit as StellarWalletsKit,
+				txUpdateRound.toXDR(),
+				stellarPubKey,
+			)
+			if (txHashUpdateRound) {
+				setSuccessUpdateRoundModalProps((prev) => ({
+					...prev,
+					isOpen: true,
+					updateRoundRes: txUpdateRound.result,
+					txHash: txHashUpdateRound,
+				}))
 				reset()
 				dismissPageLoading()
 				router.push(`/rounds`)
@@ -330,24 +262,12 @@ const EditRoundPage = () => {
 		skip: number
 		limit: number
 	}) => {
-		if (storage.chainId === 'stellar') {
-			let contracts = storage.getStellarContracts()
-			if (!contracts) {
-				return []
-			}
-			const res = await getLists(
-				{ skip: key.skip, limit: key.limit },
-				contracts,
-			)
-			return res
-		} else {
-			let contracts = storage.getNearContracts(nearWallet)
-			if (!contracts) {
-				return []
-			}
-			const res = await contracts.lists.getLists(key.skip, key.limit)
-			return res
+		let contracts = storage.getStellarContracts()
+		if (!contracts) {
+			return []
 		}
+		const res = await getLists({ skip: key.skip, limit: key.limit }, contracts)
+		return res
 	}
 
 	const getKey = (
@@ -370,12 +290,15 @@ const EditRoundPage = () => {
 		},
 	)
 
-	const lists = data && data.length > 0 ? ([] as IGetListExternalResponse[]).concat(...(data as IGetListExternalResponse[])) : []
+	const lists =
+		data && data.length > 0
+			? ([] as IGetListExternalResponse[]).concat(
+					...(data as unknown as IGetListExternalResponse[]),
+				)
+			: []
 	const isEmpty = data?.[0]?.length === 0
 	const isReachingEnd =
-		isEmpty || (data && data[data.length - 1]?.length < LIMIT_SIZE)
-
-
+		isEmpty || (!!data && (data[data.length - 1]?.length || 0) < LIMIT_SIZE)
 
 	return (
 		<CreateRoundLayout>
@@ -426,7 +349,7 @@ const EditRoundPage = () => {
 										className={clsx(
 											'border border-grantpicks-black-200 rounded-xl py-3 px-3 flex items-center justify-between cursor-pointer hover:opacity-80 transition',
 											errors.contact_address?.type === 'required' &&
-											'border-red-500',
+												'border-red-500',
 										)}
 									>
 										<p
@@ -502,7 +425,7 @@ const EditRoundPage = () => {
 										className={clsx(
 											(errors.contact_address?.type === 'required' ||
 												errors.contact_address) &&
-											'border border-red-500',
+												'border border-red-500',
 										)}
 										disabled={!watch('contact_type')}
 										required
@@ -557,9 +480,10 @@ const EditRoundPage = () => {
 							</p>
 						</div>
 					</div>
-					<div className='bg-white p-6 justify-between flex flex-col gap-2 rounded-2xl shadow-md mb-6'>
-
-						<div className={`pt-4 flex flex-col items-center md:flex-row gap-2`}>
+					<div className="bg-white p-6 justify-between flex flex-col gap-2 rounded-2xl shadow-md mb-6">
+						<div
+							className={`pt-4 flex flex-col items-center md:flex-row gap-2`}
+						>
 							<div className="flex flex-col w-full md:w-[38%] space-x-4 mb-2">
 								<div className="w-full">
 									<InputText
@@ -655,7 +579,10 @@ const EditRoundPage = () => {
 												setValue('vote_per_person', watch().vote_per_person + 1)
 											}}
 										>
-											<IconAdd size={24} className="fill-grantpicks-black-600" />
+											<IconAdd
+												size={24}
+												className="fill-grantpicks-black-600"
+											/>
 										</Button>
 									</div>
 								</div>
@@ -664,23 +591,17 @@ const EditRoundPage = () => {
 								</p>
 							</div>
 						</div>
-						{connectedWallet === 'stellar' && isVaultDeposit ? (
-							<div className="flex items-center">
-								<Checkbox
-									label="Open Funding Pool"
-									checked={watch().use_vault}
-									onChange={(e) => {
-										setValue('use_vault', e.target.checked)
-										setValue('amount', '')
-									}}
-								/>
-							</div>
-						) : (
-							<></>
-						)}
+						<div className="flex items-center">
+							<Checkbox
+								label="Allow Fund Deposits"
+								checked={watch().use_vault}
+								onChange={(e) => {
+									setValue('use_vault', e.target.checked)
+									setValue('amount', '')
+								}}
+							/>
+						</div>
 					</div>
-
-
 
 					<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
 						<div className="flex items-center justify-between pb-4 border-b border-black/10">
@@ -750,7 +671,9 @@ const EditRoundPage = () => {
 															className="py-4 flex items-center gap-x-4"
 														>
 															<Checkbox
-																checked={checkedListIds?.includes(list.id) || false}
+																checked={
+																	checkedListIds?.includes(list.id) || false
+																}
 																onChange={(e) => {
 																	if (e.target.checked) {
 																		setCheckedListIds([list?.id])
@@ -810,7 +733,6 @@ const EditRoundPage = () => {
 							)}
 						</div>
 					</div>
-
 
 					{/* Application Requirements - Only show when allow_application is true */}
 					{watch().allow_application && (
@@ -955,7 +877,6 @@ const EditRoundPage = () => {
 							</div>
 						</div>
 					)}
-
 
 					<Button
 						color="black-950"

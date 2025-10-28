@@ -6,8 +6,6 @@ import { CreateProjectStep1Data } from '@/types/form'
 import React, { useEffect, useState } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
 import { useCreateProject } from './CreateProjectFormMainModal'
-import { DEFAULT_CREATE_PROJECT_DATA } from '@/constants/project'
-import PreviousConfirmationModal from './PreviousConfirmationModal'
 import { localStorageConfigs } from '@/configs/local-storage'
 
 const CreateProjectStep1 = () => {
@@ -27,7 +25,6 @@ const CreateProjectStep1 = () => {
 			title: submitData.title,
 			project_id: submitData.project_id,
 			description: submitData.description,
-			considering_desc: submitData.considering_desc,
 		})
 		setStep(2)
 	}
@@ -40,7 +37,6 @@ const CreateProjectStep1 = () => {
 			const draft = JSON.parse(draftData)
 			setValue('title', draft.title)
 			setValue('description', draft.description)
-			setValue('considering_desc', draft.considering_desc)
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])
@@ -83,7 +79,7 @@ const CreateProjectStep1 = () => {
 						}
 					/>
 					<InputTextArea
-						label="A brief Description"
+						label="Project Description"
 						required
 						rows={2}
 						maxLength={300}
@@ -93,21 +89,6 @@ const CreateProjectStep1 = () => {
 							errors.description?.type === 'required' ? (
 								<p className="text-red-500 text-xs mt-1 ml-2">
 									Project brief description is required
-								</p>
-							) : undefined
-						}
-					/>
-					<InputTextArea
-						label="Why do you consider yourself a public good?"
-						required
-						rows={2}
-						maxLength={300}
-						hintLabel="Max. 300 characters"
-						{...register('considering_desc', { required: true })}
-						errorMessage={
-							errors.considering_desc?.type === 'required' ? (
-								<p className="text-red-500 text-xs mt-1 ml-2">
-									Considering description is required
 								</p>
 							) : undefined
 						}

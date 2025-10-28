@@ -16,20 +16,15 @@ import {
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
-import {
-	ICreateProjectParams,
-	IGetProjectsResponse,
-} from '@/services/stellar/project-registry'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import { useModalContext } from '@/app/providers/ModalProvider'
 import IconClose from '@/app/components/svgs/IconClose'
 import { localStorageConfigs } from '@/configs/local-storage'
 import useAppStorage from '@/stores/zustand/useAppStorage'
-import { RegistrationStatus } from 'lists-client'
-import { NearSocialGPProject } from '@/services/near/type'
 import { useSearchParams } from 'next/navigation'
 import { usePotlockService } from '@/services/potlock'
+import { CreateProjectParams, scValToNative } from 'project-registry-client'
 
 const CreateProjectFormContext = createContext<ICreateProjectFormContext>({
 	data: DEFAULT_CREATE_PROJECT_DATA,
@@ -48,8 +43,8 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 	)
 	const { dismissPageLoading, openPageLoading } = useGlobalContext()
 	const [step, setStep] = useState<number>(1)
-	const { stellarKit, nearWallet } = useWallet()
-	const { setSuccessCreateProjectModalProps, setApplyProjectInitProps } =
+	const { stellarKit } = useWallet()
+	const { setSuccessCreateProjectModalProps } =
 		useModalContext()
 	const storage = useAppStorage()
 
@@ -71,11 +66,13 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 					return
 				}
 
-
-				const params: ICreateProjectParams = {
+				const params: CreateProjectParams = {
 					name: dataForm.title,
 					overview: dataForm.description,
-					admins: dataForm.team_member.map((mem) => mem),
+					admins:
+						dataForm.team_member.length > 0
+							? dataForm.team_member.map((mem) => mem)
+							: [storage.my_address || ''],
 					contacts: dataForm.contacts.map((c) => ({
 						name: c.platform,
 						value: c.link_url,
@@ -92,24 +89,26 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 						funded_ms: BigInt(f.date.getTime() as number),
 					})),
 					image_url: DEFAULT_IMAGE_URL,
-					// payout_address: storage.my_address || '',
 					repositories: dataForm.github_urls.map((g) => ({
 						label: 'github',
 						url: g,
 					})),
-					video_url: dataForm.video.url,
-					team_members: dataForm.team_member.map((mem) => ({
-						name: mem,
-						value: mem,
-					})),
+					video_url: dataForm.video.url || undefined,
+					team_members:
+						dataForm.team_member.length > 0
+							? dataForm.team_member.map((mem) => ({
+								name: mem,
+								value: mem,
+							}))
+							: [],
 				}
+
 
 				const isRegistered = await contracts.lists_contract.is_registered({
 					registrant_id: storage.my_address || '',
 					list_id: BigInt(process.env.PROJECTS_LIST_ID || '1'),
 					required_status: undefined,
 				})
-
 
 				if (!isRegistered) {
 					const txRegisterList = await contracts.lists_contract.register_batch({
@@ -126,13 +125,12 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 					)
 				}
 
-
-
 				const txCreateProject = await contracts.project_contract.apply({
 					applicant: storage.my_address || '',
 					project_params: params,
+				}, {
+					fee: 200,
 				})
-
 
 				const txHashCreateProject = await contracts.signAndSendTx(
 					stellarKit as StellarWalletsKit,
@@ -140,11 +138,12 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 					storage.my_address || '',
 				)
 
+
 				if (txHashCreateProject) {
 					setSuccessCreateProjectModalProps((prev) => ({
 						...prev,
 						isOpen: true,
-						createProjectRes: txCreateProject.result,
+						createProjectRes: scValToNative(txCreateProject.simulationData.result.retval),
 						txHash: txHashCreateProject,
 					}))
 					setDataForm(DEFAULT_CREATE_PROJECT_DATA)
@@ -156,84 +155,10 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 					dismissPageLoading()
 					onClose()
 				}
-			} else {
-				const contracts = storage.getNearContracts(nearWallet)
-
-				if (!contracts) {
-					return
-				}
-
-				const params: NearSocialGPProject = {
-					name: dataForm.title,
-					overview: dataForm.description,
-					contacts: dataForm.contacts.map((c) => ({
-						name: c.platform,
-						value: c.link_url,
-					})),
-					owner: storage.my_address || '',
-					contracts: dataForm.smart_contracts.map((sm) => ({
-						name: sm.chain,
-						contract_address: sm.address,
-					})),
-					fundings: dataForm.funding_histories.map((f) => ({
-						source: f.source,
-						denomination: f.denomination,
-						description: f.description,
-						amount: f.amount.toString(),
-						funded_ms: parseInt(f.date.getTime().toString()),
-					})),
-					image_url: DEFAULT_IMAGE_URL,
-					repositories: dataForm.github_urls.map((g) => ({
-						label: 'github',
-						url: g,
-					})),
-					video_url: dataForm.video.url,
-					team_members: dataForm.team_member,
-				}
-
-
-				const txCreateProject = await contracts.near_social.setProjectData(
-					storage.my_address || '',
-					params,
-					true,
-				)
-
-				const listId = process.env.NEAR_PROJECTS_LIST_ID || '1'
-
-				const txRegisterList = await contracts.lists.registerList(listId, true)
-
-				await contracts.near_social.sendTransactions([
-					txRegisterList,
-					txCreateProject,
-				])
-
-				if (searchParams.has('apply_round')) {
-					setApplyProjectInitProps((prev) => ({
-						...prev,
-						isOpen: true,
-						round_id: BigInt(searchParams.get('apply_round') as string),
-						roundData: roundData,
-					}))
-				} else {
-					setSuccessCreateProjectModalProps((prev) => ({
-						...prev,
-						isOpen: true,
-						createProjectRes: params as unknown as IGetProjectsResponse,
-						txHash: undefined,
-					}))
-				}
-				setDataForm(DEFAULT_CREATE_PROJECT_DATA)
-				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_1)
-				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_2)
-				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_3)
-				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_4)
-				localStorage.removeItem(localStorageConfigs.CREATE_PROJECT_STEP_5)
-				dismissPageLoading()
-				onClose()
 			}
 		} catch (error: any) {
 			console.error(error)
-			console.log('error', error?.message)
+			console.log('error', error)
 			toast.error(error?.message || 'Something went wrong', {
 				style: toastOptions.error.style,
 			})

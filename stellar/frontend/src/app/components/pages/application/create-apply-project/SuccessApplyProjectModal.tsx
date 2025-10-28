@@ -61,6 +61,7 @@ const SuccessApplyProjectModal = ({
 						className="!rounded-full"
 						isFullWidth
 						onClick={() => {
+							router.push(`/round/${roundData?.on_chain_id}/applications`)
 							onClose()
 						}}
 					>

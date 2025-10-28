@@ -31,12 +31,15 @@ import { usePotlockService } from '@/services/potlock'
 import { GPApplication } from '@/models/application'
 import { NearProjectApplication } from '@/services/near/type'
 import { RoundApplication } from 'round-client'
+import ProjectDetailDrawer from '../round-vote/ProjectDetailDrawer'
+import { Project } from 'project-registry-client'
+import { GPProject } from '@/models/project'
 
 interface ApplicationsDrawerProps extends IDrawerProps {
 	doc: GPRound
 }
 
-const ApplicationItem = ({
+export const ApplicationItem = ({
 	type,
 	index,
 	item,
@@ -49,74 +52,56 @@ const ApplicationItem = ({
 	roundData: GPRound
 	mutate: any
 }) => {
-	const { stellarPubKey, stellarKit, nearWallet } = useWallet()
+	const { stellarPubKey, stellarKit } = useWallet()
 	const { dismissPageLoading, openPageLoading } = useGlobalContext()
 	const [openAcceptModal, setOpenAcceptModal] = useState<boolean>(false)
 	const [openRejectModal, setOpenRejectModal] = useState<boolean>(false)
 	const storage = useAppStorage()
+	const [showProjectDetailDrawer, setShowProjectDetailDrawer] = useState<{
+		isOpen: boolean
+		project: Project | GPProject | null
+	}>({
+		isOpen: false,
+		project: null,
+	})
 
 	const onAcceptReject = async (type: 'accept' | 'reject', note: string) => {
 		try {
 			openPageLoading()
 
-			if (storage.chainId === 'stellar') {
-				let contracts = storage.getStellarContracts()
+			let contracts = storage.getStellarContracts()
 
-				if (!contracts) {
-					return
-				}
+			if (!contracts) {
+				return
+			}
 
-				const params: ReviewApplicationParams = {
-					round_id: BigInt(roundData.on_chain_id),
-					caller: stellarPubKey,
-					applicant: item.applicant.id,
-					status: {
-						tag: type === 'accept' ? 'Approved' : 'Rejected',
-						values: void 0,
-					},
-					note,
-				}
-				const txChangeProjectStatus = await reviewApplicationRound(
-					params,
-					contracts,
-				)
-				const txHash = await contracts.signAndSendTx(
-					stellarKit as StellarWalletsKit,
-					txChangeProjectStatus.toXDR(),
-					stellarPubKey,
-				)
-				if (txHash) {
-					dismissPageLoading()
-					toast.success(`Change status to ${type} is succeed`, {
-						style: toastOptions.success.style,
-					})
-					if (type === 'accept') setOpenAcceptModal(false)
-					else setOpenRejectModal(false)
-					await mutate()
-				}
-			} else {
-				const contracts = storage.getNearContracts(nearWallet)
-
-				if (!contracts) {
-					return
-				}
-
-				const txReviewApplication = await contracts.round.reviewApplication(
-					roundData.on_chain_id,
-					item.applicant.id,
-					note,
-					type === 'accept' ? 'Approved' : 'Rejected',
-				)
-
-				if (txReviewApplication) {
-					dismissPageLoading()
-					toast.success(`Change status to ${type} is succeed`, {
-						style: toastOptions.success.style,
-					})
-					if (type === 'accept') setOpenAcceptModal(false)
-					else setOpenRejectModal(false)
-					await mutate()
-				}
+			const params: ReviewApplicationParams = {
+				round_id: BigInt(roundData.on_chain_id),
+				caller: stellarPubKey,
+				applicant: item.applicant.id,
+				status: {
+					tag: type === 'accept' ? 'Approved' : 'Rejected',
+					values: void 0,
+				},
+				note,
+			}
+			const txChangeProjectStatus = await reviewApplicationRound(
+				params,
+				contracts,
+			)
+			const txHash = await contracts.signAndSendTx(
+				stellarKit as StellarWalletsKit,
+				txChangeProjectStatus.toXDR(),
+				stellarPubKey,
+			)
+			if (txHash) {
+				dismissPageLoading()
+				toast.success(`Change status to ${type} is succeed`, {
+					style: toastOptions.success.style,
+				})
+				if (type === 'accept') setOpenAcceptModal(false)
+				else setOpenRejectModal(false)
+				await mutate()
 			}
 		} catch (error: any) {
 			dismissPageLoading()
@@ -128,8 +113,13 @@ const ApplicationItem = ({
 		}
 	}
 
+
 	return (
-		<div className="bg-grantpicks-black-50 rounded-xl border border-grantpicks-black-200">
+		<div onClick={() => setShowProjectDetailDrawer((prev) => ({
+			...prev,
+			isOpen: true,
+			project: item.project as unknown as Project | GPProject,
+		}))} className="bg-grantpicks-black-50 rounded-xl border border-grantpicks-black-200">
 			{type === 'Pending' ? (
 				<div className="flex items-center justify-between bg-white px-3 md:px-4 py-2 rounded-t-xl">
 					<div className="flex items-center space-x-1 py-1">
@@ -189,18 +179,43 @@ const ApplicationItem = ({
 					</p>
 				</div>
 			)}
-			<div className="flex items-center space-x-3 px-3 md:px-4 py-2">
+			<div className="flex items-start gap-3 px-3 md:px-4 py-3">
 				<Image
 					src={`https://www.tapback.co/api/avatar/${item.applicant.id}`}
 					alt="applicant"
-					width={24}
-					height={24}
+					width={40}
+					height={40}
+					className="rounded-full ring-1 ring-grantpicks-black-200"
 				/>
-				<p>
-					<span className="text-base font-bold text-grantpicks-black-950 mr-1">
+				<div className="flex flex-col min-w-0 flex-1">
+					<p className="text-sm mb-1 md:text-base font-semibold text-grantpicks-black-950 leading-tight truncate">
+						{item?.project?.name || ''}
+					</p>
+					<span
+						title={item.applicant.id}
+						aria-label="Copy applicant address"
+						onClick={() => {
+							navigator?.clipboard
+								?.writeText(item.applicant.id)
+								.then(() =>
+									toast.success('Copied address', {
+										style: toastOptions.success.style,
+									}),
+								)
+								.catch(() =>
+									toast.error('Failed to copy', {
+										style: toastOptions.error.style,
+									}),
+								)
+						}}
+						className="text-xs md:text-sm font-mono font-medium text-grantpicks-black-700 cursor-copy hover:underline"
+					>
 						{prettyTruncate(item.applicant.id, 20, 'address')}
 					</span>
-				</p>
+					<p className="mt-3 text-sm text-grantpicks-black-600 break-words">
+						{prettyTruncate(item?.project?.overview || '', 100) || ''}
+					</p>
+				</div>
 			</div>
 			<div className=" px-3 md:px-4 py-2">
 				<p className="text-base font-normal text-grantpicks-black-600">
@@ -234,6 +249,16 @@ const ApplicationItem = ({
 				applicationData={item}
 				onConfirm={(note) => onAcceptReject('reject', note)}
 			/>
+			<ProjectDetailDrawer
+				isOpen={showProjectDetailDrawer?.isOpen || false}
+				onClose={() =>
+					setShowProjectDetailDrawer((prev) => ({
+						...prev,
+						isOpen: false,
+					}))
+				}
+				projectData={showProjectDetailDrawer.project || undefined}
+			/>
 		</div>
 	)
 }
@@ -255,15 +280,7 @@ const ApplicationsDrawer = ({
 		page: number
 	}): Promise<GPApplication[]> => {
 		if (chainId === 'stellar') {
-      //TODO: implement getApplications From BE
-			// const res = await potlockService.getApplications(doc.id, key.page + 1)
-			// return res.map((item: GPApplication) => {
-			// 	item.status = item.status.replaceAll("['", '').replaceAll("']", '')
-			// 	return item
-			// })
-
 			const contracts = storage.getStellarContracts()
-
 			if (!contracts) {
 				return []
 			}

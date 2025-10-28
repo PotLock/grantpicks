@@ -1,9 +1,7 @@
 import { Client as ListClient } from 'lists-client'
 import { Client as ProjectClient } from 'project-registry-client'
 import { Client as RoundClient } from 'round-client'
-import {
-	ClientOptions,
-} from '@stellar/stellar-sdk/contract'
+import { ClientOptions } from '@stellar/stellar-sdk/contract'
 import CMDWallet from './wallet'
 import { Network } from '@/types/on-chain'
 import { envVarConfigs } from '@/configs/env-var'
@@ -11,7 +9,7 @@ import {
 	StellarWalletsKit,
 	WalletNetwork,
 } from '@creit.tech/stellar-wallets-kit'
-import { getHorizonConfig, getHorizonServer,  submitTx } from '@/utils/helper'
+import { getHorizonConfig, getHorizonServer, submitTx } from '@/utils/helper'
 
 class Contracts {
 	private _lists_contract: ListClient
@@ -31,7 +29,7 @@ class Contracts {
 				: {
 						contractId: '',
 						networkPassphrase: 'Public Global Stellar Network ; September 2015',
-						rpcUrl: 'https://stellar-soroban-public.nodies.app',
+						rpcUrl: 'https://rpc.lightsail.network/',
 						publicKey: wallet ? wallet.account.publicKey : undefined,
 					}
 		if (wallet) {
@@ -39,14 +37,14 @@ class Contracts {
 				const signedAuth = await wallet.signAuth()
 				return {
 					signedAuthEntry: signedAuth,
-					signerAddress: wallet.account.publicKey
+					signerAddress: wallet.account.publicKey,
 				}
 			}
 			config.signTransaction = async (tx: string, opts?: any) => {
 				const signedTx = await wallet.signTransaction(tx, opts)
 				return {
 					signedTxXdr: signedTx,
-					signerAddress: wallet.account.publicKey
+					signerAddress: wallet.account.publicKey,
 				}
 			}
 		}
@@ -58,8 +56,6 @@ class Contracts {
 		let project_registry_contract_id =
 			envVarConfigs.PROJECT_REGISTRY_CONTRACT_ID || ''
 		let round_contract_id = envVarConfigs.ROUND_CONTRACT_ID || ''
-
-		
 
 		this._lists_contract = new ListClient({
 			contractId: lists_contract_id,
@@ -117,7 +113,7 @@ class Contracts {
 					?.network_passphrase as string,
 				server,
 			})
-			
+
 			return txHash
 		} else {
 			throw new Error('Tx canceled by user')

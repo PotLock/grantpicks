@@ -30,6 +30,7 @@ interface RoundVotePairItemProps {
 	setSelectedPairs: Dispatch<SetStateAction<string[]>>
 	data: Pair | NearPair
 	setShowProjectDetailDrawer: Dispatch<SetStateAction<IProjectDetailOwner>>
+	onSelect?: (index: number) => void
 }
 
 const RoundVotePairItem = ({
@@ -38,6 +39,7 @@ const RoundVotePairItem = ({
 	setSelectedPairs,
 	data,
 	setShowProjectDetailDrawer,
+	onSelect,
 }: RoundVotePairItemProps) => {
 	const wrapper1Ref = useRef<HTMLDivElement>(null)
 	const wrapper2Ref = useRef<HTMLDivElement>(null)
@@ -76,14 +78,14 @@ const RoundVotePairItem = ({
 
 				setFirstProjectData(firstRes)
 				setSecondProjectData(secondRes)
-				if (firstRes?.video_url.includes('youtube')) {
+				if (firstRes?.video_url && firstRes.video_url.includes('youtube')) {
 					const res = await fetchYoutubeIframe(
 						firstRes.video_url || '',
 						wrapper1Ref.current?.clientWidth || 0,
 					)
 					setYtIframe1(res?.html)
 				}
-				if (secondRes?.video_url.includes('youtube')) {
+				if (secondRes?.video_url && secondRes.video_url.includes('youtube')) {
 					const res = await fetchYoutubeIframe(
 						secondRes.video_url || '',
 						wrapper2Ref.current?.clientWidth || 0,
@@ -143,7 +145,8 @@ const RoundVotePairItem = ({
 	const firstVideoComponent = useMemo(() => {
 		return (
 			<div>
-				{!firstProjectData?.video_url.includes('youtube') && (
+				{(!firstProjectData?.video_url ||
+					!firstProjectData.video_url.includes('youtube')) && (
 					<div className="relative">
 						<video
 							ref={video1Ref}
@@ -188,7 +191,8 @@ const RoundVotePairItem = ({
 	const secondVideoComponent = useMemo(() => {
 		return (
 			<div>
-				{!secondProjectData?.video_url.includes('youtube') && (
+				{(!secondProjectData?.video_url ||
+					!secondProjectData.video_url.includes('youtube')) && (
 					<div className="relative">
 						<video
 							ref={video2Ref}
@@ -233,8 +237,7 @@ const RoundVotePairItem = ({
 	return (
 		<div
 			key={index}
-			id={`boxing-${index}`}
-			className="min-w-full flex flex-col md:flex-row items-stretch md:items-center justify-between snap-start md:snap-center space-y-4 md:space-y-0 md:space-x-4"
+			className="min-w-full flex flex-col md:flex-row items-stretch md:items-center justify-between snap-start space-y-4 md:space-y-0 md:space-x-4"
 		>
 			{/* the first */}
 			<div
@@ -242,13 +245,14 @@ const RoundVotePairItem = ({
 					let temp = [...selectedPairs]
 					temp[index] = data.projects[0].toString()
 					setSelectedPairs(temp)
+					onSelect?.(index)
 				}}
 				ref={wrapper1Ref}
 				className={clsx(
 					`rounded-3xl transition-all duration-200 w-full md:w-[360px] lg:w-[448px] cursor-pointer`,
 					selectedPairs[index] === data.projects[0].toString()
 						? // true
-						`border-4 border-grantpicks-purple-500`
+							`border-4 border-grantpicks-purple-500`
 						: `border-4 border-black/10`,
 				)}
 			>
@@ -298,6 +302,7 @@ const RoundVotePairItem = ({
 					let temp = [...selectedPairs]
 					temp[index] = data.projects[1].toString()
 					setSelectedPairs(temp)
+					onSelect?.(index)
 				}}
 				className={clsx(
 					`rounded-3xl transition-all duration-200 w-full md:w-[360px] lg:w-[448px] cursor-pointer`,

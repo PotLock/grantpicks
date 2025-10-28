@@ -16,15 +16,46 @@ import {
 } from '@/types/context'
 import dynamic from 'next/dynamic'
 
-const SuccessFundRoundModal = dynamic(() => import('../components/pages/application/SuccessFundRoundModal'))
-const ApplyProjectModal = dynamic(() => import('../components/pages/application/create-apply-project/ApplyProjectModal'))
-const CreateProjectFormMainModal = dynamic(() => import('../components/pages/application/create-apply-project/create-project-form/CreateProjectFormMainModal'))
-const VoteConfirmationModal = dynamic(() => import('../components/pages/application/VoteConfirmationModal'))
-const SuccessCreateRoundModal = dynamic(() => import('../components/pages/create-round/SuccessCreateRoundModal'))
-const SuccessEditRoundModal = dynamic(() => import('../components/pages/application/edit-round/SuccessEditRoundModal'))
-const SuccessCreateProjectModal = dynamic(() => import('../components/pages/application/create-apply-project/SuccessCreateProjectModal'))
-const SuccessApplyProjectModal = dynamic(() => import('../components/pages/application/create-apply-project/SuccessApplyProjectModal'))
-const VideoPlayerModal = dynamic(() => import('../components/commons/VideoPlayerModal'))
+const SuccessFundRoundModal = dynamic(
+	() => import('../components/pages/application/SuccessFundRoundModal'),
+)
+const ApplyProjectModal = dynamic(
+	() =>
+		import(
+			'../components/pages/application/create-apply-project/ApplyProjectModal'
+		),
+)
+const CreateProjectFormMainModal = dynamic(
+	() =>
+		import(
+			'../components/pages/application/create-apply-project/create-project-form/CreateProjectFormMainModal'
+		),
+)
+const VoteConfirmationModal = dynamic(
+	() => import('../components/pages/application/VoteConfirmationModal'),
+)
+const SuccessCreateRoundModal = dynamic(
+	() => import('../components/pages/create-round/SuccessCreateRoundModal'),
+)
+const SuccessEditRoundModal = dynamic(
+	() =>
+		import('../components/pages/application/edit-round/SuccessEditRoundModal'),
+)
+const SuccessCreateProjectModal = dynamic(
+	() =>
+		import(
+			'../components/pages/application/create-apply-project/SuccessCreateProjectModal'
+		),
+)
+const SuccessApplyProjectModal = dynamic(
+	() =>
+		import(
+			'../components/pages/application/create-apply-project/SuccessApplyProjectModal'
+		),
+)
+const VideoPlayerModal = dynamic(
+	() => import('../components/commons/VideoPlayerModal'),
+)
 
 const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 	const [successCreateRoundProps, setSuccessCreateRoundProps] =
@@ -181,7 +212,6 @@ const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 				<VoteConfirmationModal
 					isOpen={voteConfirmationProps.isOpen}
 					data={voteConfirmationProps.doc}
-					chainId={voteConfirmationProps.chainId}
 					onClose={() =>
 						setVoteConfirmationProps((prev) => ({
 							...prev,

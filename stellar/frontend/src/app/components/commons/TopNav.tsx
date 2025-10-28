@@ -1,11 +1,11 @@
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import Button from './Button'
 import ChooseWalletMenu from '../pages/application/ChooseWalletMenu'
 import { useWallet } from '@/app/providers/WalletProvider'
 import UserMenu from '../pages/application/UserMenu'
 import IconExpandMore from '../svgs/IconExpandMore'
 import IconExpandLess from '../svgs/IconExpandLess'
-import { formatNearAddress, prettyTruncate } from '@/utils/helper'
+import { prettyTruncate } from '@/utils/helper'
 import { useRouter } from 'next/navigation'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import Image from 'next/image'
@@ -13,17 +13,24 @@ import Image from 'next/image'
 // Add a simple hamburger icon
 const HamburgerIcon = ({ open }: { open: boolean }) => (
 	<div className="flex flex-col justify-center items-center w-8 h-8 cursor-pointer">
-		<span className={`block h-0.5 w-6 bg-black rounded transition-all duration-200 ${open ? 'rotate-45 translate-y-2' : ''}`}></span>
-		<span className={`block h-0.5 w-6 bg-black rounded my-1 transition-all duration-200 ${open ? 'opacity-0' : ''}`}></span>
-		<span className={`block h-0.5 w-6 bg-black rounded transition-all duration-200 ${open ? '-rotate-45 -translate-y-2' : ''}`}></span>
+		<span
+			className={`block h-0.5 w-6 bg-black rounded transition-all duration-200 ${open ? 'rotate-45 translate-y-2' : ''}`}
+		></span>
+		<span
+			className={`block h-0.5 w-6 bg-black rounded my-1 transition-all duration-200 ${open ? 'opacity-0' : ''}`}
+		></span>
+		<span
+			className={`block h-0.5 w-6 bg-black rounded transition-all duration-200 ${open ? '-rotate-45 -translate-y-2' : ''}`}
+		></span>
 	</div>
 )
 
 const TopNav = () => {
-	const { connectedWallet, nearAccounts, stellarPubKey, profileData } =
+	const { connectedWallet, stellarPubKey, profileData, onOpenStellarWallet } =
 		useWallet()
 	const { showMenu, setShowMenu } = useGlobalContext()
 	const [navOpen, setNavOpen] = useState(false)
+	const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 	const router = useRouter()
 
 	// Close nav dropdown on route change
@@ -36,7 +43,10 @@ const TopNav = () => {
 		<div className="flex fixed z-20 inset-x-0 items-center justify-between px-3 sm:px-[5vw] md:px-[10vw] xl:px-[15vw] py-3 sm:py-4 bg-white">
 			{/* Mobile Hamburger - now first */}
 			<div className="flex sm:hidden items-center mr-2">
-				<button onClick={() => setNavOpen((prev) => !prev)} aria-label="Open navigation menu">
+				<button
+					onClick={() => setNavOpen((prev) => !prev)}
+					aria-label="Open navigation menu"
+				>
 					<HamburgerIcon open={navOpen} />
 				</button>
 				{/* Dropdown menu */}
@@ -60,7 +70,7 @@ const TopNav = () => {
 			{/* Logo and GrantPicks text */}
 			<button
 				onClick={() => router.push(`/rounds`)}
-				className="flex items-center gap-x-[2px] px-2 sm:px-[10px]"
+				className="flex items-center gap-x-[2px] px-2 md:px-0 sm:px-[10px]"
 			>
 				<Image
 					src="/assets/images/grantpicks-logo-new.png"
@@ -75,16 +85,37 @@ const TopNav = () => {
 			</button>
 			{/* Desktop Nav */}
 			<div className="hidden sm:flex items-center gap-x-2 sm:gap-x-4">
-				<p className="text-xs sm:text-sm md:text-base font-bold hover:underline text-grantpicks-black-950 cursor-pointer" onClick={() => router.push(`/lists`)}>
+				<p
+					className="text-xs sm:text-sm md:text-base font-bold hover:underline text-grantpicks-black-950 cursor-pointer"
+					onClick={() => router.push(`/lists`)}
+				>
 					LISTS
 				</p>
-				<p className="text-xs sm:text-sm md:text-base font-bold hover:underline text-grantpicks-black-950 cursor-pointer" onClick={() => router.push(`/rounds`)}>
+				<p
+					className="text-xs sm:text-sm md:text-base font-bold hover:underline text-grantpicks-black-950 cursor-pointer"
+					onClick={() => router.push(`/rounds`)}
+				>
 					ROUNDS
 				</p>
 			</div>
 			{/* User/Wallet section */}
 			<div className="flex items-center space-x-2 sm:space-x-4">
-				<div className="relative">
+				<div
+					className="relative"
+					onMouseEnter={() => {
+						if (hoverTimerRef.current && connectedWallet) {
+							clearTimeout(hoverTimerRef.current)
+							hoverTimerRef.current = null
+							setShowMenu('user')
+						}
+					}}
+					onMouseLeave={() => {
+						if (hoverTimerRef.current && connectedWallet) {
+							clearTimeout(hoverTimerRef.current)
+						}
+						hoverTimerRef.current = setTimeout(() => setShowMenu(null), 200)
+					}}
+				>
 					{!!connectedWallet ? (
 						<button
 							onClick={() => setShowMenu((prev) => (!!prev ? null : 'user'))}
@@ -92,11 +123,7 @@ const TopNav = () => {
 						>
 							<div className="sm:pr-2">
 								<Image
-									src={
-										connectedWallet === 'near'
-											? `https://www.tapback.co/api/avatar/${nearAccounts[0]?.accountId}`
-											: `https://www.tapback.co/api/avatar/${stellarPubKey}`
-									}
+									src={`https://www.tapback.co/api/avatar/${stellarPubKey}`}
 									alt="image"
 									width={32}
 									height={32}
@@ -107,16 +134,10 @@ const TopNav = () => {
 								<div className="flex items-center mr-4 lg:mr-6">
 									<div>
 										<p className="text-xs lg:text-sm font-semibold text-grantpicks-black-950">
-											{connectedWallet === 'near'
-												? profileData?.near_social_profile_data?.name ||
-												formatNearAddress(nearAccounts[0]?.accountId)
-												: prettyTruncate(stellarPubKey, 10, 'address')}
+											{prettyTruncate(stellarPubKey, 10, 'address')}
 										</p>
 										<p className="text-xs lg:text-sm font-normal text-grantpicks-black-600">
-											@
-											{connectedWallet === 'near'
-												? formatNearAddress(nearAccounts[0]?.accountId)
-												: prettyTruncate(stellarPubKey, 10, 'address')}
+											@{prettyTruncate(stellarPubKey, 10, 'address')}
 										</p>
 									</div>
 								</div>
@@ -135,9 +156,7 @@ const TopNav = () => {
 						</button>
 					) : (
 						<Button
-							onClick={() =>
-								setShowMenu(!!connectedWallet ? 'user' : 'choose-wallet')
-							}
+							onClick={() => onOpenStellarWallet()}
 							className="!text-xs sm:!text-sm !font-semibold !px-3 sm:!px-4 !py-2"
 							color="black-950"
 						>
@@ -149,6 +168,19 @@ const TopNav = () => {
 						onShowChooseWallet={() => setShowMenu('choose-wallet')}
 						onCloseChooseWalletMenu={() => setShowMenu(null)}
 						onClose={() => setShowMenu(null)}
+						onMouseEnter={() => {
+							if (hoverTimerRef.current) {
+								clearTimeout(hoverTimerRef.current)
+								hoverTimerRef.current = null
+							}
+							setShowMenu('user')
+						}}
+						onMouseLeave={() => {
+							if (hoverTimerRef.current) {
+								clearTimeout(hoverTimerRef.current)
+							}
+							hoverTimerRef.current = setTimeout(() => setShowMenu(null), 200)
+						}}
 					/>
 					<ChooseWalletMenu
 						isOpen={showMenu === 'choose-wallet'}

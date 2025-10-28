@@ -1,11 +1,11 @@
 import Contracts from '@/lib/contracts'
+import { Option, u128, u64 } from '@stellar/stellar-sdk/contract'
 import {
-	AssembledTransaction,
-	Option,
-	u128,
-	u64,
-} from '@stellar/stellar-sdk/contract'
-import { Project } from 'project-registry-client'
+	CreateProjectParams,
+	Project,
+	UpdateProjectParams,
+} from 'project-registry-client'
+import { scValToNative} from '@stellar/stellar-sdk'
 
 interface GetProjectsParams {
 	skip: number
@@ -35,7 +35,7 @@ export interface ICreateProjectParams {
 	// payout_address: string
 	repositories: ProjectRepository[]
 	team_members: ProjectTeamMember[]
-	video_url: string
+	video_url?: string
 }
 
 export interface IUpdateProjectParams {
@@ -47,7 +47,7 @@ export interface IUpdateProjectParams {
 	overview: string
 	repositories: ProjectRepository[]
 	team_members: ProjectTeamMember[]
-	video_url: string
+	video_url?: string
 }
 
 export interface IChangeProjectStatusParams {
@@ -85,6 +85,13 @@ export interface ProjectTeamMember {
 
 export interface IGetProjectsResponse extends Project {}
 
+export type IndexerProjectResponse = Omit<Project, 'owner'> & {
+	owner: {
+		id: string
+	}
+	on_chain_id: bigint
+}
+
 export const getProjects: (
 	params: GetProjectsParams,
 	contract: Contracts,
@@ -118,24 +125,26 @@ export const getProject: (
 export const getProjectApplicant: (
 	applicant: string,
 	contract: Contracts,
-) => Promise<Project | undefined> = async (
+) => Promise<Project | undefined | any> = async (
 	applicant: string,
 	contract: Contracts,
 ) => {
 	let project = await contract.project_contract.get_project_from_applicant({
 		applicant,
 	})
-	if (project) return project.result
+	return scValToNative(project.simulationData.result.retval)
 }
 
 export const createProject = async (
 	applicant: string,
-	params: ICreateProjectParams,
+	params: CreateProjectParams,
 	contract: Contracts,
 ) => {
 	let project = await contract.project_contract.apply({
 		applicant,
 		project_params: params,
+	}, {
+		fee: 200
 	})
 	return project
 }
@@ -143,13 +152,15 @@ export const createProject = async (
 export const updateProject = async (
 	admin: string,
 	project_id: bigint,
-	params: IUpdateProjectParams,
+	params: UpdateProjectParams,
 	contract: Contracts,
 ) => {
 	let project = await contract.project_contract.update_project({
 		admin,
 		project_id: project_id,
 		new_project_params: params,
+	}, {
+		fee: 200,
 	})
 	return project
 }

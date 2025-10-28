@@ -28,27 +28,55 @@ const IsNotVotedSection = ({
 }) => {
 	const params = useParams<{ roundId: string }>()
 	const [currBoxing, setCurrBoxing] = useState<number>(0)
+	const desktopScrollerRef = useRef<HTMLDivElement>(null)
 	const [selectedVotes, setSeletedVotes] = useState<string[]>([])
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
-	const { stellarKit, nearWallet } = useWallet()
+	const { stellarKit } = useWallet()
 	const storage = useAppStorage()
 
 	const onPreviousBoxing = (currIdx: number) => {
 		if (currIdx > 0) {
 			setCurrBoxing(currIdx - 1)
-			const el = document.getElementById(`boxing-${currIdx - 1}`)
-			el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+			// mobile vertical scroll
+			document.getElementById(`boxing-m-${currIdx - 1}`)?.scrollIntoView({
+				behavior: 'smooth',
+				block: 'center',
+			})
+			// desktop horizontal scroll
+			if (desktopScrollerRef.current) {
+				const child = desktopScrollerRef.current.children[
+					currIdx - 1
+				] as HTMLElement
+				child?.scrollIntoView({
+					behavior: 'smooth',
+					inline: 'start',
+					block: 'nearest',
+				})
+			}
 		}
 	}
 
 	const onNextBoxing = (currIdx: number) => {
 		if (currIdx < pairsData.length - 1) {
 			setCurrBoxing(currIdx + 1)
-			const el = document.getElementById(`boxing-${currIdx + 1}`)
-			el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+			// mobile vertical scroll
+			document.getElementById(`boxing-m-${currIdx + 1}`)?.scrollIntoView({
+				behavior: 'smooth',
+				block: 'center',
+			})
+			// desktop horizontal scroll
+			if (desktopScrollerRef.current) {
+				const child = desktopScrollerRef.current.children[
+					currIdx + 1
+				] as HTMLElement
+				child?.scrollIntoView({
+					behavior: 'smooth',
+					inline: 'start',
+					block: 'nearest',
+				})
+			}
 		}
 	}
-
 
 	const onVotePair = async () => {
 		try {
@@ -85,7 +113,7 @@ const IsNotVotedSection = ({
 					setHasVoted(true)
 				}
 			} else {
-				const contracts = storage.getNearContracts(nearWallet)
+				const contracts = storage.getNearContracts(null)
 
 				if (!contracts) {
 					return
@@ -132,37 +160,51 @@ const IsNotVotedSection = ({
 				Ensure you’re reviewing each in consideration of public impact.{' '}
 			</p>
 			<span
-				className="text-xs md:text-base font-bold cursor-pointer mb-10 md:mb-12 lg:mb-16"
+				className="text-xs md:text-base font-bold cursor-pointer"
 				onClick={() => setShowEvalGuide(true)}
 			>
 				See Evaluation guide
 			</span>
+			<p className="text-xs md:text-sm text-grantpicks-black-600 mb-10 md:mb-12 lg:mb-16">
+				You need to vote for more than one pair. Voted:{' '}
+				{selectedVotes.filter(Boolean).length} / {pairsData.length}
+			</p>
 			{/* Mobile vertical stack with snap */}
 			<div className="flex md:hidden flex-col w-full space-y-6 px-4 mb-8 snap-y snap-mandatory overflow-y-auto h-[70vh]">
 				{pairsData.map((doc, idx) => (
-					<div key={`m-${idx}`} id={`boxing-${idx}`} className="w-full snap-start">
+					<div
+						key={`m-${idx}`}
+						id={`boxing-m-${idx}`}
+						className="w-full snap-start"
+					>
 						<RoundVotePairItem
 							index={idx}
 							data={doc}
 							setShowProjectDetailDrawer={setShowProjectDetailDrawer}
 							selectedPairs={selectedVotes}
 							setSelectedPairs={setSeletedVotes}
+							onSelect={() => setCurrBoxing(idx)}
 						/>
 					</div>
 				))}
 			</div>
 
 			{/* Desktop horizontal scroller */}
-			<div className="hidden md:flex items-center snap-x snap-mandatory overflow-x-auto mb-10 md:mb-12 lg:mb-16 no-scrollbar max-w-full space-x-4 md:space-x-6">
+			<div
+				ref={desktopScrollerRef}
+				className="hidden md:flex items-center snap-x snap-mandatory overflow-x-auto mb-10 md:mb-12 lg:mb-16 no-scrollbar max-w-full space-x-4 md:space-x-6"
+			>
 				{pairsData.map((doc, idx) => (
-					<RoundVotePairItem
-						key={idx}
-						index={idx}
-						data={doc}
-						setShowProjectDetailDrawer={setShowProjectDetailDrawer}
-						selectedPairs={selectedVotes}
-						setSelectedPairs={setSeletedVotes}
-					/>
+					<div key={`d-${idx}`} className="snap-start min-w-full">
+						<RoundVotePairItem
+							index={idx}
+							data={doc}
+							setShowProjectDetailDrawer={setShowProjectDetailDrawer}
+							selectedPairs={selectedVotes}
+							setSelectedPairs={setSeletedVotes}
+							onSelect={() => setCurrBoxing(idx)}
+						/>
+					</div>
 				))}
 			</div>
 			<div className="flex items-center justify-center space-x-6 md:space-x-10">

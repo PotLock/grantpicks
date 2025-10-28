@@ -1,6 +1,6 @@
 /// <reference types="node" resolution-mode="require"/>
 /// <reference types="node" resolution-mode="require"/>
-import { Buffer } from "buffer";
+import { Buffer } from 'buffer';
 import { AssembledTransaction, Client as ContractClient, ClientOptions as ContractClientOptions } from '@stellar/stellar-sdk/contract';
 import type { u64, u128, Option } from '@stellar/stellar-sdk/contract';
 export * from '@stellar/stellar-sdk';
@@ -9,27 +9,27 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CCIF26RAXONJHR42UKOJGTCPA3GVL37QCHS42PFWGM53A5WOLEFBMTYB";
+        readonly contractId: "CCLXSELRRF67M3K5JJYNT6HRTJN26JDJKZYKR5QTZAEZU2TSCF6OGFZT";
     };
     readonly public: {
         readonly networkPassphrase: "Public Global Stellar Network ; September 2015";
-        readonly contractId: "CAFRPR2FE2ASZGZDGLCGGUGPUJMBHCPWXVAGZ3GZR5ITZIFPPSAG53B6";
+        readonly contractId: "CAIYXP5CNFB5WUBAWEPBZHIKYZGP3IEFXILFMDUT37FZBKNGFJGNJPNT";
     };
 };
 export type RegistrationStatus = {
-    tag: "Pending";
+    tag: 'Pending';
     values: void;
 } | {
-    tag: "Approved";
+    tag: 'Approved';
     values: void;
 } | {
-    tag: "Rejected";
+    tag: 'Rejected';
     values: void;
 } | {
-    tag: "Graylisted";
+    tag: 'Graylisted';
     values: void;
 } | {
-    tag: "Blacklisted";
+    tag: 'Blacklisted';
     values: void;
 };
 export interface ListInternal {
@@ -87,40 +87,40 @@ export interface RegistrationInput {
     updated_ms: Option<u64>;
 }
 export type ContractKey = {
-    tag: "ContractOwner";
+    tag: 'ContractOwner';
     values: void;
 } | {
-    tag: "ListsNumber";
+    tag: 'ListsNumber';
     values: void;
 } | {
-    tag: "Lists";
+    tag: 'Lists';
     values: readonly [u128];
 } | {
-    tag: "ListAdmins";
+    tag: 'ListAdmins';
     values: readonly [u128];
 } | {
-    tag: "OwnedList";
+    tag: 'OwnedList';
     values: readonly [string];
 } | {
-    tag: "RegistrantList";
+    tag: 'RegistrantList';
     values: readonly [string];
 } | {
-    tag: "RegistrationsNumber";
+    tag: 'RegistrationsNumber';
     values: void;
 } | {
-    tag: "Registrations";
+    tag: 'Registrations';
     values: readonly [u128];
 } | {
-    tag: "ListRegistration";
+    tag: 'ListRegistration';
     values: readonly [u128];
 } | {
-    tag: "RegistrationsIDs";
+    tag: 'RegistrationsIDs';
     values: readonly [string];
 } | {
-    tag: "Upvotes";
+    tag: 'Upvotes';
     values: readonly [u128];
 } | {
-    tag: "UserUpvotes";
+    tag: 'UserUpvotes';
     values: readonly [string];
 };
 export declare const Errors: {
@@ -205,7 +205,7 @@ export interface Client {
     /**
      * Construct and simulate a create_list transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    create_list: ({ owner, name, default_registration_status, description, cover_image_url, admins, admin_only_registrations }: {
+    create_list: ({ owner, name, default_registration_status, description, cover_image_url, admins, admin_only_registrations, }: {
         owner: string;
         name: string;
         default_registration_status: RegistrationStatus;
@@ -230,7 +230,7 @@ export interface Client {
     /**
      * Construct and simulate a update_list transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    update_list: ({ list_id, name, description, cover_image_url, remove_cover_image, default_registration_status, admin_only_registrations }: {
+    update_list: ({ list_id, name, description, cover_image_url, remove_cover_image, default_registration_status, admin_only_registrations, }: {
         list_id: u128;
         name: Option<string>;
         description: Option<string>;
@@ -393,7 +393,7 @@ export interface Client {
     /**
      * Construct and simulate a register_batch transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    register_batch: ({ submitter, list_id, notes, registrations }: {
+    register_batch: ({ submitter, list_id, notes, registrations, }: {
         submitter: string;
         list_id: u128;
         notes: Option<string>;
@@ -415,7 +415,7 @@ export interface Client {
     /**
      * Construct and simulate a unregister transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    unregister: ({ submitter, list_id, registration_id }: {
+    unregister: ({ submitter, list_id, registration_id, }: {
         submitter: string;
         list_id: Option<u128>;
         registration_id: Option<u128>;
@@ -436,7 +436,7 @@ export interface Client {
     /**
      * Construct and simulate a update_registration transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    update_registration: ({ submitter, list_id, registration_id, status, notes }: {
+    update_registration: ({ submitter, list_id, registration_id, status, notes, }: {
         submitter: string;
         list_id: u128;
         registration_id: u128;
@@ -536,7 +536,7 @@ export interface Client {
     /**
      * Construct and simulate a get_upvotes_for_list transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    get_upvotes_for_list: ({ list_id, from_index, limit }: {
+    get_upvotes_for_list: ({ list_id, from_index, limit, }: {
         list_id: u128;
         from_index: Option<u64>;
         limit: Option<u64>;
@@ -557,7 +557,7 @@ export interface Client {
     /**
      * Construct and simulate a get_upvoted_lists_for_account transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    get_upvoted_lists_for_account: ({ user, from_index, limit }: {
+    get_upvoted_lists_for_account: ({ user, from_index, limit, }: {
         user: string;
         from_index: Option<u64>;
         limit: Option<u64>;
@@ -597,7 +597,7 @@ export interface Client {
     /**
      * Construct and simulate a get_registrations_for_list transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    get_registrations_for_list: ({ list_id, required_status, from_index, limit }: {
+    get_registrations_for_list: ({ list_id, required_status, from_index, limit, }: {
         list_id: u128;
         required_status: Option<RegistrationStatus>;
         from_index: Option<u64>;
@@ -619,7 +619,7 @@ export interface Client {
     /**
      * Construct and simulate a get_registrations_for_registrant transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    get_registrations_for_registrant: ({ registrant_id, required_status, from_index, limit }: {
+    get_registrations_for_registrant: ({ registrant_id, required_status, from_index, limit, }: {
         registrant_id: string;
         required_status: Option<RegistrationStatus>;
         from_index: Option<u64>;
@@ -641,7 +641,7 @@ export interface Client {
     /**
      * Construct and simulate a is_registered transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
      */
-    is_registered: ({ list_id, registrant_id, required_status }: {
+    is_registered: ({ list_id, registrant_id, required_status, }: {
         list_id: u128;
         registrant_id: string;
         required_status: Option<RegistrationStatus>;

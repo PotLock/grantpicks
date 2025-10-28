@@ -30,7 +30,7 @@ export type PayoutTableItem = {
 
 const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 	const [memo, setMemo] = useState<string>('')
-	const { stellarPubKey, stellarKit, nearWallet } = useWallet()
+	const { stellarPubKey, stellarKit } = useWallet()
 	const [managerWeight, setManagerWeight] = useState<number>(0)
 	const [pairwiseWeight, setPairwiseWeight] = useState<number>(100)
 	const [isLoading, setIsLoading] = useState<boolean>(false)
@@ -88,7 +88,6 @@ const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 					clear_existing: true,
 				})
 
-
 				const txHash = await contract.signAndSendTx(
 					stellarKit as StellarWalletsKit,
 					savePayoutTx.toXDR(),
@@ -116,25 +115,6 @@ const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 						memo,
 					})
 				})
-
-				const contract = storage.getNearContracts(nearWallet)
-
-				if (!contract) {
-					return
-				}
-
-				const savePayoutTx = await contract.round.setPayouts(
-					Number(storage.current_round?.id || 0),
-					payoutInputs,
-				)
-
-				if (!savePayoutTx) {
-					toast.error('Error submitting payout')
-				} else {
-					toast.success('Payout submitted successfully')
-					setIsLoading(false)
-					onClose()
-				}
 			}
 		} catch (e) {
 			console.error(e)
@@ -248,15 +228,15 @@ const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 								{storage.current_remaining.toFixed(4)} /{' '}
 								{storage.chainId === 'stellar'
 									? Number(
-										formatStroopToXlm(
-											BigInt(
-												storage.current_round?.current_vault_balance || 0,
+											formatStroopToXlm(
+												BigInt(
+													storage.current_round?.current_vault_balance || 0,
+												),
 											),
-										),
-									)
+										)
 									: formatNearAmount(
-										storage.current_round?.current_vault_balance || '0',
-									)}
+											storage.current_round?.current_vault_balance || '0',
+										)}
 							</div>
 						</div>
 						<div className="flex flex-grow"></div>

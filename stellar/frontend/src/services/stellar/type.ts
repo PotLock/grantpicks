@@ -91,7 +91,7 @@ export function projectToGPProject(project: Project) {
 	gpProject.id = Number(project.id)
 	gpProject.on_chain_id = Number(project.id)
 	gpProject.image_url = project.image_url
-	gpProject.video_url = project.video_url
+	gpProject.video_url = project.video_url || ''
 	gpProject.name = project.name
 	gpProject.overview = project.overview
 	gpProject.owner = {

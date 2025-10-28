@@ -24,24 +24,16 @@ import { StrKey } from 'round-client'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import Image from 'next/image'
 import { NEAR_ADDRESS_REGEX } from '@/constants/regex'
-import {
-	NearProjectFundingHistory,
-	NearSocialGPProject,
-} from '@/services/near/type'
+import { UpdateProjectParams } from 'project-registry-client'
 
 const MyProjectTeam = () => {
 	const { projectData, fetchProjectApplicant } = useMyProject()
-	const { stellarPubKey, stellarKit, nearWallet } = useWallet()
+	const { stellarPubKey, stellarKit } = useWallet()
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const [members, setMembers] = useState<string[]>([])
 	const [sameMemberError, setSameMemberError] = useState<boolean>(false)
-	const {
-		register,
-		watch,
-		handleSubmit,
-		setValue,
-		formState: { errors },
-	} = useForm<CreateProjectStep2Data>()
+	const { register, watch, handleSubmit, setValue } =
+		useForm<CreateProjectStep2Data>()
 	const storage = useAppStorage()
 
 	const setDefaultData = () => {
@@ -65,7 +57,7 @@ const MyProjectTeam = () => {
 					return
 				}
 
-				const params: IUpdateProjectParams = {
+				const params: UpdateProjectParams = {
 					...projectData,
 					name: projectData?.name || '',
 					overview: projectData?.overview || '',
@@ -89,42 +81,6 @@ const MyProjectTeam = () => {
 					stellarPubKey,
 				)
 				if (txHashUpdateProject) {
-					dismissPageLoading()
-					setTimeout(async () => {
-						await fetchProjectApplicant()
-					}, 2000)
-					toast.success(`Update project team is succeed`, {
-						style: toastOptions.success.style,
-					})
-				}
-			} else {
-				const contracts = storage.getNearContracts(nearWallet)
-
-				if (!contracts) {
-					return
-				}
-
-				const params: NearSocialGPProject = {
-					name: projectData?.name || '',
-					overview: projectData?.overview || '',
-					fundings:
-						(projectData?.funding_histories as unknown as NearProjectFundingHistory[]) ||
-						[],
-					contacts: projectData?.contacts || [],
-					contracts: projectData?.contracts || [],
-					image_url: projectData?.image_url || DEFAULT_IMAGE_URL,
-					repositories: projectData?.repositories || [],
-					team_members: members,
-					video_url: projectData?.video_url || '',
-					owner: projectData?.owner || '',
-				}
-
-				const txUpdateProject = await contracts.near_social.setProjectData(
-					storage.my_address || '',
-					params,
-				)
-
-				if (txUpdateProject) {
 					dismissPageLoading()
 					setTimeout(async () => {
 						await fetchProjectApplicant()
@@ -272,7 +228,7 @@ const MyProjectTeam = () => {
 						className="!py-3 !border !border-grantpicks-black-400 disabled:cursor-not-allowed"
 						isDisabled={
 							projectData?.team_members.map((mem: any) => mem.value)?.length ===
-							members.length || members.length === 0
+								members.length || members.length === 0
 						}
 					>
 						Discard
@@ -286,7 +242,7 @@ const MyProjectTeam = () => {
 						className="!py-3 disabled:cursor-not-allowed"
 						isDisabled={
 							projectData?.team_members.map((mem: any) => mem.value)?.length ===
-							members.length || members.length === 0
+								members.length || members.length === 0
 						}
 					>
 						Save changes

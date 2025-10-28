@@ -7,9 +7,6 @@ import IconProject from '@/app/components/svgs/IconProject'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import { useModalContext } from '@/app/providers/ModalProvider'
 import { useWallet } from '@/app/providers/WalletProvider'
-import { toastOptions } from '@/constants/style'
-import Contracts from '@/lib/contracts'
-import CMDWallet from '@/lib/wallet'
 import { GPRound } from '@/models/round'
 import { getProjectApplicant } from '@/services/stellar/project-registry'
 import {
@@ -18,14 +15,12 @@ import {
 } from '@/services/stellar/round'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { BaseModalProps } from '@/types/dialog'
-import { IGetRoundsResponse, Network } from '@/types/on-chain'
 import { prettyTruncate } from '@/utils/helper'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Project } from 'project-registry-client'
 import React, { useCallback, useEffect, useState } from 'react'
-import toast from 'react-hot-toast'
 import { ListExternal } from '../../../../../../lists-client/src'
 import Link from 'next/link'
 
@@ -43,15 +38,17 @@ const ApplyProjectModal = ({
 	const router = useRouter()
 	const searchParams = useSearchParams()
 	const { setCreateProjectFormMainProps } = useModalContext()
-	const { stellarPubKey, stellarKit, nearWallet, nearAccounts } = useWallet()
-	const [isProjectMissingInfo, setIsProjectMissingInfo] =
+	const { stellarPubKey, stellarKit, onOpenStellarWallet } = useWallet()
+	const [isProjectMissingInfo] =
 		useState<boolean>(false)
 	const [projectData, setProjectData] = useState<Project | undefined>(undefined)
 	const [applyNote, setApplyNote] = useState<string>('')
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const { setSuccessApplyProjectInitProps } = useModalContext()
 	const [loading, setLoading] = useState<boolean>(true)
-	const [listDetails, setListDetails] = useState<ListExternal | undefined>(undefined)
+	const [listDetails, setListDetails] = useState<ListExternal | undefined>(
+		undefined,
+	)
 	const [isRegistered, setIsRegistered] = useState<boolean>(true)
 	const storage = useAppStorage()
 
@@ -65,7 +62,10 @@ const ApplyProjectModal = ({
 				const isRegistered = await contracts.lists_contract.is_registered({
 					list_id: BigInt(roundData?.application_wl_list_id),
 					registrant_id: stellarPubKey,
-					required_status: undefined,
+					required_status: {
+						tag: 'Approved',
+						values: undefined,
+					},
 				})
 				setIsRegistered(isRegistered.result)
 
@@ -81,10 +81,9 @@ const ApplyProjectModal = ({
 		}
 	}, [stellarPubKey, roundData])
 
-
 	const fetchProjectApplicant = useCallback(async () => {
 		try {
-			if (storage.chainId === 'stellar') {
+			if (stellarPubKey) {
 				const contracts = storage.getStellarContracts()
 
 				if (!contracts) {
@@ -95,27 +94,13 @@ const ApplyProjectModal = ({
 				const res = await getProjectApplicant(stellarPubKey, contracts)
 				//@ts-ignore
 				if (!res?.error) setProjectData(res)
-			} else {
-				const contracts = storage.getNearContracts(null)
-				if (!contracts) {
-					return
-				}
-				const data = await contracts.near_social.getProjectData(
-					storage.my_address || '',
-				)
-				if (data) {
-					const json =
-						data[`${storage.my_address || ''}`]['profile']['gp_project'] || '{}'
-					const project = JSON.parse(json)
-					setProjectData(project)
-				}
 			}
 		} catch (error: any) {
 			console.log('error fetch project applicant', error)
 		} finally {
 			setLoading(false)
 		}
-	}, [storage.chainId, storage.my_address, stellarPubKey])
+	}, [storage.chainId, storage, stellarPubKey])
 
 	const onApplyProjectToRound = useCallback(async () => {
 		try {
@@ -151,30 +136,6 @@ const ApplyProjectModal = ({
 					}))
 					onClose()
 				}
-			} else {
-				const contracts = storage.getNearContracts(nearWallet)
-
-				if (!contracts) {
-					return
-				}
-
-				const txApplyProject = await contracts.round.applyProjectToRound(
-					roundData?.on_chain_id as number,
-					applyNote,
-					projectData?.video_url || '',
-				)
-
-				if (txApplyProject) {
-					dismissPageLoading()
-					setSuccessApplyProjectInitProps((prev) => ({
-						...prev,
-						isOpen: true,
-						applyProjectRes: txApplyProject.result,
-						txHash: txApplyProject.outcome.transaction_outcome.id,
-						roundData,
-					}))
-					onClose()
-				}
 			}
 		} catch (error: any) {
 			dismissPageLoading()
@@ -187,12 +148,14 @@ const ApplyProjectModal = ({
 			fetchProjectApplicant()
 			fetchIsRegistered()
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [isOpen, storage.my_address, storage.chainId])
+	}, [isOpen, projectData, fetchProjectApplicant, fetchIsRegistered])
 
 	const addApplyQuery = () => {
 		const currentParams = new URLSearchParams(searchParams.toString())
-		currentParams.set('apply_round', roundData?.id.toString() as string)
+		currentParams.set(
+			'apply_round',
+			roundData?.on_chain_id.toString() as string,
+		)
 		router.push(`?${currentParams.toString()}`, {
 			scroll: false,
 		})
@@ -312,7 +275,16 @@ const ApplyProjectModal = ({
 				{listDetails?.name && (
 					<div className="flex flex-col w-full mt-6">
 						<p className="text-sm font-semibold text-grantpicks-black-950">
-							This is a private round. You must be an approved registrant to the list <Link className='text-blue-500' href={`/list/${listDetails.id}`} target="_blank">{listDetails.name}</Link> to apply.
+							This is a private round. You must be an approved registrant to the
+							list{' '}
+							<Link
+								className="text-blue-500"
+								href={`/list/${listDetails.id}`}
+								target="_blank"
+							>
+								{listDetails.name}
+							</Link>{' '}
+							to apply.
 						</p>
 					</div>
 				)}
@@ -324,7 +296,9 @@ const ApplyProjectModal = ({
 							isDisabled={!isRegistered}
 							isFullWidth
 						>
-							<p className="text-sm font-semibold text-white">{isRegistered ? 'Apply' : 'Not Eligible to Apply'}</p>
+							<p className="text-sm font-semibold text-white">
+								{isRegistered ? 'Apply' : 'Not Eligible to Apply'}
+							</p>
 						</Button>
 						<Button
 							color="transparent"
@@ -343,13 +317,8 @@ const ApplyProjectModal = ({
 						<Button
 							color="black-950"
 							onClick={() => {
-								if (!stellarPubKey && !nearAccounts[0]?.accountId) {
-									toast.error(
-										'Please connect your wallet to create new project',
-										{
-											style: toastOptions.error.style,
-										},
-									)
+								if (!stellarPubKey) {
+									onOpenStellarWallet()
 								} else {
 									addApplyQuery()
 									setCreateProjectFormMainProps((prev) => ({
@@ -365,7 +334,7 @@ const ApplyProjectModal = ({
 							<div className="flex items-center space-x-2">
 								<IconProject size={18} className="fill-grantpicks-black-400" />
 								<p className="text-sm font-semibold text-white">
-									Create New Project
+									{stellarPubKey ? 'Create New Project' : 'Connect Wallet'}
 								</p>
 							</div>
 						</Button>

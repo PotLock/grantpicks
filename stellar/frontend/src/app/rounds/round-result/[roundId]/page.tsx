@@ -12,13 +12,13 @@ import IconStellar from '@/app/components/svgs/IconStellar'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { extractChainId, formatStroopToXlm } from '@/utils/helper'
 import clsx from 'clsx'
-import { useParams, useRouter, useSearchParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 import TimerEnd from '@/app/components/commons/TimerEnd'
 import IconEdit from '@/app/components/svgs/IconEdit'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import ResultItem from '@/app/components/commons/ResultItem'
-import { Payout, PayoutsChallenge, ProjectVotingResult } from 'round-client'
+import { Payout, ProjectVotingResult } from 'round-client'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import EditPayoutModal from '@/app/components/pages/round-result/EditPayoutModal'
 import toast from 'react-hot-toast'
@@ -26,24 +26,18 @@ import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import {
 	payoutChallengeToGPPayoutChallenge,
 	projectToGPProject,
-	// roundDetailToGPRound,
 } from '@/services/stellar/type'
-import { formatNearAmount, parseNearAmount } from 'near-api-js/lib/utils/format'
 import {
 	NearPayout,
-	NearPayoutChallenge,
-	nearPayoutChallengeToGPPayoutChallenge,
-	nearProjectToGPProject,
-	NearProjectVotingResult,
-	nearRoundToGPRound,
 } from '@/services/near/type'
 import { GPVotingResult } from '@/models/voting'
 import { GPPayout, GPPayoutChallenge } from '@/models/payout'
 import { LIMIT_SIZE_CONTRACT } from '@/constants/query'
 import { usePotlockService } from '@/services/potlock'
+import { GPRound } from '@/models/round'
 
 const RoundResultPage = () => {
-	const { nearWallet, stellarPubKey, stellarKit } = useWallet()
+	const { stellarPubKey, stellarKit } = useWallet()
 	const [showChallengeModal, setShowChallengeModal] = useState<boolean>(false)
 	const global = useGlobalContext()
 	const [showViewChallengeDrawer, setShowViewChallengeDrawer] =
@@ -62,12 +56,10 @@ const RoundResultPage = () => {
 			let isAdmin = false
 
 			const roundInfo = await potlockApi.getRound(roundId)
-			const newChainId = extractChainId(roundInfo)
+			const newChainId = extractChainId(roundInfo as unknown as GPRound)
 
-			console.log('roundInfo', roundInfo)
-
-			storage.setRound(roundInfo)
-			storage.roundes.set(roundId.toString(), roundInfo)
+			storage.setRound(roundInfo as unknown as GPRound)
+			storage.roundes.set(roundId.toString(), roundInfo as unknown as GPRound)
 
 			setChainId(newChainId)
 			storage.setChainId(newChainId)
@@ -80,7 +72,7 @@ const RoundResultPage = () => {
 				}
 				const admins = (
 					await contracts.round_contract.admins({
-						round_id: BigInt(roundInfo.on_chain_id),
+						round_id: BigInt(roundInfo.on_chain_id || 0),
 					})
 				).result
 
@@ -133,8 +125,8 @@ const RoundResultPage = () => {
 				}
 
 				if (roundInfo) {
-					isOwner = roundInfo.owner?.id === storage.my_address
-					isAdmin = roundInfo.admins.includes(storage.my_address || '')
+					isOwner = roundInfo.owner?.id === storage.my_address || false
+					isAdmin = roundInfo.admins.map(admin => admin.id).includes(storage.my_address || '')
 
 					const isAdminOrOwner = isAdmin || isOwner
 
@@ -176,168 +168,87 @@ const RoundResultPage = () => {
 
 	const fetchPayoutChallenge = async () => {
 		if (chainId) {
-			if (chainId === 'stellar') {
-				const contracts = storage.getStellarContracts()
+			const contracts = storage.getStellarContracts()
 
-				if (!contracts) {
-					return
-				}
-
-				let challenges: GPPayoutChallenge[] = []
-				let fetch = true
-
-				while (fetch) {
-					const payoutChallenges = (
-						await contracts.round_contract.get_challenges_payout({
-							round_id: storage.current_round?.on_chain_id
-								? BigInt(storage.current_round?.on_chain_id)
-								: BigInt(0),
-							from_index: BigInt(challenges.length),
-							limit: BigInt(5),
-						})
-					).result
-
-					const newPayouts: GPPayoutChallenge[] = await Promise.all(
-						payoutChallenges.map(async (challenge) => {
-							return payoutChallengeToGPPayoutChallenge(challenge)
-						}),
-					)
-					challenges = challenges.concat(newPayouts)
-
-					if (payoutChallenges.length < 5) {
-						fetch = false
-					}
-				}
-
-				storage.setCurrentRoundPayoutChallenges(challenges)
-			} else {
-				const contracts = storage.getNearContracts(null)
-
-				if (!contracts) {
-					return
-				}
-
-				let challenges: GPPayoutChallenge[] = []
-
-				let fetch = true
-
-				while (fetch) {
-					const payoutChallenges = await contracts.round.getPayoutChallenge(
-						storage.current_round?.on_chain_id || 0,
-						challenges.length,
-						LIMIT_SIZE_CONTRACT,
-					)
-
-					const newChallenges: GPPayoutChallenge[] = payoutChallenges.map(
-						(challenge: NearPayoutChallenge) => {
-							return nearPayoutChallengeToGPPayoutChallenge(challenge)
-						},
-					)
-
-					challenges = challenges.concat(newChallenges)
-
-					if (payoutChallenges.length < LIMIT_SIZE_CONTRACT) {
-						fetch = false
-					}
-				}
-
-				storage.setCurrentRoundPayoutChallenges(challenges)
+			if (!contracts) {
+				return
 			}
+
+			let challenges: GPPayoutChallenge[] = []
+			let fetch = true
+
+			while (fetch) {
+				const payoutChallenges = (
+					await contracts.round_contract.get_challenges_payout({
+						round_id: storage.current_round?.on_chain_id
+							? BigInt(storage.current_round?.on_chain_id)
+							: BigInt(0),
+						from_index: BigInt(challenges.length),
+						limit: BigInt(5),
+					})
+				).result
+
+				const newPayouts: GPPayoutChallenge[] = await Promise.all(
+					payoutChallenges.map(async (challenge) => {
+						return payoutChallengeToGPPayoutChallenge(challenge)
+					}),
+				)
+				challenges = challenges.concat(newPayouts)
+
+				if (payoutChallenges.length < 5) {
+					fetch = false
+				}
+			}
+
+			storage.setCurrentRoundPayoutChallenges(challenges)
 		}
 	}
 
 	const fetchVotingResultRound = async () => {
 		if (chainId) {
-			if (chainId === 'stellar') {
-				const contracts = storage.getStellarContracts()
+			const contracts = storage.getStellarContracts()
 
-				if (!contracts) {
-					return
-				}
+			if (!contracts) {
+				return
+			}
 
-				const votingResults = (
-					await contracts.round_contract.get_voting_results_for_round({
-						round_id: BigInt(storage.current_round?.on_chain_id || 0),
-					})
-				).result
+			const votingResults = (
+				await contracts.round_contract.get_voting_results_for_round({
+					round_id: BigInt(storage.current_round?.on_chain_id || 0),
+				})
+			).result
 
-				if (votingResults) {
-					const gpVotingResults: GPVotingResult[] = votingResults.map(
-						(v: ProjectVotingResult) =>
-							({
-								project: v.project_id.toString(),
-								votes: Number(v.voting_count.toString()),
-								flag: v.is_flagged,
-							}) as GPVotingResult,
-					)
-
-					storage.setCurrentResults(gpVotingResults)
-					const projectInfoAll = storage.projects
-					for (const votingResult of gpVotingResults) {
-						const project = storage.projects.get(
-							votingResult.project.toString(),
-						)
-						if (!project) {
-							const projectInfo = (
-								await contracts.project_contract.get_project_by_id({
-									project_id: BigInt(votingResult.project),
-								})
-							).result
-
-							if (projectInfo) {
-								projectInfoAll.set(
-									votingResult.project.toString(),
-									projectToGPProject(projectInfo),
-								)
-
-								storage.setProjects(projectInfoAll)
-							}
-						}
-					}
-				}
-			} else {
-				const contracts = storage.getNearContracts(null)
-
-				if (!contracts) {
-					return
-				}
-
-				const votingResults = await contracts.round.getVotingResults(
-					storage.current_round?.on_chain_id || 0,
+			if (votingResults) {
+				const gpVotingResults: GPVotingResult[] = votingResults.map(
+					(v: ProjectVotingResult) =>
+						({
+							project: v.project_id.toString(),
+							votes: Number(v.voting_count.toString()),
+							flag: v.is_flagged,
+						}) as GPVotingResult,
 				)
 
-				if (votingResults) {
-					const gpVotingResults: GPVotingResult[] = votingResults.map(
-						(v: NearProjectVotingResult) =>
-							({
-								project: v.project,
-								votes: v.voting_count,
-								flag: false,
-							}) as GPVotingResult,
+				storage.setCurrentResults(gpVotingResults)
+				const projectInfoAll = storage.projects
+				for (const votingResult of gpVotingResults) {
+					const project = storage.projects.get(
+						votingResult.project.toString(),
 					)
+					if (!project) {
+						const projectInfo = (
+							await contracts.project_contract.get_project_by_id({
+								project_id: BigInt(votingResult.project),
+							})
+						).result
 
-					storage.setCurrentResults(gpVotingResults)
-					const projectInfoAll = storage.projects
+						if (projectInfo) {
+							projectInfoAll.set(
+								votingResult.project.toString(),
+								projectToGPProject(projectInfo),
+							)
 
-					for (const votingResult of gpVotingResults) {
-						const data = await contracts.near_social.getProjectData(
-							votingResult.project,
-						)
-
-						const json =
-							data[`${votingResult.project}`]['profile']['gp_project'] || '{}'
-						const project = JSON.parse(json)
-
-						if (project.fundings) {
-							project.funding_histories = project.fundings
+							storage.setProjects(projectInfoAll)
 						}
-
-						projectInfoAll.set(
-							votingResult.project.toString(),
-							nearProjectToGPProject(project),
-						)
-
-						storage.setProjects(projectInfoAll)
 					}
 				}
 			}
@@ -363,23 +274,6 @@ const RoundResultPage = () => {
 				)
 
 				if (!txHash) {
-					toast.error('Error processing payout')
-					return
-				} else {
-					toast.success('Payout processed successfully')
-					await fetchRoundInfo()
-					global.dismissPageLoading()
-				}
-			} else {
-				const contract = storage.getNearContracts(nearWallet)
-
-				if (!contract) return
-
-				const txPayouts = await contract.round.processPayouts(
-					storage.current_round?.on_chain_id || 0,
-				)
-
-				if (!txPayouts) {
 					toast.error('Error processing payout')
 					return
 				} else {
@@ -415,24 +309,6 @@ const RoundResultPage = () => {
 				)
 
 				if (!txHash) {
-					toast.error('Error Set Round Completed')
-					return
-				} else {
-					toast.success('Round Completed successfully')
-					await fetchRoundInfo()
-					global.dismissPageLoading()
-				}
-			} else {
-				const contract = storage.getNearContracts(nearWallet)
-
-				if (!contract) return
-
-				const roundId = parseInt(params.roundId)
-
-				const txSetRoundCompleted =
-					await contract.round.setRoundComplete(roundId)
-
-				if (!txSetRoundCompleted) {
 					toast.error('Error Set Round Completed')
 					return
 				} else {
@@ -480,24 +356,6 @@ const RoundResultPage = () => {
 				)
 
 				if (!txHash) {
-					toast.error('Error Distribute Remaining Fund')
-					return
-				} else {
-					toast.success('Remaining Fund Distributed successfully')
-					await fetchRoundInfo()
-					global.dismissPageLoading()
-				}
-			} else {
-				const contract = storage.getNearContracts(nearWallet)
-
-				if (!contract) return
-
-				const txDistributeRemaining =
-					await contract.round.redistributeRemainingFund(
-						storage.current_round?.on_chain_id || 0,
-					)
-
-				if (!txDistributeRemaining) {
 					toast.error('Error Distribute Remaining Fund')
 					return
 				} else {
@@ -607,31 +465,14 @@ const RoundResultPage = () => {
 				</div>
 				<div className="p-3 md:p-4 lg:p-5 rounded-xl border border-black/10 flex items-center space-x-4 bg-white">
 					<div className="border border-black/10 p-2 rounded-full">
-						{storage.chainId === 'stellar' ? (
-							<IconStellar size={24} className="fill-grantpicks-black-400" />
-						) : (
-							<IconNear size={24} className="fill-grantpicks-black-400" />
-						)}
+						<IconStellar size={24} className="fill-grantpicks-black-400" />
 					</div>
 					<div>
 						<p className="text-[25px] font-normal text-grantpicks-black-950">
-							{storage.chainId === 'stellar'
-								? formatStroopToXlm(BigInt(roundData?.expected_amount || 0))
-								: roundData?.expected_amount}{' '}
-							{storage.chainId === 'stellar' ? 'XLM' : 'NEAR'}{' '}
+							{formatStroopToXlm(BigInt(roundData?.expected_amount || 0))}
+							XLM{' '}
 							<span className="text-xs md:text-base font-normal text-grantpicks-black-600">
-								{storage.chainId === 'stellar'
-									? (
-										Number(
-											formatStroopToXlm(
-												BigInt(roundData?.expected_amount || 0),
-											),
-										) * global.stellarPrice
-									).toFixed(2)
-									: (
-										Number(roundData?.expected_amount) * global.nearPrice
-									).toFixed(2)}{' '}
-								USD
+								{(Number(formatStroopToXlm(BigInt(roundData?.expected_amount || 0))) * global.stellarPrice).toFixed(2)}{' '}USD
 							</span>
 						</p>
 						<p className="text-xs font-semibold text-grantpicks-black-600">
@@ -642,38 +483,20 @@ const RoundResultPage = () => {
 				{(roundData?.use_vault || storage.chainId === 'near') && (
 					<div className="p-3 md:p-4 lg:p-5 rounded-xl border border-black/10 flex items-center space-x-4 bg-white">
 						<div className="border border-black/10 p-2 rounded-full">
-							{storage.chainId === 'stellar' ? (
-								<IconStellar size={24} className="fill-grantpicks-black-400" />
-							) : (
-								<IconNear size={24} className="fill-grantpicks-black-400" />
-							)}
+							<IconStellar size={24} className="fill-grantpicks-black-400" />
 						</div>
 						<div>
 							<p className="text-[25px] font-normal text-grantpicks-black-950">
-								{storage.chainId === 'stellar'
-									? formatStroopToXlm(
-										BigInt(roundData?.vault_total_deposits || 0),
-									)
-									: formatNearAmount(
-										roundData?.vault_total_deposits || '0',
-									)}{' '}
-								{storage.chainId === 'stellar' ? 'XLM' : 'NEAR'}{' '}
+								{formatStroopToXlm(
+									BigInt(roundData?.vault_total_deposits || 0)
+								)}{' '}
+								{'XLM'}{' '}
 								<span className="text-xs md:text-base font-normal text-grantpicks-black-600">
-									{storage.chainId === 'stellar'
-										? (
-											Number(
-												formatStroopToXlm(
-													BigInt(roundData?.vault_total_deposits || 0),
-												),
-											) * global.stellarPrice
-										).toFixed(2)
-										: (
-											Number(
-												formatNearAmount(
-													roundData?.vault_total_deposits || '0',
-												).replace(',', ''),
-											) * global.nearPrice
-										).toFixed(2)}{' '}
+									{(Number(
+										formatStroopToXlm(
+											BigInt(roundData?.vault_total_deposits || 0),
+										),
+									) * global.stellarPrice).toFixed(2)}{' '}
 									USD
 								</span>
 							</p>
@@ -742,17 +565,7 @@ const RoundResultPage = () => {
 			)}
 
 			<div className="w-full bg-grantpicks-black-50 rounded-2xl p-4">
-				{/* 
-        <!-- Search project NEED API & INDEXER-->
-        <div className="py-3 px-4">
-					<InputText
-						placeholder="Search project"
-						className="!border-none !w-full !outline-none placeholder-grantpicks-black-600 !bg-grantpicks-black-50"
-						suffixIcon={
-							<IconSearch size={18} className="fill-grantpicks-black-400" />
-						}
-					/>
-				</div> */}
+
 				<div className="py-3 px-4 flex items-center w-full">
 					<div className="flex items-center w-[10%]">
 						<p className="text-xs md:text-sm font-semibold text-grantpicks-black-500 text-center">

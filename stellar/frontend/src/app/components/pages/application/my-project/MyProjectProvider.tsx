@@ -2,7 +2,13 @@ import MyProjectHeader from '@/app/components/pages/application/my-project/MyPro
 import MyProjectLayout from '@/app/components/pages/application/my-project/MyProjectLayout'
 import MyProjectSection from '@/app/components/pages/application/my-project/MyProjectSection'
 import { IMyProjectContext } from '@/types/context'
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import React, {
+	createContext,
+	useCallback,
+	useContext,
+	useEffect,
+	useState,
+} from 'react'
 import { useWallet } from '@/app/providers/WalletProvider'
 import { getProjectApplicant } from '@/services/stellar/project-registry'
 import Button from '@/app/components/commons/Button'
@@ -22,7 +28,7 @@ const MyProjectContext = createContext<IMyProjectContext>({
 })
 
 const MyProjectProvider = () => {
-	const { stellarPubKey, nearAccounts } = useWallet()
+	const { stellarPubKey } = useWallet()
 	const router = useRouter()
 	const [projectData, setProjectData] = useState<Project | undefined>(undefined)
 	const [projectDataModel, setProjectDataModel] = useState<Project | undefined>(
@@ -39,8 +45,6 @@ const MyProjectProvider = () => {
 	const storage = useAppStorage()
 	const potlockService = usePotlockService()
 
-
-
 	const fetchProjectApplicant = useCallback(async () => {
 		try {
 			if (storage.chainId === 'stellar') {
@@ -50,69 +54,45 @@ const MyProjectProvider = () => {
 					return
 				}
 
-
 				const res = await getProjectApplicant(stellarPubKey, contracts)
 				//@ts-ignore
 				if (!res?.error) {
 					setProjectData(res)
 					setProjectDataModel(res)
 
-					if (res) {
-						const projectStats =
-							await potlockService.getProjectStats(stellarPubKey)
-						setStats(projectStats)
-					}
-				} else {
-					setNoProject(true)
-				}
-			} else {
-				const contracts = storage.getNearContracts(null)
 
-				if (!contracts) {
-					return
-				}
-
-				const data = await contracts.near_social.getProjectData(
-					storage.my_address || '',
-				)
-
-				if (data) {
-					const json =
-						data[`${storage.my_address || ''}`]['profile']['gp_project'] || '{}'
-					const project = JSON.parse(json)
-
-					if (project.fundings) {
-						project.funding_histories = project.fundings
-					}
-
-					if (project.name) {
-						setProjectDataModel(project)
-						setProjectData(project)
-						const projectStats = await potlockService.getProjectStats(
-							nearAccounts[0].accountId,
-						)
-						setStats(projectStats)
-					} else {
-						setNoProject(true)
-					}
 				} else {
 					setNoProject(true)
 				}
 			}
-			//@ts-ignore
 		} catch (error: any) {
 			storage.chainId === 'stellar' && setNoProject(true)
 			storage.chainId === 'near' && setNoProject(true)
 			console.log('error fetch project applicant', error)
 		}
-	}, [stellarPubKey, nearAccounts, storage, potlockService, setProjectData, setProjectDataModel, setStats])
+	}, [
+		stellarPubKey,
+		storage,
+		setProjectData,
+		setProjectDataModel,
+	])
+
+	const fetchProjectStats = useCallback(async () => {
+		if (projectData) {
+			const projectStats = await potlockService.getProjectStats(stellarPubKey)
+			setStats(projectStats)
+		}
+	}, [projectData, potlockService, stellarPubKey])
+
+
 
 	useEffect(() => {
 		if (storage.my_address) {
 			fetchProjectApplicant()
+			fetchProjectStats()
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [storage.my_address, fetchProjectApplicant])
+	}, [storage.my_address, fetchProjectApplicant, fetchProjectStats])
 
 	return (
 		<MyProjectContext.Provider

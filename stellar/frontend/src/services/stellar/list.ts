@@ -63,6 +63,8 @@ export const createList = async (
 		cover_image_url: params.cover_image_url,
 		admins: params.admins,
 		admin_only_registrations: params.admin_only_registrations,
+	}, {
+		fee: 200,
 	})
 
 	return tx
@@ -80,6 +82,8 @@ export const updateList = async (
 		remove_cover_image: params.cover_image_url ? false : true,
 		default_registration_status: params.default_registration_status,
 		admin_only_registrations: params.admin_only_registrations,
+	}, {
+		fee: 100000,
 	})
 	return tx
 }
@@ -122,6 +126,8 @@ export const batchRegisterToList: (
 		list_id: params.list_id,
 		notes: params.notes,
 		registrations: params.registrations,
+	}, {
+		fee: 100000,
 	})
 	return list
 }
@@ -155,6 +161,8 @@ export const updateProjectStatusInList: (
 		registration_id: params.registration_id,
 		status: params.status,
 		notes: params.notes,
+	}, {
+		fee: 100000,
 	})
 	return tx
 }
@@ -165,6 +173,8 @@ export const deleteList: (
 ) => Promise<any> = async (list_id: bigint, contract: Contracts) => {
 	let tx = await contract.lists_contract.delete_list({
 		list_id,
+	}, {
+		fee: 100000,
 	})
 	return tx
 }

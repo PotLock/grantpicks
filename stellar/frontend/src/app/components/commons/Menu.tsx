@@ -1,6 +1,6 @@
 import { IMenuProps } from '@/types/dialog'
 import clsx from 'clsx'
-import React, { useEffect, useRef, useLayoutEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 const Menu = ({
@@ -12,11 +12,14 @@ const Menu = ({
 	closeOnEscape = true,
 	children,
 	buttonRef,
+	mobileAsPortal,
 }: IMenuProps) => {
 	const menuRef = useRef<HTMLDivElement>(null)
 	const overlayRef = useRef<HTMLDivElement>(null)
 	const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({})
-	const [isDesktop, setIsDesktop] = useState<boolean>(() => (typeof window !== 'undefined' ? window.innerWidth >= 768 : false))
+	const [isDesktop, setIsDesktop] = useState<boolean>(() =>
+		typeof window !== 'undefined' ? window.innerWidth >= 768 : false,
+	)
 
 	// Detect desktop (md: 768px and up) - only on resize, not on initial render
 	useEffect(() => {
@@ -31,7 +34,8 @@ const Menu = ({
 			setMenuStyle({
 				position: 'fixed',
 				top: buttonRect.bottom + 8,
-				right: window.innerWidth - buttonRect.right,
+				left: buttonRect.left,
+				width: buttonRect.width,
 				zIndex: 60,
 			})
 		}
@@ -51,6 +55,31 @@ const Menu = ({
 		}
 	}, [onClose, closeOnEscape])
 
+	// Desktop: close on clicking outside the menu (including outside the trigger button)
+	useEffect(() => {
+		if (!isOpen || !closeOnBgClick || !isDesktop) return
+
+		const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+			const target = e.target as Node
+			const menuEl = menuRef.current
+			const buttonEl = buttonRef?.current || null
+			if (
+				menuEl &&
+				!menuEl.contains(target) &&
+				(!buttonEl || !buttonEl.contains(target))
+			) {
+				onClose()
+			}
+		}
+
+		document.addEventListener('mousedown', handleClickOutside)
+		document.addEventListener('touchstart', handleClickOutside)
+		return () => {
+			document.removeEventListener('mousedown', handleClickOutside)
+			document.removeEventListener('touchstart', handleClickOutside)
+		}
+	}, [isOpen, closeOnBgClick, isDesktop, onClose, buttonRef])
+
 	const _bgClick = (e: React.MouseEvent<HTMLDivElement>) => {
 		if (e.target === overlayRef.current && closeOnBgClick) {
 			onClose()
@@ -58,28 +87,27 @@ const Menu = ({
 	}
 
 	// Desktop: render menu in portal if buttonRef is provided
-	const shouldUsePortal = isOpen && buttonRef?.current && typeof window !== 'undefined'
+	const shouldUsePortal =
+		isOpen && buttonRef?.current && typeof window !== 'undefined'
 
 	const desktopMenu = shouldUsePortal
 		? createPortal(
 			<div
 				ref={menuRef}
 				style={menuStyle}
-				className={clsx(
-					'hidden md:block',
-					className,
-				)}
+				className={clsx('hidden md:block', className)}
 			>
 				{children}
 			</div>,
-			document.body
+			document.body,
 		)
 		: null
 
 	// Fallback: render menu in place if no buttonRef (for custom-positioned menus)
-	const fallbackMenu = isOpen && isDesktop && !buttonRef
-		? (
+	const fallbackMenu =
+		isOpen && isDesktop && !buttonRef ? (
 			<div
+				ref={menuRef}
 				className={clsx(
 					'absolute hidden md:block z-[60]',
 					position || '',
@@ -88,16 +116,22 @@ const Menu = ({
 			>
 				{children}
 			</div>
-		)
-		: null
+		) : null
 
 	return (
 		<>
 			{/* Overlay for closing on background click */}
-			{isOpen && !isDesktop && (
+			{isOpen && !isDesktop && !mobileAsPortal && (
 				<div
 					ref={overlayRef}
 					className={clsx('fixed inset-0 z-50 max-w-full mx-auto')}
+					onClick={(e) => _bgClick(e)}
+				/>
+			)}
+			{isOpen && !isDesktop && mobileAsPortal && (
+				<div
+					ref={overlayRef}
+					className={clsx('fixed inset-0 z-[59] max-w-full mx-auto')}
 					onClick={(e) => _bgClick(e)}
 				/>
 			)}
@@ -106,15 +140,27 @@ const Menu = ({
 			{/* Desktop fallback menu (custom position) */}
 			{fallbackMenu}
 			{/* Mobile menu (fixed at bottom) */}
-			<div
-				className={clsx(
-					'fixed block md:hidden bottom-0 inset-x-0 z-[60] transition-transform transform-gpu duration-500',
-					isOpen ? 'translate-y-[0%]' : 'translate-y-[100%]',
-					className,
-				)}
-			>
-				{children}
-			</div>
+			{!mobileAsPortal && (
+				<div
+					className={clsx(
+						'fixed block md:hidden bottom-0 inset-x-0 z-[60] transition-transform transform-gpu duration-500',
+						isOpen ? 'translate-y-[0%]' : 'translate-y-[100%]',
+						className,
+					)}
+				>
+					{children}
+				</div>
+			)}
+			{mobileAsPortal && isOpen && createPortal(
+				<div
+					ref={menuRef}
+					style={menuStyle}
+					className={clsx('md:hidden', className)}
+				>
+					{children}
+				</div>,
+				document.body,
+			)}
 		</>
 	)
 }

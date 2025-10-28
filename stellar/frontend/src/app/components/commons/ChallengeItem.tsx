@@ -27,7 +27,7 @@ const ChallengeItem = ({
 	challenge: GPPayoutChallenge
 	index: number
 }) => {
-	const { stellarKit, stellarPubKey, nearWallet } = useWallet()
+	const { stellarKit, stellarPubKey } = useWallet()
 	const storage = useAppStorage()
 	const [isReviewing, setIsReviewing] = useState<boolean>(false)
 	const [adminNotes, setAdminNotes] = useState<string>('')
@@ -136,24 +136,6 @@ const ChallengeItem = ({
 				} else {
 					reload()
 					setIsReviewing(false)
-				}
-			} else {
-				const contract = storage.getNearContracts(nearWallet)
-
-				if (!contract) return
-
-				const resolveTx = await contract.round.updatePayoutChallenge(
-					Number(storage.current_round?.id),
-					challenge.challenger_id,
-					adminNotes,
-					true,
-				)
-
-				if (resolveTx) {
-					reload()
-					setIsReviewing(false)
-				} else {
-					setErrorMessage('Error resolving challenge')
 				}
 			}
 		} catch (e) {

@@ -65,11 +65,8 @@ body {
 		left: 0;
 		right: 0;
 		bottom: 0;
-		background: linear-gradient(
-				90deg,
-				rgba(237, 233, 254, 0) 91.97%,
-				#ede9fe 99.61%
-			),
+		background:
+			linear-gradient(90deg, rgba(237, 233, 254, 0) 91.97%, #ede9fe 99.61%),
 			linear-gradient(89.64deg, #ddd6fe -3.06%, rgba(221, 214, 254, 0) 16.72%),
 			radial-gradient(107.03% 107.03% at 50% 0%, #bbfdfdcc 4.7%, #5a21b6 67.9%);
 		z-index: -1;

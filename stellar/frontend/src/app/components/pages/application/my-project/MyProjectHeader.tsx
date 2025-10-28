@@ -2,7 +2,6 @@ import IconCube from '@/app/components/svgs/IconCube'
 import IconNear from '@/app/components/svgs/IconNear'
 import IconStellar from '@/app/components/svgs/IconStellar'
 import React from 'react'
-import { useMyProject } from './MyProjectProvider'
 import { formatStroopToXlm, parseToStroop } from '@/utils/helper'
 import { GPProjectStats } from '@/models/stats'
 import useAppStorage from '@/stores/zustand/useAppStorage'
@@ -14,7 +13,6 @@ export interface IMyProjectHeaderProps {
 
 const MyProjectHeader = ({ stats }: IMyProjectHeaderProps) => {
 	const storage = useAppStorage()
-
 
 	return (
 		<>
@@ -47,9 +45,11 @@ const MyProjectHeader = ({ stats }: IMyProjectHeaderProps) => {
 						<p className="text-[25px] font-normal text-grantpicks-black-950">
 							{storage.chainId === 'stellar'
 								? formatStroopToXlm(
-									parseToStroop(String(stats?.total_funds_received ?? 0)),
-								)
-								: formatNearAmount(String(stats?.total_funds_received ?? 0))}{' '}
+										parseToStroop(String(stats?.total_funds_received ?? 0)),
+									)
+								: formatNearAmount(
+										String(stats?.total_funds_received ?? 0),
+									)}{' '}
 							{storage.chainId === 'near' ? 'NEAR' : 'XLM'}
 						</p>
 						<p className="text-xs font-semibold text-grantpicks-black-600">

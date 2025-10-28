@@ -85,12 +85,16 @@ export const SingleListPage = () => {
 			if (!contracts) {
 				return
 			}
-			const isRegistered = await contracts.lists_contract.is_registered({
-				list_id: BigInt(listId),
-				registrant_id: stellarPubKey,
-				required_status: undefined,
-			})
-			setIsRegistered(isRegistered.result)
+			try {
+				const isRegistered = await contracts.lists_contract.is_registered({
+					list_id: BigInt(listId),
+					registrant_id: stellarPubKey,
+					required_status: undefined,
+				})
+				setIsRegistered(isRegistered?.result || false)
+			} catch (error) {
+				console.log('error fetch is registered', error)
+			}
 		}
 	}, [listId, stellarPubKey, storage, list])
 

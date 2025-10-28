@@ -143,6 +143,8 @@ export const createProject = async (
 	let project = await contract.project_contract.apply({
 		applicant,
 		project_params: params,
+	}, {
+		fee: 200
 	})
 	return project
 }
@@ -157,6 +159,8 @@ export const updateProject = async (
 		admin,
 		project_id: project_id,
 		new_project_params: params,
+	}, {
+		fee: 200,
 	})
 	return project
 }

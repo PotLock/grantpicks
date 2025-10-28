@@ -289,7 +289,7 @@ export const RoundCard = ({
 				roundData: doc,
 			}))
 		} else {
-			router.push(`/rounds/round-result/${doc.id}`)
+			router.push(`/rounds/round-result/${doc.on_chain_id}`)
 		}
 	}
 

@@ -128,6 +128,8 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 				const txCreateProject = await contracts.project_contract.apply({
 					applicant: storage.my_address || '',
 					project_params: params,
+				}, {
+					fee: 200,
 				})
 
 				const txHashCreateProject = await contracts.signAndSendTx(

@@ -272,12 +272,12 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 	}
 
 	const onSignOut = () => {
+		setStellarPubKey('')
+		setConnectedWallet(null)
+		store.clear()
 		localStorage.removeItem(localStorageConfigs.CONNECTED_WALLET)
 		localStorage.removeItem(localStorageConfigs.STELLAR_PUBLIC_KEY)
-		setConnectedWallet(null)
 		localStorageSavedWallet.remove()
-		setStellarPubKey('')
-		store.clear()
 	}
 
 	useEffect(() => {

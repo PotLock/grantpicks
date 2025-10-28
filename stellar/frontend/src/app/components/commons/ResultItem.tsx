@@ -57,7 +57,7 @@ const ResultItem = ({
 				if (roundData)
 					[
 						router.push(
-							`/rounds/round-result/${roundData?.id.toString()}/project/${data.project.toString()}`,
+							`/rounds/round-result/${roundData?.on_chain_id.toString()}/project/${data.project.toString()}`,
 						),
 					]
 			}}

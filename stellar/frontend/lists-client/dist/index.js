@@ -14,7 +14,7 @@ export const networks = {
     },
     public: {
         networkPassphrase: "Public Global Stellar Network ; September 2015",
-        contractId: "CAFRPR2FE2ASZGZDGLCGGUGPUJMBHCPWXVAGZ3GZR5ITZIFPPSAG53B6",
+        contractId: "CAIYXP5CNFB5WUBAWEPBZHIKYZGP3IEFXILFMDUT37FZBKNGFJGNJPNT",
     }
 };
 export const Errors = {

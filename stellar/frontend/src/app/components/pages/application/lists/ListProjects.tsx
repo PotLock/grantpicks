@@ -319,12 +319,4 @@ const listRegistrationStatuses = {
 		color: '#fff',
 		background: '#292929',
 	},
-	Unregistered: {
-		color: '#F6F5F3',
-		background: '#DD3345',
-	},
-	Human: {
-		color: '#0B7A74',
-		background: '#EFFEFA',
-	},
 }

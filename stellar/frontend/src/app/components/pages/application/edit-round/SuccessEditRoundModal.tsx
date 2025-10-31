@@ -11,6 +11,7 @@ import Button from '@/app/components/commons/Button'
 import IconEye from '@/app/components/svgs/IconEye'
 import Link from 'next/link'
 import IconExternalLink from '@/app/components/svgs/IconExternalLink'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 
 interface SuccessEditRoundModalProps extends BaseModalProps {
 	updateRoundRes?: IGetRoundsResponse
@@ -24,6 +25,8 @@ const SuccessEditRoundModal = ({
 	txHash,
 }: SuccessEditRoundModalProps) => {
 	const router = useRouter()
+	const storage = useAppStorage()
+
 	return (
 		<Modal isOpen={isOpen} onClose={onClose} closeOnBgClick>
 			<div className="w-11/12 md:w-[60vw] lg:w-[45vw] mx-auto bg-white rounded-xl shadow-md p-4 md:p-6">
@@ -83,7 +86,7 @@ const SuccessEditRoundModal = ({
 							{prettyTruncate(txHash, 25)}
 						</p>
 						<Link
-							href={`https://stellar.expert/explorer/testnet/tx/${txHash}`}
+							href={`https://stellar.expert/explorer/${storage.network}/tx/${txHash}`}
 							target="_blank"
 						>
 							<IconExternalLink

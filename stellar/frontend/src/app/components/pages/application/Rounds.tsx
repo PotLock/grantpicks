@@ -90,12 +90,13 @@ const ApplicationRounds = () => {
 	}
 	const { data, size, setSize, isValidating, isLoading, mutate } =
 		useSWRInfinite(getKey, async (key) => await onFetchRounds(key), {
-			revalidateFirstPage: false,
-			revalidateOnFocus: false,
-			revalidateOnReconnect: false,
-			persistSize: true,
-			keepPreviousData: true,
-			dedupingInterval: 3000,
+			revalidateFirstPage: true,
+			revalidateOnFocus: true,
+			revalidateOnReconnect: true,
+			revalidateOnMount: true,
+			persistSize: false,
+			keepPreviousData: false,
+			dedupingInterval: 0,
 		})
 	const hasMore = data ? data.length >= LIMIT_SIZE : false
 

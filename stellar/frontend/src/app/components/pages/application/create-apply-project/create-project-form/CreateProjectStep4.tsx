@@ -35,21 +35,21 @@ const CreateProjectStep4 = () => {
 			funding_histories:
 				data.funding_histories.length > 0
 					? data.funding_histories.map((history) => ({
-							source: history.source || '',
-							date: history.date || new Date(),
-							denomination: history.denomination || '',
-							amount: history.amount || '',
-							description: history.description || '',
-						}))
+						source: history.source || '',
+						date: history.date || new Date(),
+						denomination: history.denomination || '',
+						amount: history.amount || '',
+						description: history.description || '',
+					}))
 					: [
-							{
-								source: '',
-								date: new Date(),
-								denomination: '',
-								amount: '',
-								description: '',
-							},
-						],
+						{
+							source: '',
+							date: new Date(),
+							denomination: '',
+							amount: '',
+							description: '',
+						},
+					],
 		},
 	})
 	const {
@@ -150,7 +150,7 @@ const CreateProjectStep4 = () => {
 									})}
 									errorMessage={
 										errors?.funding_histories?.[index]?.source?.type ===
-										'required' ? (
+											'required' ? (
 											<p className="text-red-500 text-xs mt-1 ml-2">
 												Source is required
 											</p>
@@ -190,6 +190,7 @@ const CreateProjectStep4 = () => {
 								<InputText
 									required={!watch().is_havent_raised}
 									label="Denomination"
+									maxLength={5}
 									labelIcon={
 										<>
 											<a
@@ -206,12 +207,21 @@ const CreateProjectStep4 = () => {
 									}
 									{...register(`funding_histories.${index}.denomination`, {
 										required: !watch().is_havent_raised,
+										maxLength: {
+											value: 5,
+											message: 'Denomination must be 5 characters or less',
+										},
 									})}
 									errorMessage={
 										errors?.funding_histories?.[index]?.denomination?.type ===
-										'required' ? (
+											'required' ? (
 											<p className="text-red-500 text-xs mt-1 ml-2">
 												Denomination is required
+											</p>
+										) : errors?.funding_histories?.[index]?.denomination?.type ===
+											'maxLength' ? (
+											<p className="text-red-500 text-xs mt-1 ml-2">
+												{errors?.funding_histories?.[index]?.denomination?.message}
 											</p>
 										) : undefined
 									}
@@ -226,12 +236,12 @@ const CreateProjectStep4 = () => {
 									})}
 									errorMessage={
 										errors?.funding_histories?.[index]?.amount?.type ===
-										'required' ? (
+											'required' ? (
 											<p className="text-red-500 text-xs mt-1 ml-2">
 												Amount is required
 											</p>
 										) : errors?.funding_histories?.[index]?.amount?.type ===
-										  'valueAsNumber' ? (
+											'valueAsNumber' ? (
 											<p className="text-red-500 text-xs mt-1 ml-2">
 												Amount only allow number
 											</p>
@@ -262,7 +272,7 @@ const CreateProjectStep4 = () => {
 										})}
 										errorMessage={
 											errors.funding_histories?.[index]?.description?.type ===
-											'required' ? (
+												'required' ? (
 												<p className="text-red-500 text-xs mt-1 ml-2">
 													Description is required
 												</p>

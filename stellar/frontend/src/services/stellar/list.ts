@@ -83,7 +83,7 @@ export const updateList = async (
 		default_registration_status: params.default_registration_status,
 		admin_only_registrations: params.admin_only_registrations,
 	}, {
-		fee: 100000,
+		fee: 200,
 	})
 	return tx
 }

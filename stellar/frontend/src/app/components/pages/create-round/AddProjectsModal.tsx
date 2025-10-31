@@ -166,7 +166,7 @@ const AddProjectsModal = ({
 					<IconSearch size={18} className="fill-grantpicks-black-400" />
 					<input
 						type="text"
-						className="outline-none border-none placeholder-grantpicks-black-600"
+						className="outline-none border-none text-grantpicks-black-950 placeholder-grantpicks-black-600"
 						placeholder="Search projects.."
 						onChange={(e) => setSearchProject(e.target.value)}
 						value={searchProject}

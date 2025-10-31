@@ -80,13 +80,8 @@ const SuccessApplyProjectModal = ({
 							{prettyTruncate(txHash, 25)}
 						</p>
 						<Link
-							href={
-								storage.chainId === 'stellar'
-									? `https://stellar.expert/explorer/${storage.network}/tx/${txHash}`
-									: storage.network === 'mainnet'
-										? `https://nearblocks.io/txns/${txHash}`
-										: `https://testnet.nearblocks.io/txns/${txHash}`
-							}
+							href={`https://stellar.expert/explorer/${storage.network}/tx/${txHash}`}
+
 							target="_blank"
 						>
 							<IconExternalLink

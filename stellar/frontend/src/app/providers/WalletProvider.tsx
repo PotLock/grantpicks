@@ -303,7 +303,9 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 	}
 
 	useEffect(() => {
-		fetchProfileData()
+		if (stellarPubKey) {
+			fetchProfileData()
+		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [stellarPubKey])
 

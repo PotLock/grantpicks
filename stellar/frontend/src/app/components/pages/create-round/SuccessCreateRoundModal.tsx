@@ -11,6 +11,7 @@ import Link from 'next/link'
 import IconExternalLink from '../../svgs/IconExternalLink'
 import { GPRound } from '@/models/round'
 import { useRouter } from 'next/navigation'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 
 interface SuccessCreateRoundModalProps extends BaseModalProps {
 	createRoundRes?: GPRound
@@ -24,7 +25,7 @@ const SuccessCreateRoundModal = ({
 	txHash,
 }: SuccessCreateRoundModalProps) => {
 	const router = useRouter()
-
+	const storage = useAppStorage()
 	return (
 		<>
 			<Modal isOpen={isOpen} onClose={onClose} closeOnBgClick>
@@ -83,7 +84,7 @@ const SuccessCreateRoundModal = ({
 								{prettyTruncate(txHash, 25)}
 							</p>
 							<Link
-								href={`https://stellar.expert/explorer/testnet/tx/${txHash}`}
+								href={`https://stellar.expert/explorer/${storage.network}/tx/${txHash}`}
 								target="_blank"
 							>
 								<IconExternalLink

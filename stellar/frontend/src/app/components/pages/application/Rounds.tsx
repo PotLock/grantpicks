@@ -57,25 +57,12 @@ const ApplicationRounds = () => {
 	}
 
 	const onFetchRounds = async (key: { url: string; page: number }) => {
-		let beChainId = null
 
-		switch (storage.chainId) {
-			case 'near':
-				beChainId = '1'
-				break
-			case 'ethereum':
-				beChainId = '2'
-				break
-			case 'stellar':
-				beChainId = '3'
-				break
-		}
 		const res = await potlockApi.getRounds(
 			key.page + 1,
 			sortType === 'Vault Total Deposits'
 				? 'vault_total_deposits'
 				: 'deployed_at',
-			beChainId,
 		)
 		return res
 	}

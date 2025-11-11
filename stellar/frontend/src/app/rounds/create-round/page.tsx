@@ -118,7 +118,7 @@ const CreateRoundPage = () => {
 			max_participants: 10,
 			voting_duration_start: null,
 			voting_duration_end: null,
-			use_vault: false,
+			use_vault: true,
 			is_video_required: false,
 			allow_application: false,
 			compliance_req_desc: '',
@@ -351,7 +351,7 @@ const CreateRoundPage = () => {
 							? checkedApplicationListIds[0]
 							: undefined,
 					allow_applications: data.allow_application,
-					use_vault: data.use_vault,
+					use_vault: true,
 					voting_start_ms: votingStartMsSafe,
 					voting_end_ms: votingEndMsSafe,
 					admins:
@@ -685,6 +685,20 @@ const CreateRoundPage = () => {
 												type="number"
 												disabled={!watch().allow_application}
 												label="Max Participants"
+												labelIcon={
+													<>
+														<a
+															data-tooltip-id="max_participants_tooltip"
+															data-tooltip-html="A Minimum of 10 Participants is required"
+														>
+															<IconInfoCircle
+																size={16}
+																className="stroke-grantpicks-black-600"
+															/>
+														</a>
+														<Tooltip id="max_participants_tooltip" place="right" />
+													</>
+												}
 												placeholder="10"
 												max={100}
 												required={watch().allow_application}
@@ -1207,7 +1221,13 @@ const CreateRoundPage = () => {
 									</p>
 								)}
 								<p className="text-xs font-normal text-grantpicks-black-600">
-									Leave an address where people can reach out to you.{' '}
+									Leave an{' '}
+									{['Telegram', 'Instagram', 'Twitter'].includes(
+										watch().contact_type,
+									)
+										? 'handle'
+										: 'address'}{' '}
+									where people can reach out to you.{' '}
 								</p>
 							</div>
 						</div>
@@ -1276,7 +1296,6 @@ const CreateRoundPage = () => {
 								<div className="flex-1">
 									<InputText
 										type="number"
-										disabled={!watch().use_vault}
 										label="Initial Deposit"
 										className="text-sm w-full"
 										placeholder={isMobile ? '' : 'Enter amount...'}
@@ -1401,16 +1420,16 @@ const CreateRoundPage = () => {
 									/>
 								</div>
 							</div>
-							<div className="flex items-center">
+							{/* <div className="flex items-center">
 								<Checkbox
 									label="Allow Deposit to Vault"
-									checked={watch().use_vault}
+									checked={}
 									onChange={(e) => {
 										setValue('use_vault', e.target.checked)
 										setValue('amount', '')
 									}}
 								/>
-							</div>
+							</div> */}
 						</div>
 
 						<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
@@ -1584,9 +1603,21 @@ const CreateRoundPage = () => {
 						<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
 							<div className="flex items-center justify-between w-full">
 								<div>
-									<p className="text-base font-bold text-grantpicks-black-950">
-										Add Projects
-									</p>
+									<div className="flex items-center space-x-2 mb-1">
+										<p className="text-base font-bold text-grantpicks-black-950">
+											Add Projects
+										</p>
+										<a
+											data-tooltip-id="add_projects_tooltip"
+											data-tooltip-html="If applications are not allowed, a minimum of 2 projects is required before the round can be created"
+										>
+											<IconInfoCircle
+												size={16}
+												className="stroke-grantpicks-black-600"
+											/>
+										</a>
+										<Tooltip id="add_projects_tooltip" place="right" />
+									</div>
 									<p className="text-sm font-normal text-grantpicks-black-600">
 										Add a maximum of 10 projects to participate in the round.
 									</p>
@@ -1708,7 +1739,19 @@ const CreateRoundPage = () => {
 
 						<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
 							<div className="flex items-center justify-between pb-4 border-b border-black/10">
-								<p className="text-base font-semibold">Voter Requirements</p>
+								<div className="flex items-center space-x-2">
+									<p className="text-base font-semibold">Voter Requirements</p>
+									<a
+										data-tooltip-id="voter_requirements_tooltip"
+										data-tooltip-html="Only users whitelisted to a selected list would be allowed to vote in this round"
+									>
+										<IconInfoCircle
+											size={16}
+											className="stroke-grantpicks-black-600"
+										/>
+									</a>
+									<Tooltip id="voter_requirements_tooltip" place="right" />
+								</div>
 							</div>
 							<div>
 								<button
@@ -1781,7 +1824,8 @@ const CreateRoundPage = () => {
 																	key={list.on_chain_id}
 																	className="py-4 flex items-center gap-x-4"
 																>
-																	<Checkbox
+																	<input
+																		type="radio"
 																		checked={checkedListIds.includes(
 																			BigInt(list.on_chain_id),
 																		)}
@@ -1794,19 +1838,11 @@ const CreateRoundPage = () => {
 																					'voting_wl_list_id',
 																					BigInt(list.on_chain_id),
 																				)
-																			} else {
-																				setCheckedListIds(
-																					checkedListIds.filter(
-																						(on_chain_id) =>
-																							on_chain_id !==
-																							BigInt(list.on_chain_id),
-																					),
-																				)
-																				setValue('voting_wl_list_id', undefined)
 																			}
 																		}}
 																		name="voting_wl_list_id"
 																		value={list.on_chain_id.toString()}
+																		className="h-4 w-4 cursor-pointer accent-grantpicks-black-950"
 																	/>
 																	<div className="flex justify-between w-full items-center">
 																		<div className="flex gap-x-3 items-center">
@@ -1858,9 +1894,21 @@ const CreateRoundPage = () => {
 						{watch().allow_application && (
 							<div className="p-5 rounded-2xl shadow-md bg-white mb-4 lg:mb-6">
 								<div className="flex items-center justify-between pb-4 border-b border-black/10">
-									<p className="text-base font-semibold">
-										Application Requirements
-									</p>
+									<div className="flex items-center space-x-2">
+										<p className="text-base font-semibold">
+											Application Requirements
+										</p>
+										<a
+											data-tooltip-id="application_requirements_tooltip"
+											data-tooltip-html="Only users whitelisted to a selected list will be allowed to apply"
+										>
+											<IconInfoCircle
+												size={16}
+												className="stroke-grantpicks-black-600"
+											/>
+										</a>
+										<Tooltip id="application_requirements_tooltip" place="right" />
+									</div>
 								</div>
 								<div>
 									<button
@@ -1926,7 +1974,8 @@ const CreateRoundPage = () => {
 																		key={list?.on_chain_id}
 																		className="py-4 flex items-center gap-x-4"
 																	>
-																		<Checkbox
+																		<input
+																			type="radio"
 																			checked={checkedApplicationListIds.includes(
 																				BigInt(list.on_chain_id),
 																			)}
@@ -1939,21 +1988,11 @@ const CreateRoundPage = () => {
 																						'application_wl_list_id',
 																						BigInt(list.on_chain_id),
 																					)
-																				} else {
-																					setCheckedApplicationListIds(
-																						checkedApplicationListIds.filter(
-																							(id) =>
-																								id !== BigInt(list.on_chain_id),
-																						),
-																					)
-																					setValue(
-																						'application_wl_list_id',
-																						undefined,
-																					)
 																				}
 																			}}
 																			name="application_wl_list_id"
 																			value={list.on_chain_id.toString()}
+																			className="h-4 w-4 cursor-pointer accent-grantpicks-black-950"
 																		/>
 																		<div className="flex justify-between w-full items-center">
 																			<div className="flex gap-x-3 items-center">
@@ -2005,6 +2044,24 @@ const CreateRoundPage = () => {
 						<div className="flex bg-white p-5 rounded-2xl shadow-md mb-4">
 							<InputText
 								label="Referral Fee (%)"
+								labelIcon={
+									<>
+										<a
+											data-tooltip-id="referral_fee_tooltip"
+											data-tooltip-html="OPTIONAL: When users fund this round through a referral link, this percentage of their donation will be deducted and sent to the referrer.<br /><br />The remaining amount goes to the Vault.<br /><br />Set between 0-5%."
+										>
+											<IconInfoCircle
+												size={16}
+												className="stroke-grantpicks-black-600"
+											/>
+										</a>
+										<Tooltip
+											id="referral_fee_tooltip"
+											place="right"
+											style={{ maxWidth: '250px' }}
+										/>
+									</>
+								}
 								placeholder="0-5"
 								type="number"
 								min={0}

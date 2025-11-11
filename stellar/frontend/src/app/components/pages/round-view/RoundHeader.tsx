@@ -16,6 +16,10 @@ import { getRoundApplication, HasVotedRoundParams, isHasVotedRound } from '@/ser
 import Menu from '../../commons/Menu'
 import IconMoreVert from '../../svgs/IconMoreVert'
 import { useRouter } from 'next/navigation'
+import ProjectDetailDrawer from '../round-vote/ProjectDetailDrawer'
+import { getProjectApplicant } from '@/services/stellar/project-registry'
+import { Project } from 'project-registry-client'
+import { GPProject } from '@/models/project'
 
 type RoundHeaderProps = {
 	name: string
@@ -50,6 +54,13 @@ const RoundHeader = ({
 	const [hasVoted, setHasVoted] = useState<boolean>(false)
 	const [isUserApplied, setIsUserApplied] = useState<boolean>(false)
 	const router = useRouter()
+	const [showProjectDetailDrawer, setShowProjectDetailDrawer] = useState<{
+		isOpen: boolean
+		project: Project | GPProject | null
+	}>({
+		isOpen: false,
+		project: null,
+	})
 
 	const currentTime = useMemo(() => resolveRoundTimelineStatus(doc), [doc])
 	const isButtonDisabled = useMemo(() => {
@@ -152,6 +163,40 @@ const RoundHeader = ({
 		}
 	}
 
+	const handleOwnerClick = useCallback(async () => {
+		if (!owner) return
+
+		try {
+			const contracts = storage.getStellarContracts()
+			if (!contracts) {
+				// If no contracts, open in block explorer
+				const network = storage.network === 'mainnet' ? 'public' : 'testnet'
+				const explorerUrl = `https://stellar.expert/explorer/${network}/account/${owner}`
+				window.open(explorerUrl, '_blank', 'noopener,noreferrer')
+				return
+			}
+
+			const project = await getProjectApplicant(owner, contracts)
+			if (project) {
+				setShowProjectDetailDrawer({
+					isOpen: true,
+					project: project as Project | GPProject,
+				})
+			} else {
+				// If no project found, open in block explorer
+				const network = storage.network === 'mainnet' ? 'public' : 'testnet'
+				const explorerUrl = `https://stellar.expert/explorer/${network}/account/${owner}`
+				window.open(explorerUrl, '_blank', 'noopener,noreferrer')
+			}
+		} catch (error: any) {
+			console.log('error fetching project by owner', error)
+			// On error, open in block explorer
+			const network = storage.network === 'mainnet' ? 'public' : 'testnet'
+			const explorerUrl = `https://stellar.expert/explorer/${network}/account/${owner}`
+			window.open(explorerUrl, '_blank', 'noopener,noreferrer')
+		}
+	}, [owner, storage])
+
 	return (
 		<div className="flex flex-col gap-4 md:gap-5">
 			<div className="flex items-center justify-between gap-4 flex-wrap">
@@ -214,7 +259,10 @@ const RoundHeader = ({
 				</div>
 			</div>
 			<div className="flex md:ml-8 items-center gap-3 text-sm text-grantpicks-black-600 flex-wrap">
-				<div className="flex items-center space-x-2">
+				<div
+					onClick={handleOwnerClick}
+					className="flex items-center space-x-2 cursor-pointer hover:opacity-70 transition"
+				>
 					<Image
 						src={`https://www.tapback.co/api/avatar/${owner}`}
 						alt="image"
@@ -230,22 +278,36 @@ const RoundHeader = ({
 							>
 								{owner ? prettyTruncate(owner, 10, 'address') : ''}
 							</p>
-							<IconCopy
-								size={16}
-								className="stroke-grantpicks-black-600 cursor-pointer hover:opacity-70 transition"
-								onClick={async () => {
+							<div
+								onClick={async (e) => {
+									e.stopPropagation()
 									await navigator.clipboard.writeText(owner)
 									toast.success('Address is copied', {
 										style: toastOptions.success.style,
 									})
 								}}
-							/>
+							>
+								<IconCopy
+									size={16}
+									className="stroke-grantpicks-black-600 cursor-pointer hover:opacity-70 transition"
+								/>
+							</div>
 						</div>
 					</div>
 				</div>
 				<span className="w-[4px] h-[4px] rounded-full bg-grantpicks-black-300" />
 				<p>{closesIn}</p>
 			</div>
+			<ProjectDetailDrawer
+				isOpen={showProjectDetailDrawer?.isOpen || false}
+				onClose={() =>
+					setShowProjectDetailDrawer((prev) => ({
+						...prev,
+						isOpen: false,
+					}))
+				}
+				projectData={showProjectDetailDrawer.project || undefined}
+			/>
 		</div>
 	)
 }

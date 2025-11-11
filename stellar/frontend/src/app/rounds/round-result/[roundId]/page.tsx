@@ -265,6 +265,8 @@ const RoundResultPage = () => {
 				const payoutTx = await contract.round_contract.process_payouts({
 					round_id: BigInt(storage.current_round?.on_chain_id || 0),
 					caller: storage.my_address || '',
+				}, {
+					fee: 100,
 				})
 
 				const txHash = await contract.signAndSendTx(

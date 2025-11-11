@@ -34,17 +34,15 @@ const ResultItem = ({
 			(p) => p.recipient === projectData?.owner?.id,
 		)
 		if (payout) {
-			if (store.chainId === 'stellar') {
-				amountToDistribute = Number(formatStroopToXlm(BigInt(payout.amount)))
-			} else {
-				amountToDistribute = Number(
-					formatNearAmount(payout.amount).replace(',', ''),
-				)
-			}
+			// Convert stroops to XLM with proper decimal handling
+			// 1 XLM = 10,000,000 stroops
+			const stroops = BigInt(payout.amount.toString())
+			amountToDistribute = Number(stroops) / 10_000_000
 		} else {
 			amountToDistribute = 0
 		}
 	}
+
 
 	return (
 		<div
@@ -96,13 +94,9 @@ const ResultItem = ({
 						: store.current_round_payouts.length > 0
 							? '0.00'
 							: '-'}{' '}
-					{store.chainId === 'stellar' ? 'XLM' : 'NEAR'}
+					XLM
 				</p>
-				{store.chainId === 'stellar' ? (
-					<IconStellar size={14} className="fill-grantpicks-black-600" />
-				) : (
-					<IconNear size={14} className="fill-grantpicks-black-600" />
-				)}
+				<IconStellar size={14} className="fill-grantpicks-black-600" />
 			</div>
 			<div className="flex items-center justify-end w-[12%]">
 				<p className="text-xs md:text-sm font-semibold text-grantpicks-black-500 text-right">

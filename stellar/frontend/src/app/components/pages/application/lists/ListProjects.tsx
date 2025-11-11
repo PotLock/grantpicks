@@ -1,5 +1,5 @@
 import { RegistrationExternal } from 'lists-client'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Image from 'next/image'
 import Menu from '@/app/components/commons/Menu'
 import { useSingleList } from './hooks/useSingleList'
@@ -26,6 +26,7 @@ export const ListProjects = ({
 }) => {
 	const [selectedStatus, setSelectedStatus] = useState<StatusTag>('Approved')
 	const [menuOpen, setMenuOpen] = useState(false)
+	const filterButtonRef = useRef<HTMLButtonElement>(null)
 
 	const {
 		registrations: projects,
@@ -58,6 +59,7 @@ export const ListProjects = ({
 					</div>
 					<div className="relative">
 						<button
+							ref={filterButtonRef}
 							className="border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 min-w-[160px] flex items-center justify-between gap-2 bg-white"
 							onClick={() => setMenuOpen((open) => !open)}
 							type="button"
@@ -82,12 +84,14 @@ export const ListProjects = ({
 							onClose={() => setMenuOpen(false)}
 							position="right-0 mt-2"
 							className="min-w-[160px]"
+							buttonRef={filterButtonRef}
+							mobileAsPortal={true}
 						>
 							<div className="flex flex-col divide-y divide-gray-100 bg-white rounded-xl shadow-lg">
 								{Object.keys(listRegistrationStatuses).map((status) => (
 									<button
 										key={status}
-										className={`px-4 py-2 text-left text-sm hover:bg-gray-100 ${selectedStatus === status ? 'font-semibold text-blue-600' : ''}`}
+										className={`px-4 py-2 text-left text-sm hover:bg-gray-100 ${selectedStatus === status ? 'font-semibold text-blue-600' : 'text-gray-500'}`}
 										onClick={() => {
 											setSelectedStatus(status as StatusTag)
 											setMenuOpen(false)
@@ -142,6 +146,7 @@ const ProjectCard = ({
 	) => Promise<void>
 }) => {
 	const [menuOpen, setMenuOpen] = useState(false)
+	const updateStatusButtonRef = useRef<HTMLButtonElement>(null)
 	const { data, isLoading, error } = useProject({ projectId: project.registrant_id })
 
 
@@ -179,8 +184,8 @@ const ProjectCard = ({
 						/>
 					</div>
 				</div>
-				<div className="flex-1 min-w-0">
-					<div className="font-semibold text-lg leading-tight">
+				<div className="flex-1 min-w-0 overflow-hidden">
+					<div className="font-semibold text-lg leading-tight truncate">
 						{data?.name || prettyTruncate(project.registrant_id, 20, 'address')}
 					</div>
 					<div
@@ -190,14 +195,14 @@ const ProjectCard = ({
 								style: toastOptions.success.style,
 							})
 						}}
-						className="relative group inline-flex items-center gap-2 mt-1"
+						className="relative group flex items-center gap-2 mt-1 w-full min-w-0"
 					>
-						<span className="text-sm cursor-pointer text-gray-500 font-mono truncate">
+						<span className="text-sm cursor-pointer text-gray-500 font-mono truncate flex-1 min-w-0">
 							{prettyTruncate(project.registrant_id, 20, 'address')}
 						</span>
 						<IconCopy
 							size={16}
-							className="fill-gray-300 cursor-pointer group-hover:opacity-80 transition"
+							className="fill-gray-300 cursor-pointer group-hover:opacity-80 transition flex-shrink-0"
 						/>
 						<div className="absolute w-[300px] z-50 left-0 top-full mt-2 rounded-md whitespace-normal break-all h-auto bg-grantpicks-black-950 text-white px-3 py-1 shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition text-xs md:text-sm font-semibold">
 							{project.registrant_id}
@@ -221,6 +226,7 @@ const ProjectCard = ({
 			{isOwner && (
 				<div className="relative mt-4">
 					<button
+						ref={updateStatusButtonRef}
 						className="border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-100 min-w-[160px] flex items-center justify-between gap-2 bg-white hover:border-gray-400"
 						onClick={() => setMenuOpen((open) => !open)}
 						type="button"
@@ -245,6 +251,8 @@ const ProjectCard = ({
 						onClose={() => setMenuOpen(false)}
 						position="right-0 mt-2"
 						className="min-w-[200px]"
+						buttonRef={updateStatusButtonRef}
+						mobileAsPortal={true}
 					>
 						<div className="flex flex-col bg-white rounded-xl shadow-lg p-1">
 							{Object.keys(listRegistrationStatuses).map((statusKey) => {

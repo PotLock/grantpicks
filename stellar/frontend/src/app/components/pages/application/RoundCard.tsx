@@ -260,7 +260,7 @@ export const RoundCard = ({
 	const handleMainAction = () => {
 		if (isNotStarted) return
 
-		if (isApplicationOpen && isAdminOrOwner) {
+		if (isAdminOrOwner) {
 			router.push(`/round/${doc.on_chain_id}/applications`)
 			return
 		}
@@ -295,10 +295,10 @@ export const RoundCard = ({
 
 	const getMainActionText = () => {
 		if (isUserApplied && isApplicationOpen) {
-			return "Applied."
+			return "Done"
 		}
 		if (isVotingOpen && !isAdminOrOwner) {
-			return hasVoted ? "Voted." : 'Vote'
+			return hasVoted ? "Done" : 'Vote'
 		}
 		if (isNotStarted) {
 			return 'Apply'
@@ -310,7 +310,7 @@ export const RoundCard = ({
 			return 'Apply'
 		}
 		if ((isApplicationOpen || isVotingOpen) && isAdminOrOwner) {
-			return 'View Applications'
+			return 'View'
 		}
 		if (isCompleted) {
 			if (!storage.my_address) return 'Login'
@@ -353,7 +353,7 @@ export const RoundCard = ({
 			return 'Voting Closed'
 		}
 		if (currentTime === 'payout-pending' && totalApprovedProjects === 0) {
-			return 'No participants. Hence, no results'
+			return 'No results'
 		}
 		if (currentTime === 'payout-pending') {
 			return 'Payout Pending'
@@ -404,6 +404,11 @@ export const RoundCard = ({
 					onFundRound={handleFundRound}
 					helperText={getHelperText()}
 					helperColorClass={currentStageColorClass()}
+					hasVoted={hasVoted}
+					isUserApplied={isUserApplied}
+					isVotingOpen={isVotingOpen}
+					isApplicationOpen={isApplicationOpen}
+					isAdminOrOwner={isAdminOrOwner}
 				/>
 			</div>
 			{showFundRoundModal && (

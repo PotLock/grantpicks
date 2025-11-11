@@ -24,6 +24,7 @@ import { useModalContext } from '@/app/providers/ModalProvider'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
 import IconCopy from '@/app/components/svgs/IconCopy'
+import ShareButton from '@/app/components/pages/round-view/ShareButton'
 
 export const SingleListPage = () => {
 	const params = useParams()
@@ -164,9 +165,21 @@ export const SingleListPage = () => {
 					>
 						<div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 gap-4">
 							<div className="flex-1">
-								<h1 className="text-2xl sm:text-3xl mb-0 font-bold break-words">
-									{list?.name}
-								</h1>
+								<div className="flex items-start justify-between gap-4">
+									<h1 className="text-2xl sm:text-3xl mb-0 font-bold break-words flex-1">
+										{list?.name}
+									</h1>
+									{list && (
+										<div className="flex-shrink-0">
+											<ShareButton
+												roundId={listId}
+												userAccount={stellarPubKey || undefined}
+												title={list.name}
+												type="list"
+											/>
+										</div>
+									)}
+								</div>
 								<div className="flex flex-col sm:flex-row sm:items-center gap-y-2 sm:gap-x-2 py-2 text-gray-500 text-sm">
 									<div className="flex items-center space-x-2">
 										<Image

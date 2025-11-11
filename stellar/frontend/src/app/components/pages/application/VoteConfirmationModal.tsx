@@ -1,7 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import Modal from '../../commons/Modal'
 import { BaseModalProps } from '@/types/dialog'
-import IconNear from '../../svgs/IconNear'
 import IconStellar from '../../svgs/IconStellar'
 import { useWallet } from '@/app/providers/WalletProvider'
 import IconCube from '../../svgs/IconCube'
@@ -10,17 +9,17 @@ import IconClock from '../../svgs/IconClock'
 import moment from 'moment'
 import { formatStroopToXlm } from '@/utils/helper'
 import Button from '../../commons/Button'
-import { getPairsRound, getRoundApplications } from '@/services/stellar/round'
+import { getPairsRound } from '@/services/stellar/round'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { GPRound } from '@/models/round'
-import { formatNearAmount } from 'near-api-js/lib/utils/format'
-import { ChainId } from '@/types/context'
 import { ListExternal } from '../../../../../lists-client/src'
 import Link from 'next/link'
 import IconClose from '../../svgs/IconClose'
+import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
+import { useGlobalContext } from '@/app/providers/GlobalProvider'
 
 interface VoteConfirmationModalProps extends BaseModalProps {
 	data?: GPRound
@@ -32,7 +31,8 @@ const VoteConfirmationModal = ({
 	data,
 }: VoteConfirmationModalProps) => {
 	const router = useRouter()
-	const { connectedWallet, stellarPubKey, onOpenStellarWallet } = useWallet()
+	const { stellarPubKey, onOpenStellarWallet, stellarKit } = useWallet()
+	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const [totalProjects, setTotalProjects] = useState<number>(0)
 	const storage = useAppStorage()
 	const [isRegistered, setIsRegistered] = useState<boolean>(true)
@@ -40,6 +40,16 @@ const VoteConfirmationModal = ({
 		undefined,
 	)
 	const [loading, setLoading] = useState<boolean>(true)
+	const [isRegistering, setIsRegistering] = useState<boolean>(false)
+
+	// Check if user can auto-register
+	const canAutoRegister = useCallback(() => {
+		if (!listDetails || isRegistered) return false
+		return (
+			listDetails.admin_only_registrations === false &&
+			listDetails.default_registration_status?.tag === 'Approved'
+		)
+	}, [listDetails, isRegistered])
 
 	const fetchIsRegistered = useCallback(async () => {
 		if (data?.application_wl_list_id) {
@@ -51,13 +61,17 @@ const VoteConfirmationModal = ({
 				const isRegistered = await contracts.lists_contract.is_registered({
 					list_id: BigInt(data?.application_wl_list_id),
 					registrant_id: stellarPubKey,
-					required_status: undefined,
+					required_status: {
+						tag: 'Approved',
+						values: undefined,
+					},
 				})
 				setIsRegistered(isRegistered.result)
 
 				const listDetails = await contracts.lists_contract.get_list({
 					list_id: BigInt(data?.application_wl_list_id),
 				})
+				console.log(listDetails)
 				setListDetails(listDetails.result || {})
 				setLoading(false)
 			} catch (error) {
@@ -65,7 +79,54 @@ const VoteConfirmationModal = ({
 				setLoading(false)
 			}
 		}
-	}, [stellarPubKey, data])
+	}, [stellarPubKey, data, storage])
+
+	const handleAutoRegisterAndVote = useCallback(async () => {
+		if (!stellarPubKey || !data?.application_wl_list_id || !listDetails) return
+
+		try {
+			setIsRegistering(true)
+			openPageLoading()
+
+			const contracts = storage.getStellarContracts()
+			if (!contracts) {
+				return
+			}
+
+			// Register to list
+			const txRegisterList = await contracts.lists_contract.register_batch({
+				submitter: stellarPubKey,
+				list_id: BigInt(data.application_wl_list_id),
+				notes: 'Auto-registered to vote in round',
+				registrations: undefined,
+			})
+
+			const txHashRegister = await contracts.signAndSendTx(
+				stellarKit as StellarWalletsKit,
+				txRegisterList.toXDR(),
+				stellarPubKey,
+			)
+
+			if (txHashRegister) {
+				dismissPageLoading()
+				setIsRegistered(true)
+				toast.success('Successfully registered to list!', {
+					style: toastOptions.success.style,
+				})
+				// Proceed to vote
+				router.push(`/rounds/round-vote/${data?.on_chain_id}`)
+				onClose()
+			}
+		} catch (error: any) {
+			dismissPageLoading()
+			toast.error(error?.message || 'Failed to register to list', {
+				style: toastOptions.error.style,
+			})
+			console.log('error auto-registering', error)
+		} finally {
+			setIsRegistering(false)
+		}
+	}, [stellarPubKey, data, listDetails, storage, stellarKit, router, onClose, openPageLoading, dismissPageLoading])
 
 	const onFetchTotalProjects = useCallback(async () => {
 		try {
@@ -165,20 +226,34 @@ const VoteConfirmationModal = ({
 					</div>
 				</div>
 
-				{listDetails?.name && (
+				{listDetails?.name && !isRegistered && (
 					<div className="flex flex-col w-full mt-6">
-						<p className="text-sm font-semibold text-grantpicks-black-950">
-							This is a private round. You must be an approved registrant to
-							{` `}
-							<Link
-								className="text-blue-500"
-								href={`/list/${listDetails.id}`}
-								target="_blank"
-							>
-								{listDetails.name}
-							</Link>{' '}
-							list to vote.
-						</p>
+						{canAutoRegister() ? (
+							<p className="text-sm font-semibold text-grantpicks-black-950">
+								This is a private round. You will be automatically registered to the{' '}
+								<Link
+									className="text-blue-500"
+									href={`/list/${listDetails.id}`}
+									target="_blank"
+								>
+									{listDetails.name}
+								</Link>{' '}
+								list when you proceed to vote.
+							</p>
+						) : (
+							<p className="text-sm font-semibold text-grantpicks-black-950">
+								This is a private round. You must be an approved registrant to
+								{` `}
+								<Link
+									className="text-blue-500"
+									href={`/list/${listDetails.id}`}
+									target="_blank"
+								>
+									{listDetails.name}
+								</Link>{' '}
+								list to vote.
+							</p>
+						)}
 					</div>
 				)}
 				<div className="pt-4 pb-6 flex flex-col md:flex-row md:items-center gap-2 md:gap-2 w-full">
@@ -197,26 +272,36 @@ const VoteConfirmationModal = ({
 					<div className="flex-1">
 						<Button
 							isFullWidth
-							isDisabled={!isRegistered}
-							onClick={() => {
+							isDisabled={!isRegistered && !canAutoRegister()}
+							isLoading={isRegistering}
+							onClick={async () => {
 								if (!stellarPubKey) {
 									onOpenStellarWallet()
+									onClose()
+								} else if (!isRegistered && canAutoRegister()) {
+									// Auto-register and proceed to vote
+									await handleAutoRegisterAndVote()
 								} else if (!isRegistered) {
 									toast.error('You are not eligible to vote in this round', {
 										style: toastOptions.error.style,
 									})
+									onClose()
 								} else {
 									router.push(`/rounds/round-vote/${data?.on_chain_id}`)
+									onClose()
 								}
-								onClose()
 							}}
 							className="!py-3 flex-1"
 						>
 							{!stellarPubKey
 								? 'Connect Wallet'
-								: isRegistered
-									? 'Proceed'
-									: 'Not Eligible to Vote'}
+								: isRegistering
+									? 'Registering...'
+									: isRegistered
+										? 'Proceed'
+										: canAutoRegister()
+											? 'Register & Vote'
+											: 'Not Eligible to Vote'}
 						</Button>
 					</div>
 				</div>

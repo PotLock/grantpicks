@@ -52,11 +52,11 @@ const SuccessCreateRoundModal = ({
 						<div className="flex items-center space-x-2 mb-4">
 							<IconClock size={18} className="fill-grantpicks-black-600" />
 							<p className="text-sm font-normal text-grantpicks-black-600">
-								Starting{' '}
+								Voting Starts at{' '}
 								{moment(new Date(createRoundRes?.voting_start || '')).format(
 									'l',
 								)}{' '}
-								and Ending{' '}
+								and Voting Ends at{' '}
 								{moment(new Date(createRoundRes?.voting_end || '')).format('l')}
 							</p>
 						</div>
@@ -84,7 +84,7 @@ const SuccessCreateRoundModal = ({
 								{prettyTruncate(txHash, 25)}
 							</p>
 							<Link
-								href={`https://stellar.expert/explorer/${storage.network}/tx/${txHash}`}
+								href={`https://stellar.expert/explorer/${storage.network === 'mainnet' ? 'public' : 'testnet'}/tx/${txHash}`}
 								target="_blank"
 							>
 								<IconExternalLink

@@ -7,4 +7,5 @@ export const localStorageConfigs = {
 	CREATE_PROJECT_STEP_3: 'create_project_step_3',
 	CREATE_PROJECT_STEP_4: 'create_project_step_4',
 	CREATE_PROJECT_STEP_5: 'create_project_step_5',
+	REFERRED_BY: 'referred_by',
 }

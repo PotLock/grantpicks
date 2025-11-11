@@ -84,11 +84,23 @@ const CreateProjectStep1 = () => {
 						rows={2}
 						maxLength={300}
 						hintLabel="Max. 300 characters"
-						{...register('description', { required: true })}
+						{...register('description', {
+							required: true,
+							validate: (value) => {
+								if (value && value.length > 300) {
+									return 'Description cannot exceed 300 characters'
+								}
+								return true
+							},
+						})}
 						errorMessage={
 							errors.description?.type === 'required' ? (
 								<p className="text-red-500 text-xs mt-1 ml-2">
 									Project brief description is required
+								</p>
+							) : errors.description?.type === 'validate' ? (
+								<p className="text-red-500 text-xs mt-1 ml-2">
+									{errors.description.message as string}
 								</p>
 							) : undefined
 						}

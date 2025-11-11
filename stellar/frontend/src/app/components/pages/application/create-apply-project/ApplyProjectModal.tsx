@@ -23,6 +23,8 @@ import { Project } from 'project-registry-client'
 import React, { useCallback, useEffect, useState } from 'react'
 import { ListExternal } from '../../../../../../lists-client/src'
 import Link from 'next/link'
+import toast from 'react-hot-toast'
+import { toastOptions } from '@/constants/style'
 
 interface ApplyProjectToRoundModalProps extends BaseModalProps {
 	round_id?: bigint
@@ -50,7 +52,17 @@ const ApplyProjectModal = ({
 		undefined,
 	)
 	const [isRegistered, setIsRegistered] = useState<boolean>(true)
+	const [isRegistering, setIsRegistering] = useState<boolean>(false)
 	const storage = useAppStorage()
+
+	// Check if user can auto-register
+	const canAutoRegister = useCallback(() => {
+		if (!listDetails || isRegistered) return false
+		return (
+			listDetails.admin_only_registrations === false &&
+			listDetails.default_registration_status?.tag === 'Approved'
+		)
+	}, [listDetails, isRegistered])
 
 	const fetchIsRegistered = useCallback(async () => {
 		if (roundData?.application_wl_list_id) {
@@ -72,6 +84,8 @@ const ApplyProjectModal = ({
 				const listDetails = await contracts.lists_contract.get_list({
 					list_id: BigInt(roundData?.application_wl_list_id),
 				})
+
+				console.log(isRegistered.result)
 				setListDetails(listDetails.result || {})
 				setLoading(false)
 			} catch (error) {
@@ -79,7 +93,7 @@ const ApplyProjectModal = ({
 				setLoading(false)
 			}
 		}
-	}, [stellarPubKey, roundData])
+	}, [stellarPubKey, roundData, storage])
 
 	const fetchProjectApplicant = useCallback(async () => {
 		try {
@@ -100,48 +114,105 @@ const ApplyProjectModal = ({
 		} finally {
 			setLoading(false)
 		}
-	}, [storage.chainId, storage, stellarPubKey])
+	}, [storage, stellarPubKey])
 
-	const onApplyProjectToRound = useCallback(async () => {
+	// Internal function to handle applying to round
+	const performApplyToRound = useCallback(async () => {
+		if (stellarPubKey) {
+			let contracts = storage.getStellarContracts()
+
+			if (!contracts || !round_id) {
+				return
+			}
+
+			const applyParams: ApplyProjectToRoundParams = {
+				round_id: round_id,
+				caller: stellarPubKey,
+				note: applyNote,
+			}
+			const txApplyProject = await applyProjectToRound(applyParams, contracts)
+
+			const txHashApplyProject = await contracts.signAndSendTx(
+				stellarKit as StellarWalletsKit,
+				txApplyProject.toXDR(),
+				stellarPubKey,
+			)
+			if (txHashApplyProject) {
+				dismissPageLoading()
+				setIsRegistering(false)
+				setSuccessApplyProjectInitProps((prev) => ({
+					...prev,
+					isOpen: true,
+					applyProjectRes: txApplyProject.result,
+					txHash: txHashApplyProject,
+					roundData,
+				}))
+				onClose()
+			}
+		}
+	}, [storage, stellarPubKey, applyNote, round_id, stellarKit, roundData, setSuccessApplyProjectInitProps, onClose, dismissPageLoading])
+
+	const handleAutoRegisterAndApply = useCallback(async () => {
+		if (!stellarPubKey || !roundData?.application_wl_list_id || !listDetails) return
+
 		try {
+			setIsRegistering(true)
 			openPageLoading()
 
-			if (storage.chainId === 'stellar') {
-				let contracts = storage.getStellarContracts()
+			const contracts = storage.getStellarContracts()
+			if (!contracts) {
+				return
+			}
 
-				if (!contracts || !round_id) {
-					return
-				}
+			// Register to list
+			const txRegisterList = await contracts.lists_contract.register_batch({
+				submitter: stellarPubKey,
+				list_id: BigInt(roundData.application_wl_list_id),
+				notes: 'Auto-registered to apply to round',
+				registrations: undefined,
+			})
 
-				const applyParams: ApplyProjectToRoundParams = {
-					round_id: round_id,
-					caller: stellarPubKey,
-					note: applyNote,
-				}
-				const txApplyProject = await applyProjectToRound(applyParams, contracts)
+			const txHashRegister = await contracts.signAndSendTx(
+				stellarKit as StellarWalletsKit,
+				txRegisterList.toXDR(),
+				stellarPubKey,
+			)
 
-				const txHashApplyProject = await contracts.signAndSendTx(
-					stellarKit as StellarWalletsKit,
-					txApplyProject.toXDR(),
-					stellarPubKey,
-				)
-				if (txHashApplyProject) {
-					dismissPageLoading()
-					setSuccessApplyProjectInitProps((prev) => ({
-						...prev,
-						isOpen: true,
-						applyProjectRes: txApplyProject.result,
-						txHash: txHashApplyProject,
-						roundData,
-					}))
-					onClose()
-				}
+			if (txHashRegister) {
+				setIsRegistered(true)
+				toast.success('Successfully registered to list!', {
+					style: toastOptions.success.style,
+				})
+				// Now apply to round
+				await performApplyToRound()
 			}
 		} catch (error: any) {
 			dismissPageLoading()
+			setIsRegistering(false)
+			toast.error(error?.message || 'Failed to register to list', {
+				style: toastOptions.error.style,
+			})
+			console.log('error auto-registering', error)
+		}
+	}, [stellarPubKey, roundData, listDetails, storage, stellarKit, openPageLoading, dismissPageLoading, performApplyToRound])
+
+	const onApplyProjectToRound = useCallback(async () => {
+		try {
+			if (!isRegistered && !canAutoRegister()) {
+				toast.error('You are not eligible to apply to this round', {
+					style: toastOptions.error.style,
+				})
+				return
+			}
+
+			openPageLoading()
+			await performApplyToRound()
+		} catch (error: any) {
+			dismissPageLoading()
+			setIsRegistering(false)
 			console.log('error apply project to round', error)
 		}
-	}, [storage.chainId, storage.my_address, stellarPubKey])
+	}, [isRegistered, canAutoRegister, openPageLoading, performApplyToRound, dismissPageLoading])
 
 	useEffect(() => {
 		if (isOpen && !projectData) {
@@ -236,7 +307,7 @@ const ApplyProjectModal = ({
 								/>
 								<div>
 									<p className="text-sm font-bold text-grantpicks-black-950">
-										{prettyTruncate(projectData.owner, 18, 'address')}
+										{prettyTruncate(projectData.name, 18, 'address')}
 									</p>
 									<p className="text-sm font-normal text-grantpicks-black-600">
 										{prettyTruncate(projectData.owner, 18, 'address')}
@@ -272,32 +343,59 @@ const ApplyProjectModal = ({
 						</p>
 					</>
 				)}
-				{listDetails?.name && (
+				{listDetails?.name && !isRegistered && (
 					<div className="flex flex-col w-full mt-6">
-						<p className="text-sm font-semibold text-grantpicks-black-950">
-							This is a private round. You must be an approved registrant to the
-							list{' '}
-							<Link
-								className="text-blue-500"
-								href={`/list/${listDetails.id}`}
-								target="_blank"
-							>
-								{listDetails.name}
-							</Link>{' '}
-							to apply.
-						</p>
+						{canAutoRegister() ? (
+							<p className="text-sm font-semibold text-grantpicks-black-950">
+								This is a private round. You will be automatically registered to the{' '}
+								<Link
+									className="text-blue-500"
+									href={`/list/${listDetails.id}`}
+									target="_blank"
+								>
+									{listDetails.name}
+								</Link>{' '}
+								list when you apply.
+							</p>
+						) : (
+							<p className="text-sm font-semibold text-grantpicks-black-950">
+								This is a private round. You must be an approved registrant to the
+								list{' '}
+								<Link
+									className="text-blue-500"
+									href={`/list/${listDetails.id}`}
+									target="_blank"
+								>
+									{listDetails.name}
+								</Link>{' '}
+								to apply.
+							</p>
+						)}
 					</div>
 				)}
 				{projectData && !isProjectMissingInfo && (
 					<div className="flex flex-col w-full space-y-4 mt-6">
 						<Button
 							color="black-950"
-							onClick={onApplyProjectToRound}
-							isDisabled={!isRegistered}
+							onClick={async () => {
+								if (!isRegistered && canAutoRegister()) {
+									await handleAutoRegisterAndApply()
+								} else {
+									await onApplyProjectToRound()
+								}
+							}}
+							isDisabled={!isRegistered && !canAutoRegister()}
+							isLoading={isRegistering}
 							isFullWidth
 						>
 							<p className="text-sm font-semibold text-white">
-								{isRegistered ? 'Apply' : 'Not Eligible to Apply'}
+								{isRegistering
+									? 'Registering...'
+									: isRegistered
+										? 'Apply'
+										: canAutoRegister()
+											? 'Register & Apply'
+											: 'Not Eligible to Apply'}
 							</p>
 						</Button>
 						<Button

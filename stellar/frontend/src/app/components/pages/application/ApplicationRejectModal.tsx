@@ -25,7 +25,10 @@ const ApplicationRejectModal = ({
 
 	return (
 		<Modal isOpen={isOpen} onClose={onClose}>
-			<div className="w-11/12 md:w-[340px] mx-auto bg-white rounded-2xl border border-black/10 shadow p-4">
+			<div
+				onClick={(e) => e.stopPropagation()}
+				className="w-11/12 md:w-[340px] mx-auto bg-white rounded-2xl border border-black/10 shadow p-4"
+			>
 				<div className="flex items-center justify-between mb-4 md:mb-6">
 					<p className="text-base font-bold text-grantpicks-red-600">
 						Reject Confirmation

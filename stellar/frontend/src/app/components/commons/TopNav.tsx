@@ -33,6 +33,7 @@ const TopNav = () => {
 	const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 	const router = useRouter()
 
+
 	// Close nav dropdown on route change
 	const handleNavClick = (path: string) => {
 		setNavOpen(false)

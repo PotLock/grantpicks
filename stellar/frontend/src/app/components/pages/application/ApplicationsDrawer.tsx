@@ -131,13 +131,19 @@ export const ApplicationItem = ({
 					{roundData.owner?.id === storage.my_address && (
 						<div className="flex items-center space-x-2">
 							<button
-								onClick={() => setOpenAcceptModal(true)}
+								onClick={(e) => {
+									e.stopPropagation()
+									setOpenAcceptModal(true)
+								}}
 								className="text-grantpicks-green-600 text-sm font-semibold cursor-pointer transition hover:opacity-70"
 							>
 								ACCEPT
 							</button>
 							<button
-								onClick={() => setOpenRejectModal(true)}
+								onClick={(e) => {
+									e.stopPropagation()
+									setOpenRejectModal(true)
+								}}
 								className="text-grantpicks-black-500 text-sm font-semibold cursor-pointer transition hover:opacity-70"
 							>
 								REJECT

@@ -20,6 +20,7 @@ import IconProject from '@/app/components/svgs/IconProject'
 import { formatStroopToXlm } from '@/utils/helper'
 import FundRoundModal from '@/app/components/pages/application/FundRoundModal'
 import { useWallet } from '@/app/providers/WalletProvider'
+import ShareButton from '@/app/components/pages/round-view/ShareButton'
 
 const SubNav = ({
 	basePath,
@@ -188,14 +189,28 @@ const RoundLayout = ({
 		<ApplicationLayout>
 			{isLoading && <PageLoading isOpen={isLoading} />}
 			<div className={`${isLoading ? 'opacity-50' : 'opacity-100'}`}>
-				<RoundHeader
-					doc={roundInfo}
-					name={roundInfo?.name || ''}
-					owner={roundInfo?.owner?.id || ''}
-					closesIn={closesText}
-					onGoBack={() => router.push('/rounds')}
-					openFundModal={() => setShowFundModal(true)}
-				/>
+				<div className="flex items-start justify-between">
+					<div className="flex-1">
+						<RoundHeader
+							doc={roundInfo}
+							name={roundInfo?.name || ''}
+							owner={roundInfo?.owner?.id || ''}
+							closesIn={closesText}
+							onGoBack={() => router.push('/rounds')}
+							openFundModal={() => setShowFundModal(true)}
+						/>
+					</div>
+					{roundInfo && (
+						<div className="ml-1">
+							<ShareButton
+								roundId={params.roundId}
+								userAccount={stellarPubKey || undefined}
+								title={roundInfo.name}
+								type="round"
+							/>
+						</div>
+					)}
+				</div>
 				<div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
 					<StatCard
 						label="Approved Projects"

@@ -143,17 +143,26 @@ const RoundVotePairItem = ({
 	}, [data])
 
 	const firstVideoComponent = useMemo(() => {
+		const videoUrl = firstProjectData?.video_url
+		const hasVideo = videoUrl && videoUrl.trim() !== ''
+		const isYouTube = hasVideo && videoUrl.includes('youtube')
+
 		return (
-			<div>
-				{(!firstProjectData?.video_url ||
-					!firstProjectData.video_url.includes('youtube')) && (
-					<div className="relative">
+			<div className="w-full h-[240px] md:h-[280px] lg:h-[320px] rounded-t-[20px] overflow-hidden bg-grantpicks-black-50 flex items-center justify-center">
+				{hasVideo && isYouTube && ytIframe1 && (
+					<div
+						className="w-full h-full flex items-center justify-center"
+						dangerouslySetInnerHTML={{ __html: ytIframe1 }}
+					/>
+				)}
+				{hasVideo && !isYouTube && videoUrl && (
+					<div className="relative w-full h-full">
 						<video
 							ref={video1Ref}
-							src={firstProjectData?.video_url || `/assets/videos/video-2.mp4`}
+							src={videoUrl}
 							autoPlay={false}
 							controls={false}
-							className="mx-auto rounded-t-[20px] overflow-hidden"
+							className="w-full h-full object-cover"
 						></video>
 						<div className="flex items-center justify-center absolute inset-0 z-20">
 							<button
@@ -161,9 +170,7 @@ const RoundVotePairItem = ({
 									setVideoPlayerProps((prev) => ({
 										...prev,
 										isOpen: true,
-										videoUrl:
-											firstProjectData?.video_url ||
-											`/assets/videos/video-2.mp4`,
+										videoUrl: videoUrl,
 									}))
 								}}
 								className="w-10 h-10 flex items-center justify-center rounded-full bg-grantpicks-black-950 cursor-pointer hover:opacity-70 transition"
@@ -177,29 +184,43 @@ const RoundVotePairItem = ({
 						</div>
 					</div>
 				)}
-				{ytIframe1 && (
-					<div
-						className="flex items-center justify-center rounded-t-[20px] overflow-hidden"
-						dangerouslySetInnerHTML={{ __html: ytIframe1 }}
-					/>
+				{!hasVideo && (
+					<div className="flex items-center justify-center w-full h-full">
+						<Image
+							src={`https://www.tapback.co/api/avatar/${firstProjectData?.owner}`}
+							alt=""
+							className="rounded-full object-fill opacity-50"
+							width={80}
+							height={80}
+						/>
+					</div>
 				)}
 			</div>
 		)
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [firstProjectData?.video_url, ytIframe1])
+	}, [firstProjectData?.video_url, ytIframe1, firstProjectData?.owner])
 
 	const secondVideoComponent = useMemo(() => {
+		const videoUrl = secondProjectData?.video_url
+		const hasVideo = videoUrl && videoUrl.trim() !== ''
+		const isYouTube = hasVideo && videoUrl.includes('youtube')
+
 		return (
-			<div>
-				{(!secondProjectData?.video_url ||
-					!secondProjectData.video_url.includes('youtube')) && (
-					<div className="relative">
+			<div className="w-full h-[240px] md:h-[280px] lg:h-[320px] rounded-t-[20px] overflow-hidden bg-grantpicks-black-50 flex items-center justify-center">
+				{hasVideo && isYouTube && ytIframe2 && (
+					<div
+						className="w-full h-full flex items-center justify-center"
+						dangerouslySetInnerHTML={{ __html: ytIframe2 }}
+					/>
+				)}
+				{hasVideo && !isYouTube && videoUrl && (
+					<div className="relative w-full h-full">
 						<video
 							ref={video2Ref}
-							src={secondProjectData?.video_url || `/assets/videos/video-2.mp4`}
+							src={videoUrl}
 							autoPlay={false}
 							controls={false}
-							className="mx-auto rounded-t-[20px] overflow-hidden"
+							className="w-full h-full object-cover"
 						></video>
 						<div className="flex items-center justify-center absolute inset-0 z-20">
 							<button
@@ -207,9 +228,7 @@ const RoundVotePairItem = ({
 									setVideoPlayerProps((prev) => ({
 										...prev,
 										isOpen: true,
-										videoUrl:
-											secondProjectData?.video_url ||
-											`/assets/videos/video-2.mp4`,
+										videoUrl: videoUrl,
 									}))
 								}}
 								className="w-10 h-10 flex items-center justify-center rounded-full bg-grantpicks-black-950 cursor-pointer hover:opacity-70 transition"
@@ -223,16 +242,21 @@ const RoundVotePairItem = ({
 						</div>
 					</div>
 				)}
-				{ytIframe2 && (
-					<div
-						className="flex items-center justify-center rounded-t-[20px] overflow-hidden"
-						dangerouslySetInnerHTML={{ __html: ytIframe2 }}
-					/>
+				{!hasVideo && (
+					<div className="flex items-center justify-center w-full h-full">
+						<Image
+							src={`https://www.tapback.co/api/avatar/${secondProjectData?.owner}`}
+							alt=""
+							className="rounded-full object-fill opacity-50"
+							width={80}
+							height={80}
+						/>
+					</div>
 				)}
 			</div>
 		)
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [secondProjectData?.video_url, ytIframe2])
+	}, [secondProjectData?.video_url, ytIframe2, secondProjectData?.owner])
 
 	return (
 		<div
@@ -249,10 +273,10 @@ const RoundVotePairItem = ({
 				}}
 				ref={wrapper1Ref}
 				className={clsx(
-					`rounded-3xl transition-all duration-200 w-full md:w-[360px] lg:w-[448px] cursor-pointer`,
+					`rounded-3xl transition-all duration-200 w-full md:w-[360px] lg:w-[448px] cursor-pointer bg-white flex flex-col overflow-hidden`,
 					selectedPairs[index] === data.projects[0].toString()
 						? // true
-							`border-4 border-grantpicks-purple-500`
+						`border-4 border-grantpicks-purple-500`
 						: `border-4 border-black/10`,
 				)}
 			>
@@ -305,7 +329,7 @@ const RoundVotePairItem = ({
 					onSelect?.(index)
 				}}
 				className={clsx(
-					`rounded-3xl transition-all duration-200 w-full md:w-[360px] lg:w-[448px] cursor-pointer`,
+					`rounded-3xl transition-all duration-200 w-full md:w-[360px] lg:w-[448px] cursor-pointer bg-white flex flex-col overflow-hidden`,
 					selectedPairs[index] === data.projects[1].toString()
 						? `border-4 border-grantpicks-purple-500`
 						: `border-4 border-black/10`,

@@ -18,17 +18,12 @@ const ProgressBar = ({
 	}, [value, max])
 	const textSize = large ? 'text-xl' : 'text-sm'
 	const barColor =
-		pct < 30
-			? 'bg-red-500'
-			: pct <= 79
-				? 'bg-yellow-400'
-				: 'bg-grantpicks-green-700'
-	const textColor =
-		pct < 30
-			? 'text-red-500'
-			: pct <= 79
-				? 'text-yellow-400'
-				: 'text-grantpicks-green-700'
+		pct <= 79
+			? 'bg-yellow-400'
+			: 'bg-grantpicks-green-700'
+	const textColor = pct <= 79
+		? 'text-yellow-400'
+		: 'text-grantpicks-green-700'
 	return (
 		<div>
 			<div className="flex justify-between items-center mb-2">

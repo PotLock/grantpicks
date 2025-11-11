@@ -1,6 +1,6 @@
 import useRoundStore from '@/stores/zustand/useRoundStore'
 import clsx from 'clsx'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useWallet } from '@/app/providers/WalletProvider'
 import useSWRInfinite from 'swr/infinite'
 import InfiniteScroll from 'react-infinite-scroll-component'
@@ -26,13 +26,36 @@ const ApplicationRounds = () => {
 	const potlockApi = usePotlockService()
 	const { connectedWallet } = useWallet()
 	const [showSortType, setShowSortType] = useState<boolean>(false)
-	const [sortType, setSortType] = useState<string>('Most Recent')
-	const storage = useAppStorage()
 	const router = useRouter()
 	const searchParams = useSearchParams()
+	const storage = useAppStorage()
 	const { stellarPubKey } = useWallet()
 	const [myRoundsData, setMyRoundsData] = useState<GPRound[]>([])
 	const [searchQuery, setSearchQuery] = useState('')
+	const sortButtonRef = useRef<HTMLDivElement>(null)
+	const [isMobile, setIsMobile] = useState<boolean>(false)
+	const isUpdatingSortFromClick = useRef<boolean>(false)
+
+	// Initialize sortType from URL or default to 'Most Recent'
+	const [sortType, setSortType] = useState<string>(() => {
+		if (typeof window !== 'undefined') {
+			const urlParams = new URLSearchParams(window.location.search)
+			const sortTypeFromQuery = urlParams.get('sort')
+			const validSortTypes = ['Most Recent', 'Vault Total Deposits', 'My Rounds']
+			// Only allow "My Rounds" if user is logged in (check will happen in useEffect)
+			if (sortTypeFromQuery && validSortTypes.includes(sortTypeFromQuery)) {
+				return sortTypeFromQuery
+			}
+		}
+		return 'Most Recent'
+	})
+
+	useEffect(() => {
+		const checkMobile = () => setIsMobile(window.innerWidth < 768)
+		checkMobile()
+		window.addEventListener('resize', checkMobile)
+		return () => window.removeEventListener('resize', checkMobile)
+	}, [])
 
 	const filterRoundsByType = (rounds: GPRound[], type: string) => {
 		switch (type) {
@@ -147,6 +170,46 @@ const ApplicationRounds = () => {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [searchParams])
 
+	// Update sortType from URL params (only when URL changes externally, not from our own clicks)
+	useEffect(() => {
+		// Skip if we're updating from a user click to avoid race conditions
+		if (isUpdatingSortFromClick.current) {
+			isUpdatingSortFromClick.current = false
+			return
+		}
+
+		const sortTypeFromQuery = searchParams.get('sort')
+		const validSortTypes = ['Most Recent', 'Vault Total Deposits', 'My Rounds']
+
+		// If user is not logged in and tries to access "My Rounds", reset to default
+		if (sortTypeFromQuery === 'My Rounds' && !stellarPubKey) {
+			const currentParams = new URLSearchParams(searchParams.toString())
+			currentParams.delete('sort')
+			router.replace(`?${currentParams.toString()}`, { scroll: false })
+			setSortType('Most Recent')
+			return
+		}
+
+		// If user logs out while viewing "My Rounds", reset to default
+		if (sortType === 'My Rounds' && !stellarPubKey) {
+			const currentParams = new URLSearchParams(searchParams.toString())
+			currentParams.delete('sort')
+			router.replace(`?${currentParams.toString()}`, { scroll: false })
+			setSortType('Most Recent')
+			return
+		}
+
+		if (sortTypeFromQuery && validSortTypes.includes(sortTypeFromQuery)) {
+			if (sortTypeFromQuery !== sortType) {
+				setSortType(sortTypeFromQuery)
+			}
+		} else if (!sortTypeFromQuery && sortType !== 'Most Recent') {
+			// If URL param is removed, reset to default
+			setSortType('Most Recent')
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [searchParams, stellarPubKey])
+
 	// Client-side search filters
 	const filteredRounds = useMemo(() => {
 		const q = (searchQuery || '').trim().toLowerCase()
@@ -187,6 +250,23 @@ const ApplicationRounds = () => {
 			</div>
 			<p className="text-base font-bold text-grantpicks-black-950 text-center">
 				There are no Rounds yet.
+			</p>
+		</div>
+	)
+
+	const EmptyMyRoundsState = () => (
+		<div>
+			<div className="mt-8 flex items-center justify-center">
+				<Image
+					src="/assets/images/empty-state.png"
+					alt=""
+					className="object-fill animate-bounce duration-1000"
+					width={100}
+					height={100}
+				/>
+			</div>
+			<p className="text-base font-bold text-grantpicks-black-950 text-center">
+				I have not created any rounds.
 			</p>
 		</div>
 	)
@@ -271,6 +351,7 @@ const ApplicationRounds = () => {
 					<div className="flex w-full flex-row items-center justify-center gap-3 md:w-auto md:justify-end">
 						<div className="relative md:col-span-3 flex-shrink-0">
 							<div
+								ref={sortButtonRef}
 								onClick={() => setShowSortType(!showSortType)}
 								className="border border-black/10 rounded-full py-3 px-3 flex items-center justify-between cursor-pointer hover:opacity-80 transition"
 							>
@@ -284,12 +365,19 @@ const ApplicationRounds = () => {
 									isOpen={showSortType}
 									onClose={() => setShowSortType(false)}
 									position="top-14 right-0"
+									buttonRef={isMobile ? sortButtonRef : undefined}
+									mobileAsPortal={isMobile}
 								>
-									<div className="border border-black/10 p-3 w-52 rounded-xl space-y-3 bg-white">
+									<div className="border border-black/10 p-3 w-52 rounded-xl space-y-3 bg-white shadow-lg">
 										<p
 											onClick={() => {
-												setSortType('Most Recent')
+												const newSortType = 'Most Recent'
+												isUpdatingSortFromClick.current = true
+												setSortType(newSortType)
 												setShowSortType(false)
+												const currentParams = new URLSearchParams(searchParams.toString())
+												currentParams.set('sort', newSortType)
+												router.push(`?${currentParams.toString()}`, { scroll: false })
 											}}
 											className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
 										>
@@ -297,22 +385,34 @@ const ApplicationRounds = () => {
 										</p>
 										<p
 											onClick={() => {
-												setSortType('Vault Total Deposits')
+												const newSortType = 'Vault Total Deposits'
+												isUpdatingSortFromClick.current = true
+												setSortType(newSortType)
 												setShowSortType(false)
+												const currentParams = new URLSearchParams(searchParams.toString())
+												currentParams.set('sort', newSortType)
+												router.push(`?${currentParams.toString()}`, { scroll: false })
 											}}
 											className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
 										>
 											Vault Total Deposits
 										</p>
-										<p
-											onClick={() => {
-												setSortType('My Rounds')
-												setShowSortType(false)
-											}}
-											className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
-										>
-											My Rounds
-										</p>
+										{stellarPubKey && (
+											<p
+												onClick={() => {
+													const newSortType = 'My Rounds'
+													isUpdatingSortFromClick.current = true
+													setSortType(newSortType)
+													setShowSortType(false)
+													const currentParams = new URLSearchParams(searchParams.toString())
+													currentParams.set('sort', newSortType)
+													router.push(`?${currentParams.toString()}`, { scroll: false })
+												}}
+												className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
+											>
+												My Rounds
+											</p>
+										)}
 									</div>
 								</Menu>
 							)}
@@ -337,7 +437,7 @@ const ApplicationRounds = () => {
 					isLoadingMyRounds ? (
 						<LoadingRoundState />
 					) : filteredMyRounds.length === 0 ? (
-						<EmptyRoundState />
+						<EmptyMyRoundsState />
 					) : (
 						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
 							{filteredMyRounds.map((doc, idx) => (

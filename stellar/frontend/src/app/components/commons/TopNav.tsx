@@ -135,7 +135,7 @@ const TopNav = () => {
 								<div className="flex items-center mr-4 lg:mr-6">
 									<div>
 										<p className="text-xs lg:text-sm font-semibold text-grantpicks-black-950">
-											{prettyTruncate(profileData?.name || stellarPubKey, 10, 'address')}
+											{prettyTruncate(stellarPubKey, 10, 'address')}
 										</p>
 										<p className="text-xs lg:text-sm font-normal text-grantpicks-black-600">
 											@{prettyTruncate(stellarPubKey, 10, 'address')}

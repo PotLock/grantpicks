@@ -135,9 +135,9 @@ const EditRoundPage = () => {
 						formatNearAmount(resRoundInfo?.current_vault_balance) === '0'
 							? '0'
 							: formatNearAmount(resRoundInfo?.current_vault_balance).replace(
-									',',
-									'',
-								),
+								',',
+								'',
+							),
 					)
 				}
 				if (resRoundInfo?.application_wl_list_id) {
@@ -153,8 +153,8 @@ const EditRoundPage = () => {
 					'expected_amount',
 					storage.chainId === 'stellar'
 						? (formatStroopToXlm(
-								BigInt(resRoundInfo?.expected_amount),
-							) as string)
+							BigInt(resRoundInfo?.expected_amount),
+						) as string)
 						: (resRoundInfo?.expected_amount as string),
 				)
 				let calculation = 0
@@ -219,7 +219,7 @@ const EditRoundPage = () => {
 				voting_wl_list_id:
 					checkedListIds.length > 0 ? checkedListIds[0] : undefined,
 				is_video_required: data.is_video_required,
-				use_vault: data.use_vault || false,
+				// use_vault: data.use_vault || false,
 			}
 			const txUpdateRound = await editRound(
 				stellarPubKey,
@@ -293,8 +293,8 @@ const EditRoundPage = () => {
 	const lists =
 		data && data.length > 0
 			? ([] as IGetListExternalResponse[]).concat(
-					...(data as unknown as IGetListExternalResponse[]),
-				)
+				...(data as unknown as IGetListExternalResponse[]),
+			)
 			: []
 	const isEmpty = data?.[0]?.length === 0
 	const isReachingEnd =
@@ -349,7 +349,7 @@ const EditRoundPage = () => {
 										className={clsx(
 											'border border-grantpicks-black-200 rounded-xl py-3 px-3 flex items-center justify-between cursor-pointer hover:opacity-80 transition',
 											errors.contact_address?.type === 'required' &&
-												'border-red-500',
+											'border-red-500',
 										)}
 									>
 										<p
@@ -425,7 +425,7 @@ const EditRoundPage = () => {
 										className={clsx(
 											(errors.contact_address?.type === 'required' ||
 												errors.contact_address) &&
-												'border border-red-500',
+											'border border-red-500',
 										)}
 										disabled={!watch('contact_type')}
 										required
@@ -476,7 +476,13 @@ const EditRoundPage = () => {
 								</p>
 							)}
 							<p className="text-xs font-normal text-grantpicks-black-600">
-								Leave an address where people can reach out to you.{' '}
+								Leave an{' '}
+								{['Telegram', 'Instagram', 'Twitter'].includes(
+									watch().contact_type,
+								)
+									? 'handle'
+									: 'address'}{' '}
+								where people can reach out to you.{' '}
 							</p>
 						</div>
 					</div>

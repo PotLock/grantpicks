@@ -160,32 +160,46 @@ const Footer = () => {
 							Smart Contracts
 						</h3>
 						<div className="space-y-3">
-							{chains.map((c) => (
-								<button
-									key={c.name}
-									onClick={async () => {
-										await navigator.clipboard.writeText(c.contract as string)
-										toast.success(`${c.name} contract copied`, {
-											style: toastOptions.success.style,
-										})
-									}}
-									className="w-full relative group border border-gray-200 rounded-xl bg-gray-50 py-3 px-3 flex items-center gap-x-3 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 transition-all cursor-pointer active:scale-[0.99]"
-									disabled={c.contract === 'Not Audited'}
-								>
-									<div className="border border-gray-200 rounded-full p-1 flex items-center justify-center bg-white">
-										{c.icon}
-									</div>
-									<div className="flex flex-col text-left flex-1 ">
-										<span className="text-xs text-gray-500">{c.name}</span>
-										<span className="text-sm text-gray-900">
-											{prettyTruncate(c.contract, 12, 'address')}
-										</span>
-										<div className="absolute w-[300px] z-50 left-1/2 bottom-[-40px] -translate-x-1/2 mt-2 rounded-md whitespace-normal break-all h-auto bg-grantpicks-black-950 text-white px-3 py-1 shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition text-sm md:text-sm font-semibold">
-											{c.contract}
+							{chains.map((c) => {
+								const getExplorerUrl = () => {
+									if (c.contract === 'Not Audited') return null
+									const network = envVarConfigs.NETWORK_ENV === 'testnet' ? 'testnet' : 'public'
+									return `https://stellar.expert/explorer/${network}/contract/${c.contract}`
+								}
+
+								return (
+									<button
+										key={c.name}
+										onClick={async () => {
+											await navigator.clipboard.writeText(c.contract as string)
+											toast.success(`${c.name} contract copied`, {
+												style: toastOptions.success.style,
+											})
+										}}
+										onDoubleClick={() => {
+											const explorerUrl = getExplorerUrl()
+											if (explorerUrl) {
+												window.open(explorerUrl, '_blank', 'noopener,noreferrer')
+											}
+										}}
+										className="w-full relative group border border-gray-200 rounded-xl bg-gray-50 py-3 px-3 flex items-center gap-x-3 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 transition-all cursor-pointer active:scale-[0.99]"
+										disabled={c.contract === 'Not Audited'}
+									>
+										<div className="border border-gray-200 rounded-full p-1 flex items-center justify-center bg-white">
+											{c.icon}
 										</div>
-									</div>
-								</button>
-							))}
+										<div className="flex flex-col text-left flex-1 ">
+											<span className="text-xs text-gray-500">{c.name}</span>
+											<span className="text-sm text-gray-900">
+												{prettyTruncate(c.contract, 12, 'address')}
+											</span>
+											<div className="absolute w-[300px] z-50 left-1/2 bottom-[-40px] -translate-x-1/2 mt-2 rounded-md whitespace-normal break-all h-auto bg-grantpicks-black-950 text-white px-3 py-1 shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition text-sm md:text-sm font-semibold">
+												{c.contract}
+											</div>
+										</div>
+									</button>
+								)
+							})}
 
 							<a
 								href="https://github.com/PotLock/grantpicks/blob/main/VAR_PotLock_250113_GrantPicks-V3.pdf"

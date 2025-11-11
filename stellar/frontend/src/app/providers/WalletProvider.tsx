@@ -45,10 +45,18 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 	const store = useAppStorage()
 
 	useEffect(() => {
-		const localSavedWallet = localStorageSavedWallet.get()
-		if (localSavedWallet && localSavedWallet.network.id === envVarConfigs.NETWORK_ENV) {
-			setSavedWallet(localSavedWallet)
+		const syncSavedWallet = () => {
+			const localSavedWallet = localStorageSavedWallet.get()
+			if (localSavedWallet && localSavedWallet.network.id === envVarConfigs.NETWORK_ENV) {
+				setSavedWallet(localSavedWallet)
+			} else {
+				setSavedWallet(null)
+			}
 		}
+		syncSavedWallet()
+		// Listen for storage changes (in case wallet is removed from another tab/window)
+		window.addEventListener('storage', syncSavedWallet)
+		return () => window.removeEventListener('storage', syncSavedWallet)
 	}, [])
 
 	const createKit = useMemo(() => {
@@ -274,6 +282,9 @@ const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 	const onSignOut = () => {
 		setStellarPubKey('')
 		setConnectedWallet(null)
+		setSavedWallet(null)
+		setHasAttemptedAutoConnect(false)
+		setCurrentBalance(null)
 		store.clear()
 		localStorage.removeItem(localStorageConfigs.CONNECTED_WALLET)
 		localStorage.removeItem(localStorageConfigs.STELLAR_PUBLIC_KEY)

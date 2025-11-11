@@ -62,60 +62,47 @@ const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 	const submitPayout = async () => {
 		setIsLoading(true)
 		try {
-			if (storage.chainId === 'stellar') {
-				let payoutInputs: PayoutInput[] = []
+			let payoutInputs: PayoutInput[] = []
 
-				storage.getResultNotFlagged().forEach((data) => {
-					const tableState = storage.getPayoutTableItems(data.project)
-					const projectData = storage.projects.get(data.project)
-					payoutInputs.push({
-						recipient_id: projectData?.owner?.id || '',
-						amount: BigInt(tableState.final_calculation * 10000000),
-						memo,
-					})
+			storage.getResultNotFlagged().forEach((data) => {
+				const tableState = storage.getPayoutTableItems(data.project)
+				const projectData = storage.projects.get(data.project)
+				payoutInputs.push({
+					recipient_id: projectData?.owner?.id || '',
+					amount: BigInt(tableState.final_calculation * 10000000),
+					memo,
 				})
+			})
 
-				const contract = storage.getStellarContracts()
+			const contract = storage.getStellarContracts()
 
-				if (!contract) {
-					return
-				}
-
-				const savePayoutTx = await contract.round_contract.set_payouts({
-					round_id: BigInt(storage.current_round?.on_chain_id || 0),
-					caller: stellarPubKey,
-					payouts: payoutInputs,
-					clear_existing: true,
-				})
-
-				const txHash = await contract.signAndSendTx(
-					stellarKit as StellarWalletsKit,
-					savePayoutTx.toXDR(),
-					stellarPubKey,
-				)
-
-				if (!txHash) {
-					toast.error('Error submitting payout')
-				} else {
-					toast.success('Payout submitted successfully')
-					setIsLoading(false)
-					onClose()
-				}
-			} else {
-				let payoutInputs: NearPayoutInput[] = []
-
-				storage.getResultNotFlagged().forEach((data) => {
-					const tableState = storage.getPayoutTableItems(data.project)
-					const projectData = storage.projects.get(data.project)
-
-					payoutInputs.push({
-						recipient_id: projectData?.owner?.id || '',
-						amount:
-							parseNearAmount(tableState.final_calculation.toString()) || '0',
-						memo,
-					})
-				})
+			if (!contract) {
+				return
 			}
+
+			const savePayoutTx = await contract.round_contract.set_payouts({
+				round_id: BigInt(storage.current_round?.on_chain_id || 0),
+				caller: stellarPubKey,
+				payouts: payoutInputs,
+				clear_existing: true,
+			}, {
+				fee: 200,
+			})
+
+			const txHash = await contract.signAndSendTx(
+				stellarKit as StellarWalletsKit,
+				savePayoutTx.toXDR(),
+				stellarPubKey,
+			)
+
+			if (!txHash) {
+				toast.error('Error submitting payout')
+			} else {
+				toast.success('Payout submitted successfully')
+				setIsLoading(false)
+				onClose()
+			}
+
 		} catch (e) {
 			console.error(e)
 			setIsLoading(false)
@@ -228,15 +215,15 @@ const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 								{storage.current_remaining.toFixed(4)} /{' '}
 								{storage.chainId === 'stellar'
 									? Number(
-											formatStroopToXlm(
-												BigInt(
-													storage.current_round?.current_vault_balance || 0,
-												),
+										formatStroopToXlm(
+											BigInt(
+												storage.current_round?.current_vault_balance || 0,
 											),
-										)
+										),
+									)
 									: formatNearAmount(
-											storage.current_round?.current_vault_balance || '0',
-										)}
+										storage.current_round?.current_vault_balance || '0',
+									)}
 							</div>
 						</div>
 						<div className="flex flex-grow"></div>

@@ -16,6 +16,7 @@ import IconTelegram from '../../svgs/IconTelegram'
 import IconInstagram from '../../svgs/IconInstagram'
 import IconTwitter from '../../svgs/IconTwitter'
 import IconEmail from '../../svgs/IconEmail'
+import useAppStorage from '@/stores/zustand/useAppStorage'
 
 interface ProjectDetailDrawerProps extends IDrawerProps {
 	projectData?: Project | GPProject
@@ -84,6 +85,7 @@ const ProjectDetailDrawer = ({
 	const [copied, setCopied] = useState<boolean>(false)
 	const [ytIframe, setYtIframe] = useState<string>('')
 	const embededYtHtmlRef = useRef<HTMLDivElement>(null)
+	const storage = useAppStorage()
 
 	useEffect(() => {
 		const fetchIframe = async () => {
@@ -108,6 +110,15 @@ const ProjectDetailDrawer = ({
 		return typeof owner === 'string' ? owner : owner?.id || ''
 	}
 
+	const handleViewInExplorer = () => {
+		const ownerId = getOwnerId()
+		if (!ownerId) return
+
+		const network = storage.network === 'mainnet' ? 'public' : 'testnet'
+		const explorerUrl = `https://stellar.expert/explorer/${network}/account/${ownerId}`
+		window.open(explorerUrl, '_blank', 'noopener,noreferrer')
+	}
+
 	return (
 		<Drawer onClose={onClose} isOpen={isOpen}>
 			<div className="bg-white flex flex-col w-full h-full overflow-y-auto text-grantpicks-black-950">
@@ -124,48 +135,64 @@ const ProjectDetailDrawer = ({
 					</p>
 				</div>
 				<div ref={embededYtHtmlRef} className="px-3 md:px-5 py-6">
-					{!ytIframe && projectData?.video_url && (
-						<div className="relative mb-6 md:mb-8">
-							<video
-								ref={videoRef}
-								src={projectData?.video_url || `/assets/videos/video-2.mp4`}
-								autoPlay={false}
-								controls={false}
-								className="w-full mx-auto aspect-video"
-							></video>
-							<div className="flex items-center justify-center absolute inset-0 z-20">
-								<button
-									onClick={async () => {
-										setVideoPlayerProps((prev) => ({
-											...prev,
-											isOpen: true,
-											videoUrl:
-												projectData?.video_url || `/assets/videos/video-2.mp4`,
-										}))
-									}}
-									className="w-10 h-10 flex items-center justify-center rounded-full bg-grantpicks-black-950 cursor-pointer hover:opacity-70 transition"
-								>
-									{videoPlayed ? (
-										<IconPause
-											size={28}
-											className="fill-grantpicks-black-400"
-										/>
-									) : (
-										<IconPlay
-											size={28}
-											className="stroke-grantpicks-black-400"
-										/>
-									)}
-								</button>
-							</div>
-						</div>
-					)}
-					{ytIframe && (
-						<div
-							className="mb-6 md:mb-8 overflow-hidden"
-							dangerouslySetInnerHTML={{ __html: ytIframe }}
-						/>
-					)}
+					{(() => {
+						const videoUrl = projectData?.video_url
+						const hasVideo = videoUrl && videoUrl.trim() !== ''
+						const isYouTube = hasVideo && videoUrl.includes('youtube')
+
+						if (!hasVideo) {
+							return null
+						}
+
+						if (isYouTube && ytIframe) {
+							return (
+								<div
+									className="mb-6 md:mb-8 overflow-hidden rounded-xl"
+									dangerouslySetInnerHTML={{ __html: ytIframe }}
+								/>
+							)
+						}
+
+						if (hasVideo && !isYouTube && videoUrl) {
+							return (
+								<div className="relative mb-6 md:mb-8 rounded-xl overflow-hidden bg-grantpicks-black-50 aspect-video">
+									<video
+										ref={videoRef}
+										src={videoUrl}
+										autoPlay={false}
+										controls={false}
+										className="w-full h-full object-cover"
+									></video>
+									<div className="flex items-center justify-center absolute inset-0 z-20">
+										<button
+											onClick={async () => {
+												setVideoPlayerProps((prev) => ({
+													...prev,
+													isOpen: true,
+													videoUrl: videoUrl,
+												}))
+											}}
+											className="w-10 h-10 flex items-center justify-center rounded-full bg-grantpicks-black-950 cursor-pointer hover:opacity-70 transition"
+										>
+											{videoPlayed ? (
+												<IconPause
+													size={28}
+													className="fill-grantpicks-black-400"
+												/>
+											) : (
+												<IconPlay
+													size={28}
+													className="stroke-grantpicks-black-400"
+												/>
+											)}
+										</button>
+									</div>
+								</div>
+							)
+						}
+
+						return null
+					})()}
 					<div className="mb-6 md:mb-8">
 						<p className="text-base md:text-xl font-semibold mb-3">Overview</p>
 						<p className="text-sm md:text-base text-grantpicks-black-600">
@@ -224,68 +251,72 @@ const ProjectDetailDrawer = ({
 							})}
 						</div>
 					</div>
-					<div className="mb-6 md:mb-8">
-						<div className="flex items-center pb-4 border-b border-black/10">
-							<p className="text-base md:text-xl font-semibold">
-								Smart contracts{' '}
-							</p>
-						</div>
-						<div className="divide-y divide-black/10">
-							{projectData?.contracts.map((contract, index) => (
-								<div
-									className="flex items-center py-2 justify-between"
-									key={index}
-								>
-									<div>
-										<p className="text-sm md:text-base font-normal">
-											{prettyTruncate(contract.contract_address, 20)}
-										</p>
-										<p className="text-xs font-normal">{contract.name}</p>
-									</div>
-									<Button
-										color="alpha-50"
-										onClick={async () => {
-											setCopied(true)
-											await navigator.clipboard.writeText(
-												contract.contract_address,
-											)
-											setTimeout(() => {
-												setCopied(false)
-											}, 2000)
-										}}
+					{projectData?.contracts && projectData.contracts.length > 0 && (
+						<div className="mb-6 md:mb-8">
+							<div className="flex items-center pb-4 border-b border-black/10">
+								<p className="text-base md:text-xl font-semibold">
+									Smart contracts{' '}
+								</p>
+							</div>
+							<div className="divide-y divide-black/10">
+								{projectData.contracts.map((contract, index) => (
+									<div
+										className="flex items-center py-2 justify-between"
+										key={index}
 									>
-										{copied ? 'Copied' : 'Copy'}
-									</Button>
-								</div>
-							))}
-						</div>
-					</div>
-					<div className="mb-6 md:mb-8">
-						<div className="flex items-center pb-4 border-b border-black/10">
-							<p className="text-base md:text-xl font-semibold">
-								Repositories{' '}
-							</p>
-						</div>
-						<div className="divide-y divide-black/10">
-							{projectData?.repositories.map((repo, index) => (
-								<Link
-									key={index}
-									href={repo.url || `https://github.com`}
-									target="_blank"
-								>
-									<div className="flex items-center py-2 justify-between">
-										<p className="text-sm md:text-base font-normal">
-											{repo.label}
-										</p>
-										<IconArrowOutward
-											size={24}
-											className="fill-grantpicks-black-400 cursor-pointer"
-										/>
+										<div>
+											<p className="text-sm md:text-base font-normal">
+												{prettyTruncate(contract.contract_address, 20)}
+											</p>
+											<p className="text-xs font-normal">{contract.name}</p>
+										</div>
+										<Button
+											color="alpha-50"
+											onClick={async () => {
+												setCopied(true)
+												await navigator.clipboard.writeText(
+													contract.contract_address,
+												)
+												setTimeout(() => {
+													setCopied(false)
+												}, 2000)
+											}}
+										>
+											{copied ? 'Copied' : 'Copy'}
+										</Button>
 									</div>
-								</Link>
-							))}
+								))}
+							</div>
 						</div>
-					</div>
+					)}
+					{projectData?.repositories && projectData.repositories.length > 0 && (
+						<div className="mb-6 md:mb-8">
+							<div className="flex items-center pb-4 border-b border-black/10">
+								<p className="text-base md:text-xl font-semibold">
+									Repositories{' '}
+								</p>
+							</div>
+							<div className="divide-y divide-black/10">
+								{projectData.repositories.map((repo, index) => (
+									<Link
+										key={index}
+										href={repo.url || `https://github.com`}
+										target="_blank"
+									>
+										<div className="flex items-center py-2 justify-between">
+											<p className="text-sm md:text-base font-normal">
+												{repo.label}
+											</p>
+											<IconArrowOutward
+												size={24}
+												className="fill-grantpicks-black-400 cursor-pointer"
+											/>
+										</div>
+									</Link>
+								))}
+							</div>
+						</div>
+					)}
 					<div className="mb-6 md:mb-8">
 						<div className="flex items-center pb-4 border-b border-black/10">
 							<p className="text-base md:text-xl font-semibold">Contacts</p>
@@ -308,7 +339,25 @@ const ProjectDetailDrawer = ({
 								))}
 							</div>
 						)}
-					</div>{' '}
+					</div>
+					<div className="mb-6 md:mb-8">
+						<div className="flex items-center pb-4 border-b border-black/10">
+							<p className="text-base md:text-xl font-semibold">Block Explorer</p>
+						</div>
+						<div className="pt-3">
+							<Button
+								color="alpha-50"
+								onClick={handleViewInExplorer}
+								className="!text-sm !font-semibold flex items-center gap-2"
+							>
+								View Address in Explorer
+								<IconArrowOutward
+									size={18}
+									className="fill-grantpicks-black-400"
+								/>
+							</Button>
+						</div>
+					</div>
 				</div>
 			</div>
 		</Drawer>

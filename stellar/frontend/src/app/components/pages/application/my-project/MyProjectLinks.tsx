@@ -66,7 +66,7 @@ const MyProjectLinks = () => {
 		formState: { errors },
 	} = useForm<CreateProjectStep3Data>({
 		defaultValues: {
-			is_open_source: true,
+			is_open_source: false,
 		},
 	})
 	const {
@@ -316,13 +316,13 @@ const MyProjectLinks = () => {
 													watch().smart_contracts[index].chain === 'bitcoin'
 														? BITCOIN_ADDRESS_REGEX(value)
 														: watch().smart_contracts[index].chain ===
-															  'ethereum'
+															'ethereum'
 															? ETHEREUM_ADDRESS_REGEX(value)
 															: watch().smart_contracts[index].chain ===
-																  'stellar'
+																'stellar'
 																? StrKey.isValidEd25519PublicKey(value)
 																: watch().smart_contracts[index].chain ===
-																	  'near'
+																	'near'
 																	? NEAR_ADDRESS_REGEX(value)
 																	: true,
 											})}
@@ -342,7 +342,7 @@ const MyProjectLinks = () => {
 									</div>
 								</div>
 								{errors?.smart_contracts?.[index]?.address?.type ===
-								'validate' ? (
+									'validate' ? (
 									<p className="text-red-500 text-xs ml-2">
 										Address is invalid
 									</p>
@@ -391,7 +391,7 @@ const MyProjectLinks = () => {
 										})}
 										errorMessage={
 											errors?.github_urls?.[index]?.github_url?.type ===
-											'validate' ? (
+												'validate' ? (
 												<p className="text-red-500 text-xs mt-1 ml-2">
 													Please enter a valid GitHub URL
 												</p>
@@ -591,11 +591,11 @@ const MyProjectLinks = () => {
 						className="!py-3 !border !border-grantpicks-black-400"
 						isDisabled={
 							JSON.stringify(watch().smart_contracts) ===
-								JSON.stringify(currentContract) &&
+							JSON.stringify(currentContract) &&
 							JSON.stringify(watch().github_urls) ===
-								JSON.stringify(currentRepo) &&
+							JSON.stringify(currentRepo) &&
 							JSON.stringify(watch().contacts) ===
-								JSON.stringify(currentContact)
+							JSON.stringify(currentContact)
 						}
 					>
 						Discard
@@ -609,11 +609,11 @@ const MyProjectLinks = () => {
 						className="!py-3 disabled:cursor-not-allowed"
 						isDisabled={
 							JSON.stringify(watch().smart_contracts) ===
-								JSON.stringify(currentContract) &&
+							JSON.stringify(currentContract) &&
 							JSON.stringify(watch().github_urls) ===
-								JSON.stringify(currentRepo) &&
+							JSON.stringify(currentRepo) &&
 							JSON.stringify(watch().contacts) ===
-								JSON.stringify(currentContact)
+							JSON.stringify(currentContact)
 						}
 					>
 						Save changes

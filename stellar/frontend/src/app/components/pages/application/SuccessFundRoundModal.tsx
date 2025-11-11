@@ -67,7 +67,7 @@ const SuccessFundRoundModal = ({
 							{prettyTruncate(txHash, 10)}
 						</p>
 						<Link
-							href={`https://stellar.expert/explorer/${storage.network}/tx/${txHash}`}
+							href={`https://stellar.expert/explorer/${storage.network === 'mainnet' ? 'public' : 'testnet'}/tx/${txHash}`}
 							target="_blank"
 						>
 							<IconExternalLink

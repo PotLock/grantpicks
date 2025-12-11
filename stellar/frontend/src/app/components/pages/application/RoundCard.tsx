@@ -65,6 +65,29 @@ export const RoundCard = ({
 				return 'upcoming-closed'
 			}
 		} else if (selectedRoundType === 'on-going') {
+			const now = new Date().getTime()
+			const votingStart = new Date(doc.voting_start).getTime()
+			const votingEnd = new Date(doc.voting_end).getTime()
+			const appEnd = doc.application_end ? new Date(doc.application_end).getTime() : null
+			const appStart = doc.application_start ? new Date(doc.application_start).getTime() : null
+
+			// Check if voting has started
+			if (now >= votingStart && now < votingEnd) {
+				return 'on-going'
+			}
+
+			// Voting hasn't started yet - check if application ended or doesn't exist
+			if (now < votingStart) {
+				// Case 1: Application has ended but voting hasn't started
+				if (appEnd && now >= appEnd) {
+					return 'on-going-voting-not-started'
+				}
+				// Case 2: Application doesn't exist, voting hasn't started
+				if (!appStart && !appEnd) {
+					return 'on-going-voting-not-started'
+				}
+			}
+
 			return 'on-going'
 		} else {
 			return doc.round_complete ? 'ended' : 'payout-pending'
@@ -73,6 +96,7 @@ export const RoundCard = ({
 
 	const isApplicationOpen = currentTime === 'upcoming-open'
 	const isVotingOpen = currentTime === 'on-going'
+	const isVotingNotStarted = currentTime === 'on-going-voting-not-started'
 	const isApplicationClosed =
 		currentTime === 'upcoming-closed' || currentTime === 'upcoming'
 	const isNotStarted = currentTime === 'upcoming-not-started'
@@ -258,7 +282,7 @@ export const RoundCard = ({
 	}, [fetchPendingApplicationsCount])
 
 	const handleMainAction = () => {
-		if (isNotStarted) return
+		if (isNotStarted || isVotingNotStarted) return
 
 		if (isAdminOrOwner) {
 			router.push(`/round/${doc.on_chain_id}/applications`)
@@ -295,10 +319,13 @@ export const RoundCard = ({
 
 	const getMainActionText = () => {
 		if (isUserApplied && isApplicationOpen) {
-			return "Done"
+			return "Applied"
 		}
 		if (isVotingOpen && !isAdminOrOwner) {
-			return hasVoted ? "Done" : 'Vote'
+			return hasVoted ? "Voted" : 'Vote'
+		}
+		if (isVotingNotStarted) {
+			return 'Vote'
 		}
 		if (isNotStarted) {
 			return 'Apply'
@@ -309,7 +336,7 @@ export const RoundCard = ({
 		if (isApplicationOpen && !isAdminOrOwner) {
 			return 'Apply'
 		}
-		if ((isApplicationOpen || isVotingOpen) && isAdminOrOwner) {
+		if ((isApplicationOpen || isVotingOpen || isVotingNotStarted) && isAdminOrOwner) {
 			return 'View'
 		}
 		if (isCompleted) {
@@ -324,7 +351,8 @@ export const RoundCard = ({
 			(isCompleted && totalApprovedProjects === 0) ||
 			isApplicationClosed ||
 			(isUserApplied && isApplicationOpen) ||
-			isNotStarted
+			isNotStarted ||
+			isVotingNotStarted
 		)
 	}
 
@@ -346,6 +374,9 @@ export const RoundCard = ({
 		if (currentTime === 'upcoming' || currentTime === 'upcoming-closed') {
 			return 'Applications Closed'
 		}
+		if (currentTime === 'on-going-voting-not-started') {
+			return `Voting starts ${moment(new Date(doc.voting_start)).fromNow()}`
+		}
 		if (currentTime === 'on-going') {
 			return 'Voting Open'
 		}
@@ -364,6 +395,7 @@ export const RoundCard = ({
 	const currentStageColorClass = () => {
 		if (isApplicationOpen) return 'fill-grantpicks-green-700'
 		if (isVotingOpen) return 'fill-grantpicks-green-700'
+		if (isVotingNotStarted) return 'fill-amber-500'
 		if (isNotStarted) return 'fill-amber-500'
 		if (isApplicationClosed) return 'fill-grantpicks-black-400'
 		if (isCompleted) return 'fill-grantpicks-amber-500'

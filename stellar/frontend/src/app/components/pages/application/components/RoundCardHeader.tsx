@@ -30,6 +30,13 @@ const RoundCardHeader: React.FC<RoundCardHeaderProps> = ({
 				text:
 					selectedRoundType === 'on-going' ? 'VOTING OPEN' : 'APPLICATION OPEN',
 			}
+		} else if (currentTime === 'on-going-voting-not-started') {
+			return {
+				className:
+					'border-amber-400 text-amber-700 bg-amber-50',
+				icon: <IconCube size={18} className="fill-amber-400" />,
+				text: 'VOTING NOT STARTED',
+			}
 		} else if (
 			currentTime === 'upcoming' ||
 			currentTime === 'upcoming-closed' ||

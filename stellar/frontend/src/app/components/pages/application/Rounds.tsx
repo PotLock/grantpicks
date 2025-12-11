@@ -60,16 +60,54 @@ const ApplicationRounds = () => {
 	const filterRoundsByType = (rounds: GPRound[], type: string) => {
 		switch (type) {
 			case 'upcoming':
-				return rounds.filter(
-					(t) => new Date().getTime() < new Date(t.voting_start).getTime(),
-				)
+				return rounds.filter((t) => {
+					const now = new Date().getTime()
+					const votingStart = new Date(t.voting_start).getTime()
+					const appStart = t.application_start ? new Date(t.application_start).getTime() : null
+					const appEnd = t.application_end ? new Date(t.application_end).getTime() : null
+					
+					// Only show in upcoming if voting hasn't started
+					if (now >= votingStart) return false
+					
+					// If application exists and has ended, don't show in upcoming (should be in on-going)
+					if (appEnd && now >= appEnd) return false
+					
+					// If no application dates exist, don't show in upcoming (should be in on-going)
+					if (!appStart && !appEnd) return false
+					
+					// If application exists and hasn't started, show in upcoming
+					if (appStart && now < appStart) return true
+					
+					// If application exists and is open, show in upcoming
+					if (appStart && appEnd && now >= appStart && now < appEnd) return true
+					
+					return false
+				})
 			case 'on-going':
-				return rounds.filter(
-					(t) =>
-						new Date(t.voting_start).getTime() <= new Date().getTime() &&
-						new Date().getTime() < new Date(t.voting_end).getTime() &&
-						t.approved_projects.length > 0,
-				)
+				return rounds.filter((t) => {
+					const now = new Date().getTime()
+					const votingStart = new Date(t.voting_start).getTime()
+					const votingEnd = new Date(t.voting_end).getTime()
+					const appEnd = t.application_end ? new Date(t.application_end).getTime() : null
+					const appStart = t.application_start ? new Date(t.application_start).getTime() : null
+					
+					// Case 1: Voting has started (normal on-going case)
+					if (now >= votingStart && now < votingEnd && t.approved_projects.length > 0) {
+						return true
+					}
+					
+					// Case 2: Voting hasn't started BUT application has ended
+					if (now < votingStart && appEnd && now >= appEnd) {
+						return true
+					}
+					
+					// Case 3: Voting hasn't started AND application doesn't exist
+					if (now < votingStart && !appStart && !appEnd) {
+						return true
+					}
+					
+					return false
+				})
 			case 'ended':
 				return rounds.filter(
 					(t) => new Date(t.voting_end).getTime() <= new Date().getTime(),

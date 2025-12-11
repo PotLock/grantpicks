@@ -135,6 +135,29 @@ const RoundDetailDrawer = ({
 				return 'upcoming-closed'
 			}
 		} else if (selectedRoundType === 'on-going') {
+			const now = new Date().getTime()
+			const votingStart = new Date(doc.voting_start || '').getTime()
+			const votingEnd = new Date(doc.voting_end || '').getTime()
+			const appEnd = doc.application_end ? new Date(doc.application_end).getTime() : null
+			const appStart = doc.application_start ? new Date(doc.application_start).getTime() : null
+			
+			// Check if voting has started
+			if (now >= votingStart && now < votingEnd) {
+				return 'on-going'
+			}
+			
+			// Voting hasn't started yet - check if application ended or doesn't exist
+			if (now < votingStart) {
+				// Case 1: Application has ended but voting hasn't started
+				if (appEnd && now >= appEnd) {
+					return 'on-going-voting-not-started'
+				}
+				// Case 2: Application doesn't exist, voting hasn't started
+				if (!appStart && !appEnd) {
+					return 'on-going-voting-not-started'
+				}
+			}
+			
 			return 'on-going'
 		} else {
 			return doc.round_complete != null ? 'ended' : 'payout-pending'

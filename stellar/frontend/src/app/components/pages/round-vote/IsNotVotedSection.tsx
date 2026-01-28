@@ -33,6 +33,12 @@ const IsNotVotedSection = ({
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const { stellarKit } = useWallet()
 	const storage = useAppStorage()
+	const totalPairs = pairsData.length
+	const selectedCount = selectedVotes.filter(Boolean).length
+	const remainingCount = Math.max(totalPairs - selectedCount, 0)
+	const progressPercent = totalPairs
+		? Math.round((selectedCount / totalPairs) * 100)
+		: 0
 
 	const onPreviousBoxing = (currIdx: number) => {
 		if (currIdx > 0) {
@@ -150,25 +156,51 @@ const IsNotVotedSection = ({
 
 	return (
 		<div className="flex flex-col items-center text-grantpicks-black-950">
-			<p className="text-xl md:text-[26px] lg:text-[32px] font-black text-grantpicks-black-300 mb-5 md:mb-8">
-				PAIR {currBoxing + 1} OF {pairsData.length}
-			</p>
-			<p className="text-3xl md:text-4xl lg:text-[50px] font-black text-center mb-5 w-96 leading-[50px]">
-				WHICH ONE DO YOU CHOOSE?
-			</p>
-			<p className="text-center text-sm md:text-base font-normal">
-				Ensure you’re reviewing each in consideration of public impact.{' '}
-			</p>
-			<span
-				className="text-xs md:text-base font-bold cursor-pointer"
-				onClick={() => setShowEvalGuide(true)}
-			>
-				See Evaluation guide
-			</span>
-			<p className="text-xs md:text-sm text-grantpicks-black-600 mb-10 md:mb-12 lg:mb-16">
-				You need to vote for more than one pair. Voted:{' '}
-				{selectedVotes.filter(Boolean).length} / {pairsData.length}
-			</p>
+			<div className="w-full max-w-4xl px-4 md:px-6">
+				<div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
+					<div>
+						<p className="text-xs md:text-sm font-semibold text-grantpicks-black-500 uppercase tracking-[0.2em]">
+							Voting Progress
+						</p>
+						<p className="text-2xl md:text-3xl lg:text-4xl font-black text-grantpicks-black-950 mt-2">
+							Choose a winner for each pair
+						</p>
+						<p className="text-sm md:text-base text-grantpicks-black-600 mt-2">
+							Select one project per pair. You can vote for multiple pairs before
+							finishing.
+						</p>
+					</div>
+					<button
+						className="text-sm font-semibold text-grantpicks-black-900 hover:text-grantpicks-black-950 underline underline-offset-4"
+						onClick={() => setShowEvalGuide(true)}
+						type="button"
+					>
+						See evaluation guide
+					</button>
+				</div>
+
+				<div className="bg-white border border-black/10 rounded-2xl p-4 md:p-5 mb-6 shadow-sm">
+					<div className="flex items-center justify-between">
+						<p className="text-sm font-semibold text-grantpicks-black-800">
+							Pair {currBoxing + 1} of {totalPairs}
+						</p>
+						<p className="text-sm text-grantpicks-black-600">
+							{selectedCount}/{totalPairs} selected
+						</p>
+					</div>
+					<div className="mt-3 h-2 w-full rounded-full bg-grantpicks-black-100 overflow-hidden">
+						<div
+							className="h-full rounded-full bg-grantpicks-green-600 transition-all"
+							style={{ width: `${progressPercent}%` }}
+						/>
+					</div>
+					<p className="text-xs md:text-sm text-grantpicks-black-600 mt-3">
+						{remainingCount === 0
+							? 'All pairs selected. You can review before finishing.'
+							: `${remainingCount} ${remainingCount === 1 ? 'pair' : 'pairs'} left to vote.`}
+					</p>
+				</div>
+			</div>
 			{/* Mobile vertical stack with snap */}
 			<div className="flex md:hidden flex-col w-full space-y-6 px-4 mb-8 snap-y snap-mandatory overflow-y-auto h-[70vh]">
 				{pairsData.map((doc, idx) => (
@@ -190,44 +222,60 @@ const IsNotVotedSection = ({
 			</div>
 
 			{/* Desktop horizontal scroller */}
-			<div
-				ref={desktopScrollerRef}
-				className="hidden md:flex items-center snap-x snap-mandatory overflow-x-auto mb-10 md:mb-12 lg:mb-16 no-scrollbar max-w-full space-x-4 md:space-x-6"
-			>
-				{pairsData.map((doc, idx) => (
-					<div key={`d-${idx}`} className="snap-start min-w-full">
-						<RoundVotePairItem
-							index={idx}
-							data={doc}
-							setShowProjectDetailDrawer={setShowProjectDetailDrawer}
-							selectedPairs={selectedVotes}
-							setSelectedPairs={setSeletedVotes}
-							onSelect={() => setCurrBoxing(idx)}
-						/>
-					</div>
-				))}
+			<div className="w-full max-w-4xl px-4 md:px-6">
+				<div
+					ref={desktopScrollerRef}
+					className="hidden md:flex items-center snap-x snap-mandatory overflow-x-auto mb-8 no-scrollbar max-w-full space-x-6"
+				>
+					{pairsData.map((doc, idx) => (
+						<div key={`d-${idx}`} className="snap-start min-w-full">
+							<RoundVotePairItem
+								index={idx}
+								data={doc}
+								setShowProjectDetailDrawer={setShowProjectDetailDrawer}
+								selectedPairs={selectedVotes}
+								setSelectedPairs={setSeletedVotes}
+								onSelect={() => setCurrBoxing(idx)}
+							/>
+						</div>
+					))}
+				</div>
 			</div>
-			<div className="flex items-center justify-center space-x-6 md:space-x-10">
-				{currBoxing > 0 && (
-					<Button color="alpha-50" onClick={() => onPreviousBoxing(currBoxing)}>
-						<div className="flex items-center space-x-2">
-							<IconArrowLeft size={18} className="fill-grantpicks-black-400" />
-							<p className="text-sm font-semibold">Previous</p>
-						</div>
-					</Button>
-				)}
-				{currBoxing < pairsData.length - 1 ? (
-					<Button color="alpha-50" onClick={() => onNextBoxing(currBoxing)}>
-						<div className="flex items-center space-x-2">
-							<IconArrowRight size={18} className="fill-grantpicks-black-400" />
-							<p className="text-sm font-semibold">Next</p>
-						</div>
-					</Button>
-				) : (
-					<Button color="alpha-50" onClick={async () => await onVotePair()}>
-						<p className="text-sm font-semibold">Finish</p>
-					</Button>
-				)}
+
+			<div className="w-full sticky bottom-0 bg-white/90 backdrop-blur border-t border-grantpicks-black-100 py-4">
+				<div className="max-w-4xl mx-auto px-4 md:px-6 flex items-center justify-between gap-4">
+					<div className="text-xs md:text-sm text-grantpicks-black-600">
+						{remainingCount === 0
+							? 'Ready to submit your vote.'
+							: `Select ${remainingCount} more ${remainingCount === 1 ? 'pair' : 'pairs'} to finish.`}
+					</div>
+					<div className="flex items-center space-x-3 md:space-x-4">
+						{currBoxing > 0 && (
+							<Button color="alpha-50" onClick={() => onPreviousBoxing(currBoxing)}>
+								<div className="flex items-center space-x-2">
+									<IconArrowLeft size={18} className="fill-grantpicks-black-400" />
+									<p className="text-sm font-semibold">Previous</p>
+								</div>
+							</Button>
+						)}
+						{currBoxing < totalPairs - 1 ? (
+							<Button color="alpha-50" onClick={() => onNextBoxing(currBoxing)}>
+								<div className="flex items-center space-x-2">
+									<IconArrowRight size={18} className="fill-grantpicks-black-400" />
+									<p className="text-sm font-semibold">Next</p>
+								</div>
+							</Button>
+						) : (
+							<Button
+								color="black"
+								onClick={async () => await onVotePair()}
+								isDisabled={selectedCount < totalPairs}
+							>
+								<p className="text-sm font-semibold text-white">Submit Votes</p>
+							</Button>
+						)}
+					</div>
+				</div>
 			</div>
 		</div>
 	)

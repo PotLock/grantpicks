@@ -47,6 +47,7 @@ const MyProjectProvider = () => {
 
 	const fetchProjectApplicant = useCallback(async () => {
 		try {
+			if (!stellarPubKey) return
 			if (storage.chainId === 'stellar') {
 				let contracts = storage.getStellarContracts()
 
@@ -78,21 +79,20 @@ const MyProjectProvider = () => {
 	])
 
 	const fetchProjectStats = useCallback(async () => {
-		if (projectData) {
-			const projectStats = await potlockService.getProjectStats(stellarPubKey)
-			setStats(projectStats)
-		}
-	}, [projectData, potlockService, stellarPubKey])
-
-
+		if (!projectData?.id || !stellarPubKey) return
+		const projectStats = await potlockService.getProjectStats(stellarPubKey)
+		setStats(projectStats)
+	}, [projectData?.id, potlockService, stellarPubKey])
 
 	useEffect(() => {
-		if (storage.my_address) {
+		if (storage.my_address && stellarPubKey) {
 			fetchProjectApplicant()
-			fetchProjectStats()
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [storage.my_address, fetchProjectApplicant, fetchProjectStats])
+	}, [storage.my_address, stellarPubKey, fetchProjectApplicant])
+
+	useEffect(() => {
+		fetchProjectStats()
+	}, [fetchProjectStats])
 
 	return (
 		<MyProjectContext.Provider

@@ -20,6 +20,7 @@ import {
 	isHasVotedRound,
 } from '@/services/stellar/round'
 import FundRoundModal from './FundRoundModal'
+import clsx from 'clsx'
 
 export const RoundCard = ({
 	doc,
@@ -209,7 +210,10 @@ export const RoundCard = ({
 	}, [chainId, doc.admins, doc.on_chain_id, doc.owner?.id, storage])
 
 	const fetchPendingApplicationsCount = useCallback(async () => {
-		if (!isAdminOrOwner || selectedRoundType !== 'upcoming') return
+		if (!isAdminOrOwner || selectedRoundType !== 'upcoming') {
+			setPendingApplicationsCount(0)
+			return
+		}
 
 		try {
 			let total = 0
@@ -319,10 +323,10 @@ export const RoundCard = ({
 
 	const getMainActionText = () => {
 		if (isUserApplied && isApplicationOpen) {
-			return "Applied"
+			return "Apply"
 		}
 		if (isVotingOpen && !isAdminOrOwner) {
-			return hasVoted ? "Voted" : 'Vote'
+			return 'Vote'
 		}
 		if (isVotingNotStarted) {
 			return 'Vote'
@@ -406,43 +410,59 @@ export const RoundCard = ({
 	return (
 		<div
 			onClick={() => router.push(`/round/${doc.on_chain_id}`)}
-			className="p-4 md:p-5 rounded-xl border border-black/10 hover:shadow-md cursor-pointer transition-shadow duration-300 h-full flex flex-col"
+			className="group relative bg-white rounded-2xl border-2 border-grantpicks-black-100 hover:border-grantpicks-black-200 cursor-pointer transition-all duration-300 h-full flex flex-col overflow-hidden shadow-sm hover:shadow-xl"
 		>
-			<RoundCardHeader
-				chainId={chainId}
-				currentTime={currentTime}
-				selectedRoundType={selectedRoundType}
+			{/* Gradient Accent Bar */}
+			<div
+				className={clsx(
+					'h-1.5 w-full',
+					selectedRoundType === 'upcoming'
+						? 'bg-gradient-to-r from-orange-400 to-orange-600'
+						: selectedRoundType === 'ended'
+							? 'bg-gradient-to-r from-purple-500 to-purple-700'
+							: 'bg-gradient-to-r from-green-400 to-green-600',
+				)}
 			/>
 
-			<div className="flex-1">
-				<RoundCardContent
-					doc={doc}
-					selectedRoundType={selectedRoundType}
+			<div className="p-6 flex-1 flex flex-col">
+				<RoundCardHeader
 					currentTime={currentTime}
-					totalApprovedProjects={totalApprovedProjects}
-					chainId={chainId}
-					isAdminOrOwner={isAdminOrOwner}
-					pendingApplicationsCount={pendingApplicationsCount}
+					selectedRoundType={selectedRoundType}
 				/>
+
+				<div className="flex-1">
+					<RoundCardContent
+						doc={doc}
+						selectedRoundType={selectedRoundType}
+						currentTime={currentTime}
+						totalApprovedProjects={totalApprovedProjects}
+						isAdminOrOwner={isAdminOrOwner}
+						pendingApplicationsCount={pendingApplicationsCount}
+					/>
+				</div>
+
+				<div className="mt-6 pt-4 border-t border-grantpicks-black-100">
+					<RoundCardActions
+						actionText={getMainActionText()}
+						isDisabled={isMainActionDisabled()}
+						onClick={handleMainAction}
+						showFundButton={!doc?.round_complete}
+						disableFundButton={!doc?.use_vault}
+						onFundRound={handleFundRound}
+						helperText={getHelperText()}
+						helperColorClass={currentStageColorClass()}
+						hasVoted={hasVoted}
+						isUserApplied={isUserApplied}
+						isVotingOpen={isVotingOpen}
+						isApplicationOpen={isApplicationOpen}
+						isAdminOrOwner={isAdminOrOwner}
+					/>
+				</div>
 			</div>
 
-			<div className="mt-auto pt-4">
-				<RoundCardActions
-					actionText={getMainActionText()}
-					isDisabled={isMainActionDisabled()}
-					onClick={handleMainAction}
-					showFundButton={!doc?.round_complete}
-					disableFundButton={!doc?.use_vault}
-					onFundRound={handleFundRound}
-					helperText={getHelperText()}
-					helperColorClass={currentStageColorClass()}
-					hasVoted={hasVoted}
-					isUserApplied={isUserApplied}
-					isVotingOpen={isVotingOpen}
-					isApplicationOpen={isApplicationOpen}
-					isAdminOrOwner={isAdminOrOwner}
-				/>
-			</div>
+			{/* Hover Effect Overlay */}
+			<div className="absolute inset-0 bg-gradient-to-br from-grantpicks-black-950/0 to-grantpicks-black-950/0 group-hover:from-grantpicks-black-950/2 group-hover:to-grantpicks-black-950/5 transition-all duration-300 pointer-events-none rounded-2xl" />
+
 			{showFundRoundModal && (
 				<FundRoundModal
 					isOpen={showFundRoundModal}

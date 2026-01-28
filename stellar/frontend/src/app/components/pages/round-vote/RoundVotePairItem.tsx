@@ -1,15 +1,13 @@
-import { useModalContext } from '@/app/providers/ModalProvider'
 import clsx from 'clsx'
 import React, {
 	Dispatch,
 	SetStateAction,
+	useCallback,
 	useEffect,
 	useMemo,
 	useRef,
 	useState,
 } from 'react'
-import IconPause from '../../svgs/IconPause'
-import IconPlay from '../../svgs/IconPlay'
 import Button from '../../commons/Button'
 import IconEye from '../../svgs/IconEye'
 import { Pair } from 'round-client'
@@ -23,6 +21,7 @@ import { Project } from 'project-registry-client'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { NearPair } from '@/services/near/type'
 import Image from 'next/image'
+import Hls from 'hls.js'
 
 interface RoundVotePairItemProps {
 	index: number
@@ -49,7 +48,8 @@ const RoundVotePairItem = ({
 	const [video1Played, setVideo1Played] = useState<boolean>(false)
 	const video2Ref = useRef<HTMLVideoElement>(null)
 	const [video2Played, setVideo2Played] = useState<boolean>(false)
-	const { setVideoPlayerProps } = useModalContext()
+	const hls1Ref = useRef<Hls | null>(null)
+	const hls2Ref = useRef<Hls | null>(null)
 	const [firstProjectData, setFirstProjectData] = useState<Project | undefined>(
 		undefined,
 	)
@@ -58,7 +58,11 @@ const RoundVotePairItem = ({
 	>(undefined)
 	const storage = useAppStorage()
 
-	const fetchProjectById = async () => {
+	const isHlsStream = useCallback((url?: string) => {
+		return Boolean(url && /\.m3u8($|\?)/.test(url))
+	}, [])
+
+	const fetchProjectById = useCallback(async () => {
 		try {
 			if (storage.chainId === 'stellar') {
 				let contracts = storage.getStellarContracts()
@@ -134,24 +138,79 @@ const RoundVotePairItem = ({
 		} catch (error: any) {
 			console.log('error project by id', error)
 		}
-	}
+	}, [data, storage])
 
 	useEffect(() => {
 		if (data) {
 			fetchProjectById()
 		}
-	}, [data])
+	}, [data, fetchProjectById])
+
+	useEffect(() => {
+		const videoUrl = firstProjectData?.video_url
+		if (!videoUrl || videoUrl.includes('youtube')) return
+		const videoEl = video1Ref.current
+		if (!videoEl) return
+
+		if (isHlsStream(videoUrl)) {
+			if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
+				videoEl.src = videoUrl
+				return
+			}
+			if (Hls.isSupported()) {
+				hls1Ref.current?.destroy()
+				const hls = new Hls()
+				hls.loadSource(videoUrl)
+				hls.attachMedia(videoEl)
+				hls1Ref.current = hls
+				return () => {
+					hls.destroy()
+					hls1Ref.current = null
+				}
+			}
+		} else {
+			videoEl.src = videoUrl
+		}
+	}, [firstProjectData?.video_url, isHlsStream])
+
+	useEffect(() => {
+		const videoUrl = secondProjectData?.video_url
+		if (!videoUrl || videoUrl.includes('youtube')) return
+		const videoEl = video2Ref.current
+		if (!videoEl) return
+
+		if (isHlsStream(videoUrl)) {
+			if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
+				videoEl.src = videoUrl
+				return
+			}
+			if (Hls.isSupported()) {
+				hls2Ref.current?.destroy()
+				const hls = new Hls()
+				hls.loadSource(videoUrl)
+				hls.attachMedia(videoEl)
+				hls2Ref.current = hls
+				return () => {
+					hls.destroy()
+					hls2Ref.current = null
+				}
+			}
+		} else {
+			videoEl.src = videoUrl
+		}
+	}, [secondProjectData?.video_url, isHlsStream])
 
 	const firstVideoComponent = useMemo(() => {
 		const videoUrl = firstProjectData?.video_url
 		const hasVideo = videoUrl && videoUrl.trim() !== ''
 		const isYouTube = hasVideo && videoUrl.includes('youtube')
+		const isHls = isHlsStream(videoUrl)
 
 		return (
-			<div className="w-full h-[240px] md:h-[280px] lg:h-[320px] rounded-t-[20px] overflow-hidden bg-grantpicks-black-50 flex items-center justify-center">
+			<div className="w-full h-[220px] md:h-[260px] lg:h-[280px] rounded-t-2xl overflow-hidden bg-grantpicks-black-50 flex items-center justify-center">
 				{hasVideo && isYouTube && ytIframe1 && (
 					<div
-						className="w-full h-full flex items-center justify-center"
+						className="w-full h-full [&_iframe]:w-full [&_iframe]:h-full [&_iframe]:block"
 						dangerouslySetInnerHTML={{ __html: ytIframe1 }}
 					/>
 				)}
@@ -159,29 +218,14 @@ const RoundVotePairItem = ({
 					<div className="relative w-full h-full">
 						<video
 							ref={video1Ref}
-							src={videoUrl}
+							src={isHls ? undefined : videoUrl}
 							autoPlay={false}
-							controls={false}
+							controls={true}
+							playsInline
+							onEnded={() => setVideo1Played(false)}
+							onPause={() => setVideo1Played(false)}
 							className="w-full h-full object-cover"
 						></video>
-						<div className="flex items-center justify-center absolute inset-0 z-20">
-							<button
-								onClick={async () => {
-									setVideoPlayerProps((prev) => ({
-										...prev,
-										isOpen: true,
-										videoUrl: videoUrl,
-									}))
-								}}
-								className="w-10 h-10 flex items-center justify-center rounded-full bg-grantpicks-black-950 cursor-pointer hover:opacity-70 transition"
-							>
-								{video1Played ? (
-									<IconPause size={28} className="fill-grantpicks-black-400" />
-								) : (
-									<IconPlay size={28} className="stroke-grantpicks-black-400" />
-								)}
-							</button>
-						</div>
 					</div>
 				)}
 				{!hasVideo && (
@@ -198,18 +242,24 @@ const RoundVotePairItem = ({
 			</div>
 		)
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [firstProjectData?.video_url, ytIframe1, firstProjectData?.owner])
+	}, [
+		firstProjectData?.video_url,
+		ytIframe1,
+		firstProjectData?.owner,
+		isHlsStream,
+	])
 
 	const secondVideoComponent = useMemo(() => {
 		const videoUrl = secondProjectData?.video_url
 		const hasVideo = videoUrl && videoUrl.trim() !== ''
 		const isYouTube = hasVideo && videoUrl.includes('youtube')
+		const isHls = isHlsStream(videoUrl)
 
 		return (
-			<div className="w-full h-[240px] md:h-[280px] lg:h-[320px] rounded-t-[20px] overflow-hidden bg-grantpicks-black-50 flex items-center justify-center">
+			<div className="w-full h-[220px] md:h-[260px] lg:h-[280px] rounded-t-2xl overflow-hidden bg-grantpicks-black-50 flex items-center justify-center">
 				{hasVideo && isYouTube && ytIframe2 && (
 					<div
-						className="w-full h-full flex items-center justify-center"
+						className="w-full h-full [&_iframe]:w-full [&_iframe]:h-full [&_iframe]:block"
 						dangerouslySetInnerHTML={{ __html: ytIframe2 }}
 					/>
 				)}
@@ -217,29 +267,14 @@ const RoundVotePairItem = ({
 					<div className="relative w-full h-full">
 						<video
 							ref={video2Ref}
-							src={videoUrl}
+							src={isHls ? undefined : videoUrl}
 							autoPlay={false}
-							controls={false}
+							controls={true}
+							playsInline
+							onEnded={() => setVideo2Played(false)}
+							onPause={() => setVideo2Played(false)}
 							className="w-full h-full object-cover"
 						></video>
-						<div className="flex items-center justify-center absolute inset-0 z-20">
-							<button
-								onClick={async () => {
-									setVideoPlayerProps((prev) => ({
-										...prev,
-										isOpen: true,
-										videoUrl: videoUrl,
-									}))
-								}}
-								className="w-10 h-10 flex items-center justify-center rounded-full bg-grantpicks-black-950 cursor-pointer hover:opacity-70 transition"
-							>
-								{video2Played ? (
-									<IconPause size={28} className="fill-grantpicks-black-400" />
-								) : (
-									<IconPlay size={28} className="stroke-grantpicks-black-400" />
-								)}
-							</button>
-						</div>
 					</div>
 				)}
 				{!hasVideo && (
@@ -256,12 +291,17 @@ const RoundVotePairItem = ({
 			</div>
 		)
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [secondProjectData?.video_url, ytIframe2, secondProjectData?.owner])
+	}, [
+		secondProjectData?.video_url,
+		ytIframe2,
+		secondProjectData?.owner,
+		isHlsStream,
+	])
 
 	return (
 		<div
 			key={index}
-			className="min-w-full flex flex-col md:flex-row items-stretch md:items-center justify-between snap-start space-y-4 md:space-y-0 md:space-x-4"
+			className="min-w-full grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] items-stretch gap-4 md:gap-6 snap-start"
 		>
 			{/* the first */}
 			<div
@@ -273,15 +313,19 @@ const RoundVotePairItem = ({
 				}}
 				ref={wrapper1Ref}
 				className={clsx(
-					`rounded-3xl transition-all duration-200 w-full md:w-[360px] lg:w-[448px] cursor-pointer bg-white flex flex-col overflow-hidden`,
+					`relative rounded-2xl transition-all duration-200 w-full cursor-pointer bg-white flex flex-col overflow-hidden border shadow-sm hover:shadow-md`,
 					selectedPairs[index] === data.projects[0].toString()
-						? // true
-						`border-4 border-grantpicks-purple-500`
-						: `border-4 border-black/10`,
+						? `border-grantpicks-purple-500 ring-2 ring-grantpicks-purple-200`
+						: `border-black/10`,
 				)}
 			>
+				{selectedPairs[index] === data.projects[0].toString() && (
+					<div className="absolute top-4 right-4 z-10 rounded-full bg-grantpicks-purple-500 px-3 py-1 text-xs font-semibold text-white shadow">
+						Selected
+					</div>
+				)}
 				{firstVideoComponent}
-				<div className="md:p-4 lg:p-5">
+				<div className="p-4 md:p-5">
 					<div className="flex items-center space-x-2 mb-4">
 						<Image
 							src={`https://www.tapback.co/api/avatar/${firstProjectData?.owner}`}
@@ -294,12 +338,12 @@ const RoundVotePairItem = ({
 							{prettyTruncate(firstProjectData?.name, 30)}
 						</p>
 					</div>
-					<p className="text-base font-normal text-grantpicks-black-600 mb-6 line-clamp-3 whitespace-pre-wrap break-words">
+					<p className="text-sm md:text-base font-normal text-grantpicks-black-600 mb-5 line-clamp-3 whitespace-pre-wrap break-words">
 						{firstProjectData?.overview}
 					</p>
 					<Button
 						color="white"
-						className="!border !border-black/10 !rounded-full"
+						className="!border !border-black/10 !rounded-full hover:!border-grantpicks-black-300"
 						isFullWidth
 						onClick={() =>
 							setShowProjectDetailDrawer((prev: any) => ({
@@ -316,8 +360,10 @@ const RoundVotePairItem = ({
 					</Button>
 				</div>
 			</div>
-			<div className="rounded-full w-12 h-12 md:w-16 md:h-16 bg-gradient-to-t from-grantpicks-purple-500 to-grantpicks-purple-100 flex items-center justify-center mx-auto md:mx-0">
-				<p className="text-2xl md:text-[32px] font-black text-white">VS</p>
+			<div className="flex items-center justify-center">
+				<div className="rounded-full w-10 h-10 md:w-12 md:h-12 bg-gradient-to-t from-grantpicks-purple-500 to-grantpicks-purple-100 flex items-center justify-center shadow-sm">
+					<p className="text-base md:text-xl font-black text-white">VS</p>
+				</div>
 			</div>
 			{/* The second */}
 			<div
@@ -329,14 +375,19 @@ const RoundVotePairItem = ({
 					onSelect?.(index)
 				}}
 				className={clsx(
-					`rounded-3xl transition-all duration-200 w-full md:w-[360px] lg:w-[448px] cursor-pointer bg-white flex flex-col overflow-hidden`,
+					`relative rounded-2xl transition-all duration-200 w-full cursor-pointer bg-white flex flex-col overflow-hidden border shadow-sm hover:shadow-md`,
 					selectedPairs[index] === data.projects[1].toString()
-						? `border-4 border-grantpicks-purple-500`
-						: `border-4 border-black/10`,
+						? `border-grantpicks-purple-500 ring-2 ring-grantpicks-purple-200`
+						: `border-black/10`,
 				)}
 			>
+				{selectedPairs[index] === data.projects[1].toString() && (
+					<div className="absolute top-4 right-4 z-10 rounded-full bg-grantpicks-purple-500 px-3 py-1 text-xs font-semibold text-white shadow">
+						Selected
+					</div>
+				)}
 				{secondVideoComponent}
-				<div className="md:p-4 lg:p-5">
+				<div className="p-4 md:p-5">
 					<div className="flex items-center space-x-2 mb-4">
 						<Image
 							src={`https://www.tapback.co/api/avatar/${secondProjectData?.owner}`}
@@ -349,12 +400,12 @@ const RoundVotePairItem = ({
 							{prettyTruncate(secondProjectData?.name, 24, 'address')}
 						</p>
 					</div>
-					<p className="text-base font-normal text-grantpicks-black-600 mb-6 break-words text-wrap">
+					<p className="text-sm md:text-base font-normal text-grantpicks-black-600 mb-5 line-clamp-3 break-words text-wrap">
 						{secondProjectData?.overview}
 					</p>
 					<Button
 						color="white"
-						className="!border !border-black/10 !rounded-full"
+						className="!border !border-black/10 !rounded-full hover:!border-grantpicks-black-300"
 						isFullWidth
 						onClick={() =>
 							setShowProjectDetailDrawer((prev: any) => ({

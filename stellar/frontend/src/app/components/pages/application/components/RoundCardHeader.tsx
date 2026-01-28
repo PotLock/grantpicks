@@ -1,18 +1,16 @@
 import React, { useMemo } from 'react'
-import IconNear from '../../../svgs/IconNear'
-import IconStellar from '../../../svgs/IconStellar'
 import IconCube from '../../../svgs/IconCube'
 import IconProject from '../../../svgs/IconProject'
 import IconDollar from '../../../svgs/IconDollar'
+import IconClock from '../../../svgs/IconClock'
+import clsx from 'clsx'
 
 interface RoundCardHeaderProps {
-	chainId: string
 	currentTime: string
 	selectedRoundType: string
 }
 
 const RoundCardHeader: React.FC<RoundCardHeaderProps> = ({
-	chainId,
 	currentTime,
 	selectedRoundType,
 }) => {
@@ -20,22 +18,30 @@ const RoundCardHeader: React.FC<RoundCardHeaderProps> = ({
 		if (currentTime === 'upcoming-open' || currentTime === 'on-going') {
 			return {
 				className:
-					'border-grantpicks-green-400 text-grantpicks-green-700 bg-grantpicks-green-50',
+					selectedRoundType === 'on-going'
+						? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30'
+						: 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30',
 				icon:
 					selectedRoundType === 'on-going' ? (
-						<IconCube size={18} className="fill-grantpicks-green-400" />
+						<IconCube size={20} className="fill-white" />
 					) : (
-						<IconProject size={18} className="fill-grantpicks-green-400" />
+						<IconProject size={20} className="fill-white" />
 					),
 				text:
 					selectedRoundType === 'on-going' ? 'VOTING OPEN' : 'APPLICATION OPEN',
+				badgeBg: 'bg-green-50',
+				badgeText: 'text-green-700',
+				badgeBorder: 'border-green-200',
 			}
 		} else if (currentTime === 'on-going-voting-not-started') {
 			return {
 				className:
-					'border-amber-400 text-amber-700 bg-amber-50',
-				icon: <IconCube size={18} className="fill-amber-400" />,
+					'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30',
+				icon: <IconClock size={20} className="fill-white" />,
 				text: 'VOTING NOT STARTED',
+				badgeBg: 'bg-green-50',
+				badgeText: 'text-green-700',
+				badgeBorder: 'border-green-200',
 			}
 		} else if (
 			currentTime === 'upcoming' ||
@@ -44,48 +50,61 @@ const RoundCardHeader: React.FC<RoundCardHeaderProps> = ({
 		) {
 			return {
 				className:
-					'border-grantpicks-black-400 text-grantpicks-black-950 bg-grantpicks-black-50',
+					currentTime === 'ended'
+						? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg shadow-purple-600/30'
+						: 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30',
 				icon:
 					currentTime === 'ended' ? (
-						<IconDollar size={18} className="fill-grantpicks-black-950" />
+						<IconDollar size={20} className="fill-white" />
 					) : (
-						<IconProject size={18} className="fill-grantpicks-black-950" />
+						<IconProject size={20} className="fill-white" />
 					),
 				text: currentTime === 'ended' ? 'COMPLETED' : 'APPLICATION CLOSED',
+				badgeBg:
+					currentTime === 'ended' ? 'bg-purple-50' : 'bg-orange-50',
+				badgeText:
+					currentTime === 'ended' ? 'text-purple-700' : 'text-orange-700',
+				badgeBorder:
+					currentTime === 'ended' ? 'border-purple-200' : 'border-orange-200',
 			}
 		} else if (currentTime === 'upcoming-not-started') {
 			return {
 				className:
-					'border-grantpicks-black-400 text-grantpicks-black-950 bg-grantpicks-black-50',
-				icon: <IconProject size={18} className="fill-grantpicks-black-950" />,
+					'bg-gradient-to-r from-orange-400 to-orange-500 text-white shadow-lg shadow-orange-400/30',
+				icon: <IconClock size={20} className="fill-white" />,
 				text: 'NOT STARTED',
+				badgeBg: 'bg-orange-50',
+				badgeText: 'text-orange-700',
+				badgeBorder: 'border-orange-200',
 			}
 		} else {
 			return {
 				className:
-					'border-grantpicks-amber-400 text-grantpicks-amber-700 bg-grantpicks-amber-50',
-				icon: <IconDollar size={18} className="fill-grantpicks-amber-400" />,
+					'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30',
+				icon: <IconDollar size={20} className="fill-white" />,
 				text: 'PAYOUT PENDING',
+				badgeBg: 'bg-purple-50',
+				badgeText: 'text-purple-700',
+				badgeBorder: 'border-purple-200',
 			}
 		}
 	}, [currentTime, selectedRoundType])
 
 	return (
-		<div className="flex items-center justify-between mb-4 md:mb-6">
-			<div className="border border-black/10 rounded-full p-3 flex items-center justify-center">
-				{chainId === 'near' ? (
-					<IconNear size={16} className="fill-grantpicks-black-950" />
-				) : (
-					<IconStellar size={16} className="fill-grantpicks-black-950" />
-				)}
+		<div className="mb-4">
+			<div className="flex items-center justify-between">
+				<p className="text-[11px] font-semibold text-grantpicks-black-500 uppercase tracking-wider">
+					Round Status
+				</p>
 			</div>
-			<div className="flex items-center space-x-2">
-				<div
-					className={`px-5 py-2 border text-xs font-semibold flex items-center justify-center space-x-2 rounded-full ${config.className}`}
-				>
-					{config.icon}
-					<p className="uppercase">{config.text}</p>
-				</div>
+			<div
+				className={clsx(
+					'mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-full font-bold text-xs shadow-sm border border-white/30',
+					config.className,
+				)}
+			>
+				{config.icon}
+				<p className="uppercase tracking-wide">{config.text}</p>
 			</div>
 		</div>
 	)

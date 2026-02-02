@@ -26,10 +26,17 @@ class Contracts {
 						rpcUrl: 'https://soroban-testnet.stellar.org',
 						publicKey: wallet ? wallet.account.publicKey : undefined,
 					}
+				// Alternative Stellar Soroban RPC endpoints (mainnet):
+				// - https://rpc.ankr.com/stellar_soroban (Ankr - currently in use)
+				// - https://soroban-rpc.mainnet.stellar.gateway.fm (Gateway FM)
+				// - https://stellar-soroban-public.nodies.app (Nodies)
+				// - https://mainnet.sorobanrpc.com (sorobanrpc.com)
+				// - https://stellar.api.onfinality.io/public (OnFinality)
+				// - https://rpc.lightsail.network/ (Lightsail - may timeout)
 				: {
 						contractId: '',
 						networkPassphrase: 'Public Global Stellar Network ; September 2015',
-						rpcUrl: 'https://rpc.lightsail.network/',
+						rpcUrl: 'https://rpc.ankr.com/stellar_soroban',
 						publicKey: wallet ? wallet.account.publicKey : undefined,
 					}
 		if (wallet) {

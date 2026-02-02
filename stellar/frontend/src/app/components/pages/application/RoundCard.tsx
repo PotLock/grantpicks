@@ -91,6 +91,15 @@ export const RoundCard = ({
 
 			return 'on-going'
 		} else {
+			// Round Results tab - verify voting has actually ended
+			const now = new Date().getTime()
+			const votingEnd = new Date(doc.voting_end).getTime()
+
+			// If voting hasn't ended yet, this shouldn't be in Round Results
+			if (now < votingEnd) {
+				return 'on-going'
+			}
+
 			return doc.round_complete ? 'ended' : 'payout-pending'
 		}
 	}, [doc, selectedRoundType])
@@ -288,13 +297,14 @@ export const RoundCard = ({
 	const handleMainAction = () => {
 		if (isNotStarted || isVotingNotStarted) return
 
-		if (isAdminOrOwner) {
-			router.push(`/round/${doc.on_chain_id}/applications`)
+		// For completed rounds, always go to results page (regardless of admin status)
+		if (isCompleted) {
+			router.push(`/rounds/round-result/${doc.on_chain_id}`)
 			return
 		}
 
-		if (isVotingOpen && isAdminOrOwner) {
-			router.push(`/round/${doc.on_chain_id}`)
+		if (isAdminOrOwner) {
+			router.push(`/round/${doc.on_chain_id}/applications`)
 			return
 		}
 
@@ -351,8 +361,13 @@ export const RoundCard = ({
 	}
 
 	const isMainActionDisabled = () => {
+		// For completed rounds (Round Results tab), only disable if no approved projects
+		if (isCompleted) {
+			return totalApprovedProjects === 0
+		}
+
+		// For other tabs, use the existing logic
 		return (
-			(isCompleted && totalApprovedProjects === 0) ||
 			isApplicationClosed ||
 			(isUserApplied && isApplicationOpen) ||
 			isNotStarted ||

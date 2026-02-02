@@ -32,7 +32,7 @@ import {
 	CreateRoundParams,
 	depositFundRound,
 } from '@/services/stellar/round'
-import { parseToStroop } from '@/utils/helper'
+import { normalizeCreateRoundTimings, parseToStroop } from '@/utils/helper'
 import { toastOptions } from '@/constants/style'
 import { IRoundPeriodData } from '@/types/round'
 import { convertToBasisPoints, LIMIT_SIZE } from '@/constants/query'
@@ -164,55 +164,29 @@ const CreateRoundPage = () => {
 			const maxParticipants = Math.max(data.max_participants, 10, selectedProjects.length)
 
 			const now = new Date()
-			const providedVotingStart = data.voting_duration_start
-				? new Date(data.voting_duration_start)
-				: now
-
-			const votingStartMsBase = providedVotingStart.getTime()
-			const tenMinutesFromNow = now.getTime() + 10 * 60 * 1000
-			const votingStartEffectiveMs =
-				providedVotingStart.toDateString() === now.toDateString()
-					? Math.max(votingStartMsBase, tenMinutesFromNow)
-					: votingStartMsBase
+			const {
+				applicationStartMs,
+				applicationEndMs,
+				votingStartMs: votingStartEffectiveMs,
+				votingEndMs: votingEndEffectiveMs,
+			} = normalizeCreateRoundTimings({
+				now,
+				allowApplications: data.allow_application,
+				applicationStart: data.apply_duration_start,
+				applicationEnd: data.apply_duration_end,
+				votingStart: data.voting_duration_start,
+				votingEnd: data.voting_duration_end,
+			})
 
 			const votingStartEffectiveDate = new Date(votingStartEffectiveMs)
-
-			const providedVotingEnd = data.voting_duration_end
-				? new Date(data.voting_duration_end)
-				: new Date(votingStartEffectiveMs + 24 * 60 * 60 * 1000)
-
-			// If user selected a date-only end (midnight), align to start time-of-day.
-			const isEndDateOnly =
-				providedVotingEnd.getHours() === 0 &&
-				providedVotingEnd.getMinutes() === 0 &&
-				providedVotingEnd.getSeconds() === 0 &&
-				providedVotingEnd.getMilliseconds() === 0
-
-			if (isEndDateOnly) {
-				providedVotingEnd.setHours(
-					votingStartEffectiveDate.getHours(),
-					votingStartEffectiveDate.getMinutes(),
-					votingStartEffectiveDate.getSeconds(),
-					votingStartEffectiveDate.getMilliseconds(),
-				)
-			}
-
-			const minimumVotingDuration = 24 * 60 * 60 * 1000
-			const minEndMs = votingStartEffectiveMs + minimumVotingDuration
-			if (providedVotingEnd.getTime() < minEndMs) {
-				providedVotingEnd.setTime(minEndMs)
-			}
+			const votingEndEffectiveDate = new Date(votingEndEffectiveMs)
 
 			const createRoundParams: CreateRoundParams = {
 				owner: stellarPubKey,
 				name: data.title,
 				description: data.description,
-				application_start_ms: data.apply_duration_start
-					? BigInt(data.apply_duration_start.getTime())
-					: undefined,
-				application_end_ms: data.apply_duration_end
-					? BigInt(data.apply_duration_end.getTime())
-					: undefined,
+				application_start_ms: applicationStartMs !== undefined ? BigInt(applicationStartMs) : undefined,
+				application_end_ms: applicationEndMs !== undefined ? BigInt(applicationEndMs) : undefined,
 				contacts: [{ name: data.contact_type, value: data.contact_address }],
 				expected_amount: parseToStroop(data.expected_amount),
 				minimum_deposit: parseToStroop(data.minimum_deposit),
@@ -226,7 +200,7 @@ const CreateRoundPage = () => {
 				allow_applications: data.allow_application,
 				use_vault: true,
 				voting_start_ms: BigInt(votingStartEffectiveMs),
-				voting_end_ms: BigInt(providedVotingEnd.getTime()),
+				voting_end_ms: BigInt(votingEndEffectiveMs),
 				admins: data.admins?.map((a) => a.admin_id) || [],
 				allow_remaining_dist: data.allow_remaining_dist || false,
 				compliance_req_desc: data.compliance_req_desc,
@@ -253,7 +227,7 @@ const CreateRoundPage = () => {
 					createRoundRes: {
 						...txCreate.result,
 						voting_start: votingStartEffectiveDate.toISOString(),
-						voting_end: providedVotingEnd.toISOString(),
+						voting_end: votingEndEffectiveDate.toISOString(),
 					} as any,
 					txHash,
 				}))

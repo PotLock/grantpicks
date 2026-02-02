@@ -33,6 +33,7 @@ const SubNav = ({
 	const tabs = [
 		{ href: `${basePath}`, label: 'About', exact: true, show: true },
 		{ href: `${basePath}/applications`, label: 'Applications', show: true },
+		{ href: `${basePath}/votes`, label: 'Votes', show: true },
 		{ href: `${basePath}/admins`, label: 'Admins', show: true },
 		{
 			href: `${basePath}/duration`,

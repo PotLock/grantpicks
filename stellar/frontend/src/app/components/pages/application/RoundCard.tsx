@@ -48,6 +48,7 @@ export const RoundCard = ({
 	const [showFundRoundModal, setShowFundRoundModal] = useState<boolean>(false)
 	const chainId = extractChainId(doc)
 
+
 	// Memoized values
 	const currentTime = useMemo(() => {
 		if (selectedRoundType === 'upcoming') {
@@ -102,7 +103,16 @@ export const RoundCard = ({
 				return 'on-going'
 			}
 
-			return doc.round_complete ? 'ended' : 'payout-pending'
+			if (doc.round_complete) return 'ended'
+
+			if (
+				doc.use_vault &&
+				doc.current_vault_balance === '0' &&
+				doc.vault_total_deposits !== '0'
+			)
+				return 'payout-done'
+
+			return 'payout-pending'
 		}
 	}, [doc, selectedRoundType])
 
@@ -113,7 +123,9 @@ export const RoundCard = ({
 		currentTime === 'upcoming-closed' || currentTime === 'upcoming'
 	const isNotStarted = currentTime === 'upcoming-not-started'
 	const isCompleted =
-		currentTime === 'ended' || currentTime === 'payout-pending'
+		currentTime === 'ended' ||
+		currentTime === 'payout-pending' ||
+		currentTime === 'payout-done'
 
 	const fetchTotalApprovedProjects = useCallback(async () => {
 		if (chainId === 'stellar') {
@@ -402,13 +414,16 @@ export const RoundCard = ({
 			return 'Voting Open'
 		}
 		if (currentTime === 'ended') {
-			return 'Voting Closed'
+			return 'Round Completed'
 		}
 		if (currentTime === 'payout-pending' && totalApprovedProjects === 0) {
 			return 'No results'
 		}
 		if (currentTime === 'payout-pending') {
 			return 'Payout Pending'
+		}
+		if (currentTime === 'payout-done') {
+			return 'Payout Distributed'
 		}
 		return ''
 	}

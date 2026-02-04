@@ -42,8 +42,24 @@ export const formatNearAddress = (address: string | undefined) => {
 }
 
 export const formatStroopToXlm = (amount: bigint) => {
-	const res = (BigInt(amount as bigint) / BigInt(10 ** 7)).toString()
-	return res
+	const divisor = BigInt(10 ** 7)
+	const integerPart = amount / divisor
+	const fractionalPart = amount % divisor
+
+	if (fractionalPart === 0n) {
+		return integerPart.toString()
+	}
+
+	const fractionalStr = fractionalPart
+		.toString()
+		.padStart(7, '0')
+		.slice(0, 2)
+		.replace(/0+$/, '')
+
+	if (!fractionalStr) {
+		return integerPart.toString()
+	}
+	return `${integerPart}.${fractionalStr}`
 }
 
 export const parseToStroop = (amount: string) => {

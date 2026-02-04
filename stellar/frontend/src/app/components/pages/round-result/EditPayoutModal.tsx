@@ -56,8 +56,7 @@ const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 		if (!totalDeposits || totalDeposits === '0') return 0
 
 		const balance = Number(formatStroopToXlm(BigInt(totalDeposits)))
-		const margin = 0.03
-		return Math.max(0, balance - margin)
+		return Math.max(0, balance)
 	}, [storage.current_round?.vault_total_deposits])
 
 	// Calculate weights from split

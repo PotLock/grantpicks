@@ -77,6 +77,16 @@ const RoundCardHeader: React.FC<RoundCardHeaderProps> = ({
 				badgeText: 'text-orange-700',
 				badgeBorder: 'border-orange-200',
 			}
+		} else if (currentTime === 'payout-done') {
+			return {
+				className:
+					'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30',
+				icon: <IconDollar size={20} className="fill-white" />,
+				text: 'PAYOUT DONE',
+				badgeBg: 'bg-purple-50',
+				badgeText: 'text-purple-700',
+				badgeBorder: 'border-purple-200',
+			}
 		} else {
 			return {
 				className:

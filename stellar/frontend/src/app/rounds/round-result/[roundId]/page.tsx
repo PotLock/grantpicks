@@ -23,16 +23,17 @@ import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import EditPayoutModal from '@/app/components/pages/round-result/EditPayoutModal'
 import toast from 'react-hot-toast'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
+import { scValToNative } from '@stellar/stellar-sdk'
+import { Project } from 'project-registry-client'
+import { PayoutsChallenge } from 'round-client'
+
 import {
 	payoutChallengeToGPPayoutChallenge,
 	projectToGPProject,
 } from '@/services/stellar/type'
-import {
-	NearPayout,
-} from '@/services/near/type'
+
 import { GPVotingResult } from '@/models/voting'
 import { GPPayout, GPPayoutChallenge } from '@/models/payout'
-import { LIMIT_SIZE_CONTRACT } from '@/constants/query'
 import { usePotlockService } from '@/services/potlock'
 import { GPRound } from '@/models/round'
 
@@ -70,25 +71,34 @@ const RoundResultPage = () => {
 				if (!contracts) {
 					return
 				}
-				const admins = (
-					await contracts.round_contract.admins({
-						round_id: BigInt(roundInfo.on_chain_id || 0),
-					})
-				).result
+
+				let admins: string[] = []
+				try {
+					const adminsScVal = (
+						await contracts.round_contract.admins({
+							round_id: BigInt(roundInfo.on_chain_id || 0),
+						})
+					).simulationData.result.retval
+					admins = scValToNative(adminsScVal) as string[]
+					console.log('Admins:', admins)
+				} catch (e) {
+					console.log('No admins set for this round')
+				}
 
 				if (roundInfo) {
 					isOwner = roundInfo.owner?.id === storage.my_address
-					isAdmin = admins.includes(storage.my_address || '')
+					isAdmin = admins?.includes(storage.my_address || '')
 
 					const isAdminOrOwner = isAdmin || isOwner
 
 					storage.setIsAdminRound(isAdminOrOwner)
 
-					const isPayoutDone = (
+					const isPayoutDoneScVal = (
 						await contracts.round_contract.is_payout_done({
 							round_id: BigInt(roundInfo.on_chain_id),
 						})
-					).result
+					).simulationData.result.retval
+					const isPayoutDone = scValToNative(isPayoutDoneScVal) as boolean
 
 					storage.setPayoutDone(isPayoutDone)
 
@@ -96,13 +106,15 @@ const RoundResultPage = () => {
 					let newPayouts: GPPayout[] = []
 
 					while (fetch) {
-						const payouts = (
+						const payoutsScVal = (
 							await contracts.round_contract.get_payouts_for_round({
 								round_id: BigInt(roundInfo.on_chain_id),
 								from_index: BigInt(newPayouts.length),
 								limit: BigInt(5),
 							})
-						).result
+						).simulationData.result.retval
+						const payouts = scValToNative(payoutsScVal) as Payout[]
+
 
 						payouts.forEach((p: Payout) => {
 							newPayouts.push({
@@ -112,50 +124,6 @@ const RoundResultPage = () => {
 						})
 
 						if (payouts.length < 5) {
-							fetch = false
-						}
-
-						storage.setCurrentRoundPayouts(newPayouts)
-					}
-				}
-			} else {
-				const contracts = storage.getNearContracts(null)
-				if (!contracts) {
-					return
-				}
-
-				if (roundInfo) {
-					isOwner = roundInfo.owner?.id === storage.my_address || false
-					isAdmin = roundInfo.admins.map(admin => admin.id).includes(storage.my_address || '')
-
-					const isAdminOrOwner = isAdmin || isOwner
-
-					storage.setIsAdminRound(isAdminOrOwner)
-
-					const isPayoutDone = await contracts.round.isPayoutDone(
-						roundInfo.on_chain_id,
-					)
-
-					storage.setPayoutDone(isPayoutDone)
-
-					let fetch = true
-					let newPayouts: GPPayout[] = []
-
-					while (fetch) {
-						const payouts = await contracts.round.getPayouts(
-							roundInfo.on_chain_id,
-							newPayouts.length,
-							LIMIT_SIZE_CONTRACT,
-						)
-
-						payouts.forEach((p: NearPayout) => {
-							newPayouts.push({
-								recipient: p.recipient_id,
-								amount: p.amount,
-							})
-						})
-
-						if (payouts.length < LIMIT_SIZE_CONTRACT) {
 							fetch = false
 						}
 
@@ -178,7 +146,7 @@ const RoundResultPage = () => {
 			let fetch = true
 
 			while (fetch) {
-				const payoutChallenges = (
+				const payoutChallengesScVal = (
 					await contracts.round_contract.get_challenges_payout({
 						round_id: storage.current_round?.on_chain_id
 							? BigInt(storage.current_round?.on_chain_id)
@@ -186,10 +154,12 @@ const RoundResultPage = () => {
 						from_index: BigInt(challenges.length),
 						limit: BigInt(5),
 					})
-				).result
+				).simulationData.result.retval
+
+				const payoutChallenges = scValToNative(payoutChallengesScVal) as PayoutsChallenge[]
 
 				const newPayouts: GPPayoutChallenge[] = await Promise.all(
-					payoutChallenges.map(async (challenge) => {
+					payoutChallenges.map(async (challenge: PayoutsChallenge) => {
 						return payoutChallengeToGPPayoutChallenge(challenge)
 					}),
 				)
@@ -212,11 +182,13 @@ const RoundResultPage = () => {
 				return
 			}
 
-			const votingResults = (
+			const votingResultsScVal = (
 				await contracts.round_contract.get_voting_results_for_round({
 					round_id: BigInt(storage.current_round?.on_chain_id || 0),
 				})
-			).result
+			).simulationData.result.retval
+
+			const votingResults = scValToNative(votingResultsScVal) as ProjectVotingResult[]
 
 			if (votingResults) {
 				const gpVotingResults: GPVotingResult[] = votingResults.map(
@@ -235,11 +207,13 @@ const RoundResultPage = () => {
 						votingResult.project.toString(),
 					)
 					if (!project) {
-						const projectInfo = (
+						const projectInfoScVal = (
 							await contracts.project_contract.get_project_by_id({
 								project_id: BigInt(votingResult.project),
 							})
-						).result
+						).simulationData.result.retval
+						const projectInfo = scValToNative(projectInfoScVal) as Project
+
 
 						if (projectInfo) {
 							projectInfoAll.set(
@@ -640,7 +614,8 @@ const RoundResultPage = () => {
 
 						{!storage.isPayoutDone && (
 							<Button
-								color="black"
+								color={storage.current_round_payouts.length === 0 ? 'disabled' : 'black'}
+								isDisabled={storage.current_round_payouts.length === 0}
 								className="!rounded-full !px-4"
 								onClick={() => {
 									if (storage.current_round_payouts.length === 0) {

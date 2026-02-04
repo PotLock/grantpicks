@@ -50,8 +50,11 @@ const MyProjectMedia = () => {
 	const [embededYtTitle, setEmbededYtTitle] = useState<string>('')
 	const embededYtHtmlRef = useRef<HTMLDivElement>(null)
 	const storage = useAppStorage()
+	const hasLocalEditsRef = useRef<boolean>(false)
+	const initializedForProjectIdRef = useRef<bigint | null>(null)
 
 	const onDrop = useCallback(async (acceptedFiles: File[]) => {
+		hasLocalEditsRef.current = true
 		if (acceptedFiles[0].size / 10 ** 6 > 25) {
 			toast.error('Max. file size is 25 MB', {
 				style: toastOptions.error.style,
@@ -109,7 +112,7 @@ const MyProjectMedia = () => {
 			setLoadingFlow(null)
 			console.log('error uploading', error)
 		}
-	}, [])
+	}, [livepeer, setValue])
 
 	const { getRootProps, getInputProps } = useDropzone({
 		onDrop,
@@ -171,7 +174,13 @@ const MyProjectMedia = () => {
 			console.log('error to update media project', error)
 		}
 	}
-	const setDefaultData = async () => {
+	const setDefaultData = useCallback(async () => {
+		setAccFiles([])
+		setAccFileUrls([])
+		setYtIframe('')
+		setEmbededYtTitle('')
+		setLinkInput('')
+		setValue('video', { url: '', file: undefined })
 		if (projectData && projectData.video_url && projectData.video_url !== '') {
 			if (projectData.video_url.includes('youtube')) {
 				const res = await fetchYoutubeIframe(
@@ -192,9 +201,11 @@ const MyProjectMedia = () => {
 				setValue('video.url', projectData.video_url)
 			}
 		}
-	}
+		hasLocalEditsRef.current = false
+	}, [projectData, setValue])
 
 	const onProcessYoutubeInput = async () => {
+		hasLocalEditsRef.current = true
 		setIsDirtyInput(true)
 		if (!YOUTUBE_URL_REGEX.test(linkInput)) {
 			setYtIframe('')
@@ -213,11 +224,20 @@ const MyProjectMedia = () => {
 		})
 	}
 
+	// Initialize only once per project ID
 	useEffect(() => {
-		if (projectData) {
-			setDefaultData()
-		}
-	}, [projectData])
+		if (!projectData?.id) return
+		if (initializedForProjectIdRef.current === projectData.id) return
+		if (hasLocalEditsRef.current) return
+
+		// Mark as initialized BEFORE calling async function to prevent duplicate calls
+		initializedForProjectIdRef.current = projectData.id
+		setDefaultData()
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [projectData?.id])
+
+	const currentVideoUrl = watch('video')?.url || ''
+	const originalVideoUrl = projectData?.video_url || ''
 
 	return (
 		<div
@@ -317,22 +337,16 @@ const MyProjectMedia = () => {
 								size={24}
 								className="fill-grantpicks-black-400 cursor-pointer hover:opacity-70 transition"
 								onClick={() => {
-									if (accFiles.length > 0) {
-										let temp = [...accFiles]
-										temp.splice(0, 1)
-										setAccFiles(temp)
-										let temp2 = [...accFileUrls]
-										temp2.splice(0, 1)
-										setAccFileUrls(temp2)
-									} else {
-										setValue('video', {
-											url: '',
-											file: undefined,
-										})
-										setYtIframe('')
-										setLinkInput('')
-										setEmbededYtTitle('')
-									}
+									hasLocalEditsRef.current = true
+									setAccFiles([])
+									setAccFileUrls([])
+									setValue('video', {
+										url: '',
+										file: undefined,
+									})
+									setYtIframe('')
+									setLinkInput('')
+									setEmbededYtTitle('')
 								}}
 							/>
 						</div>
@@ -405,7 +419,7 @@ const MyProjectMedia = () => {
 						color="black-950"
 						onClick={handleSubmit(onSaveChanges)}
 						className="!py-3 disabled:cursor-not-allowed"
-						isDisabled={linkInput === projectData?.video_url || !ytIframe}
+						isDisabled={currentVideoUrl === originalVideoUrl}
 					>
 						Save changes
 					</Button>

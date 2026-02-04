@@ -24,6 +24,8 @@ const Menu = ({
 	// Detect desktop (md: 768px and up) - only on resize, not on initial render
 	useEffect(() => {
 		const checkDesktop = () => setIsDesktop(window.innerWidth >= 768)
+		// Run once on mount to fix SSR/hydration mismatch.
+		checkDesktop()
 		window.addEventListener('resize', checkDesktop)
 		return () => window.removeEventListener('resize', checkDesktop)
 	}, [])

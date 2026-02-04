@@ -1,6 +1,7 @@
 import React from 'react'
 import Button from '../../../commons/Button'
 import IconDot from '../../../svgs/IconDot'
+import clsx from 'clsx'
 
 interface RoundCardActionsProps {
 	actionText: string
@@ -33,56 +34,79 @@ const RoundCardActions: React.FC<RoundCardActionsProps> = ({
 	isApplicationOpen,
 	isAdminOrOwner,
 }) => {
-
 	const statusBadge = () => {
 		if (isVotingOpen && !isAdminOrOwner && hasVoted) {
-			return 'Already Voted'
+			return { text: '✓ Voted', className: 'bg-green-100 text-green-700 border-green-300' }
 		}
 		if (isApplicationOpen && !isAdminOrOwner && isUserApplied) {
-			return 'Already Applied'
+			return { text: '✓ You\'re a part of this round.', className: 'bg-blue-100 text-blue-700 border-blue-300' }
 		}
 		return null
 	}
 
+	const badge = statusBadge()
+
 	return (
-		<div>
-			<div className="mb-2 flex flex-row justify-between gap-2 items-center">
-				<p className="text-xs font-semibold text-grantpicks-black-950">Current Stage:</p>
-				<div className="text-xs font-semibold text-grantpicks-black-950 flex items-center gap-2">
-					{helperText && (
-						<IconDot size={10} className={helperColorClass || 'fill-grantpicks-green-400'} />
-					)}
-					<span>{helperText}</span>
+		<div className="space-y-3">
+			{/* Status Indicator */}
+			{helperText && (
+				<div className="flex items-center justify-between px-3 py-2 bg-grantpicks-black-50 rounded-lg border border-grantpicks-black-100">
+					<span className="text-xs font-medium text-grantpicks-black-600 uppercase tracking-wide">
+						Status
+					</span>
+					<div className="flex items-center space-x-2">
+						<IconDot size={8} className={helperColorClass || 'fill-grantpicks-green-400'} />
+						<span className="text-xs font-bold text-grantpicks-black-950">
+							{helperText}
+						</span>
+					</div>
 				</div>
-			</div>
-			<div className="w-full flex flex-row gap-2 items-start">
-				<Button
-					onClick={(e) => {
-						e.stopPropagation()
-						onClick()
-					}}
-					isFullWidth
-					className="!border !border-grantpicks-black-200 !py-2"
-					isDisabled={isDisabled}
-				>
-					{actionText}
-				</Button>
-				{showFundButton && (
+			)}
+
+			{/* Action Buttons */}
+			<div className="flex flex-col gap-2">
+				{badge && (
+					<div
+						className={clsx(
+							'px-4 py-2 rounded-lg border-2 text-center text-sm font-bold',
+							badge.className,
+						)}
+					>
+						{badge.text}
+					</div>
+				)}
+				<div className="flex gap-2">
 					<Button
 						onClick={(e) => {
 							e.stopPropagation()
-							onFundRound()
+							onClick()
 						}}
-						color="white"
-						isDisabled={disableFundButton}
 						isFullWidth
-						className="!border !border-grantpicks-black-200 !py-2"
+						color={isDisabled ? 'disabled' : 'black-950'}
+						className={clsx(
+							'!py-3 !font-bold transition-all',
+							!isDisabled && 'hover:scale-[1.02] shadow-lg',
+						)}
+						isDisabled={isDisabled}
 					>
-						Fund Round
+						{actionText}
 					</Button>
-				)}
+					{showFundButton && (
+						<Button
+							onClick={(e) => {
+								e.stopPropagation()
+								onFundRound()
+							}}
+							color="white"
+							isDisabled={disableFundButton}
+							isFullWidth
+							className="!py-3 !font-bold !border-2 !border-grantpicks-black-200 hover:border-grantpicks-black-300 transition-all hover:scale-[1.02]"
+						>
+							Fund
+						</Button>
+					)}
+				</div>
 			</div>
-
 		</div>
 	)
 }

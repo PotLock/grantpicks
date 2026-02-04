@@ -42,6 +42,13 @@ export class PotlockService {
 		return result?.data.results
 	}
 
+	async getRoundVotes(roundId: number, page: number = 1, limit: number = 20) {
+		const result = await this._axios?.get(
+			`/round/${roundId}/votes?page=${page}&limit=${limit}`,
+		)
+		return result?.data
+	}
+
 	async getProjects(skip: number, limit: number) {
 		const result = await this._axios?.get(
 			`/projects?skip=${skip}&limit=${limit}`,
@@ -72,8 +79,23 @@ export class PotlockService {
 	}
 
 	async getProjectStats(owner: string) {
-		const result = await this._axios?.get(`/${owner}/project-stats`)
-		return result?.data
+		try {
+			const result = await this._axios?.get(`/${owner}/project-stats`)
+			return (
+				result?.data || {
+					total_funds_received: 0,
+					rounds_participated: 0,
+					total_votes: 0,
+				}
+			)
+		} catch (error) {
+			console.log('error getProjectStats', error)
+			return {
+				total_funds_received: 0,
+				rounds_participated: 0,
+				total_votes: 0,
+			}
+		}
 	}
 
 	async getAccounts(accountId: string) {

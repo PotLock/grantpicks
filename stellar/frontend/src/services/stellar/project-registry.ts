@@ -119,7 +119,7 @@ export const getProject: (
 	let project = await contract.project_contract.get_project_by_id({
 		project_id: params.project_id,
 	})
-	return project.result
+	return scValToNative(project.simulationData.result.retval) as Project
 }
 
 export const getProjectApplicant: (

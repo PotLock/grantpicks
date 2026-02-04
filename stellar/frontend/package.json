@@ -48,6 +48,7 @@
 		"axios": "^1.7.2",
 		"clsx": "^2.1.1",
 		"date-fns": "^3.6.0",
+		"hls.js": "^1.6.15",
 		"install": "^0.13.0",
 		"lists-client": "./lists-client",
 		"livepeer": "^3.2.7",

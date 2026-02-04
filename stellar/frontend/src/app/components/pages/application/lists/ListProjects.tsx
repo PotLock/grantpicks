@@ -91,7 +91,15 @@ export const ListProjects = ({
 								{Object.keys(listRegistrationStatuses).map((status) => (
 									<button
 										key={status}
+										type="button"
 										className={`px-4 py-2 text-left text-sm hover:bg-gray-100 ${selectedStatus === status ? 'font-semibold text-blue-600' : 'text-gray-500'}`}
+										onMouseDown={(e) => {
+											// Ensure selection happens even if menu closes on mousedown.
+											e.preventDefault()
+											e.stopPropagation()
+											setSelectedStatus(status as StatusTag)
+											setMenuOpen(false)
+										}}
 										onClick={() => {
 											setSelectedStatus(status as StatusTag)
 											setMenuOpen(false)
@@ -104,15 +112,13 @@ export const ListProjects = ({
 						</Menu>
 					</div>
 				</div>
-				<div className="flex flex-wrap gap-3">
-					{isLoading && !filteredProjects ? (
-						<div className="mt-8 mx-auto px-4">
-							<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">
-								{Array.from({ length: 4 }).map((_, i) => (
-									<ProjectCardSkeleton key={i} />
-								))}
-							</div>
-						</div>
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+					{isLoading ? (
+						<>
+							{Array.from({ length: 6 }).map((_, i) => (
+								<ProjectCardSkeleton key={i} />
+							))}
+						</>
 					) : filteredProjects.length === 0 ? (
 						<div className="col-span-full text-center h-[200px] flex items-center justify-center text-gray-400">
 							No projects found for this status.
@@ -171,7 +177,7 @@ const ProjectCard = ({
 
 
 	return (
-		<div className="flex flex-col w-full md:w-[360px] bg-white rounded-2xl border border-gray-200 shadow-sm p-6  min-h-[260px] transition-all hover:shadow-md hover:border-gray-300">
+		<div className="flex flex-col w-full bg-white rounded-2xl border border-gray-200 shadow-sm p-6 min-h-[260px] transition-all hover:shadow-md hover:border-gray-300">
 			<div className="flex items-start gap-4 w-full">
 				<div className="relative">
 					<div className="rounded-full p-[3px] bg-gradient-to-tr from-emerald-400 to-cyan-400 shadow-sm">
@@ -260,7 +266,17 @@ const ProjectCard = ({
 								return (
 									<button
 										key={statusKey}
+										type="button"
 										className={`flex w-full items-center justify-between px-4 py-2 text-left text-sm rounded-lg hover:bg-gray-100 ${isActive ? 'bg-emerald-50 text-emerald-700 font-semibold' : ''}`}
+										onMouseDown={(e) => {
+											e.preventDefault()
+											e.stopPropagation()
+											handleUpdateProjectStatus(project.id, {
+												tag: statusKey as StatusTag,
+												values: undefined,
+											})
+											setMenuOpen(false)
+										}}
 										onClick={() => {
 											handleUpdateProjectStatus(project.id, {
 												tag: statusKey as StatusTag,
@@ -287,7 +303,7 @@ const ProjectCard = ({
 }
 
 const ProjectCardSkeleton = () => (
-	<div className="flex flex-col items-center bg-white rounded-xl border border-black/10 shadow w-full md:w-[360px] p-6 min-h-[240px] animate-pulse">
+	<div className="flex flex-col items-center bg-white rounded-xl border border-black/10 shadow w-full p-6 min-h-[240px] animate-pulse">
 		<div className="rounded-full bg-gray-200 w-16 h-16 mb-4" />
 		<div className="h-5 w-24 bg-gray-200 rounded mb-2" />
 		<div className="h-4 w-16 bg-gray-100 rounded" />
@@ -295,7 +311,7 @@ const ProjectCardSkeleton = () => (
 )
 
 const ProjectCardError = () => (
-	<div className="flex flex-col items-center bg-white rounded-xl border border-red-200 shadow p-6 min-h-[240px]">
+	<div className="flex flex-col items-center bg-white rounded-xl border border-red-200 shadow p-6 min-h-[240px] w-full">
 		<div className="rounded-full bg-red-100 w-16 h-16 mb-4 flex items-center justify-center text-red-400 text-2xl">
 			!
 		</div>

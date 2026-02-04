@@ -65,22 +65,22 @@ const ApplicationRounds = () => {
 					const votingStart = new Date(t.voting_start).getTime()
 					const appStart = t.application_start ? new Date(t.application_start).getTime() : null
 					const appEnd = t.application_end ? new Date(t.application_end).getTime() : null
-					
+
 					// Only show in upcoming if voting hasn't started
 					if (now >= votingStart) return false
-					
+
 					// If application exists and has ended, don't show in upcoming (should be in on-going)
 					if (appEnd && now >= appEnd) return false
-					
+
 					// If no application dates exist, don't show in upcoming (should be in on-going)
 					if (!appStart && !appEnd) return false
-					
+
 					// If application exists and hasn't started, show in upcoming
 					if (appStart && now < appStart) return true
-					
+
 					// If application exists and is open, show in upcoming
 					if (appStart && appEnd && now >= appStart && now < appEnd) return true
-					
+
 					return false
 				})
 			case 'on-going':
@@ -90,22 +90,22 @@ const ApplicationRounds = () => {
 					const votingEnd = new Date(t.voting_end).getTime()
 					const appEnd = t.application_end ? new Date(t.application_end).getTime() : null
 					const appStart = t.application_start ? new Date(t.application_start).getTime() : null
-					
+
 					// Case 1: Voting has started (normal on-going case)
 					if (now >= votingStart && now < votingEnd && t.approved_projects.length > 0) {
 						return true
 					}
-					
+
 					// Case 2: Voting hasn't started BUT application has ended
 					if (now < votingStart && appEnd && now >= appEnd) {
 						return true
 					}
-					
+
 					// Case 3: Voting hasn't started AND application doesn't exist
 					if (now < votingStart && !appStart && !appEnd) {
 						return true
 					}
-					
+
 					return false
 				})
 			case 'ended':
@@ -310,8 +310,9 @@ const ApplicationRounds = () => {
 	)
 
 	return (
-		<div>
-			<div className="flex items-center md:justify-center md:space-x-4 space-x-2 overflow-x-auto mb-6 md:mb-7 lg:mb-8">
+		<div className="space-y-8">
+			{/* Filter Tabs */}
+			<div className="flex items-center md:justify-center md:space-x-3 space-x-2 overflow-x-auto pb-2">
 				<button
 					onClick={() => {
 						setSelectedRoundType('on-going')
@@ -320,13 +321,13 @@ const ApplicationRounds = () => {
 						router.replace(url.toString(), { scroll: false })
 					}}
 					className={clsx(
-						`rounded-full px-6 py-3 flex-shrink-0 md:flex-shrink text-sm font-semibold cursor-pointer transition hover:opacity-70`,
+						`rounded-xl px-6 py-3.5 flex-shrink-0 md:flex-shrink text-sm font-bold cursor-pointer shadow-sm`,
 						selectedRoundType === 'on-going'
-							? `bg-grantpicks-black-950 text-white`
-							: `bg-grantpicks-black-50 text-grantpicks-black-950`,
+							? `bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30 scale-105`
+							: `bg-white text-grantpicks-black-700 border-2 border-grantpicks-black-100 hover:border-grantpicks-black-200 hover:shadow-md`,
 					)}
 				>
-					Ongoing rounds
+					Ongoing Rounds
 				</button>
 				<button
 					onClick={() => {
@@ -334,13 +335,13 @@ const ApplicationRounds = () => {
 						router.push(`?round_type=upcoming`, { scroll: false })
 					}}
 					className={clsx(
-						`rounded-full px-6 py-3 flex-shrink-0 md:flex-shrink text-sm font-semibold cursor-pointer transition hover:opacity-70`,
+						`rounded-xl px-6 py-3.5 flex-shrink-0 md:flex-shrink text-sm font-bold cursor-pointer shadow-sm`,
 						selectedRoundType === 'upcoming'
-							? `bg-grantpicks-black-950 text-white`
-							: `bg-grantpicks-black-50 text-grantpicks-black-950`,
+							? `bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30 scale-105`
+							: `bg-white text-grantpicks-black-700 border-2 border-grantpicks-black-100 hover:border-grantpicks-black-200 hover:shadow-md`,
 					)}
 				>
-					Upcoming rounds
+					Upcoming Rounds
 				</button>
 				<button
 					onClick={() => {
@@ -348,25 +349,26 @@ const ApplicationRounds = () => {
 						router.push(`?round_type=ended`, { scroll: false })
 					}}
 					className={clsx(
-						`rounded-full px-6 py-3 flex-shrink-0 md:flex-shrink text-sm font-semibold cursor-pointer transition hover:opacity-70`,
+						`rounded-xl px-6 py-3.5 flex-shrink-0 md:flex-shrink text-sm font-bold cursor-pointer shadow-sm`,
 						selectedRoundType === 'ended'
-							? `bg-grantpicks-black-950 text-white`
-							: `bg-grantpicks-black-50 text-grantpicks-black-950`,
+							? `bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg shadow-purple-600/30 scale-105`
+							: `bg-white text-grantpicks-black-700 border-2 border-grantpicks-black-100 hover:border-grantpicks-black-200 hover:shadow-md`,
 					)}
 				>
-					Round results
+					Round Results
 				</button>
 			</div>
 
-			<div className="mb-6 md:mb-7 lg:mb-8">
-				<div className="flex w-full flex-col gap-3 md:flex-row md:items-center md:justify-between">
+			{/* Search and Filters */}
+			<div className="bg-white rounded-2xl p-4 md:p-6 border-2 border-grantpicks-black-100 shadow-sm">
+				<div className="flex w-full flex-col gap-4 md:flex-row md:items-center md:justify-between">
 					<div className="flex-1 w-full">
-						<div className="flex h-[49px] items-center gap-x-2 rounded-full p-2 border border-grantpicks-black-200 w-full">
-							<IconSearch size={24} color="#292929" />
+						<div className="flex h-14 items-center gap-x-3 rounded-xl px-4 border-2 border-grantpicks-black-100 bg-grantpicks-black-50/50 w-full focus-within:border-grantpicks-black-200 focus-within:bg-white transition-all">
+							<IconSearch size={22} color="#656565" />
 							<input
 								type="text"
-								placeholder="Search Rounds"
-								className="w-full text-grantpicks-black-950 outline-none"
+								placeholder="Search rounds by name or description..."
+								className="flex-1 text-grantpicks-black-950 placeholder:text-grantpicks-black-400 outline-none bg-transparent font-medium"
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
 								onKeyDown={(e) => {
@@ -378,25 +380,25 @@ const ApplicationRounds = () => {
 							{searchQuery && (
 								<button
 									onClick={() => setSearchQuery('')}
-									className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+									className="p-1.5 hover:bg-grantpicks-black-100 rounded-lg transition-colors"
 									title="Clear search"
 								>
-									<IconClose size={16} color="#292929" />
+									<IconClose size={18} color="#656565" />
 								</button>
 							)}
 						</div>
 					</div>
-					<div className="flex w-full flex-row items-center justify-center gap-3 md:w-auto md:justify-end">
-						<div className="relative md:col-span-3 flex-shrink-0">
+					<div className="flex w-full flex-row items-center justify-end gap-3 md:w-auto">
+						<div className="relative flex-shrink-0">
 							<div
 								ref={sortButtonRef}
 								onClick={() => setShowSortType(!showSortType)}
-								className="border border-black/10 rounded-full py-3 px-3 flex items-center justify-between cursor-pointer hover:opacity-80 transition"
+								className="border-2 border-grantpicks-black-100 bg-white rounded-xl py-3 px-4 flex items-center justify-between cursor-pointer hover:border-grantpicks-black-200 hover:shadow-md transition-all min-w-[180px]"
 							>
-								<p className="text-sm font-normal text-grantpicks-black-950">
+								<p className="text-sm font-semibold text-grantpicks-black-950">
 									{sortType}
 								</p>
-								<IconUnfoldMore size={24} className="fill-grantpicks-black-400" />
+								<IconUnfoldMore size={20} className="fill-grantpicks-black-400" />
 							</div>
 							{showSortType && (
 								<Menu
@@ -406,7 +408,7 @@ const ApplicationRounds = () => {
 									buttonRef={isMobile ? sortButtonRef : undefined}
 									mobileAsPortal={isMobile}
 								>
-									<div className="border border-black/10 p-3 w-52 rounded-xl space-y-3 bg-white shadow-lg">
+									<div className="border-2 border-grantpicks-black-100 p-2 w-56 rounded-xl space-y-1 bg-white shadow-xl">
 										<p
 											onClick={() => {
 												const newSortType = 'Most Recent'
@@ -417,7 +419,7 @@ const ApplicationRounds = () => {
 												currentParams.set('sort', newSortType)
 												router.push(`?${currentParams.toString()}`, { scroll: false })
 											}}
-											className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
+											className="text-sm font-medium text-grantpicks-black-950 hover:bg-grantpicks-black-50 cursor-pointer transition px-3 py-2 rounded-lg"
 										>
 											Most Recent
 										</p>
@@ -431,7 +433,7 @@ const ApplicationRounds = () => {
 												currentParams.set('sort', newSortType)
 												router.push(`?${currentParams.toString()}`, { scroll: false })
 											}}
-											className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
+											className="text-sm font-medium text-grantpicks-black-950 hover:bg-grantpicks-black-50 cursor-pointer transition px-3 py-2 rounded-lg"
 										>
 											Vault Total Deposits
 										</p>
@@ -446,7 +448,7 @@ const ApplicationRounds = () => {
 													currentParams.set('sort', newSortType)
 													router.push(`?${currentParams.toString()}`, { scroll: false })
 												}}
-												className="text-sm font-normal text-grantpicks-black-950 hover:opacity-70 cursor-pointer transition"
+												className="text-sm font-medium text-grantpicks-black-950 hover:bg-grantpicks-black-50 cursor-pointer transition px-3 py-2 rounded-lg"
 											>
 												My Rounds
 											</p>
@@ -456,12 +458,12 @@ const ApplicationRounds = () => {
 							)}
 						</div>
 						{stellarPubKey && (
-							<div className="md:col-span-2 flex justify-end flex-shrink-0">
+							<div className="flex justify-end flex-shrink-0">
 								<Button
 									onClick={() => {
 										router.push('/rounds/create-round')
 									}}
-									className="w-auto"
+									className="!px-6 !py-3 !font-bold shadow-lg hover:shadow-xl transition-all"
 								>
 									Create Round
 								</Button>
@@ -477,7 +479,7 @@ const ApplicationRounds = () => {
 					) : filteredMyRounds.length === 0 ? (
 						<EmptyMyRoundsState />
 					) : (
-						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
+						<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6 md:gap-8">
 							{filteredMyRounds.map((doc, idx) => (
 								<RoundCard key={idx} doc={doc} mutateRounds={mutateMyRounds} />
 							))}
@@ -500,7 +502,7 @@ const ApplicationRounds = () => {
 						) : filteredRounds.length === 0 ? (
 							<EmptyRoundState />
 						) : (
-							<div className="grid grid-cols-1 z-10 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
+							<div className="grid grid-cols-1 z-10 md:grid-cols-2 xl:grid-cols-2 gap-6 md:gap-8">
 								{filteredRounds?.map((doc, idx) => (
 									<RoundCard key={idx} doc={doc} mutateRounds={mutate} />
 								))}

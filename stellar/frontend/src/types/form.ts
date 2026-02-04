@@ -42,7 +42,7 @@ export interface InputTextAreaProps {
 	rows?: number
 	preffixIcon?: React.ReactNode
 	suffixIcon?: React.ReactNode
-	errorMessage?: JSX.Element
+	errorMessage?: JSX.Element | string
 	textAlign?: 'left' | 'center' | 'right'
 	maxLength?: number
 }

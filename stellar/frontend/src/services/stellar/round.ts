@@ -288,6 +288,10 @@ export const createRound = async (
 	return round
 }
 
+export const deleteRound = async () => {
+	
+}
+
 export const updateRoundApplicationDuration = async (
 	caller: string,
 	round_id: bigint,

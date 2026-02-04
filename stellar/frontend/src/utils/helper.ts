@@ -42,8 +42,24 @@ export const formatNearAddress = (address: string | undefined) => {
 }
 
 export const formatStroopToXlm = (amount: bigint) => {
-	const res = (BigInt(amount as bigint) / BigInt(10 ** 7)).toString()
-	return res
+	const divisor = BigInt(10 ** 7)
+	const integerPart = amount / divisor
+	const fractionalPart = amount % divisor
+
+	if (fractionalPart === 0n) {
+		return integerPart.toString()
+	}
+
+	const fractionalStr = fractionalPart
+		.toString()
+		.padStart(7, '0')
+		.slice(0, 2)
+		.replace(/0+$/, '')
+
+	if (!fractionalStr) {
+		return integerPart.toString()
+	}
+	return `${integerPart}.${fractionalStr}`
 }
 
 export const parseToStroop = (amount: string) => {
@@ -193,6 +209,144 @@ export const fetchYoutubeIframe = async (
 }
 
 export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+const DAY_MS = 24 * 60 * 60 * 1000
+const MIN_START_OFFSET_MS = 10 * 60 * 1000
+const END_PAD_MS = 30 * 60 * 1000
+
+const isSameCalendarDay = (a: Date, b: Date) => a.toDateString() === b.toDateString()
+
+const isDateOnlyMidnight = (d: Date) =>
+	d.getHours() === 0 &&
+	d.getMinutes() === 0 &&
+	d.getSeconds() === 0 &&
+	d.getMilliseconds() === 0
+
+const setTimeOfDayFrom = (target: Date, source: Date) => {
+	target.setHours(
+		source.getHours(),
+		source.getMinutes(),
+		source.getSeconds(),
+		source.getMilliseconds(),
+	)
+}
+
+export type CreateRoundTimingInput = {
+	now?: Date
+	allowApplications: boolean
+	applicationStart?: Date | null
+	applicationEnd?: Date | null
+	votingStart?: Date | null
+	votingEnd?: Date | null
+}
+
+export type CreateRoundTimingOutput = {
+	applicationStartMs?: number
+	applicationEndMs?: number
+	votingStartMs: number
+	votingEndMs: number
+}
+
+/**
+ * Normalizes application + voting windows for round creation.
+ *
+ * Rules (as agreed in UI):
+ * - If a start date is today, it must be at least 10 minutes from "now".
+ * - If an end is selected as a date-only value (midnight), align its time-of-day to the corresponding start.
+ * - If application end is "tomorrow" (date-only), make it exactly start + 24h + 30m.
+ * - Enforce a minimum 24h gap between application end and voting start (when both exist).
+ * - Enforce voting duration >= 24h, then add 30m padding.
+ */
+export const normalizeCreateRoundTimings = ({
+	now: nowInput,
+	allowApplications,
+	applicationStart,
+	applicationEnd,
+	votingStart,
+	votingEnd,
+}: CreateRoundTimingInput): CreateRoundTimingOutput => {
+	const now = nowInput ? new Date(nowInput) : new Date()
+	const tenMinutesFromNow = now.getTime() + MIN_START_OFFSET_MS
+
+	// --- Application ---
+	let applicationStartMs: number | undefined
+	let applicationEndMs: number | undefined
+
+	if (allowApplications) {
+		const providedApplicationStart = applicationStart
+			? new Date(applicationStart)
+			: new Date(now)
+
+		const applicationStartBaseMs = providedApplicationStart.getTime()
+		const applicationStartEffectiveMs = isSameCalendarDay(providedApplicationStart, now)
+			? Math.max(applicationStartBaseMs, tenMinutesFromNow)
+			: applicationStartBaseMs
+
+		const applicationStartEffectiveDate = new Date(applicationStartEffectiveMs)
+		applicationStartMs = applicationStartEffectiveMs
+
+		if (applicationEnd) {
+			let providedApplicationEnd = new Date(applicationEnd)
+
+			if (isDateOnlyMidnight(providedApplicationEnd)) {
+				const tomorrowFromStart = new Date(applicationStartEffectiveMs + DAY_MS)
+				const isTomorrowFromStart =
+					providedApplicationEnd.getFullYear() === tomorrowFromStart.getFullYear() &&
+					providedApplicationEnd.getMonth() === tomorrowFromStart.getMonth() &&
+					providedApplicationEnd.getDate() === tomorrowFromStart.getDate()
+
+				if (isTomorrowFromStart) {
+					providedApplicationEnd = new Date(applicationStartEffectiveMs + DAY_MS + END_PAD_MS)
+				} else {
+					setTimeOfDayFrom(providedApplicationEnd, applicationStartEffectiveDate)
+				}
+			}
+
+			applicationEndMs = providedApplicationEnd.getTime()
+		}
+	}
+
+	// --- Voting start ---
+	const providedVotingStart = votingStart ? new Date(votingStart) : new Date(now)
+	const votingStartBaseMs = providedVotingStart.getTime()
+	let votingStartEffectiveMs = isSameCalendarDay(providedVotingStart, now)
+		? Math.max(votingStartBaseMs, tenMinutesFromNow)
+		: votingStartBaseMs
+
+	// Enforce minimum 24h gap between application end and voting start.
+	if (allowApplications && typeof applicationEndMs === 'number') {
+		const minVotingStartMs = applicationEndMs + DAY_MS
+		if (votingStartEffectiveMs < minVotingStartMs) {
+			votingStartEffectiveMs = minVotingStartMs
+		}
+	}
+
+	const votingStartEffectiveDate = new Date(votingStartEffectiveMs)
+
+	// --- Voting end ---
+	const providedVotingEnd = votingEnd
+		? new Date(votingEnd)
+		: new Date(votingStartEffectiveMs + DAY_MS)
+
+	if (isDateOnlyMidnight(providedVotingEnd)) {
+		setTimeOfDayFrom(providedVotingEnd, votingStartEffectiveDate)
+	}
+
+	// Minimum 24h duration, then add 30m padding.
+	const minVotingEndMs = votingStartEffectiveMs + DAY_MS
+	if (providedVotingEnd.getTime() < minVotingEndMs) {
+		providedVotingEnd.setTime(minVotingEndMs + END_PAD_MS)
+	} else {
+		providedVotingEnd.setTime(providedVotingEnd.getTime() + END_PAD_MS)
+	}
+
+	return {
+		applicationStartMs,
+		applicationEndMs,
+		votingStartMs: votingStartEffectiveMs,
+		votingEndMs: providedVotingEnd.getTime(),
+	}
+}
 
 export const extractChainId = (round: GPRound) => {
 	if (round.chain === 'stellar') {

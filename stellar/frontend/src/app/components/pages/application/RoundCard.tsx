@@ -37,7 +37,9 @@ export const RoundCard = ({
 	const storage = useAppStorage()
 
 	// State
-	const [totalApprovedProjects, setTotalApprovedProjects] = useState<number>(0)
+	const [totalApprovedProjects, setTotalApprovedProjects] = useState<number>(
+		doc.approved_projects?.length || 0,
+	)
 	const [isUserApplied, setIsUserApplied] = useState<boolean>(false)
 	const [hasVoted, setHasVoted] = useState<boolean>(false)
 	const [isAdminOrOwner, setIsAdminOrOwner] = useState<boolean>(false)

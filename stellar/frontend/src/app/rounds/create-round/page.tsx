@@ -45,7 +45,7 @@ const STEPS = ['Basic Info', 'Timing', 'Funding', 'Projects']
 
 const CreateRoundPage = () => {
 	const router = useRouter()
-	const { currentStep, setCurrentStep, formData, setFormData } = useCreateRoundStore()
+	const { currentStep, setCurrentStep, formData, setFormData, resetStore } = useCreateRoundStore()
 	const { stellarPrice, openPageLoading, dismissPageLoading } = useGlobalContext()
 	const { stellarPubKey, stellarKit, onOpenStellarWallet } = useWallet()
 	const { setSuccessCreateRoundModalProps } = useModalContext()
@@ -232,6 +232,7 @@ const CreateRoundPage = () => {
 					txHash,
 				}))
 				reset()
+				resetStore() // Reset the step and store data only on success
 				router.push('/rounds')
 			}
 		} catch (error: any) {

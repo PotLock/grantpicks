@@ -46,14 +46,14 @@ main()
 // Description: Invest in transparent public datasets or infrastructure that makes civic data, environmental telemetry, or community research easy to access and reuse.
 // Title: “Stable Community Infrastructure”
 // Description: Fund efforts that strengthen community infrastructure—identity, wallets, dispute resolution, or coordination tooling—for resilient ecosystems.
-// Title: “Health & Wellness Open Labs”
+// Title: Health & Wellness Open Labs
 // Description: Support decentralized health tools targeting underserved communities—mental health platforms, telemedicine hubs, or health literacy initiatives.
-// Title: “Creative Economy Catalyst”
+// Title: Creative Economy Catalyst
 // Description: Back artists and creators bringing new digital art, media, or cultural tools to life on decentralized platforms with a focus on fair compensation.
-// Title: “Future of Work Experiments”
+// Title: Future of Work Experiments
 // Description: Fund projects reimagining distributed work—collaboration tools, asynchronous workflows, or new community-driven employment models.
-// Title: “Financial Inclusion Sprint”
+// Title: Financial Inclusion Sprint
 // Description: Back initiatives that extend access to savings, credit, or transparent funding to people outside the traditional banking system via DeFi or local currencies.
-// Title: “Open Science Challenge”
+// Title: Open Science Challenge
 // Description: Support reproducible, open scientific work—data platforms, lab automation, or citizen science projects that invite community collaboration.
 // Let me know if you’d like one tailored to a specific sector (e.g., Web3 infrastructure, health, education, climate).

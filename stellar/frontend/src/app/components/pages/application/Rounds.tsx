@@ -65,22 +65,22 @@ const ApplicationRounds = () => {
 					const votingStart = new Date(t.voting_start).getTime()
 					const appStart = t.application_start ? new Date(t.application_start).getTime() : null
 					const appEnd = t.application_end ? new Date(t.application_end).getTime() : null
-					
+
 					// Only show in upcoming if voting hasn't started
 					if (now >= votingStart) return false
-					
+
 					// If application exists and has ended, don't show in upcoming (should be in on-going)
 					if (appEnd && now >= appEnd) return false
-					
+
 					// If no application dates exist, don't show in upcoming (should be in on-going)
 					if (!appStart && !appEnd) return false
-					
+
 					// If application exists and hasn't started, show in upcoming
 					if (appStart && now < appStart) return true
-					
+
 					// If application exists and is open, show in upcoming
 					if (appStart && appEnd && now >= appStart && now < appEnd) return true
-					
+
 					return false
 				})
 			case 'on-going':
@@ -90,22 +90,22 @@ const ApplicationRounds = () => {
 					const votingEnd = new Date(t.voting_end).getTime()
 					const appEnd = t.application_end ? new Date(t.application_end).getTime() : null
 					const appStart = t.application_start ? new Date(t.application_start).getTime() : null
-					
+
 					// Case 1: Voting has started (normal on-going case)
 					if (now >= votingStart && now < votingEnd && t.approved_projects.length > 0) {
 						return true
 					}
-					
+
 					// Case 2: Voting hasn't started BUT application has ended
 					if (now < votingStart && appEnd && now >= appEnd) {
 						return true
 					}
-					
+
 					// Case 3: Voting hasn't started AND application doesn't exist
 					if (now < votingStart && !appStart && !appEnd) {
 						return true
 					}
-					
+
 					return false
 				})
 			case 'ended':
@@ -321,7 +321,7 @@ const ApplicationRounds = () => {
 						router.replace(url.toString(), { scroll: false })
 					}}
 					className={clsx(
-						`rounded-xl px-6 py-3.5 flex-shrink-0 md:flex-shrink text-sm font-bold cursor-pointer transition-all duration-200 shadow-sm`,
+						`rounded-xl px-6 py-3.5 flex-shrink-0 md:flex-shrink text-sm font-bold cursor-pointer shadow-sm`,
 						selectedRoundType === 'on-going'
 							? `bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30 scale-105`
 							: `bg-white text-grantpicks-black-700 border-2 border-grantpicks-black-100 hover:border-grantpicks-black-200 hover:shadow-md`,
@@ -335,7 +335,7 @@ const ApplicationRounds = () => {
 						router.push(`?round_type=upcoming`, { scroll: false })
 					}}
 					className={clsx(
-						`rounded-xl px-6 py-3.5 flex-shrink-0 md:flex-shrink text-sm font-bold cursor-pointer transition-all duration-200 shadow-sm`,
+						`rounded-xl px-6 py-3.5 flex-shrink-0 md:flex-shrink text-sm font-bold cursor-pointer shadow-sm`,
 						selectedRoundType === 'upcoming'
 							? `bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30 scale-105`
 							: `bg-white text-grantpicks-black-700 border-2 border-grantpicks-black-100 hover:border-grantpicks-black-200 hover:shadow-md`,
@@ -349,7 +349,7 @@ const ApplicationRounds = () => {
 						router.push(`?round_type=ended`, { scroll: false })
 					}}
 					className={clsx(
-						`rounded-xl px-6 py-3.5 flex-shrink-0 md:flex-shrink text-sm font-bold cursor-pointer transition-all duration-200 shadow-sm`,
+						`rounded-xl px-6 py-3.5 flex-shrink-0 md:flex-shrink text-sm font-bold cursor-pointer shadow-sm`,
 						selectedRoundType === 'ended'
 							? `bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg shadow-purple-600/30 scale-105`
 							: `bg-white text-grantpicks-black-700 border-2 border-grantpicks-black-100 hover:border-grantpicks-black-200 hover:shadow-md`,

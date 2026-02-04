@@ -71,14 +71,19 @@ const RoundResultPage = () => {
 				if (!contracts) {
 					return
 				}
-				const adminsScVal = (
-					await contracts.round_contract.admins({
-						round_id: BigInt(roundInfo.on_chain_id || 0),
-					})
-				).simulationData.result.retval
 
-				const admins = scValToNative(adminsScVal) as string[]
-				console.log(admins)
+				let admins: string[] = []
+				try {
+					const adminsScVal = (
+						await contracts.round_contract.admins({
+							round_id: BigInt(roundInfo.on_chain_id || 0),
+						})
+					).simulationData.result.retval
+					admins = scValToNative(adminsScVal) as string[]
+					console.log('Admins:', admins)
+				} catch (e) {
+					console.log('No admins set for this round')
+				}
 
 				if (roundInfo) {
 					isOwner = roundInfo.owner?.id === storage.my_address
@@ -609,7 +614,8 @@ const RoundResultPage = () => {
 
 						{!storage.isPayoutDone && (
 							<Button
-								color="black"
+								color={storage.current_round_payouts.length === 0 ? 'disabled' : 'black'}
+								isDisabled={storage.current_round_payouts.length === 0}
 								className="!rounded-full !px-4"
 								onClick={() => {
 									if (storage.current_round_payouts.length === 0) {

@@ -20,7 +20,9 @@ class CMDWallet {
 		} else {
 			this.server = new Horizon.Server('https://horizon.stellar.org')
 		}
-		this.server.loadAccount(this.pubKey)
+		// Note: loadAccount is called in getBalances() when needed - no need to call it here
+		// Previously, calling it here without await caused race conditions where transactions
+		// would fail with "Account not found" if attempted before the account was loaded
 		CMDWallet.Wallet = this
 	}
 

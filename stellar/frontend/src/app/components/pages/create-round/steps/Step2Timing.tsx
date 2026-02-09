@@ -83,7 +83,7 @@ const Step2Timing: React.FC<Step2TimingProps> = ({
 											<Tooltip
 												id="max_participants_tooltip"
 												place="top"
-												content="Minimum 10 participants required"
+												content="Maximum number of projects that can apply to this round. From 10 and above"
 											/>
 										</>
 									}

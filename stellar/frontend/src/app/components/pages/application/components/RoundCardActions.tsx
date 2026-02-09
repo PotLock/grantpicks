@@ -87,7 +87,7 @@ const RoundCardActions: React.FC<RoundCardActionsProps> = ({
 							'!py-3 !font-bold transition-all',
 							!isDisabled && 'hover:scale-[1.02] shadow-lg',
 						)}
-						isDisabled={isDisabled}
+						isDisabled={isDisabled || (isVotingOpen && !isAdminOrOwner && hasVoted)}
 					>
 						{actionText}
 					</Button>

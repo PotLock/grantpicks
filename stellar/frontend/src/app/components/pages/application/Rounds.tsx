@@ -41,7 +41,7 @@ const ApplicationRounds = () => {
 		if (typeof window !== 'undefined') {
 			const urlParams = new URLSearchParams(window.location.search)
 			const sortTypeFromQuery = urlParams.get('sort')
-			const validSortTypes = ['Most Recent', 'Vault Total Deposits', 'My Rounds']
+			const validSortTypes = ['Most Recent', 'Total Funds Raised', 'My Rounds']
 			// Only allow "My Rounds" if user is logged in (check will happen in useEffect)
 			if (sortTypeFromQuery && validSortTypes.includes(sortTypeFromQuery)) {
 				return sortTypeFromQuery
@@ -121,7 +121,7 @@ const ApplicationRounds = () => {
 
 		const res = await potlockApi.getRounds(
 			key.page + 1,
-			sortType === 'Vault Total Deposits'
+			sortType === 'Total Funds Raised'
 				? 'vault_total_deposits'
 				: 'deployed_at',
 		)
@@ -217,7 +217,7 @@ const ApplicationRounds = () => {
 		}
 
 		const sortTypeFromQuery = searchParams.get('sort')
-		const validSortTypes = ['Most Recent', 'Vault Total Deposits', 'My Rounds']
+		const validSortTypes = ['Most Recent', 'Total Funds Raised', 'My Rounds']
 
 		// If user is not logged in and tries to access "My Rounds", reset to default
 		if (sortTypeFromQuery === 'My Rounds' && !stellarPubKey) {
@@ -355,7 +355,7 @@ const ApplicationRounds = () => {
 							: `bg-white text-grantpicks-black-700 border-2 border-grantpicks-black-100 hover:border-grantpicks-black-200 hover:shadow-md`,
 					)}
 				>
-					Round Results
+					Past Rounds
 				</button>
 			</div>
 
@@ -425,7 +425,7 @@ const ApplicationRounds = () => {
 										</p>
 										<p
 											onClick={() => {
-												const newSortType = 'Vault Total Deposits'
+												const newSortType = 'Total Funds Raised'
 												isUpdatingSortFromClick.current = true
 												setSortType(newSortType)
 												setShowSortType(false)
@@ -435,7 +435,7 @@ const ApplicationRounds = () => {
 											}}
 											className="text-sm font-medium text-grantpicks-black-950 hover:bg-grantpicks-black-50 cursor-pointer transition px-3 py-2 rounded-lg"
 										>
-											Vault Total Deposits
+											Total Funds Raised
 										</p>
 										{stellarPubKey && (
 											<p

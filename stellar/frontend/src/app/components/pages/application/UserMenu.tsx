@@ -106,6 +106,17 @@ const UserMenu = ({
 					)}
 					{stellarPubKey && (
 						<div
+							onClick={() => router.push(`/rounds/my-rounds`)}
+							className="flex items-center space-x-3 cursor-pointer hover:opacity-70 transition"
+						>
+							<IconCube size={24} className="fill-grantpicks-black-400" />
+							<p className="text-sm font-normal text-grantpicks-black-950">
+								My Rounds
+							</p>
+						</div>
+					)}
+					{stellarPubKey && (
+						<div
 							onClick={() => router.push(`/rounds/my-project`)}
 							className="flex items-center space-x-3 cursor-pointer hover:opacity-70 transition"
 						>

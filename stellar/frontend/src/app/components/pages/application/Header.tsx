@@ -54,7 +54,7 @@ const ApplicationHeader = () => {
 						</div>
 						<div className="min-w-0">
 							<h3 className="text-lg sm:text-xl font-bold text-grantpicks-black-950 mb-1">
-								Win
+								Funding
 							</h3>
 							<p className="text-sm text-grantpicks-black-600">
 								Get funded

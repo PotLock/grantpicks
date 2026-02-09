@@ -188,7 +188,7 @@ const MyRoundsPage = () => {
                 isOpen={showFilter}
                 onClose={() => setShowFilter(false)}
                 position="top-16 right-0"
-                width="w-full md:w-[200px]"
+                className="w-full md:w-[200px]"
               >
                 <div className="bg-white rounded-xl shadow-xl border border-grantpicks-black-100 p-2 space-y-1">
                   {['on-going', 'upcoming', 'ended'].map((type) => (

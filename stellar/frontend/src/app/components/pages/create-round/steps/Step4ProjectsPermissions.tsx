@@ -184,12 +184,16 @@ const Step4ProjectsPermissions: React.FC<Step4ProjectsPermissionsProps> = ({
 						))}
 					</div>
 				) : (
-					<div className={clsx(
-						"mt-6 py-8 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center transition-colors",
-						showProjectsError
-							? "border-red-300 bg-red-50/50"
-							: "border-grantpicks-black-100"
-					)}>
+					<button
+						type="button"
+						onClick={() => setShowAddProjectsModal(true)}
+						className={clsx(
+							"w-full mt-6 py-8 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center transition-colors cursor-pointer hover:border-grantpicks-black-300 hover:bg-grantpicks-black-50",
+							showProjectsError
+								? "border-red-300 bg-red-50/50 hover:bg-red-50"
+								: "border-grantpicks-black-100"
+						)}
+					>
 						<p className={clsx(
 							"text-sm font-medium",
 							showProjectsError ? "text-red-600" : "text-grantpicks-black-400"
@@ -199,7 +203,7 @@ const Step4ProjectsPermissions: React.FC<Step4ProjectsPermissionsProps> = ({
 								: "No projects added yet"
 							}
 						</p>
-					</div>
+					</button>
 				)}
 			</div>
 
@@ -313,10 +317,16 @@ const Step4ProjectsPermissions: React.FC<Step4ProjectsPermissionsProps> = ({
 										type="radio"
 										className="h-5 w-5 accent-grantpicks-black-950"
 										checked={checkedListIds.includes(BigInt(list.on_chain_id))}
-										onChange={() => {
-											setCheckedListIds([BigInt(list.on_chain_id)])
-											setValue('voting_wl_list_id', BigInt(list.on_chain_id))
+										onClick={() => {
+											if (watch('voting_wl_list_id') === BigInt(list.on_chain_id)) {
+												setCheckedListIds([])
+												setValue('voting_wl_list_id', undefined)
+											} else {
+												setCheckedListIds([BigInt(list.on_chain_id)])
+												setValue('voting_wl_list_id', BigInt(list.on_chain_id))
+											}
 										}}
+										onChange={() => { }}
 									/>
 									<div className="flex flex-1 items-center justify-between">
 										<div className="flex items-center gap-x-3">
@@ -325,7 +335,7 @@ const Step4ProjectsPermissions: React.FC<Step4ProjectsPermissionsProps> = ({
 											</div>
 											<div>
 												<p className="font-bold text-sm text-grantpicks-black-950">{list.name}</p>
-												<p className="text-xs text-grantpicks-black-500">{list.registrations_count} Eligible</p>
+												<p className="text-xs text-grantpicks-black-500"><strong>{list.registrations_count}</strong> Account(s) belong to this list</p>
 											</div>
 										</div>
 										<div className="flex gap-x-1">
@@ -402,10 +412,16 @@ const Step4ProjectsPermissions: React.FC<Step4ProjectsPermissionsProps> = ({
 												type="radio"
 												className="h-5 w-5 accent-grantpicks-black-950"
 												checked={checkedApplicationListIds.includes(BigInt(list.on_chain_id))}
-												onChange={() => {
-													setCheckedApplicationListIds([BigInt(list.on_chain_id)])
-													setValue('application_wl_list_id', BigInt(list.on_chain_id))
+												onClick={() => {
+													if (watch('application_wl_list_id') === BigInt(list.on_chain_id)) {
+														setCheckedApplicationListIds([])
+														setValue('application_wl_list_id', undefined)
+													} else {
+														setCheckedApplicationListIds([BigInt(list.on_chain_id)])
+														setValue('application_wl_list_id', BigInt(list.on_chain_id))
+													}
 												}}
+												onChange={() => { }}
 											/>
 											<div className="flex flex-1 items-center justify-between">
 												<div className="flex items-center gap-x-3">
@@ -414,7 +430,7 @@ const Step4ProjectsPermissions: React.FC<Step4ProjectsPermissionsProps> = ({
 													</div>
 													<div>
 														<p className="font-bold text-sm text-grantpicks-black-950">{list.name}</p>
-														<p className="text-xs text-grantpicks-black-500">{list.registrations_count} Eligible</p>
+														<p className="text-xs text-grantpicks-black-500"><strong>{list.registrations_count}</strong> Account(s) belong to this list</p>
 													</div>
 												</div>
 											</div>

@@ -253,6 +253,7 @@ const RoundResultPage = () => {
 					toast.error('Error processing payout')
 					return
 				} else {
+					await potlockApi.syncRoundPayouts(Number(storage.current_round?.on_chain_id || 0)).catch(() => {})
 					toast.success('Payout processed successfully')
 					await fetchRoundInfo()
 					global.dismissPageLoading()
@@ -288,6 +289,7 @@ const RoundResultPage = () => {
 					toast.error('Error Set Round Completed')
 					return
 				} else {
+					await potlockApi.syncRound(Number(storage.current_round?.on_chain_id || 0)).catch(() => {})
 					toast.success('Round Completed successfully')
 					await fetchRoundInfo()
 					global.dismissPageLoading()
@@ -335,6 +337,8 @@ const RoundResultPage = () => {
 					toast.error('Error Distribute Remaining Fund')
 					return
 				} else {
+					await potlockApi.syncRoundDeposits(Number(storage.current_round?.on_chain_id || 0)).catch(() => {})
+					await potlockApi.syncRound(Number(storage.current_round?.on_chain_id || 0)).catch(() => {})
 					toast.success('Remaining Fund Distributed successfully')
 					await fetchRoundInfo()
 					global.dismissPageLoading()

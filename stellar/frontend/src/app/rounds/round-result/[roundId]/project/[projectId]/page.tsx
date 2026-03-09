@@ -342,6 +342,7 @@ const RoundResultProjectDetailPage = () => {
 				if (!txHash) {
 					toast.error('Failed to unflag project')
 				} else {
+					await potlockService.syncRound(Number(storage.current_round?.on_chain_id || 0)).catch(() => {})
 					fetchVotingResultRound()
 					toast.success('Project unflagged successfully')
 				}

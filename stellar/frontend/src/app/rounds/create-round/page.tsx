@@ -221,6 +221,16 @@ const CreateRoundPage = () => {
 				if (selectedProjects.length > 0) await onAddApprovedProjects(roundId)
 				if (watch('amount') && watch('amount') !== '0') await onInitialDeposit(roundId)
 
+				// Sync round, approved projects, and deposits to indexer
+				const roundIdNum = Number(roundId)
+				await potlockApi.syncRound(roundIdNum).catch(() => {})
+				if (selectedProjects.length > 0) {
+					await potlockApi.syncApprovedProjects(roundIdNum).catch(() => {})
+				}
+				if (watch('amount') && watch('amount') !== '0') {
+					await potlockApi.syncRoundDeposits(roundIdNum).catch(() => {})
+				}
+
 				setSuccessCreateRoundModalProps((prev) => ({
 					...prev,
 					isOpen: true,

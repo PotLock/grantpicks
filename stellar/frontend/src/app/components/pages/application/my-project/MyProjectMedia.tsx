@@ -25,6 +25,7 @@ import { updateProject } from '@/services/stellar/project-registry'
 import { DEFAULT_IMAGE_URL } from '@/constants/project'
 import { useMyProject } from './MyProjectProvider'
 import useAppStorage from '@/stores/zustand/useAppStorage'
+import { usePotlockService } from '@/services/potlock'
 import { UpdateProjectParams } from 'project-registry-client'
 
 const MyProjectMedia = () => {
@@ -50,6 +51,7 @@ const MyProjectMedia = () => {
 	const [embededYtTitle, setEmbededYtTitle] = useState<string>('')
 	const embededYtHtmlRef = useRef<HTMLDivElement>(null)
 	const storage = useAppStorage()
+	const potlockApi = usePotlockService()
 	const hasLocalEditsRef = useRef<boolean>(false)
 	const initializedForProjectIdRef = useRef<bigint | null>(null)
 
@@ -157,6 +159,10 @@ const MyProjectMedia = () => {
 					stellarPubKey,
 				)
 				if (txHashUpdateProject) {
+					// Sync project to indexer
+					if (projectData?.id != null) {
+						await potlockApi.syncProject(Number(projectData.id)).catch(() => {})
+					}
 					dismissPageLoading()
 					setTimeout(async () => {
 						await fetchProjectApplicant()

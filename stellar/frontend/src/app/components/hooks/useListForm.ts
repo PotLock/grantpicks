@@ -13,6 +13,7 @@ import { RegistrationStatus } from 'lists-client'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import { useRouter } from 'next/navigation'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
+import { usePotlockService } from '@/services/potlock'
 
 type FormState = {
 	showAddAdminsModal: boolean
@@ -70,6 +71,7 @@ export const useListForm = ({ listId }: UseListFormProps) => {
 		name: 'admins' as const,
 	})
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
+	const potlockApi = usePotlockService()
 
 	const onDrop = useCallback(
 		async (acceptedFiles: File[]) => {
@@ -184,6 +186,7 @@ export const useListForm = ({ listId }: UseListFormProps) => {
 					stellarPubKey,
 				)
 				if (txHashUpdateList) {
+					await potlockApi.syncList(Number(listId)).catch(() => {})
 					toast.success('List updated successfully')
 					router.push(`/list/${listId}`)
 				} else {
@@ -211,6 +214,12 @@ export const useListForm = ({ listId }: UseListFormProps) => {
 					stellarPubKey,
 				)
 				if (txHashCreateList) {
+					try {
+						const listResult = txCreateList.result
+						if (listResult?.id != null) {
+							await potlockApi.syncList(Number(listResult.id)).catch(() => {})
+						}
+					} catch {}
 					toast.success('List created successfully')
 					router.push(`/lists`)
 				} else {

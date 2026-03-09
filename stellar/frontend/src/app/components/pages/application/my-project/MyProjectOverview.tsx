@@ -13,6 +13,7 @@ import { SubmitHandler, useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { useMyProject } from './MyProjectProvider'
 import useAppStorage from '@/stores/zustand/useAppStorage'
+import { usePotlockService } from '@/services/potlock'
 
 import { UpdateProjectParams } from 'project-registry-client'
 
@@ -34,6 +35,7 @@ const MyProjectOverview = () => {
 		},
 	})
 	const storage = useAppStorage()
+	const potlockApi = usePotlockService()
 
 	const setDefaultData = () => {
 		if (projectData) {
@@ -88,6 +90,10 @@ const MyProjectOverview = () => {
 					stellarPubKey,
 				)
 				if (txHashUpdateProject) {
+					// Sync project to indexer
+					if (projectData?.id != null) {
+						await potlockApi.syncProject(Number(projectData.id)).catch(() => {})
+					}
 					dismissPageLoading()
 					setTimeout(async () => {
 						await fetchProjectApplicant()

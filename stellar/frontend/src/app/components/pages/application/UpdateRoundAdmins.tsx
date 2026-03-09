@@ -8,6 +8,7 @@ import { useWallet } from '@/app/providers/WalletProvider'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
+import { usePotlockService } from '@/services/potlock'
 
 interface FormData {
 	admins: { admin_id: string }[]
@@ -28,6 +29,7 @@ export const UpdateRoundAdmins = ({
 	const storage = useAppStorage()
 	const { stellarPubKey, stellarKit } = useWallet()
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
+	const potlockApi = usePotlockService()
 	const { control, handleSubmit } = useForm<FormData>({
 		mode: 'onChange',
 		defaultValues: {
@@ -68,6 +70,7 @@ export const UpdateRoundAdmins = ({
 				stellarPubKey,
 			)
 			if (txHash) {
+				await potlockApi.syncRound(Number(doc.on_chain_id)).catch(() => {})
 				toast.success('Round admins updated successfully')
 				dismissPageLoading()
 				mutateRounds()

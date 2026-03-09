@@ -57,6 +57,7 @@ export const ApplicationItem = ({
 	const [openAcceptModal, setOpenAcceptModal] = useState<boolean>(false)
 	const [openRejectModal, setOpenRejectModal] = useState<boolean>(false)
 	const storage = useAppStorage()
+	const potlockApi = usePotlockService()
 	const [showProjectDetailDrawer, setShowProjectDetailDrawer] = useState<{
 		isOpen: boolean
 		project: Project | GPProject | null
@@ -95,6 +96,11 @@ export const ApplicationItem = ({
 				stellarPubKey,
 			)
 			if (txHash) {
+				await potlockApi.syncApplicationReview(
+					Number(roundData.on_chain_id),
+					item.applicant.id,
+					stellarPubKey,
+				).catch(() => {})
 				dismissPageLoading()
 				toast.success(`Change status to ${type} is succeed`, {
 					style: toastOptions.success.style,

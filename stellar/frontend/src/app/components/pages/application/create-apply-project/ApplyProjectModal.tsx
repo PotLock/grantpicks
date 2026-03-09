@@ -29,6 +29,7 @@ import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
 import clsx from 'clsx'
+import { usePotlockService } from '@/services/potlock'
 
 interface ApplyProjectToRoundModalProps extends BaseModalProps {
 	round_id?: bigint
@@ -58,6 +59,7 @@ const ApplyProjectModal = ({
 	const [isRegistered, setIsRegistered] = useState<boolean>(true)
 	const [isRegistering, setIsRegistering] = useState<boolean>(false)
 	const storage = useAppStorage()
+	const potlockApi = usePotlockService()
 
 	// Check if user can auto-register
 	const canAutoRegister = useCallback(() => {
@@ -142,6 +144,10 @@ const ApplyProjectModal = ({
 				stellarPubKey,
 			)
 			if (txHashApplyProject) {
+				// Sync applications to indexer
+				if (round_id != null) {
+					await potlockApi.syncRoundApplications(Number(round_id)).catch(() => {})
+				}
 				dismissPageLoading()
 				setIsRegistering(false)
 				setSuccessApplyProjectInitProps((prev) => ({
@@ -183,6 +189,7 @@ const ApplyProjectModal = ({
 			)
 
 			if (txHashRegister) {
+				await potlockApi.syncListRegistrations(Number(roundData.application_wl_list_id)).catch(() => {})
 				setIsRegistered(true)
 				toast.success('Successfully registered to list!', {
 					style: toastOptions.success.style,

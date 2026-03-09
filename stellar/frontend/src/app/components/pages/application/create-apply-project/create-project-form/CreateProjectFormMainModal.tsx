@@ -118,11 +118,14 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 						registrations: undefined,
 					})
 
-					await contracts.signAndSendTx(
+					const txHashRegister = await contracts.signAndSendTx(
 						stellarKit as StellarWalletsKit,
 						txRegisterList.toXDR(),
 						storage.my_address || '',
 					)
+					if (txHashRegister) {
+						await potlockApi.syncListRegistrations(Number(process.env.PROJECTS_LIST_ID || '1')).catch(() => {})
+					}
 				}
 
 				const txCreateProject = await contracts.project_contract.apply({
@@ -140,10 +143,17 @@ const CreateProjectFormMainModal = ({ isOpen, onClose }: BaseModalProps) => {
 
 
 				if (txHashCreateProject) {
+					const createProjectRes = scValToNative(txCreateProject.simulationData.result.retval)
+
+					// Sync project to indexer
+					if (createProjectRes?.id != null) {
+						await potlockApi.syncProject(Number(createProjectRes.id)).catch(() => {})
+					}
+
 					setSuccessCreateProjectModalProps((prev) => ({
 						...prev,
 						isOpen: true,
-						createProjectRes: scValToNative(txCreateProject.simulationData.result.retval),
+						createProjectRes,
 						txHash: txHashCreateProject,
 					}))
 					setDataForm(DEFAULT_CREATE_PROJECT_DATA)

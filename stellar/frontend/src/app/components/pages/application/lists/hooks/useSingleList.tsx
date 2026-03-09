@@ -100,6 +100,7 @@ export const useSingleList = ({
 			)
 
 			if (txHashBatchRegisterToList) {
+				await potlockApi.syncListRegistrations(Number(listId)).catch(() => {})
 				toast.success('Registered project(s) to list successfully')
 				return onClose()
 			} else {
@@ -150,6 +151,7 @@ export const useSingleList = ({
 			)
 
 			if (txHashApplyToList) {
+				await potlockApi.syncListRegistrations(Number(listId)).catch(() => {})
 				toast.success('Applied Successfully')
 				return onClose()
 			} else {
@@ -189,6 +191,7 @@ export const useSingleList = ({
 			)
 
 			if (txHashUpdateProjectStatus) {
+				await potlockApi.syncListRegistrations(Number(listId)).catch(() => {})
 				toast.success('Project status updated successfully')
 			} else {
 				toast.error('Failed to update project status')
@@ -216,6 +219,7 @@ export const useSingleList = ({
 			)
 
 			if (txHashDeleteList) {
+				await potlockApi.syncListDelete(Number(listId)).catch(() => {})
 				toast.success('List deleted successfully')
 				router.push('/lists')
 			} else {

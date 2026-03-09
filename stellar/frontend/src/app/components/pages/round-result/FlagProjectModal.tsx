@@ -9,12 +9,14 @@ import useAppStorage from '@/stores/zustand/useAppStorage'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
 import toast from 'react-hot-toast'
 import IconLoading from '../../svgs/IconLoading'
+import { usePotlockService } from '@/services/potlock'
 
 const FlagProjectModal = ({ isOpen, onClose }: BaseModalProps) => {
 	const [reason, setReason] = useState<string>('')
 	const [isLoading, setIsLoading] = useState<boolean>(false)
 	const { stellarKit } = useWallet()
 	const storage = useAppStorage()
+	const potlockApi = usePotlockService()
 
 	const flagProject = async () => {
 		setIsLoading(true)
@@ -38,6 +40,8 @@ const FlagProjectModal = ({ isOpen, onClose }: BaseModalProps) => {
 
 				if (!txHash) {
 					toast.error('Failed to flag project')
+				} else {
+					await potlockApi.syncRound(Number(storage.current_round?.on_chain_id || 0)).catch(() => {})
 				}
 			}
 			setIsLoading(false)

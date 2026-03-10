@@ -98,6 +98,135 @@ export class PotlockService {
 		}
 	}
 
+	async syncProject(projectId: number) {
+		try {
+			const result = await this._axios?.post(`/grantpicks/projects/${projectId}/sync`)
+			return result?.data
+		} catch (error) {
+			console.log('error syncProject', error)
+		}
+	}
+
+	async syncRound(roundId: number) {
+		try {
+			const result = await this._axios?.post(`/grantpicks/rounds/${roundId}/sync`)
+			return result?.data
+		} catch (error) {
+			console.log('error syncRound', error)
+		}
+	}
+
+	async syncRoundApplications(roundId: number) {
+		try {
+			const result = await this._axios?.post(
+				`/grantpicks/rounds/${roundId}/applications/sync`,
+			)
+			return result?.data
+		} catch (error) {
+			console.log('error syncRoundApplications', error)
+		}
+	}
+
+	async syncApplicationReview(
+		roundId: number,
+		applicantId: string,
+		reviewerId: string,
+	) {
+		try {
+			const result = await this._axios?.post(
+				`/grantpicks/rounds/${roundId}/applications/review/sync`,
+				{ applicant_id: applicantId, reviewer_id: reviewerId },
+			)
+			return result?.data
+		} catch (error) {
+			console.log('error syncApplicationReview', error)
+		}
+	}
+
+	async syncApprovedProjects(roundId: number) {
+		try {
+			const result = await this._axios?.post(
+				`/grantpicks/rounds/${roundId}/approved-projects/sync`,
+			)
+			return result?.data
+		} catch (error) {
+			console.log('error syncApprovedProjects', error)
+		}
+	}
+
+	async syncRoundDeposits(roundId: number) {
+		try {
+			const result = await this._axios?.post(
+				`/grantpicks/rounds/${roundId}/deposits/sync`,
+			)
+			return result?.data
+		} catch (error) {
+			console.log('error syncRoundDeposits', error)
+		}
+	}
+
+	async syncRoundVotes(roundId: number) {
+		try {
+			const result = await this._axios?.post(`/grantpicks/rounds/${roundId}/votes/sync`)
+			return result?.data
+		} catch (error) {
+			console.log('error syncRoundVotes', error)
+		}
+	}
+
+	async syncRoundPayouts(roundId: number) {
+		try {
+			const result = await this._axios?.post(
+				`/grantpicks/rounds/${roundId}/payouts/sync`,
+			)
+			return result?.data
+		} catch (error) {
+			console.log('error syncRoundPayouts', error)
+		}
+	}
+
+	async syncList(listId: number) {
+		try {
+			const result = await this._axios?.post(`/grantpicks/lists/${listId}/sync`)
+			return result?.data
+		} catch (error) {
+			console.log('error syncList', error)
+		}
+	}
+
+	async syncListRegistrations(listId: number) {
+		try {
+			const result = await this._axios?.post(
+				`/grantpicks/lists/${listId}/registrations/sync`,
+			)
+			return result?.data
+		} catch (error) {
+			console.log('error syncListRegistrations', error)
+		}
+	}
+
+	async syncSingleRegistration(listId: number, registrantId: string) {
+		try {
+			const result = await this._axios?.post(
+				`/grantpicks/lists/${listId}/registrations/${registrantId}/sync`,
+			)
+			return result?.data
+		} catch (error) {
+			console.log('error syncSingleRegistration', error)
+		}
+	}
+
+	async syncListDelete(listId: number) {
+		try {
+			const result = await this._axios?.post(
+				`/grantpicks/lists/${listId}/delete/sync`,
+			)
+			return result?.data
+		} catch (error) {
+			console.log('error syncListDelete', error)
+		}
+	}
+
 	async getAccounts(accountId: string) {
 		const result = await this._axios?.get(`/accounts/${accountId}`)
 		return result?.data

@@ -23,6 +23,7 @@ import {
 import toast from 'react-hot-toast'
 import { useMyProject } from './MyProjectProvider'
 import useAppStorage from '@/stores/zustand/useAppStorage'
+import { usePotlockService } from '@/services/potlock'
 import { UpdateProjectParams } from 'project-registry-client'
 
 interface IFunding {
@@ -61,6 +62,7 @@ const MyProjectFundingRaised = () => {
 	})
 
 	const storage = useAppStorage()
+	const potlockApi = usePotlockService()
 
 	const setDefaultData = () => {
 		if (projectData) {
@@ -136,6 +138,10 @@ const MyProjectFundingRaised = () => {
 					stellarPubKey,
 				)
 				if (txHashUpdateProject) {
+					// Sync project to indexer
+					if (projectData?.id != null) {
+						await potlockApi.syncProject(Number(projectData.id)).catch(() => {})
+					}
 					dismissPageLoading()
 					setTimeout(async () => {
 						await fetchProjectApplicant()

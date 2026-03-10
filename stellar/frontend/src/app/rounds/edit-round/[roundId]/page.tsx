@@ -34,6 +34,7 @@ import {
 	TWITTER_USERNAME_REGEX,
 } from '@/constants/regex'
 import useAppStorage from '@/stores/zustand/useAppStorage'
+import { usePotlockService } from '@/services/potlock'
 import { GPRound } from '@/models/round'
 import { roundDetailToGPRound } from '@/services/stellar/type'
 import { formatNearAmount } from 'near-api-js/lib/utils/format'
@@ -63,6 +64,7 @@ const EditRoundPage = () => {
 		useState<boolean>(true)
 	const [isVaultDeposit, setIsVaultDeposit] = useState<boolean>(false)
 	const [showLists, setShowLists] = useState<boolean>(true)
+	const potlockApi = usePotlockService()
 
 	const {
 		register,
@@ -233,6 +235,9 @@ const EditRoundPage = () => {
 				stellarPubKey,
 			)
 			if (txHashUpdateRound) {
+				// Sync round to indexer
+				await potlockApi.syncRound(Number(params.roundId)).catch(() => {})
+
 				setSuccessUpdateRoundModalProps((prev) => ({
 					...prev,
 					isOpen: true,

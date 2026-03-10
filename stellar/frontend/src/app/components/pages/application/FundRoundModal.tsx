@@ -20,6 +20,7 @@ import { StrKey } from '@stellar/stellar-base'
 import { toastOptions } from '@/constants/style'
 import toast from 'react-hot-toast'
 import { localStorageConfigs } from '@/configs/local-storage'
+import { usePotlockService } from '@/services/potlock'
 
 interface FundROundModalProps extends BaseModalProps {
 	doc: GPRound
@@ -33,6 +34,7 @@ const FundRoundModal = ({
 	mutateRounds,
 }: FundROundModalProps) => {
 	const storage = useAppStorage()
+	const potlockApi = usePotlockService()
 	const { setSuccessFundRoundModalProps } = useModalContext()
 	const { stellarPrice, openPageLoading, dismissPageLoading, nearPrice } =
 		useGlobalContext()
@@ -154,6 +156,9 @@ const FundRoundModal = ({
 				stellarPubKey,
 			)
 			if (txHash) {
+				// Sync deposits to indexer
+				await potlockApi.syncRoundDeposits(Number(doc.on_chain_id)).catch(() => {})
+
 				dismissPageLoading()
 				setSuccessFundRoundModalProps((prev) => ({
 					...prev,

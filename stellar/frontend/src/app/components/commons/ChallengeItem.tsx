@@ -19,6 +19,7 @@ import {
 	NearPayoutChallenge,
 	nearPayoutChallengeToGPPayoutChallenge,
 } from '@/services/near/type'
+import { usePotlockService } from '@/services/potlock'
 
 const ChallengeItem = ({
 	challenge,
@@ -29,6 +30,7 @@ const ChallengeItem = ({
 }) => {
 	const { stellarKit, stellarPubKey } = useWallet()
 	const storage = useAppStorage()
+	const potlockApi = usePotlockService()
 	const [isReviewing, setIsReviewing] = useState<boolean>(false)
 	const [adminNotes, setAdminNotes] = useState<string>('')
 	const [errorMessage, setErrorMessage] = useState<string>('')
@@ -134,6 +136,7 @@ const ChallengeItem = ({
 					setErrorMessage('Error resolving challenge')
 					return
 				} else {
+					await potlockApi.syncRoundPayouts(Number(storage.current_round?.on_chain_id || 0)).catch(() => {})
 					reload()
 					setIsReviewing(false)
 				}

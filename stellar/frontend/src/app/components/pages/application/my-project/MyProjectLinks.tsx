@@ -28,6 +28,7 @@ import {
 	TWITTER_USERNAME_REGEX,
 } from '@/constants/regex'
 import useAppStorage from '@/stores/zustand/useAppStorage'
+import { usePotlockService } from '@/services/potlock'
 import { UpdateProjectParams } from 'project-registry-client'
 
 interface IContract {
@@ -94,6 +95,7 @@ const MyProjectLinks = () => {
 		name: 'contacts',
 	})
 	const storage = useAppStorage()
+	const potlockApi = usePotlockService()
 
 	const setDefaultData = () => {
 		if (projectData) {
@@ -188,6 +190,10 @@ const MyProjectLinks = () => {
 					stellarPubKey,
 				)
 				if (txHashUpdateProject) {
+					// Sync project to indexer
+					if (projectData?.id != null) {
+						await potlockApi.syncProject(Number(projectData.id)).catch(() => {})
+					}
 					dismissPageLoading()
 					setTimeout(async () => {
 						await fetchProjectApplicant()

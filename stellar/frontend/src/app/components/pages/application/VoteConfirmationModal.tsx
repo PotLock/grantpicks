@@ -15,6 +15,7 @@ import toast from 'react-hot-toast'
 import { toastOptions } from '@/constants/style'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { GPRound } from '@/models/round'
+import { usePotlockService } from '@/services/potlock'
 import { ListExternal } from '../../../../../lists-client/src'
 import Link from 'next/link'
 import IconClose from '../../svgs/IconClose'
@@ -41,6 +42,7 @@ const VoteConfirmationModal = ({
 	)
 	const [loading, setLoading] = useState<boolean>(true)
 	const [isRegistering, setIsRegistering] = useState<boolean>(false)
+	const potlockApi = usePotlockService()
 
 	// Check if user can auto-register
 	const canAutoRegister = useCallback(() => {
@@ -108,6 +110,7 @@ const VoteConfirmationModal = ({
 			)
 
 			if (txHashRegister) {
+				await potlockApi.syncListRegistrations(Number(data.application_wl_list_id)).catch(() => {})
 				dismissPageLoading()
 				setIsRegistered(true)
 				toast.success('Successfully registered to list!', {

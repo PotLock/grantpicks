@@ -22,6 +22,7 @@ import toast from 'react-hot-toast'
 import { useMyProject } from './MyProjectProvider'
 import { StrKey } from 'round-client'
 import useAppStorage from '@/stores/zustand/useAppStorage'
+import { usePotlockService } from '@/services/potlock'
 import Image from 'next/image'
 import { NEAR_ADDRESS_REGEX } from '@/constants/regex'
 import { UpdateProjectParams } from 'project-registry-client'
@@ -35,6 +36,7 @@ const MyProjectTeam = () => {
 	const { register, watch, handleSubmit, setValue } =
 		useForm<CreateProjectStep2Data>()
 	const storage = useAppStorage()
+	const potlockApi = usePotlockService()
 
 	const setDefaultData = () => {
 		if (projectData) {
@@ -81,6 +83,10 @@ const MyProjectTeam = () => {
 					stellarPubKey,
 				)
 				if (txHashUpdateProject) {
+					// Sync project to indexer
+					if (projectData?.id != null) {
+						await potlockApi.syncProject(Number(projectData.id)).catch(() => {})
+					}
 					dismissPageLoading()
 					setTimeout(async () => {
 						await fetchProjectApplicant()

@@ -10,6 +10,7 @@ import { GPRound } from '@/models/round'
 import toast from 'react-hot-toast'
 import Contracts from '@/lib/contracts'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
+import { usePotlockService } from '@/services/potlock'
 
 interface AppRepo {
 	chainId: string | null
@@ -32,6 +33,7 @@ export const useRoundDuration = ({
 	mutateRounds,
 }: UseRoundDurationProps) => {
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
+	const potlockApi = usePotlockService()
 
 	const handleUpdateApplicationDuration: SubmitHandler<
 		UpdateApplicationConfig
@@ -68,6 +70,7 @@ export const useRoundDuration = ({
 					stellarPubKey,
 				)
 				if (txHash) {
+					await potlockApi.syncRound(Number(doc.on_chain_id)).catch(() => {})
 					toast.success('Application duration updated successfully', {
 						style: toastOptions.success.style,
 					})
@@ -112,6 +115,7 @@ export const useRoundDuration = ({
 					stellarPubKey,
 				)
 				if (txHash) {
+					await potlockApi.syncRound(Number(doc.on_chain_id)).catch(() => {})
 					toast.success('Voting duration updated successfully', {
 						style: toastOptions.success.style,
 					})

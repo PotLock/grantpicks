@@ -13,6 +13,7 @@ import { PayoutInput } from 'round-client'
 import IconLoading from '../../svgs/IconLoading'
 import Image from 'next/image'
 import IconInfoCircle from '../../svgs/IconInfoCircle'
+import { usePotlockService } from '@/services/potlock'
 
 export type PayoutTableItem = {
 	actual_amount: number
@@ -48,6 +49,7 @@ const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 	const [manualAllocations, setManualAllocations] = useState<Map<string, number>>(new Map())
 
 	const storage = useAppStorage()
+	const potlockApi = usePotlockService()
 
 	// Calculate vault balance from vault_total_deposits
 	// Subtract 0.01 XLM buffer to avoid "Insufficient Funds" errors
@@ -186,6 +188,7 @@ const EditPayoutModal = ({ isOpen, onClose }: BaseModalProps) => {
 			if (!txHash) {
 				toast.error('Error submitting payout')
 			} else {
+				await potlockApi.syncRoundPayouts(Number(storage.current_round?.on_chain_id || 0)).catch(() => {})
 				toast.success('Payout set successfully!')
 				setIsLoading(false)
 				onClose()

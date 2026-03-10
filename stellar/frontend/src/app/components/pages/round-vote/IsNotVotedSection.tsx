@@ -14,6 +14,7 @@ import { toastOptions } from '@/constants/style'
 import { IProjectDetailOwner } from '@/app/rounds/round-vote/[roundId]/page'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { NearPair, NearPick } from '@/services/near/type'
+import { usePotlockService } from '@/services/potlock'
 
 const IsNotVotedSection = ({
 	setShowEvalGuide,
@@ -33,6 +34,7 @@ const IsNotVotedSection = ({
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const { stellarKit } = useWallet()
 	const storage = useAppStorage()
+	const potlockApi = usePotlockService()
 	const totalPairs = pairsData.length
 	const selectedCount = selectedVotes.filter(Boolean).length
 	const remainingCount = Math.max(totalPairs - selectedCount, 0)
@@ -113,6 +115,7 @@ const IsNotVotedSection = ({
 					storage.my_address || '',
 				)
 				if (txVoteProject) {
+					await potlockApi.syncRoundVotes(Number(params.roundId)).catch(() => {})
 					toast.success('Round is voted successfully', {
 						style: toastOptions.success.style,
 					})

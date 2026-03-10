@@ -12,6 +12,7 @@ import { toastOptions } from '@/constants/style'
 import { useGlobalContext } from '@/app/providers/GlobalProvider'
 import useAppStorage from '@/stores/zustand/useAppStorage'
 import { GPRound } from '@/models/round'
+import { usePotlockService } from '@/services/potlock'
 
 interface ChallengePayoutModalProps extends BaseModalProps {
 	roundData: GPRound | undefined
@@ -26,6 +27,7 @@ const ChallengePayoutModal = ({
 	const { stellarPubKey, stellarKit } = useWallet()
 	const { openPageLoading, dismissPageLoading } = useGlobalContext()
 	const storage = useAppStorage()
+	const potlockApi = usePotlockService()
 
 	const onSubmitChallenge = async () => {
 		try {
@@ -52,6 +54,7 @@ const ChallengePayoutModal = ({
 					stellarPubKey,
 				)
 				if (txhash) {
+					await potlockApi.syncRoundPayouts(Number(roundData?.on_chain_id || 0)).catch(() => {})
 					toast.success('Payout challenged successfully', {
 						style: toastOptions.success.style,
 					})
